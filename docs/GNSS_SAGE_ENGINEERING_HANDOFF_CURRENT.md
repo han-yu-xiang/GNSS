@@ -2,7 +2,7 @@
 
 **项目根目录：** `E:\GNSS_Multipath_Project`  
 **工程状态唯一来源：** 本文件  
-**最后审计时点：** 2026-08-14（Asia/Shanghai）  
+**最后审计时点：** 2026-08-18（Asia/Shanghai）
 **面向对象：** Codex、AI Agent、开发人员、实验执行人员  
 **当前阶段：** 从算法验证阶段进入论文数据生产阶段；当前主线是 accuracy-first full SAGE data production，已有6个10.23 MHz production task通过独立QA；G12 controlled acceptance、VTC Tier-1 T1-1 G05、T1-2 G25和T1-3 Mountain/Valley G11均已通过真实执行验收。根据 Commander 决策，SAGE production 当前已 STOPPED，转入 VTC evidence consolidation 和 event-level geometry/time-alignment QA。正式A3 G16仍因历史executor/request contract mismatch不计入production acceptance，其余任务保持 Planned / Not started。
 
@@ -599,7 +599,6 @@ Execution
 - Status: non-raw organization and provenance capture `Completed/Validated`; GNSS-SDR/NAV/trajectory/geometry inputs `Partial/Missing`; SAGE `Not started/Blocked`. No MATLAB, SAGE, batch task, raw-IQ processing, raw deletion, or existing SAGE artifact modification occurred.
 - Engineering next decision: before any future request, establish a matched PRN across weather conditions and complete/verify GNSS-SDR, navigation, trajectory, and geometry provenance. Do not add these partial scenes to production or infer rain effects from their current files.
 
-
 ## 25. Darkroom Rain GNSS-SDR rerun and separate Rain adapter (2026-08-17)
 
 - This section supersedes the pre-rerun Rain facts recorded in Section 24; the earlier artifacts remain preserved under dataset_generation_logs/darkroom_channel_emulation/superseded_pre_rerun_20260817/ and are not silently reused.
@@ -691,3 +690,146 @@ Execution
 - The recovery state is also recorded in `dataset_generation_logs/darkroom_channel_emulation/rain_provenance_manifest.json`, now valid JSON with SHA-256=`34151d19a287d6467e72dbe4f4fb5bde5f231793816513fe4d15f9c9d2828269`, including the preserved-copy path, candidate-ledger hash, exact-target status, and no-production-modification assertion.
 - Rain remains branch-local under `scripts/sage_pipeline/rain/`; the Rain branch did not modify the production entry during this audit. The user-reported normal-user Rain syntax smoke fact (`RAIN_MATLAB_SYNTAX_SMOKE=PASS`, `MATLAB_EXIT_CODE=0`) is retained as reported evidence and was not rerun by Codex. `RAIN_G24_PREFLIGHT=NOT_RUN` remains mandatory.
 - No MATLAB, SAGE, G24 preflight, raw-IQ processing, batch execution, production restoration, or VTC/Paper update occurred. The unique next action is Commander direction or supply of a traceable exact historical source; do not reconstruct or run Rain/production before that.
+
+## 33. Validated-equivalent production recovery preparation (Implemented + static Validated; MATLAB pending, 2026-08-17)
+
+- Commander decision: `EXACT_HISTORICAL_SOURCE_RECOVERY=BLOCKED`; the route is now `VALIDATED_EQUIVALENT_PRODUCTION_RECOVERY=ACTIVE`. Further shared-core architecture work is frozen. The shared-core files and their regression harness remain audit evidence only; Rain remains paused.
+- P0 created a project-local Git repository with a deliberately narrow `.gitignore` and committed the pre-recovery source state before restoration edits. Checkpoint commit: `0f9726e8be94af19064b2ac44cd007a61048730c`, message `checkpoint: preserve pre-recovery GNSS SAGE source state`. Raw/bulk files, SAGE outputs, generated logs, caches, and temporary/build artifacts were not staged.
+- P2 damage audit: `dataset_generation_logs/darkroom_channel_emulation/production_refactor_damage_audit.md`. Available source evidence classified the shared-core change as interface adaptation/mechanical extraction; no source-level `ALGORITHM_CHANGE` or `UNKNOWN` item was identified. Numerical equivalence is still unvalidated and must not be inferred.
+- Recovery provenance manifest: `dataset_generation_logs/darkroom_channel_emulation/rain_provenance_manifest.json`, current SHA-256=`2e012111e2ebe56c7c1118656c0f251b663c24f6e27970168b921143b4ab8705`; it records exact recovery blocked, the new validated-equivalent candidate, source/test hashes, and `PRODUCTION_PIPELINE_FROZEN=false`.
+- P3 restored a new self-contained monolithic candidate at `scripts/sage_pipeline/run_nav_sage_pipeline.m`, SHA-256=`f1a16ceea6bcdafd46a85bce478d18e96f4dcd19e9bcb3991fb35b867e2b2088`. Stage1–Stage4, configuration, and Doppler-bound helper are local in this entry; there is no production `coreDirectory`, `addpath(core,...)`, or `run_sage_stage1_stage4_core` dependency. The old modified source remains preserved at `dataset_generation_logs/darkroom_channel_emulation/production_pipeline_recovery_20260817/run_nav_sage_pipeline.modified_by_shared_core_refactor.m` with SHA-256=`95f608acb9c7920fcef88855c866fb74465e1a080893b1ea276ab00df838def0`.
+- P5/P6 prepared, but did not run, the production-only MATLAB Code Analyzer smoke `scripts/sage_pipeline/regression/run_production_matlab_syntax_smoke.m` (SHA-256=`8b4de75ae9b84fa637e7896763bd24dd70d75e889e6c8c0fd1068a1f3d97ced3`) and protected G28 numerical replay harness `scripts/sage_pipeline/regression/run_production_recovery_regression.m` (SHA-256=`3cb5bb87d3cb058f63d444bd2d3eca0cb593b527498be0e568eecc634849991c`). The numerical harness fixes G28/ch1/10.23 MHz, passes `Resume=false`, regenerates Stage0 from copied non-raw inputs, compares against frozen baseline Stage0 and Stage1–Stage4 artifacts, and writes only to a fresh `dataset_generation_logs/darkroom_channel_emulation/production_recovery_<UTC>/` namespace. The baseline `scenes/F1023_V70_D0117_P2/sage_results/nav_sage_v2/G28` is never an output target.
+- New static structure test: `scripts/sage_pipeline/regression/test_production_recovery_structure.py` (SHA-256=`e9175188c235ba6ba4913aa0fbc4b4fdc461be0b20fa380f387fa142dfc18a02`). Existing core structure tests were updated to distinguish the frozen audit copy from the new monolithic production route.
+- Python `py_compile` passed. The compiled local Python verification passed `102/102` existing unit tests plus explicit core/Rain/shared-core-regression/production-recovery suites `13+11+7+9+6=46/46`, total `148/148 PASS`. No MATLAB, production SAGE, Rain SAGE, G24 preflight, batch task, raw-IQ processing, or 20.46 MHz task was run.
+- Current gates:
+
+```text
+EXACT_SOURCE_RECOVERY=BLOCKED
+VALIDATED_EQUIVALENT_RECOVERY=READY_FOR_MATLAB_VALIDATION
+PRODUCTION_MATLAB_SYNTAX_SMOKE=NOT_RUN
+G28_NUMERICAL_REGRESSION=NOT_RUN
+PRODUCTION_PIPELINE_FROZEN=NO
+RAIN_G24_PREFLIGHT=NOT_RUN
+RAIN_SAGE_EXECUTION=NOT_STARTED
+```
+
+- The source restoration edits remain intentionally uncommitted after the checkpoint. Do not create `PRODUCTION_SAGE_PIPELINE_FREEZE.md`, commit/tag the restored candidate, run production/Rain, or resume any task until a normal Windows user `TJ-CHANNEL\\Jing_` runs the syntax smoke and then, only after syntax PASS, the protected G28 numerical replay. The sole next engineering action is that gated MATLAB validation.
+
+## 32. GNSS-SDR weather-effect MVP audit (Completed + Validated, 2026-08-17)
+
+- Added the read-only analysis tool `scripts/analysis/rain_gnss_sdr/audit_rain_gnss_sdr_mvp.py` (SHA-256 `7f4798f693fc1283d1d1a288c9336a6db0806ca8c7167791495a5f95d755391f`). It reads existing standardized GNSS-SDR artifacts only; it does not open raw IQ content, invoke the MATLAB executable, rerun GNSS-SDR, or run SAGE.
+- The generated meeting package is frozen under `dataset_generation_logs/darkroom_channel_emulation/gnss_sdr_weather_mvp_20260817/`. It contains the summary, scene/PRN metrics, matched G24 comparison, field inventory, provenance, meeting brief, and four figures. Two superseded self-generated diagnostic directories were retained separately; no source artifact was deleted, moved, or overwritten.
+- Artifact-backed channel mappings were validated as clear: ch3/G29, ch8/G13, ch10/G24, ch11/G12; midrain: ch8/G24, ch9/G20; heavyrain: ch1/G02, ch4/G31, ch7/G01. The only same-PRN weather comparison is clear G24/ch10 versus midrain G24/ch8; heavyrain is not a same-satellite matched comparison.
+- The MVP reports receiver-level C/N0, tracking-valid fraction/duration, lock-continuity diagnostics, robust Doppler/code-frequency variation, telemetry/CRC, and observables evidence. Missing trajectory/geometry and unsupported weather-propagation conclusions remain explicitly unavailable/not established.
+- Existing production-source provenance was checked before and after generation. The actual pre-existing source hash is `f1a16ceea6bcdafd46a85bce478d18e96f4dcd19e9bcb3991fb35b867e2b2088`, whereas the Commander request cited `95f608acb9c7920fcef88855c866fb74465e1a080893b1ea276ab00df838def`; this discrepancy was recorded and no rollback or source modification was performed.
+- Engineering status: the GNSS-SDR weather-effect MVP is `Completed + Validated` as a read-only receiver-level audit. It is not a rain-propagation law, multipath model, geometry study, or production SAGE result. The existing protected pipeline/source-restoration gate remains unchanged.
+
+## 34. G28 recovery result-container packaging fix (Implemented + static Validated; MATLAB pending, 2026-08-17)
+
+- The normal-user G28 recovery run at `dataset_generation_logs/darkroom_channel_emulation/production_recovery_regression_20260817T123353Z/` reached Stage0, Stage1, Stage2, Stage3, and Stage4, then failed at `run_sage_stage1_stage4_local` result packaging. Stage4 CSV/MAT files were written before the failure; this is `FAILURE_CLASS=PRODUCTION_RECOVERY_RESULT_PACKAGING_ERROR`, not an algorithm regression.
+- The localized MATLAB message quoted struct input argument positions 20 and 8. Input 8 is the `stage2Fits` value and input 20 is `jointFits`; both are non-scalar cell containers. The unsafe constructor could expand the result into a struct array. The tokens are argument positions, not literal array lengths 20 and 8.
+- Fixed only the production result container in `scripts/sage_pipeline/run_nav_sage_pipeline.m`: initialize `result=struct()`, assign every Stage1–Stage4 output as a field, and assert `isscalar(result)`. No Stage numerical code, configuration, threshold, grid, model selection, path output, or confirmation criterion changed.
+- The recovery harness `scripts/sage_pipeline/regression/run_production_recovery_regression.m` now captures the return value and asserts a scalar struct. Structural test: `scripts/sage_pipeline/regression/test_production_recovery_structure.py`.
+- Fix report: `dataset_generation_logs/darkroom_channel_emulation/production_recovery_result_packaging_fix_20260817/result_packaging_fix_report.md`, SHA-256=`d9d58cea4eeb53d8911e2206ccf206650a35b359951489a59cb090868bc6567b`.
+- Updated hashes: production source=`bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c`; recovery harness=`e0745a3dee9542d85089ea3f1189ffe258f2b65dac7c3a057e0ce5b0e6df4cf7`; structural test=`3fea7d444748f9eddfbac7be79a97189e8941fa5889b2295cbf1c24fe6b2297b`.
+- Verification: `py_compile=PASS`, relevant production/core structure tests `20/20 PASS`, and `git diff --check=PASS`. The failed recovery namespace and protected G28 baseline remain unchanged and retained.
+
+```text
+EXACT_SOURCE_RECOVERY=BLOCKED
+VALIDATED_EQUIVALENT_RECOVERY=INCOMPLETE
+PRODUCTION_MATLAB_SYNTAX_SMOKE=NOT_RUN
+G28_NUMERICAL_REGRESSION=NOT_RUN
+PRODUCTION_PIPELINE_FROZEN=NO
+RAIN_G24_PREFLIGHT=NOT_RUN
+RAIN_SAGE_EXECUTION=NOT_STARTED
+```
+
+- The only next action is for normal Windows user `TJ-CHANNEL\\Jing_` to review and run the protected `run_production_recovery_regression` command. Codex must not launch MATLAB; do not run Rain, G24, production, or another task before that gate.
+
+## 35. G28 recovery comparator indexing repair (Implemented + static Validated; MATLAB comparison pending, 2026-08-18)
+
+- The normal-user G28 recovery run at `dataset_generation_logs/darkroom_channel_emulation/production_recovery_regression_20260817T152437Z/` completed Stage0, Stage1, Stage2, Stage3, Stage4, and output generation. MATLAB then exited with `表变量名称必须为字符串标量或字符向量。` in `compareTableFile` at the dynamic table access. The preserved run is classified `SAGE_EXECUTION_COMPLETED` plus `COMPARISON_HARNESS_FAILED`; numerical equivalence remains incomplete. This is `REGRESSION_COMPARATOR_TABLE_VARIABLE_INDEXING_ERROR`, not a SAGE, production-stage, or Stage4 failure.
+- Root cause is mechanical MATLAB table-name indexing: `readtable(..., "VariableNamingRule", "preserve")` exposed `Properties.VariableNames` as a cell array of character vectors; iterating that cell array with `for name = reshape(...)` produced a 1-by-1 cell instead of a scalar character vector. The source had `exactNames` (not `commonNames`) as the equivalent common-name set. No comparison field was skipped and no tolerance was changed.
+- `scripts/sage_pipeline/regression/run_production_recovery_regression.m` now normalizes cell/string/char table variable-name representations and extracts scalar character names before every dynamic table access. Stage0 table equality, Stage1 candidate detection, and Stage4 path identity use the same normalization. The harness also implements an optional `CompareExistingActualDir` read-only mode that validates the G28 context, confines the actual directory to the darkroom namespace, does not call `run_nav_sage_pipeline`, and writes only to a fresh comparison namespace.
+- New harness SHA-256=`50ab8429cd12a9f687021690dbed396cf6aea2b821afd89ee52144fc1d42e080`. New comparator tests are `scripts/sage_pipeline/regression/test_production_recovery_comparator.py`, SHA-256=`78aee03b856307d5004a609efe032738180bd70d32f3e83ca13a878ff7568f21`; the updated structure test SHA-256=`86da644c614d29fbfd84df52185f9bbba10b7516a9fb0a35cb71188041c96d1`. The fix report is `dataset_generation_logs/darkroom_channel_emulation/production_recovery_comparator_fix_20260818/comparator_fix_report.md`, SHA-256=`df16522c9c8edd90880cae617189ca43ee1ebef440ffbe78dfc5b11c599a117`.
+- MATLAB-free validation passed: all regression Python modules `py_compile=PASS`; production-recovery structure/comparator tests `16/16 PASS`; shared-core regression harness tests `9/9 PASS`; trailing-whitespace/diff hygiene `PASS`. No MATLAB, raw-IQ sample read, SAGE, G24 preflight, batch task, Rain run, or 20.46 MHz run occurred.
+- The current production entry remains unchanged at SHA-256=`bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c`. The protected G28 baseline and the preserved interrupted/failed recovery artifacts remain unchanged. The preserved actual output contains `run_context.json`, `stage0_nav_catalog.mat`, and all required Stage1--Stage4 CSVs, so it is sufficient for a strict comparison-only replay; no SAGE rerun is required solely for this comparator repair.
+- Current flags remain:
+
+```text
+EXACT_SOURCE_RECOVERY=BLOCKED
+PRODUCTION_EXECUTION=PASS
+VALIDATED_EQUIVALENT_RECOVERY=INCOMPLETE
+PRODUCTION_PIPELINE_FROZEN=NO
+RAIN_G24_PREFLIGHT=NOT_RUN
+RAIN_SAGE_EXECUTION=NOT_STARTED
+```
+
+- The sole next action is for normal Windows user `TJ-CHANNEL\\Jing_` to review and run the comparison-only command recorded in `dataset_generation_logs/darkroom_channel_emulation/production_recovery_comparator_fix_20260818/comparator_fix_report.md`. Do not rerun G28 SAGE, run Rain/G24, start production, or process 20.46 MHz until that comparison result is independently reviewed.
+
+## 36. G28 comparison path-canonicalization repair (Implemented + static Validated; MATLAB comparison pending, 2026-08-18)
+
+- The first normal-user comparison-only retry failed before reading comparison tables because `isPathWithinRoot` rejected the actual directory even though it is physically under the darkroom namespace. The reported actual path was `E:/GNSS_Multipath_Project/dataset_generation_logs/darkroom_channel_emulation/production_recovery_regression_20260817T152437Z/project/scenes/F1023_V70_D0117_P2/sage_results/nav_sage_v2/G28`; the root is constructed from `fullfile(ProjectRoot, "dataset_generation_logs", "darkroom_channel_emulation")`. This is `FAILURE_CLASS=REGRESSION_HARNESS_PATH_NORMALIZATION_ERROR`, not a production or SAGE failure.
+- The previous helper only replaced separators and applied a raw prefix comparison. It did not canonicalize absolute paths, resolve `.`/`..`, collapse duplicate separators, or make the path representation independent of MATLAB char/string behavior.
+- `isPathWithinRoot` now canonicalizes both paths with `java.io.File.getCanonicalPath()` and a JVM-free lexical fallback, normalizes slash direction, resolves dot segments, compares case-insensitively, allows the root itself and descendants, enforces a separator directory boundary, and fails closed on canonicalization errors. No G28-specific allow-list or assertion bypass was added.
+- Updated recovery harness SHA-256=`f3c520a9f9aad46f5a217d329a79edf4305096bd28f7d7f625c31d2a40fd1b0f`. Path/comparator test SHA-256=`3c35c0de3651dc1d774e1340abd3b323ff8ae99b941999ec3b5250e1727c7690`; path safety report=`dataset_generation_logs/darkroom_channel_emulation/production_recovery_path_safety_fix_20260818/path_safety_fix_report.md`, SHA-256=`3beb1f2c32c25aad76c7810ad703dea09c96dcaeece641b11035d68466f9b867`.
+- MATLAB-free validation passed: production-recovery/comparator/path tests `19/19 PASS`; regression-module `py_compile=PASS`; path-fix whitespace and `git diff --check` `PASS`. No MATLAB, raw-IQ read, SAGE, Rain, batch, G24 preflight, or 20.46 MHz execution occurred.
+- Production source remains unchanged at SHA-256=`bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c`. G28 baseline `run_context.json` remains SHA-256=`5f11979294f753ebae7656e3ee039e1525c6c96aebf76e2bd2aa2e07e37cda2f`; baseline last-write time remains 2026-08-06. The preserved actual output remains unchanged, and no comparison-only output namespace was created by the failed retry.
+- Current flags remain:
+
+```text
+PRODUCTION_EXECUTION=PASS
+NUMERICAL_EQUIVALENCE_COMPARISON=INCOMPLETE
+VALIDATED_EQUIVALENT_RECOVERY=INCOMPLETE
+PRODUCTION_PIPELINE_FROZEN=NO
+RAIN_G24_PREFLIGHT=NOT_RUN
+```
+
+- The sole next action is for normal Windows user `TJ-CHANNEL\\Jing_` to run the updated comparison-only command in `dataset_generation_logs/darkroom_channel_emulation/production_recovery_path_safety_fix_20260818/path_safety_fix_report.md`. Stop after comparison and review; do not rerun SAGE or start Rain/production.
+
+## 37. G28 comparison aggregate-pass repair (Implemented + MATLAB-free Validated; comparison pending, 2026-08-18)
+
+- The normal-user `CompareExistingActualDir` run at `dataset_generation_logs/darkroom_channel_emulation/production_recovery_compare_existing_20260817T164259Z/` reached the final table comparison. All eight Stage1--Stage4 CSVs had equal baseline/actual row counts, equal visible categorical values, equal numeric values within the frozen tolerance, and `exact_mismatch_count=0`; the existing receipt also reports PASS for the Stage0 catalog and Stage1--Stage4 identity checks. The only contradictory fields were `pass=0` and `message=mismatch` on every row.
+- Root cause was an `OVERALL_PASS_LOGIC_BUG` in `compareTableFile`: `emptyComparisonRecord()` initialized `record.pass=false`, and the old no-difference path retained that false value when aggregating categorical and numeric checks. The comparator therefore reported false despite passing comparison components. This is a comparator implementation failure, not evidence of a production/SAGE numerical regression.
+- `scripts/sage_pipeline/regression/run_production_recovery_regression.m` now computes explicit row-count, column-count, variable-name-set, variable-order, variable-type, required-column, exact, categorical, numeric, and `overall_pass` components. The file-level aggregate is the AND of those required components; the final comparison also retains Stage0 catalog identity and baseline-unchanged gates. No tolerance was relaxed and no output column was ignored or reordered.
+- The repaired harness writes `production_recovery_schema_comparison.csv` on the next fresh comparison-only run with column counts, missing/extra columns, order equality, imported MATLAB type equality, and type details. The old receipt did not contain imported type classes; they are intentionally not invented retroactively. A separate `confirmedEventPathIdentity` gate now explicitly compares Stage4 `joint_valid`, `joint_multipath_count`, `(center_window_id,path_id,is_multipath)`, and confirmed path counts.
+- Current repaired hashes: comparator harness=`F62AA999E191767B52CA1AEC31B6F4CF8B3768F342638FE6A05E54BCEBF8A041`; comparator test=`DC5A2B653A3F0CF915DD1200F4D58D5E045EF47275A5DDFD3B5C059A6C17A909`; structure test=`86DA644C614D29FBFD84DFE52185F9BBBA10B7516A9FB0A35CB71188041C96D1`; report=`dataset_generation_logs/darkroom_channel_emulation/production_recovery_comparator_aggregate_fix_20260818/aggregate_pass_fix_report.md`, SHA-256=`ECC81CA2A49028E659C300F01380D1E102E60D4A27383BA79EC9C4D1D837F17D`.
+- MATLAB-free verification passed: production-recovery/comparator/path tests=`22/22 PASS`, regression-module `py_compile=PASS`, and `git diff --check=PASS`. The protected production source remains `scripts/sage_pipeline/run_nav_sage_pipeline.m` SHA-256=`BFFC123C97AF77F0A797F417D3866E9A34FEAB7729C5C1575352F53BC3571B9C`. The protected G28 baseline and the existing actual recovery artifact remain unchanged. No MATLAB, raw-IQ read, SAGE, Rain, G24 preflight, batch, or 20.46 MHz task was run.
+- The next comparison-only run is still required before declaring numerical equivalence complete. Until its repaired receipt and schema CSV are independently reviewed, status remains:
+
+```text
+PRODUCTION_EXECUTION=PASS
+STAGE1_NUMERIC_COMPARISON=PASS (existing comparison evidence)
+STAGE2_NUMERIC_COMPARISON=PASS (existing comparison evidence)
+STAGE3_NUMERIC_COMPARISON=PASS (existing comparison evidence)
+STAGE4_NUMERIC_COMPARISON=PASS (existing comparison evidence)
+OVERALL_REGRESSION_PASS=INCOMPLETE_PENDING_REPAIRED_COMPARISON
+VALIDATED_EQUIVALENT_RECOVERY=INCOMPLETE
+PRODUCTION_PIPELINE_FROZEN=NO
+RAIN_G24_PREFLIGHT=NOT_RUN
+```
+
+- The unique next action is for normal Windows user `TJ-CHANNEL\\Jing_` to run the comparison-only command in the aggregate-pass fix report and then review the new `comparison_summary.csv`, `production_recovery_schema_comparison.csv`, receipt, and explicit Stage4 confirmed identity. Do not rerun G28 SAGE, run Rain/G24, start production, or process 20.46 MHz before that review.
+
+## 38. Production SAGE recovery finalized and frozen (Validated + Frozen; 2026-08-18)
+
+- The final normal-user MATLAB comparison-only run is preserved at `dataset_generation_logs/darkroom_channel_emulation/production_recovery_compare_existing_20260817T170347Z/`. Its receipt SHA-256 is `A5B9390CA70EAE5F513EB3795B11DF4D0971B56210C41ED56C94B97624FA41FB`, status is `PASS`, `comparison_mode=existing_output_read_only`, `raw_iq_opened=false`, `sage_executed=false`, `MATLAB_EXIT_CODE=0`, and `PRODUCTION_REFACTOR_REGRESSION=PASS`.
+- Final comparison evidence: `comparison_summary.csv` SHA-256=`BB70293F145218959E7A53CFB87D5231B54A8AA6E4EA88287500237525F226F7`; `production_recovery_schema_comparison.csv` SHA-256=`4AA43AC87E5EF0014C1812CC660CCED6D9CB9270456B6966A24A1F53303D0808`. All eight Stage1--Stage4 CSVs passed row count, column count, variable-name set, variable order, imported MATLAB types, required columns, exact fields, categorical fields, numeric tolerance, and overall checks; max absolute/relative errors are zero. Stage0 catalog identity and baseline unchanged also passed.
+- The explicit Stage4 identity gate passed: `joint_valid`, `joint_multipath_count`, path identity including `is_multipath`, and confirmed event/path counts. The historical/recovered G28 baseline comparison is therefore validated equivalent under the frozen comparator. This does not change the scientific confirmation criterion.
+- Validated production source: `scripts/sage_pipeline/run_nav_sage_pipeline.m`, SHA-256=`bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c`. The historical original SHA=`5ff00366f2d71eff7945418ce484b0fedb7199f1144c2db2fb18268fe5b4b0ab` remains unrecovered; therefore `EXACT_SOURCE_RECOVERY=BLOCKED`, not PASS.
+- The prior real full execution evidence is retained: Stage0 completed, Stage1 completed, Stage2 `54/54`, Stage3 completed, and Stage4 completed. The final freeze record is `dataset_generation_logs/darkroom_channel_emulation/PRODUCTION_SAGE_PIPELINE_FREEZE.md`, SHA-256=`E4D2854145A92C34AC51766A3B787512F3C25D237E62248F9CE0BF50FA2F27E7`.
+- Production is now frozen and no longer depends on `scripts/sage_pipeline/core/`; the production entry is the validated-equivalent monolithic implementation. `SHARED_CORE_ROUTE=FROZEN_FOR_RAIN_MVP` remains in force. Rain branch, darkroom modeling, and shared-core work must not modify the frozen production entry or freeze record; every future Rain code task must verify the production SHA before and after.
+- Final engineering states:
+
+```text
+EXACT_SOURCE_RECOVERY=BLOCKED
+VALIDATED_EQUIVALENT_RECOVERY=PASS
+PRODUCTION_EXECUTION=PASS
+PRODUCTION_REFACTOR_REGRESSION=PASS
+PRODUCTION_PIPELINE_FROZEN=YES
+RAIN_MATLAB_SYNTAX_SMOKE=PASS
+RAIN_G24_PREFLIGHT=NOT_RUN
+RAIN_SAGE_EXECUTION=NOT_STARTED
+```
+
+- No Rain task, G24 preflight, production SAGE task, raw-IQ processing, or 20.46 MHz task was run in this closure. The next decision remains Commander-controlled; do not automatically start Rain or production after the freeze.

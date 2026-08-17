@@ -30,11 +30,13 @@ class SharedCoreStructureTests(unittest.TestCase):
         self.rain_doppler = RAIN_DOPPLER.read_text(encoding="utf-8")
         self.rain_smoke = RAIN_SMOKE.read_text(encoding="utf-8")
 
-    def test_production_calls_shared_core(self) -> None:
-        self.assertIn("run_sage_stage1_stage4_core(", self.production)
+    def test_production_is_monolithic_and_core_is_preserved_as_audit_evidence(self) -> None:
+        self.assertNotIn("run_sage_stage1_stage4_core(", self.production)
+        self.assertIn("run_sage_stage1_stage4_local(", self.production)
         self.assertIn("default_sage_configuration(", self.production)
+        self.assertIn("run_sage_stage1_stage4_core(", self.core)
 
-    def test_production_has_no_duplicate_stage_core_definitions(self) -> None:
+    def test_production_contains_stage_helpers_and_core_keeps_audit_copy(self) -> None:
         for name in (
             "determineDopplerSign",
             "runFastScan",
@@ -45,14 +47,7 @@ class SharedCoreStructureTests(unittest.TestCase):
             "makeReplica",
             "readIq",
         ):
-            production_definitions = [
-                line.strip()
-                for line in self.production.splitlines()
-                if line.strip().startswith("function ")
-            ]
-            self.assertFalse(
-                any(name in line for line in production_definitions), name
-            )
+            self.assertIn(name, self.production)
             self.assertIn(name, self.core)
 
     def test_core_contains_stage_boundaries(self) -> None:
