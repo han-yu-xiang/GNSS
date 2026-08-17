@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<!DOCTYPE boost_serialization>
+<boost_serialization signature="serialization::archive" version="18">
+<GNSS-SDR_ephemeris_map class_id="0" tracking_level="0" version="0">
+	<count>1</count>
+	<item_version>0</item_version>
+	<item class_id="1" tracking_level="0" version="0">
+		<first>24</first>
+		<second class_id="2" tracking_level="0" version="0">
+			<PRN>24</PRN>
+			<M_0>-2.08379058722495447e+00</M_0>
+			<delta_n>4.77591322167003400e-09</delta_n>
+			<ecc>1.85766628710553015e-02</ecc>
+			<sqrtA>5.15363190078735352e+03</sqrtA>
+			<OMEGA_0>-3.07308421895564798e+00</OMEGA_0>
+			<i_0>9.35825062881611491e-01</i_0>
+			<omega>1.16874766543150854e+00</omega>
+			<OMEGAdot>-7.69460622552043164e-09</OMEGAdot>
+			<idot>7.73603652268717698e-10</idot>
+			<Cuc>-2.82563269138336182e-06</Cuc>
+			<Cus>1.13900750875473022e-05</Cus>
+			<Crc>1.38531250000000000e+02</Crc>
+			<Crs>-5.29375000000000000e+01</Crs>
+			<Cic>2.83122062683105469e-07</Cic>
+			<Cis>-1.86264514923095703e-09</Cis>
+			<toe>180000</toe>
+			<toc>180000</toc>
+			<af0>1.55061017721891403e-04</af0>
+			<af1>1.79625203600153295e-11</af1>
+			<af2>0.00000000000000000e+00</af2>
+			<WN>383</WN>
+			<tow>179628</tow>
+			<satClkDrift>0.00000000000000000e+00</satClkDrift>
+			<dtr>0.00000000000000000e+00</dtr>
+			<IODE_SF2>115</IODE_SF2>
+			<IODE_SF3>115</IODE_SF3>
+			<code_on_L2>1</code_on_L2>
+			<L2_P_data_flag>0</L2_P_data_flag>
+			<SV_accuracy>0</SV_accuracy>
+			<SV_health>0</SV_health>
+			<TGD>2.32830643653869629e-09</TGD>
+			<IODC>115</IODC>
+			<AODO>9000</AODO>
+			<fit_interval_flag>0</fit_interval_flag>
+			<spare1>0.00000000000000000e+00</spare1>
+			<spare2>0.00000000000000000e+00</spare2>
+			<integrity_status_flag>0</integrity_status_flag>
+			<alert_flag>0</alert_flag>
+			<antispoofing_flag>1</antispoofing_flag>
+		</second>
+	</item>
+</GNSS-SDR_ephemeris_map>
+</boost_serialization>
+

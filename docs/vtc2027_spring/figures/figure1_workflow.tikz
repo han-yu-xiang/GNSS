@@ -1,0 +1,21 @@
+% Figure 1 source: IEEE-style workflow diagram. No experiment data are encoded.
+% Compile or include this source only after the official IEEEtran/LaTeX toolchain
+% is available and the final typography is reviewed at two-column width.
+\begin{tikzpicture}[
+  node distance=5mm and 4mm,
+  every node/.style={font=\sffamily\scriptsize, align=center},
+  box/.style={draw, rounded corners=1pt, minimum height=8mm, text width=23mm, fill=gray!8},
+  arrow/.style={-latex, line width=0.45pt}
+]
+\node[box] (rf) {Dynamic RF capture\\GPS L1 C/A raw IQ};
+\node[box, right=of rf] (sdr) {GNSS-SDR\\tracking / NAV support};
+\node[box, right=of sdr] (s0) {Stage0\\NAV-aligned windows};
+\node[box, right=of s0] (hier) {Stage1--Stage4\\hierarchical SAGE};
+\node[box, right=of hier] (path) {Confirmed\\path components};
+\node[box, right=of path] (char) {Delay / Doppler\\power characterization};
+\draw[arrow] (rf) -- (sdr);
+\draw[arrow] (sdr) -- (s0);
+\draw[arrow] (s0) -- (hier);
+\draw[arrow] (hier) -- (path);
+\draw[arrow] (path) -- (char);
+\end{tikzpicture}

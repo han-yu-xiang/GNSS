@@ -1,0 +1,11 @@
+parameter,value,source
+Receiver,TEST-TREE RF-Catcher,E:\GNSS_Multipath_Project\docs\vtc2027_spring\evidence\manuscript_tables\measurement_configuration.csv
+Hardware version,V2,E:\GNSS_Multipath_Project\docs\vtc2027_spring\evidence\manuscript_tables\measurement_configuration.csv
+Antenna,GNSS dome antenna,E:\GNSS_Multipath_Project\docs\vtc2027_spring\evidence\manuscript_tables\measurement_configuration.csv
+Polarization,RHCP,E:\GNSS_Multipath_Project\docs\vtc2027_spring\evidence\manuscript_tables\measurement_configuration.csv
+Mounting,vehicle roof (dynamic measurement platform),E:\GNSS_Multipath_Project\docs\vtc2027_spring\evidence\manuscript_tables\measurement_configuration.csv
+Signal,GPS L1 C/A,E:\GNSS_Multipath_Project\docs\vtc2027_spring\evidence\manuscript_tables\measurement_configuration.csv
+Carrier/center frequency,1575.42 MHz,E:\GNSS_Multipath_Project\docs\vtc2027_spring\evidence\manuscript_tables\measurement_configuration.csv
+Sampling rate,10230000 Hz (10.23 MHz),E:\GNSS_Multipath_Project\docs\vtc2027_spring\evidence\manuscript_tables\measurement_configuration.csv
+IQ format,interleaved I/Q; little-endian int16,E:\GNSS_Multipath_Project\docs\vtc2027_spring\evidence\manuscript_tables\measurement_configuration.csv
+Processing chain,raw IQ -> GNSS-SDR (ishort; GPS_L1_CA acquisition; GPS_L1_CA_DLL_PLL tracking; PLL 40 Hz; DLL 4 Hz; early-late spacing 0.5 chip; telemetry; observables; RTKLIB PVT; RINEX/NMEA) -> NAV-aided SAGE Stage0-Stage4 -> Stage4-confirmed path,E:\GNSS_Multipath_Project\docs\vtc2027_spring\evidence\manuscript_tables\measurement_configuration.csv

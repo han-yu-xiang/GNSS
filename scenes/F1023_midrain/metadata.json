@@ -1,0 +1,141 @@
+{
+  "scene_id": "F1023_midrain",
+  "branch": "darkroom_channel_emulation",
+  "weather_condition": "midrain",
+  "source_rerun_id": "20260817_gnss_sdr_rerun",
+  "source_recording": "F1023_midrain.bin",
+  "signal": {
+    "sample_rate_hz": 10230000,
+    "signal_type": "GPS_L1_CA",
+    "complex_iq": true,
+    "raw_format": "interleaved_int16_little_endian"
+  },
+  "raw_iq": {
+    "path": "E:/GNSS_Multipath_Project/rain/F1023_midrain/F1023_midrain.bin",
+    "storage_mode": "external_storage",
+    "copied_into_scene": false,
+    "size_bytes": 2903638528,
+    "sha256": "22f8074e6fa0e78790f87dc3c4114d1420963335a541b19dda57e087ac81fa69",
+    "hash_scope": "file_hash_only; raw samples were not processed by this audit"
+  },
+  "gnss_sdr": {
+    "result_path": "E:/GNSS_Multipath_Project/scenes/F1023_midrain/gnss_sdr",
+    "source_result_path": "E:/GNSS_Multipath_Project/rain/F1023_midrain/results",
+    "source_config_path": "E:/GNSS_Multipath_Project/rain/F1023_midrain/F1023_midrain.conf",
+    "config_path": "E:/GNSS_Multipath_Project/scenes/F1023_midrain/gnss_sdr/config/F1023_midrain.conf",
+    "source_config_sha256": "ed443f3d43fc105377cb0807b5043c0e221cd6782f7c98256126b7f8998929fa",
+    "source_batch": "darkroom_rain_gnss_sdr_rerun",
+    "run_status": "RERUN_OUTPUT_PRESENT_WITHOUT_RUN_RECEIPT",
+    "completion_evidence": "Tracking, telemetry, observables, and navigation XML are present; no GNSS-SDR exit receipt was found.",
+    "configuration_path_context": "Source configuration uses /mnt/e/rain paths; Windows paths are recorded here."
+  },
+  "processing_status": {
+    "gnss_sdr": "partial_provenance",
+    "navigation": "xml_available_rinex_absent",
+    "trajectory": "not_available",
+    "sage": "not_run",
+    "satellite_geometry": "disabled_for_rain_mvp"
+  },
+  "available_data": {
+    "raw_iq": "external_reference",
+    "gnss_sdr_tracking": "available_for_mapped_channels",
+    "gnss_sdr_telemetry": "available_for_mapped_channels",
+    "gnss_sdr_observables": "available",
+    "gnss_sdr_navigation_xml": "available",
+    "pvt": "not_available",
+    "nmea": "not_available",
+    "trajectory": "not_available",
+    "rinex_nav": "not_available",
+    "satellite_geometry": "not_available",
+    "sage_results": "not_run"
+  },
+  "rain_mvp_policy": {
+    "nmea_required": false,
+    "pvt_required": false,
+    "rinex_required": false,
+    "trajectory_required": false,
+    "geometry_required": false,
+    "elevation_conditioning": false,
+    "common_prn_required_for_sage": false,
+    "common_prn_preferred_for_matched_validation": true
+  },
+  "recording_duration_s": null,
+  "recording_duration_estimate_s": 70.96,
+  "recording_duration_estimate_source": "raw_size_bytes / (4 bytes per complex int16 sample) / sample_rate_hz",
+  "tracking_channels": [
+    {
+      "tracking_channel": 8,
+      "prn": "G24",
+      "mapping_source": "telemetry DAT PRN field",
+      "tracking_dat_path": "gnss_sdr/tracking/F1023_midrain_track_ch_8.dat",
+      "tracking_mat_path": "gnss_sdr/tracking/F1023_midrain_track_ch_8.mat",
+      "tracking_dat_size_bytes": 1345248,
+      "tracking_mat_size_bytes": 842476,
+      "telemetry_dat_path": "gnss_sdr/telemetry/F1023_midrain_telemetry_ch_8.dat",
+      "telemetry_mat_path": "gnss_sdr/telemetry/F1023_midrain_telemetry_ch_8.mat",
+      "telemetry_record_count": 2688,
+      "valid_nav_symbol_count": 2688,
+      "telemetry_tow_start_s": 179586.0,
+      "telemetry_tow_end_s": 179639.74,
+      "telemetry_tow_span_s": 53.74,
+      "tracking_mat_schema_status": "present_nonempty_schema_deferred_to_matlab_preflight",
+      "continuity_status": "telemetry_record_spacing_passed_static_audit"
+    },
+    {
+      "tracking_channel": 9,
+      "prn": "G20",
+      "mapping_source": "telemetry DAT PRN field",
+      "tracking_dat_path": "gnss_sdr/tracking/F1023_midrain_track_ch_9.dat",
+      "tracking_mat_path": "gnss_sdr/tracking/F1023_midrain_track_ch_9.mat",
+      "tracking_dat_size_bytes": 1367232,
+      "tracking_mat_size_bytes": 846257,
+      "telemetry_dat_path": "gnss_sdr/telemetry/F1023_midrain_telemetry_ch_9.dat",
+      "telemetry_mat_path": "gnss_sdr/telemetry/F1023_midrain_telemetry_ch_9.mat",
+      "telemetry_record_count": 2689,
+      "valid_nav_symbol_count": 2689,
+      "telemetry_tow_start_s": 179586.0,
+      "telemetry_tow_end_s": 179639.76,
+      "telemetry_tow_span_s": 53.76,
+      "tracking_mat_schema_status": "present_nonempty_schema_deferred_to_matlab_preflight",
+      "continuity_status": "telemetry_record_spacing_passed_static_audit"
+    }
+  ],
+  "available_prns": ["G20", "G24"],
+  "navigation": {
+    "status": "xml_available_rinex_absent",
+    "source": "GNSS-SDR navigation XML",
+    "xml_file": "navigation/gps_ephemeris.xml",
+    "xml_sha256": "9a333ac2a4ad3a20c503002923e1d9772f7168fcc82610eb725ce4b59bcedb17",
+    "ephemeris_entry_count": 1,
+    "rinex_nav_file": null
+  },
+  "trajectory": {
+    "status": "not_available",
+    "nmea_available": false,
+    "file": null
+  },
+  "satellite_geometry": {
+    "status": "disabled_for_rain_mvp",
+    "elevation_conditioning": false,
+    "sources": [],
+    "algorithm": {
+      "geometry_generation_required": false,
+      "broadcast_ephemeris_position_recomputation": false
+    }
+  },
+  "rain_input_gate": {
+    "rain_sage_input_ready": true,
+    "ready_scope": "static_input_gate_only",
+    "tracking_mat_schema_requires_matlab_preflight": true,
+    "execution_ready": false,
+    "reasons": ["raw, sample rate, telemetry, mapped tracking DAT/MAT, and valid NAV symbol records pass static checks"]
+  },
+  "standardization_audit": {
+    "target_scene": "E:/GNSS_Multipath_Project/scenes/F1023_midrain",
+    "source_directory": "E:/GNSS_Multipath_Project/rain/F1023_midrain",
+    "standardization_mode": "replace_stale_nonraw_with_rerun_outputs_preserve_external_raw",
+    "stale_pre_rerun_metadata": "dataset_generation_logs/darkroom_channel_emulation/superseded_pre_rerun_20260817/F1023_midrain_metadata.json",
+    "common_prn_across_all_three_weather": false,
+    "sage_execution_allowed": false
+  }
+}

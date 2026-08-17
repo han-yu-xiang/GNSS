@@ -1,0 +1,48 @@
+﻿{
+    "scene_id":  "F1023_V70_D0117_P2",
+    "scene_role":  "reference_scene",
+    "signal":  {
+                   "sample_rate_hz":  10230000,
+                   "signal_type":  "GPS_L1_CA",
+                   "complex_iq":  true
+               },
+    "raw_iq":  {
+                   "path":  "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0117_P2\\raw\\F1023_V70_D0117_P2.bin",
+                   "storage_mode":  "scene_local",
+                   "copied_into_scene":  true
+               },
+    "gnss_sdr":  {
+                     "result_path":  "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0117_P2\\gnss_sdr",
+                     "source_batch":  "full_parse_v1",
+                     "run_status":  "SUCCESS"
+                 },
+    "processing_status":  {
+                              "gnss_sdr":  "completed",
+                              "navigation":  "completed",
+                              "trajectory":  "completed",
+                              "sage":  "completed",
+                              "satellite_geometry":  "completed"
+                          },
+    "available_data":  {
+                           "raw_iq":  "available",
+                           "gnss_sdr":  "available",
+                           "navigation":  "available",
+                           "trajectory":  "available",
+                           "sage_results":  "available",
+                           "satellite_geometry":  "available"
+                       },
+    "migration":  {
+                      "mode":  "reference_scene_preserved"
+                  },
+    "satellite_geometry":  {
+                               "status":  "completed",
+                               "sources":  [
+                                               "gnss_sdr/nmea",
+                                               "navigation/rinex_nav"
+                                           ],
+                               "outputs":  [
+                                               "F1023_V70_D0117_P2_satellite_elevation_timeseries.csv",
+                                               "F1023_V70_D0117_P2_satellite_elevation_summary.csv"
+                                           ]
+                           }
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "VTC2027 Paper Authoring"
+  short_description: "Evidence-driven VTC2027 paper workflow"
+  default_prompt: "Use $vtc2027-paper-authoring to draft or QA the VTC2027 paper within its frozen scope."

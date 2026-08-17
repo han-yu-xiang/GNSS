@@ -1,0 +1,5 @@
+environment,independent_scenes,full_pipeline_tasks,confirmed_events,confirmed_paths,source
+Urban,4,4,7,7,E:\GNSS_Multipath_Project\docs\vtc2027_spring\evidence\VTC_ENVIRONMENT_EVIDENCE_CENSUS.csv
+Mountain/Valley,3,9,13,14,E:\GNSS_Multipath_Project\docs\vtc2027_spring\evidence\VTC_ENVIRONMENT_EVIDENCE_CENSUS.csv
+Highway/Open,2,2,2,2,E:\GNSS_Multipath_Project\docs\vtc2027_spring\evidence\VTC_ENVIRONMENT_EVIDENCE_CENSUS.csv
+Special Reflective,2,2,7,7,E:\GNSS_Multipath_Project\docs\vtc2027_spring\evidence\VTC_ENVIRONMENT_EVIDENCE_CENSUS.csv

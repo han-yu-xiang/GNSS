@@ -1,0 +1,4 @@
+interface:
+  display_name: "GNSS SAGE Project Commander"
+  short_description: "Enforce GNSS/SAGE production and VTC governance"
+  default_prompt: "Use $gnss-sage-project-commander to execute a GNSS/SAGE task with frozen project state, QA, and production-governance rules."

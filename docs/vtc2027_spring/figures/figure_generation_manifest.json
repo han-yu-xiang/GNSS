@@ -1,0 +1,452 @@
+{
+  "schema_version": "vtc-figure-assets-1.3-g15-scientific-label-cleanup",
+  "project_root": "E:\\GNSS_Multipath_Project",
+  "raw_iq_read": false,
+  "sage_executed": false,
+  "sources": {
+    "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\evidence\\manuscript_tables\\measurement_configuration.csv": "9f3aec65afbadc0d0e57100a1d7652997a927ab554e05c2375d24b948fe31528",
+    "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\evidence\\manuscript_tables\\experimental_evidence_summary.csv": "f54090ab595110d5f96b7cf44f8a92fc3b19477e3b30e6a015a5d32bdcfeef26",
+    "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\evidence\\VTC_ENVIRONMENT_EVIDENCE_CENSUS.csv": "f1516dfc1d5e2906cfb1a70d1156b5f3ceb792d02a50c17a6e9571b34e22b99e",
+    "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\evidence\\manuscript_figures\\representative_path_case.csv": "e072e74220386d2fb20932408bff965189eb66fa83e312eca986e49dc0d51594",
+    "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\evidence\\manuscript_figures\\hierarchical_filtering_summary.csv": "78709a1dc9e8be0a74adbd60416faa5973d14c867dc0ee9e7b683b26c80abd26",
+    "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\evidence\\VTC_ENVIRONMENT_PATH_CANDIDATES.csv": "465404d76eb6c70097485ff77c11628134ebdc8a2d047480a4beb70a683f1f2b",
+    "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\figures\\figure1_workflow.svg": "ba76a2f6f51b342f658a8d6c0a78d4a546f8dd49aa3311635b5b323a9cc20103",
+    "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\figures\\figure1_workflow.tikz": "cefb2e1b45cd9276bafc6d499f7db6b44041f62796e4a3fa16fa07eb81ec4350",
+    "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\figures\\scripts\\generate_vtc_figures.py": "46457cb7dd1f7d5cc3957a7f4b2143d7ac27404f26d6bcc2d4b0b4e900bffdca"
+  },
+  "outputs": {
+    "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\figures\\figure1_workflow.pdf": "1ba9341a0ddbe2e948ce8f453a8b628c51901f161cea1610d7dc4f954a3265ff",
+    "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\figures\\figure1_workflow.png": "a3fd6c2e1fd61060fc34c035f62511f1bede2c4f3b9d8d6ad26dcca60096320f",
+    "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\figures\\figure2_representative_path.pdf": "a20cc948b6a5c059cf1736bd62d092daa4eb7ce9923ed5afec4a92b1d7f3b7d9",
+    "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\figures\\figure2_representative_path.png": "e7e18bce9a87817f5512c37cee15ebf4070d4cec276c9a23502f3189020c023a",
+    "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\figures\\figure3_hierarchical_confirmation.pdf": "a465a1bcc9d9e4fed2566eee60e2d45878ce9b4b8f872bdb4cb1add355daf17b",
+    "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\figures\\figure3_hierarchical_confirmation.png": "956575e72120428004b24a84e4f66b768798bcbfb7bb26cc1f260a7dec97078e",
+    "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\figures\\figure4_environment_path_characteristics.pdf": "4c92af1d2cebea37d1365d423345f64381a9a3d5ef47bddc0377a29b155b0244",
+    "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\figures\\figure4_environment_path_characteristics.png": "5ec2fcfdc254efe095ed3e39d008570defd2c0d9454adf8029c59f6eb484b520",
+    "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\tables\\table1_measurement_configuration.csv": "d283303df2f09bcbaaab71da495e19e59aeb38264c54093428790ea9406142a2",
+    "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\tables\\table2_experimental_evidence_summary.csv": "bbfb710387c8559fb6b7929e5a0b95d06135453f000e422abb6332486016d7bf"
+  },
+  "audits": {
+    "doppler_audit": {
+      "field": "doppler_offset_hz",
+      "all_rows_match": true,
+      "rows": [
+        {
+          "event_id": "F1023_V70_D0117_P2__G06__legacy_v1__W203",
+          "window_id": 203,
+          "path_id": 2,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": 149.664302095285,
+          "stage4_doppler_hz": -6520.93286587346,
+          "stage4_doppler_offset_hz": 149.664302095285,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0117_P2\\sage_results\\G06_nav_sage_v1\\stage4_joint_paths.csv"
+        },
+        {
+          "event_id": "F1023_V70_D0117_P2__G06__legacy_v1__W203",
+          "window_id": 203,
+          "path_id": 3,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": 199.664302095285,
+          "stage4_doppler_hz": -6470.93286587346,
+          "stage4_doppler_offset_hz": 199.664302095285,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0117_P2\\sage_results\\G06_nav_sage_v1\\stage4_joint_paths.csv"
+        },
+        {
+          "event_id": "F1023_V70_D0117_P2__G06__legacy_v1__W203",
+          "window_id": 203,
+          "path_id": 4,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": 149.664302095285,
+          "stage4_doppler_hz": -6520.93286587346,
+          "stage4_doppler_offset_hz": 149.664302095285,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0117_P2\\sage_results\\G06_nav_sage_v1\\stage4_joint_paths.csv"
+        },
+        {
+          "event_id": "F1023_V70_D0117_P2__G06__legacy_v1__W264",
+          "window_id": 264,
+          "path_id": 2,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": 159.664302095285,
+          "stage4_doppler_hz": -6509.13989712346,
+          "stage4_doppler_offset_hz": 159.664302095285,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0117_P2\\sage_results\\G06_nav_sage_v1\\stage4_joint_paths.csv"
+        },
+        {
+          "event_id": "F1023_V70_D0117_P2__G11__ch5__nav_sage_v2__W640",
+          "window_id": 640,
+          "path_id": 2,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": -10.0131071441147,
+          "stage4_doppler_hz": -3861.46720870661,
+          "stage4_doppler_offset_hz": -10.0131071441147,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0117_P2\\sage_results\\nav_sage_v2\\G11\\stage4_joint_paths.csv"
+        },
+        {
+          "event_id": "F1023_V70_D0117_P2__G12__ch6__nav_sage_v2__W970",
+          "window_id": 970,
+          "path_id": 2,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": 24.4273194846846,
+          "stage4_doppler_hz": -7029.77141098407,
+          "stage4_doppler_offset_hz": 24.4273194846846,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0117_P2\\sage_results\\nav_sage_v2\\G12\\stage4_joint_paths.csv"
+        },
+        {
+          "event_id": "F1023_V70_D0117_P2__G12__ch6__nav_sage_v2__W971",
+          "window_id": 971,
+          "path_id": 2,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": -0.599714753362605,
+          "stage4_doppler_hz": -7052.86729287836,
+          "stage4_doppler_offset_hz": -0.599714753362605,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0117_P2\\sage_results\\nav_sage_v2\\G12\\stage4_joint_paths.csv"
+        },
+        {
+          "event_id": "F1023_V70_D0117_P2__G29__ch7__nav_sage_v2__W80",
+          "window_id": 80,
+          "path_id": 2,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": -5.33569790471529,
+          "stage4_doppler_hz": -2246.75684048284,
+          "stage4_doppler_offset_hz": -5.33569790471529,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0117_P2\\sage_results\\nav_sage_v2\\G29\\stage4_joint_paths.csv"
+        },
+        {
+          "event_id": "F1023_V70_D0117_P2__G32__ch11__nav_sage_v2__W82",
+          "window_id": 82,
+          "path_id": 2,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": 19.6643020952852,
+          "stage4_doppler_hz": -6226.12671352971,
+          "stage4_doppler_offset_hz": 19.6643020952852,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0117_P2\\sage_results\\nav_sage_v2\\G32\\stage4_joint_paths.csv"
+        },
+        {
+          "event_id": "F1023_V70_D0117_P2__G32__ch11__nav_sage_v2__W82",
+          "window_id": 82,
+          "path_id": 3,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": -65.3356979047148,
+          "stage4_doppler_hz": -6311.12671352971,
+          "stage4_doppler_offset_hz": -65.3356979047148,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0117_P2\\sage_results\\nav_sage_v2\\G32\\stage4_joint_paths.csv"
+        },
+        {
+          "event_id": "F1023_V70_D0117_P2__G32__ch11__nav_sage_v2__W84",
+          "window_id": 84,
+          "path_id": 2,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": 14.6643020952852,
+          "stage4_doppler_hz": -6231.15259243596,
+          "stage4_doppler_offset_hz": 14.6643020952852,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0117_P2\\sage_results\\nav_sage_v2\\G32\\stage4_joint_paths.csv"
+        },
+        {
+          "event_id": "F1023_V70_D0117_P4__G11__ch2__nav_sage_v2__W526",
+          "window_id": 526,
+          "path_id": 2,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": -9.50258948890132,
+          "stage4_doppler_hz": -4835.63198402015,
+          "stage4_doppler_offset_hz": -9.50258948890132,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0117_P4\\sage_results\\nav_sage_v2\\G11\\stage4_joint_paths.csv"
+        },
+        {
+          "event_id": "F1023_V70_D0117_P4__G11__ch2__nav_sage_v2__W72",
+          "window_id": 72,
+          "path_id": 2,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": 49.6643020952852,
+          "stage4_doppler_hz": -4765.48120571721,
+          "stage4_doppler_offset_hz": 49.6643020952852,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0117_P4\\sage_results\\nav_sage_v2\\G11\\stage4_joint_paths.csv"
+        },
+        {
+          "event_id": "F1023_V70_D0117_P4__G11__ch2__nav_sage_v2__W73",
+          "window_id": 73,
+          "path_id": 2,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": 49.6643020952852,
+          "stage4_doppler_hz": -4765.93823696721,
+          "stage4_doppler_offset_hz": 49.6643020952852,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0117_P4\\sage_results\\nav_sage_v2\\G11\\stage4_joint_paths.csv"
+        },
+        {
+          "event_id": "F1023_V70_D0117_P4__G12__ch4__nav_sage_v2__W163",
+          "window_id": 163,
+          "path_id": 2,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": 8.21546815754027,
+          "stage4_doppler_hz": -7531.81871152996,
+          "stage4_doppler_offset_hz": 8.21546815754027,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0117_P4\\sage_results\\nav_sage_v2\\G12\\stage4_joint_paths.csv"
+        },
+        {
+          "event_id": "F1023_V70_D0117_P4__G12__ch4__nav_sage_v2__W289",
+          "window_id": 289,
+          "path_id": 2,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": -24.1522257641154,
+          "stage4_doppler_hz": -7563.09070232662,
+          "stage4_doppler_offset_hz": -24.1522257641154,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0117_P4\\sage_results\\nav_sage_v2\\G12\\stage4_joint_paths.csv"
+        },
+        {
+          "event_id": "F1023_V70_D0117_P4__G12__ch4__nav_sage_v2__W290",
+          "window_id": 290,
+          "path_id": 2,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": -29.0981572880219,
+          "stage4_doppler_hz": -7568.26368463177,
+          "stage4_doppler_offset_hz": -29.0981572880219,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0117_P4\\sage_results\\nav_sage_v2\\G12\\stage4_joint_paths.csv"
+        },
+        {
+          "event_id": "F1023_V70_D0120_P7__G16__ch1__nav_sage_v2__W1337",
+          "window_id": 1337,
+          "path_id": 2,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": 19.6531946392915,
+          "stage4_doppler_hz": -3039.50159051696,
+          "stage4_doppler_offset_hz": 19.6531946392915,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0120_P7\\sage_results\\nav_sage_v2\\G16\\stage4_joint_paths.csv"
+        },
+        {
+          "event_id": "F1023_V70_D0120_P7__G16__ch1__nav_sage_v2__W1338",
+          "window_id": 1338,
+          "path_id": 2,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": 19.9105605851228,
+          "stage4_doppler_hz": -3039.9139023055,
+          "stage4_doppler_offset_hz": 19.9105605851228,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0120_P7\\sage_results\\nav_sage_v2\\G16\\stage4_joint_paths.csv"
+        },
+        {
+          "event_id": "F1023_V70_D0120_P7__G16__ch1__nav_sage_v2__W1406",
+          "window_id": 1406,
+          "path_id": 2,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": -3.04226548844508,
+          "stage4_doppler_hz": -3053.82449205095,
+          "stage4_doppler_offset_hz": -3.04226548844508,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0120_P7\\sage_results\\nav_sage_v2\\G16\\stage4_joint_paths.csv"
+        },
+        {
+          "event_id": "F1023_V70_D0120_P7__G16__ch1__nav_sage_v2__W2079",
+          "window_id": 2079,
+          "path_id": 2,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": -3.82041692625126,
+          "stage4_doppler_hz": -3064.40611028563,
+          "stage4_doppler_offset_hz": -3.82041692625126,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0120_P7\\sage_results\\nav_sage_v2\\G16\\stage4_joint_paths.csv"
+        },
+        {
+          "event_id": "F1023_V70_D0120_P9__G05__ch10__nav_sage_v2__W493",
+          "window_id": 493,
+          "path_id": 2,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": 11.7153663155214,
+          "stage4_doppler_hz": -6830.77047352823,
+          "stage4_doppler_offset_hz": 11.7153663155214,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0120_P9\\sage_results\\nav_sage_v2\\G05\\stage4_joint_paths.csv"
+        },
+        {
+          "event_id": "F1023_V70_D0120_P9__G05__ch10__nav_sage_v2__W495",
+          "window_id": 495,
+          "path_id": 2,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": 11.9467793930344,
+          "stage4_doppler_hz": -6832.26269326322,
+          "stage4_doppler_offset_hz": 11.9467793930344,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0120_P9\\sage_results\\nav_sage_v2\\G05\\stage4_joint_paths.csv"
+        },
+        {
+          "event_id": "F1023_V70_D0122_P1__G12__ch6__nav_sage_v2__W1278",
+          "window_id": 1278,
+          "path_id": 2,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": -78.5522071033497,
+          "stage4_doppler_hz": -1638.09578620491,
+          "stage4_doppler_offset_hz": -78.5522071033497,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0122_P1\\sage_results\\nav_sage_v2\\G12\\stage4_joint_paths.csv"
+        },
+        {
+          "event_id": "F1023_V70_D0122_P1__G12__ch6__nav_sage_v2__W835",
+          "window_id": 835,
+          "path_id": 2,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": -71.5654432731581,
+          "stage4_doppler_hz": -1623.0892469841,
+          "stage4_doppler_offset_hz": -71.5654432731581,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0122_P1\\sage_results\\nav_sage_v2\\G12\\stage4_joint_paths.csv"
+        },
+        {
+          "event_id": "F1023_V70_D0122_P1__G12__ch6__nav_sage_v2__W836",
+          "window_id": 836,
+          "path_id": 2,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": -71.4648759076238,
+          "stage4_doppler_hz": -1623.82156536075,
+          "stage4_doppler_offset_hz": -71.4648759076238,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0122_P1\\sage_results\\nav_sage_v2\\G12\\stage4_joint_paths.csv"
+        },
+        {
+          "event_id": "F1023_V80_D0117_P8__G25__ch10__nav_sage_v2__W985",
+          "window_id": 985,
+          "path_id": 2,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": -4.71590730637763,
+          "stage4_doppler_hz": -5887.58162996263,
+          "stage4_doppler_offset_hz": -4.71590730637763,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V80_D0117_P8\\sage_results\\nav_sage_v2\\G25\\stage4_joint_paths.csv"
+        },
+        {
+          "event_id": "F1023_V80_D0117_P8__G25__ch10__nav_sage_v2__W970",
+          "window_id": 970,
+          "path_id": 2,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": -10.7135060437722,
+          "stage4_doppler_hz": -5892.22961932502,
+          "stage4_doppler_offset_hz": -10.7135060437722,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V80_D0117_P8\\sage_results\\nav_sage_v2\\G25\\stage4_joint_paths.csv"
+        },
+        {
+          "event_id": "F1023_v90_D0117_P7__G11__ch6__nav_sage_v2__W1264",
+          "window_id": 1264,
+          "path_id": 2,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": -0.335697904714834,
+          "stage4_doppler_hz": -5642.83716274846,
+          "stage4_doppler_offset_hz": -0.335697904714834,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_v90_D0117_P7\\sage_results\\nav_sage_v2\\G11\\stage4_joint_paths.csv"
+        },
+        {
+          "event_id": "SR2_G15_W1079",
+          "window_id": 1079,
+          "path_id": 2,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": 31.5397446616225,
+          "stage4_doppler_hz": -8352.25322408838,
+          "stage4_doppler_offset_hz": 31.5397446616225,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0122_P2\\sage_results\\nav_sage_v2\\G15\\stage4_joint_paths.csv"
+        },
+        {
+          "event_id": "SR2_G15_W2167",
+          "window_id": 2167,
+          "path_id": 2,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": -31.5908908130405,
+          "stage4_doppler_hz": -8419.94342987554,
+          "stage4_doppler_offset_hz": -31.5908908130405,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0122_P2\\sage_results\\nav_sage_v2\\G15\\stage4_joint_paths.csv"
+        },
+        {
+          "event_id": "SR2_G15_W1080",
+          "window_id": 1080,
+          "path_id": 2,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": 32.669775811979,
+          "stage4_doppler_hz": -8350.48940387552,
+          "stage4_doppler_offset_hz": 32.669775811979,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0122_P2\\sage_results\\nav_sage_v2\\G15\\stage4_joint_paths.csv"
+        },
+        {
+          "event_id": "SR2_G15_W1081",
+          "window_id": 1081,
+          "path_id": 2,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": 33.7998069590485,
+          "stage4_doppler_hz": -8341.57031022845,
+          "stage4_doppler_offset_hz": 33.7998069590485,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0122_P2\\sage_results\\nav_sage_v2\\G15\\stage4_joint_paths.csv"
+        },
+        {
+          "event_id": "SR2_G15_W2166",
+          "window_id": 2166,
+          "path_id": 2,
+          "source_field": "doppler_offset_hz",
+          "plotted_relative_doppler_hz": 38.7713679767876,
+          "stage4_doppler_hz": -8352.43761639821,
+          "stage4_doppler_offset_hz": 38.7713679767876,
+          "match": true,
+          "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0122_P2\\sage_results\\nav_sage_v2\\G15\\stage4_joint_paths.csv"
+        }
+      ]
+    },
+    "figure2": {
+      "case": "F1023_V80_D0117_P8/G25/ch10",
+      "window_id": 985,
+      "source_artifact": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V80_D0117_P8\\sage_results\\nav_sage_v2\\G25\\stage4_joint_paths.csv",
+      "visualization": "direct/secondary Stage4 path parameter representation",
+      "correlation_curve_generated": false,
+      "coherence_displayed": false,
+      "coherence_semantics": "Stage4 maximum_coherence is an event/joint-model metric, not a path parameter"
+    },
+    "figure4": {
+      "n_points": 30,
+      "groups": [
+        "Urban",
+        "Mountain/Valley",
+        "Highway/Open",
+        "Special Reflective"
+      ],
+      "parameters": [
+        "excess_delay_samples",
+        "relative_power_db",
+        "relative_doppler_hz"
+      ],
+      "tiers": [
+        "Tier A",
+        "Tier B"
+      ],
+      "source": "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\evidence\\VTC_ENVIRONMENT_PATH_CANDIDATES.csv",
+      "median_marker": true,
+      "sample_size_labels": true,
+      "internal_annotation_removed": true,
+      "doppler_choice": "SIGNED",
+      "doppler_semantic": "signed relative Doppler remains the estimated source quantity; sign is not interpreted as an environment effect",
+      "distribution_fit": false,
+      "regression": false,
+      "geometry_conditioning": false,
+      "independence_warning": "paths are not independent environment replicates; scene and task counts must be reported separately",
+      "coherence_excluded_from_main_figure": true,
+      "coherence_path_level_defined": false,
+      "event_model_metric_source": "stage4_joint_summary.maximum_coherence",
+      "event_model_metric_used_in_environment_figure": false
+    }
+  }
+}

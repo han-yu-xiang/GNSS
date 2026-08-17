@@ -1,0 +1,2 @@
+receiver,hardware_version,antenna_type,polarization,mounting,carrier_frequency,signal,sampling_rate,iq_format,processing_chain
+TEST-TREE RF-Catcher,V2,GNSS dome antenna,RHCP,vehicle roof (dynamic measurement platform),1575.42 MHz,GPS L1 C/A,10230000 Hz (10.23 MHz),interleaved I/Q; little-endian int16,"raw IQ -> GNSS-SDR (ishort; GPS_L1_CA acquisition; GPS_L1_CA_DLL_PLL tracking; PLL 40 Hz; DLL 4 Hz; early-late spacing 0.5 chip; telemetry; observables; RTKLIB PVT; RINEX/NMEA) -> NAV-aided SAGE Stage0-Stage4 -> Stage4-confirmed path"

@@ -1,0 +1,57 @@
+# GNSS/SAGE generated raw and bulk data
+*.bin
+*.mat
+*.dat
+*.pyc
+*.pyo
+*.lock
+*.log
+*.jsonl
+*.tmp
+*.swp
+*.swo
+*.autosave
+*.asv
+
+# Generated scene products; retain lightweight metadata and source configs
+scenes/**/sage_results/
+scenes/**/gnss_sdr/
+scenes/**/navigation/
+scenes/**/trajectory/
+scenes/**/satellite/
+scenes/**/raw/
+scenes/**/*.bin
+
+# Generated parsing and monitoring trees
+dataset_generation_logs/
+full_parse_v1/
+tmp/
+MATLAB_RUNTIME_CACHE_TEST/
+
+# Python environments and caches
+.venv/
+venv/
+env/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Generated paper/build products
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.out
+*.synctex.gz
+*.toc
+*.pdf
+*.png
+
+# Archives and temporary editor artifacts
+*.zip
+*.7z
+*.rar
+_read_attachment_tmp.py
+/$null

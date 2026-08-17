@@ -1,0 +1,116 @@
+{
+  "scene_id": "F2046_V30_D0131_P2",
+  "signal": {
+    "sample_rate_hz": 20460000,
+    "signal_type": "GPS_L1_CA",
+    "complex_iq": true
+  },
+  "raw_iq": {
+    "path": "E:\\AAGNSSSDR_input\\raw_data\\F2046_V30_D0131_P2.bin",
+    "storage_mode": "external_storage",
+    "copied_into_scene": false
+  },
+  "gnss_sdr": {
+    "result_path": "E:\\GNSS_Multipath_Project\\scenes\\F2046_V30_D0131_P2\\gnss_sdr",
+    "source_batch": "full_parse_v1",
+    "run_status": "SUCCESS"
+  },
+  "processing_status": {
+    "gnss_sdr": "completed",
+    "navigation": "completed",
+    "trajectory": "completed",
+    "sage": "not_run",
+    "satellite_geometry": "completed"
+  },
+  "available_data": {
+    "raw_iq": "external_reference",
+    "gnss_sdr": "available",
+    "navigation": "available",
+    "trajectory": "available",
+    "sage_results": "not_run",
+    "satellite_geometry": "available"
+  },
+  "migration": {
+    "source_result_path": "E:\\GNSS_Multipath_Project\\full_parse_v1\\F2046_V30_D0131_P2",
+    "mode": "copy_preserve_source"
+  },
+  "satellite_geometry": {
+    "status": "completed",
+    "sources": [
+      "gnss_sdr/nmea",
+      "navigation/rinex_nav"
+    ],
+    "input_files": {
+      "nmea": [
+        "gnss_sdr/nmea/F2046_V30_D0131_P2_trajectory.nmea"
+      ],
+      "rinex_nav": [
+        "navigation/rinex_nav/RINEXFILE.26N"
+      ]
+    },
+    "input_sha256": {
+      "nmea": [
+        "4c25fe7aeb64f52ec15a2719232ce811984ca4c64ce2fbde62aa9e3f99e9c664"
+      ],
+      "rinex_nav": [
+        "2cc86ec0a3922fa2b4784c5f744ed8a15466b9e84c9f85965bcad8c69b2613ad"
+      ]
+    },
+    "outputs": [
+      "satellite/F2046_V30_D0131_P2_satellite_elevation_timeseries.csv",
+      "satellite/F2046_V30_D0131_P2_satellite_elevation_summary.csv"
+    ],
+    "output_sha256": [
+      "5609839d22db9f06011023a75c2437b7fbe64b9c271270c340f474c17784f74a",
+      "a4e7fbcc1e68c6aa575b954e83e960c6ba07ccd2accb63f144bf2b6b2c5d9035"
+    ],
+    "generated_at": "2026-08-06T06:14:54Z",
+    "statistics": {
+      "observation_count": 144,
+      "satellite_count": 6,
+      "nav_prn_count": 7,
+      "bad_checksum_count": 0,
+      "untimestamped_gsv_count": 0,
+      "ignored_prn_count": 0
+    },
+    "algorithm": {
+      "geometry_source": "NMEA_GSV",
+      "rinex_nav_usage": "GPS_PRN_filter_only",
+      "broadcast_ephemeris_position_recomputation": false
+    },
+    "last_batch_status": "completed",
+    "error": null
+  },
+  "navigation": {
+    "status": "completed",
+    "source": "gnss_sdr/rinex",
+    "destination": {
+      "rinex_nav": "navigation/rinex_nav",
+      "rinex_obs": "navigation/rinex_obs"
+    },
+    "files": {
+      "rinex_nav": "navigation/rinex_nav/RINEXFILE.26N",
+      "rinex_obs": "navigation/rinex_obs/RINEXFILE.26O"
+    },
+    "source_files": {
+      "rinex_nav": "gnss_sdr/rinex/RINEXFILE.26N",
+      "rinex_obs": "gnss_sdr/rinex/RINEXFILE.26O"
+    },
+    "sha256": {
+      "rinex_nav": "2cc86ec0a3922fa2b4784c5f744ed8a15466b9e84c9f85965bcad8c69b2613ad",
+      "rinex_obs": "a6e5df31006498b26e448294c8ad8ac7062335f349d7ec9f6c5148d0c3719706"
+    },
+    "preparation_method": "copy",
+    "prepared_at": "2026-08-06T05:50:01Z"
+  },
+  "trajectory": {
+    "status": "completed",
+    "source": "gnss_sdr/nmea",
+    "destination": "trajectory",
+    "source_file": "gnss_sdr/nmea/F2046_V30_D0131_P2_trajectory.nmea",
+    "file": "trajectory/F2046_V30_D0131_P2_trajectory.nmea",
+    "sha256": "4c25fe7aeb64f52ec15a2719232ce811984ca4c64ce2fbde62aa9e3f99e9c664",
+    "preparation_method": "copy",
+    "prepared_at": "2026-08-06T05:52:39Z"
+  }
+}

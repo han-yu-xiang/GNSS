@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="230" viewBox="0 0 1200 230">
+  <title>Dynamic GNSS raw IQ to path-level characterization workflow</title>
+  <desc>RF capture, GNSS-SDR support, Stage0, hierarchical SAGE, confirmed paths, and path-level characterization.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#303030"/></marker>
+    <style>
+      .box { fill:#f7f7f7; stroke:#303030; stroke-width:2; }
+      .txt { font-family:Arial,Helvetica,sans-serif; font-size:19px; fill:#202020; text-anchor:middle; }
+      .small { font-family:Arial,Helvetica,sans-serif; font-size:16px; fill:#202020; text-anchor:middle; }
+      .arrow { stroke:#303030; stroke-width:2; marker-end:url(#arrow); }
+    </style>
+  </defs>
+  <rect class="box" x="20" y="78" width="170" height="74" rx="5"/><text class="txt" x="105" y="106">RF capture</text><text class="small" x="105" y="131">GPS L1 C/A raw IQ</text>
+  <rect class="box" x="220" y="78" width="170" height="74" rx="5"/><text class="txt" x="305" y="106">GNSS-SDR</text><text class="small" x="305" y="131">tracking / NAV support</text>
+  <rect class="box" x="420" y="78" width="170" height="74" rx="5"/><text class="txt" x="505" y="106">Stage0</text><text class="small" x="505" y="131">NAV-aligned windows</text>
+  <rect class="box" x="620" y="78" width="170" height="74" rx="5"/><text class="txt" x="705" y="106">Stage1–Stage4</text><text class="small" x="705" y="131">hierarchical SAGE</text>
+  <rect class="box" x="820" y="78" width="170" height="74" rx="5"/><text class="txt" x="905" y="106">Confirmed paths</text><text class="small" x="905" y="131">Stage4 components</text>
+  <rect class="box" x="1020" y="78" width="160" height="74" rx="5"/><text class="txt" x="1100" y="106">Path-level</text><text class="small" x="1100" y="131">characterization</text>
+  <line class="arrow" x1="190" y1="115" x2="218" y2="115"/><line class="arrow" x1="390" y1="115" x2="418" y2="115"/><line class="arrow" x1="590" y1="115" x2="618" y2="115"/><line class="arrow" x1="790" y1="115" x2="818" y2="115"/><line class="arrow" x1="990" y1="115" x2="1018" y2="115"/>
+</svg>
