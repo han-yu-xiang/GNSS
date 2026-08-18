@@ -833,3 +833,200 @@ RAIN_SAGE_EXECUTION=NOT_STARTED
 ```
 
 - No Rain task, G24 preflight, production SAGE task, raw-IQ processing, or 20.46 MHz task was run in this closure. The next decision remains Commander-controlled; do not automatically start Rain or production after the freeze.
+
+## 39. Rain MVP static preflight and output-export preparation (Implemented + static Validated; execution pending, 2026-08-18)
+
+- The standalone Rain task list was audited without reading raw-IQ contents, invoking MATLAB, or running SAGE. The nine planned tasks remain serialized and not started: Clear `G24/ch10`, `G29/ch3`, `G13/ch8`, `G12/ch11`; MidRain `G24/ch8`, `G20/ch9`; HeavyRain `G02/ch1`, `G31/ch4`, `G01/ch7`.
+- Static preflight output: `dataset_generation_logs/darkroom_channel_emulation/rain_sage_preflight_20260818.csv`. All 9/9 rows are `PASS_STATIC_INPUT_GATE`; this verifies metadata/path/size, 10.23 MHz `ishort` compatibility, tracking/telemetry presence and mapping, and output namespace absence. MATLAB field loading and Stage0 runtime validation remain pending normal-user execution.
+- The Rain branch remains isolated under `scripts/sage_pipeline/rain/` and uses `rain_sage_v1/<PRN>` with new-only `Resume=false`. The only Rain-local source change is output export of phase and relative phase/amplitude from the already selected complex `alpha`; Stage1--Stage4 estimation, thresholds, grids, model order, persistence, joint validity, and confirmed-path criterion were not changed. Updated source hash: `run_rain_sage_stage1_stage4.m` = `B98EF879004A6E682227A82B3DA72BA8CA667939D1797FA4CC18AE41DDC34AB9`.
+- Rain Python static/unit checks passed `36/36`, `py_compile` passed, PowerShell AST parsing passed, the deletion-command audit passed, and `git diff --check` passed. Normal-user Rain MATLAB syntax smoke is now recorded as `PASS`; the Code Analyzer warnings are non-fatal and were not used to justify algorithm edits.
+- The one-start overnight runner is `scripts/sage_pipeline/rain/run_all_rain_sage_overnight.ps1` (static validated). Its read-only QA/summary helper is `scripts/sage_pipeline/rain/audit_rain_sage_overnight_outputs.py`. It uses a named mutex for serialization, runs G24 first as the global gate, continues independent later-task failures only after a valid G24 Stage0--Stage4 result, and never self-modifies source or resumes output.
+- Production protection was rechecked after the Rain-local change: `scripts/sage_pipeline/run_nav_sage_pipeline.m` SHA-256 remains `BFFC123C97AF77F0A797F417D3866E9A34FEAB7729C5C1575352F53BC3571B9C`, and its Git diff is empty. No production, reference, `nav_sage_v2`, raw-IQ, 20.46 MHz, or prior artifact was modified.
+
+Current Rain gate state:
+
+```text
+RAIN_MATLAB_SYNTAX_SMOKE = PASS (normal-user evidence)
+RAIN_G24_PREFLIGHT = STATIC_PASS_9_OF_9; RUNTIME_FIELD_LOAD_PENDING
+RAIN_SAGE_EXECUTION = NOT_STARTED
+RAIN_QA = NOT_STARTED
+RAIN_OVERNIGHT_RUNNER = IMPLEMENTED_STATIC_VALIDATED
+PRODUCTION_PIPELINE_FROZEN = YES
+```
+
+The only next action is for `TJ-CHANNEL\\Jing_` to start
+`scripts/sage_pipeline/rain/run_all_rain_sage_overnight.ps1` once. It will run
+Clear `G24/ch10` first and then apply the recorded serial policy; no Rain task
+has yet executed and no G24 output receipt exists. MidRain and HeavyRain remain
+gated until the overnight runner produces an independently reviewable G24 QA.
+
+## 40. Overnight runner interface-gate repair (Implemented + static Validated; execution still not started, 2026-08-18)
+
+- The first real runner start passed the production freeze gate and stopped before MATLAB with `OVERNIGHT_RUNNER_RAIN_INTERFACE_MARKER_VALIDATION_ERROR`. No MATLAB process started and no raw IQ was opened.
+- Root cause was `MARKER_CHECK_TOO_BRITTLE`: the runner searched `run_rain_sage_pipeline.m` for the literal quoted text `"run_rain_sage_stage1_stage4"`, while the actual call is `coreResult = run_rain_sage_stage1_stage4( ... )` at lines 82--84. The Rain wiring was present; this was not `RAIN_INTERFACE_WIRING_MISSING`.
+- Added `scripts/sage_pipeline/rain/validate_rain_interface.ps1`. It checks evaluator existence, the evaluator's primary function declaration, the whitespace/continuation-tolerant call relationship, and rejects production/shared-core calls. It does not remove the interface gate or allow-list a path.
+- The corrected runner is `scripts/sage_pipeline/rain/run_all_rain_sage_overnight.ps1`, SHA-256 `E8E84EDA40A726D06860B018BB47AA96D51968FEF2006CFB1F1F6A8E879FB13B`; validator SHA-256 is `98841A3597A5E39D7433393AFCA649A03CDC559634CBCCE16D90E4F2DDF3220C`.
+- Static validation passed: Rain Python suite `37/37`, interface positive/negative cases `6/6`, Python compile, PowerShell AST, deletion-command audit, and `git diff --check`. No runner re-execution was performed after the repair.
+
+Current gate state remains:
+
+```text
+PRODUCTION_PIPELINE_FROZEN = YES
+PRODUCTION_SHA = BFFC123C97AF77F0A797F417D3866E9A34FEAB7729C5C1575352F53BC3571B9C
+RAIN_STATIC_PREFLIGHT = 9/9 PASS
+RAIN_MATLAB_SYNTAX_SMOKE = PASS (normal-user evidence)
+RAIN_INTERFACE_GATE = PASS_AFTER_FIX (static actual-source validation)
+RAIN_SAGE_EXECUTION = NOT_STARTED
+```
+
+The only next action is to start the same overnight command once as the normal
+Windows user. The runner must still begin with Clear `G24/ch10`; no G24 result
+or final Rain QA report exists yet.
+
+## 41. Rain overnight runner Windows PowerShell 5.1 compatibility repair (Implemented + validated dry-run; execution not started, 2026-08-18)
+
+- The second normal-user runner start failed before MATLAB with `找不到与参数名称“LiteralPath”匹配的参数。` and the catch-site line was reported as `run_all_rain_sage_overnight.ps1:545`. The actual unsupported call was a `New-Item -LiteralPath` invocation in the runner; Windows PowerShell 5.1 exposes `LiteralPath` for `Test-Path`, `Get-Content`, `Add-Content`, `Get-FileHash`, and `Import-Csv`, but not for `New-Item`. The catch line was only the reporting location, not the root cause.
+- Fixed only the runner's directory-creation calls from `New-Item -LiteralPath` to `New-Item -Path`. The paths are runner-generated and contain no wildcard characters; input/path safety checks continue to use `-LiteralPath` on cmdlets whose PS5.1 parameter sets support it.
+- The compatibility audit also found `ProcessStartInfo.ArgumentList`, which is not available through the .NET Framework path used by Windows PowerShell 5.1. MATLAB invocation now uses the legacy-compatible `ProcessStartInfo.Arguments` string with the existing `-batch` expression and unchanged `'Resume',false` semantics. The expression validator was corrected to match the actual quoted MATLAB name-value syntax `'<Resume>',false`; no execution parameter or scientific logic changed.
+- Added `-DryRun`. It runs production freeze/tag/SHA checks, Rain interface validation, Python/MATLAB executable checks, static preflight and all nine task/output namespace checks, acquires/releases the global mutex, prints the planned MATLAB expressions, and does not start MATLAB, open raw IQ, execute SAGE, create Rain output, or create a run namespace.
+- Top-level failures now emit `ERROR_MESSAGE`, `ERROR_COMMAND`, `ERROR_LINE`, `ERROR_LINE_NUMBER`, `ERROR_POSITION`, `ERROR_SCRIPT_STACK_TRACE`, `FULLY_QUALIFIED_ERROR_ID`, and `POWERSHELL_VERSION`, and return a nonzero exit code. Task-level failures remain recorded without deleting or resuming artifacts.
+- New compatibility tests: `scripts/sage_pipeline/rain/test_rain_overnight_powershell_compatibility.py`. Windows PowerShell 5.1 AST parsing passed; Python `py_compile` passed for all 9 Rain Python files; Rain Python tests passed `43/43`; interface tests passed `6/6`; `git diff --check` passed.
+- Windows PowerShell 5.1 dry-run passed with exit code 0: `OVERNIGHT_RUNNER_DRY_RUN=PASS`, `TASK_COUNT=9`, `MATLAB_STARTED=NO`, `RAW_IQ_OPENED=NO`, `SAGE_EXECUTED=NO`, `OUTPUT_SAGE_CREATED=NO`, and `GLOBAL_MUTEX_RELEASED=YES`. All nine expected Rain output namespaces remained absent.
+- Updated runner SHA-256=`785AA510011FF0B7239026624F6F4BD723DA54313BF98F1C822AA32A44615C2C`. The frozen production entry remains SHA-256=`BFFC123C97AF77F0A797F417D3866E9A34FEAB7729C5C1575352F53BC3571B9C`, Git diff is empty, and tag `sage-production-recovered-validated` is present.
+
+Current gate state:
+
+```text
+PRODUCTION_FREEZE_GATE=PASS
+RAIN_INTERFACE_GATE=PASS
+WINDOWS_POWERSHELL_5_1_AST=PASS
+WINDOWS_POWERSHELL_5_1_DRY_RUN=PASS
+MATLAB_STARTED=NO
+RAW_IQ_OPENED=NO
+RAIN_SAGE_STARTED=NO
+RAIN_SAGE_EXECUTION=NOT_STARTED
+GLOBAL_MUTEX_RELEASED=YES
+FAILURE_CLASS=OVERNIGHT_RUNNER_WINDOWS_POWERSHELL_COMPATIBILITY_ERROR (fixed)
+```
+
+The next permitted action is for `TJ-CHANNEL\\Jing_` to review and run the
+dry-run command recorded in the task report before any formal overnight start.
+
+## 42. Rain overnight runner formal-path initialization and diagnostics repair (Implemented + validated; execution not started, 2026-08-18)
+
+- The first formal overnight start after the PowerShell compatibility repair failed before MATLAB because the formal logger initialization used an undefined `${NewLine}` under `Set-StrictMode`. The prior dry-run branched before creating `RunDir`/`MasterLog`, so it could not expose this formal-only path. The fix uses `[Environment]::NewLine` and moves dry-run branching after the complete formal pre-MATLAB initialization block.
+- The same run exposed a second failure in the new error handler: the expression `$diagnosticLine -replace pattern, replacement` was passed directly into `.WriteLine(...)`, allowing PowerShell to bind two method arguments and treat error text containing `{}` or `{0}` as a composite format string. Diagnostic output now constructs/sanitizes a completed string first and calls `WriteLine([string]$safeLine)` with one argument. A minimal console fallback is nested and fail-safe.
+- Added `Test-ErrorDiagnosticsSafe`, covering ordinary text, null ErrorRecord/command, `{0}`, `{}`, Chinese text, multiline text, percent signs, and quotes. The formal initialization path runs this self-test before any MATLAB launch and records `ERROR_DIAGNOSTICS_NEVER_THROWS=PASS`.
+- Dry-run now shares the formal path through mutex acquisition, unique run directory, master logger, task schedule, summary directory, diagnostics self-test, frozen production checks, Python/interface checks, all nine task preflight checks, and MATLAB expression construction. It stops before `Invoke-MatlabBatch`. Summary artifacts are scoped under the unique run namespace; historical root summary files from the failed run remain untouched and are explicitly preserved.
+- Windows PowerShell 5.1 dry-run passed with exit code 0 in `dataset_generation_logs/darkroom_channel_emulation/rain_sage_overnight_20260817T181521Z/`: `OVERNIGHT_RUNNER_DRY_RUN=PASS`, `FORMAL_INITIALIZATION_PATH=PASS`, `FORMAL_PATH_RUNTIME_CHECK=PASS`, `ERROR_DIAGNOSTICS_NEVER_THROWS=PASS`, `MATLAB_STARTED=NO`, `RAW_IQ_OPENED=NO`, `SAGE_EXECUTED=NO`, `TASK_COUNT=9`, and `GLOBAL_MUTEX_RELEASED=YES`.
+- Validation: Python `py_compile=PASS` for all 9 Rain Python files; Rain Python tests `46/46 PASS`; PowerShell 5.1 AST `PASS`; interface tests `6/6 PASS`; all nine Rain SAGE output namespaces remain absent; `git diff --check=PASS`.
+- Updated runner SHA-256=`15F2D50A676F462E2F543086D7FE0D254612D756C8FC52881FE91941A05970F0`. The frozen production entry remains SHA-256=`BFFC123C97AF77F0A797F417D3866E9A34FEAB7729C5C1575352F53BC3571B9C`, production diff is empty, and tag `sage-production-recovered-validated` remains present.
+
+Current gate state:
+
+```text
+PRODUCTION_FREEZE_GATE=PASS
+RAIN_INTERFACE_GATE=PASS
+FORMAL_PATH_RUNTIME_CHECK=PASS
+ERROR_DIAGNOSTICS_NEVER_THROWS=PASS
+WINDOWS_POWERSHELL_5_1_AST=PASS
+WINDOWS_POWERSHELL_5_1_RUNTIME_DRY_RUN=PASS
+MATLAB_STARTED=NO
+RAW_IQ_OPENED=NO
+RAIN_SAGE_STARTED=NO
+RAIN_SAGE_EXECUTION=NOT_STARTED
+GLOBAL_MUTEX_RELEASED=YES
+FAILURE_CLASS=RUNNER_RUNTIME_INITIALIZATION_AND_ERROR_LOGGING_BUG (fixed)
+```
+
+No formal overnight command is released by this change; the next action remains
+the reviewed `-DryRun` command only.
+
+## 43. First formal Rain launch: MATLAB sandbox startup block (Validated failure; Rain execution incomplete, 2026-08-18)
+
+- After the capture fix, the formal runner genuinely reached `TASK=1 START` for Clear `F1023_clear/G24/ch10` and logged `PROCESS_START`/`PROCESS_EXIT` for `D:\Program Files\Matlab\bin\matlab.exe`. The preserved run is `dataset_generation_logs/darkroom_channel_emulation/rain_sage_overnight_20260817T182556Z/`.
+- MATLAB returned exit code `1` before MATLAB code/Stage0 execution. stderr is `Fatal Startup Error: System Error: File system inconsistency`; stdout contains only the MATLAB-side failure result. G24 output directory does not exist and all Stage0--Stage4 counts are zero. This is `MATLAB_STARTUP_ENVIRONMENT_FAILURE`, not a Rain input or SAGE algorithm failure.
+- The process-capture defect is resolved: stdout/stderr files were written successfully, task record and QA receipt were generated, and the runner stopped at the G24 global gate. The historical run incorrectly returned process exit 0 despite a software-failed G24; the runner now sets a nonzero exit code for `SOFTWARE_FAIL`/`INPUT_BLOCKED` and preserves the stop policy.
+- Current Codex identity is `tj-channel\\codexsandboxoffline`; project evidence and the existing Windows execution design require non-elevated `TJ-CHANNEL\\Jing_`. No automatic cross-user `runas`, credential, or scheduled-task bridge exists or was created. A formal identity gate now rejects sandbox/elevated/wrong-user execution before MATLAB launch while leaving `-DryRun` available in Codex.
+- A subsequent Windows PowerShell 5.1 dry-run passed after this gate: `FORMAL_INITIALIZATION_PATH=PASS`, `TASK_OUTPUT_CAPTURE_NEVER_THROWS=PASS`, `OVERNIGHT_RUNNER_DRY_RUN=PASS`, `MATLAB_STARTED=NO`, `RAW_IQ_OPENED=NO`, `SAGE_EXECUTED=NO`, and `GLOBAL_MUTEX_RELEASED=YES` in `rain_sage_overnight_20260817T182855Z`.
+- No G24 partial output exists, so no move-to-trash action was necessary. The failed run, all logs, receipt, stdout/stderr, and summary artifacts remain retained.
+- Updated runner SHA-256=`BB674546CCC518AAC6E45A96ECE7BAB117CF7B9CB69B25541AF9F1B44B00AB94`. Production entry remains SHA-256=`BFFC123C97AF77F0A797F417D3866E9A34FEAB7729C5C1575352F53BC3571B9C` with empty Git diff and freeze tag present. Static/unit tests remain `46/46 PASS`, PowerShell 5.1 AST PASS, interface tests `6/6 PASS`, and `git diff --check` PASS.
+
+Current gate state:
+
+```text
+PRODUCTION_SHA_UNCHANGED=YES
+MATLAB_PROCESS_STARTED=YES (sandbox launch attempt)
+MATLAB_STARTUP=FAILED_SYSTEM_ERROR_FILE_SYSTEM_INCONSISTENCY
+MATLAB_CODE_ENTERED=NO
+RAW_IQ_OPENED=NO
+RAIN_STAGE0_STARTED=NO
+RAIN_SAGE_EXECUTION=BLOCKED_BY_MATLAB_ENVIRONMENT
+RAIN_G24_OUTPUT=ABSENT
+RAIN_REMAINING_TASKS=NOT_STARTED
+NORMAL_USER_IDENTITY_GATE=IMPLEMENTED
+WINDOWS_POWERSHELL_5_1_RUNTIME_DRY_RUN=PASS
+```
+
+Completion now requires an external normal, non-elevated `TJ-CHANNEL\\Jing_`
+PowerShell session. Codex must not retry MATLAB under the sandbox identity.
+
+## Rain Stage0 telemetry table compatibility repair (Implemented; normal-user validation pending, 2026-08-18)
+
+- The latest normal-user Rain launch reached `build_rain_stage0>readRainTelemetryDat` and failed at the telemetry table construction with MATLAB's equal-row-count error. The captured MATLAB diagnostic also explicitly reported that the string name-value syntax for `"VariableNames"` should use the character-vector form for backwards compatibility.
+- Source inspection found no telemetry length or orientation defect: `readRainTelemetryDat` derives `recordCount` from 32-byte records, preallocates `towCurrentS`, `sampleCounter`, `towPreambleS`, `navSymbol`, and `prn` as `recordCount x 1` column vectors, and writes one scalar per record. The actual Clear G24 telemetry file is 70,592 bytes = 2,206 complete records; HeavyRain G02 is 91,680 bytes = 2,865 complete records; both have zero remainder.
+- The only code change is in `scripts/sage_pipeline/rain/build_rain_stage0.m`: the table name-value parameter was changed from the MATLAB string form `"VariableNames"` to the character-vector form `'VariableNames'`. No `x(:)` normalization, truncation, padding, field replacement, raw-IQ read, or Stage1--Stage4 change was made.
+- A static regression assertion was added to `scripts/sage_pipeline/rain/test_rain_standalone_pipeline.py`. Python compilation passed; the selected Rain read-only tests passed `36/36`; the PowerShell Rain interface tests passed `6/6`; source-level Rain MATLAB smoke checks passed. MATLAB runtime smoke was not run in the Codex sandbox.
+- The frozen production entry remains unchanged: `scripts/sage_pipeline/run_nav_sage_pipeline.m` SHA-256 is `BFFC123C97AF77F0A797F417D3866E9A34FEAB7729C5C1575352F53BC3571B9C` and its Git diff is empty. No raw IQ, SAGE, overnight runner, nine-task batch, production artifact, or 20.46 MHz task was executed or modified.
+
+Current Rain gate state:
+
+```text
+RAIN_STAGE0_TABLE_FIX = IMPLEMENTED
+RAIN_TELEMETRY_LENGTH_ORIENTATION = VERIFIED_FOR_CLEAR_G24_AND_HEAVYRAIN_G02
+RAIN_STATIC_TESTS = PASS (36/36 selected; destructive temporary-file tests not run)
+RAIN_MATLAB_RUNTIME_SMOKE_AFTER_FIX = PENDING_NORMAL_USER
+RAIN_G24_STAGE0_TO_STAGE4 = NOT_STARTED_AFTER_FIX
+RAIN_HEAVYRAIN_G02_STAGE0_TO_STAGE4 = NOT_STARTED_AFTER_FIX
+RAIN_OVERNIGHT_RUNNER = STOPPED_BY_COMMANDER
+PRODUCTION_PIPELINE_FROZEN = YES
+```
+
+The next permitted actions are the two explicitly scoped normal-user MATLAB
+commands for Clear `G24/ch10` and HeavyRain `G02/ch1`; do not start the
+overnight runner or any other Rain task from this change.
+
+## Rain Stage0 VariableNames container repair (Implemented; runtime validation pending, 2026-08-18)
+
+- The first compatibility repair correctly changed the name-value parameter to `'VariableNames'`, but the next normal-user run exposed that the value was still a cell array of string scalars. MATLAB requires a string array or a cell array of character vectors for multiple table variable names.
+- The telemetry table has exactly five data columns and now supplies exactly five non-empty character-vector names in one container: `{'tow_s', 'sample_counter', 'preamble_tow_s', 'nav_symbol', 'prn'}`. No telemetry data shape, length, orientation, or field semantics were changed.
+- The static regression assertion in `scripts/sage_pipeline/rain/test_rain_standalone_pipeline.py` now rejects the old nested string-cell form and requires the character-vector cell form. Python compilation, selected Rain tests `36/36`, Rain interface tests `6/6`, source static smoke, production SHA check, and `git diff --check` passed.
+- `scripts/sage_pipeline/run_nav_sage_pipeline.m` remains unchanged at SHA-256 `BFFC123C97AF77F0A797F417D3866E9A34FEAB7729C5C1575352F53BC3571B9C`. MATLAB runtime validation after this second fix remains pending a normal non-elevated `TJ-CHANNEL\Jing_` session. No raw IQ, SAGE, overnight runner, batch, production artifact, or file deletion was performed.
+
+The only released next commands remain the separately scoped Clear `G24/ch10`
+and HeavyRain `G02/ch1` normal-user MATLAB commands; no G31 or overnight command
+is released at this stage.
+
+## Rain Stage1–Stage4 result-container packaging repair (Implemented; runtime validation pending, 2026-08-18)
+
+- The normal-user Clear `F1023_clear/G24/ch10` run completed Stage1 (`2204/2204`), Stage2 (`120/120`), Stage3 persistence, and wrote the Stage4 joint artifacts before failing while returning the result from `run_rain_sage_stage1_stage4.m`.
+- The failure is a result-container packaging error, not a Stage1–Stage4 numerical failure. The unsafe `struct(...)` constructor treated the non-scalar cell fields `stage2Fits` and `jointFits` as struct-array expansion inputs. In the historical error text, input argument `8` is the `stage2Fits` value and input argument `20` is the `jointFits` value; these numbers are constructor argument positions, not literal array lengths.
+- The preserved G24 MAT artifact reports `stage2Fits=120x1` and `jointFits=3x1`. The written Stage4 CSV/MAT artifacts contain three joint rows, all `joint_valid=1`, `joint_multipath_count=0`, and three non-multipath paths; therefore the existing computation is retained as a zero-confirmed-event result pending independent QA.
+- The Rain result block now uses scalar initialization plus field assignment and asserts `isstruct(result) && isscalar(result)`. This is `OUTPUT_RESULT_PACKAGING_FIX_ONLY`; no Stage1–Stage4 algorithm, threshold, grid, model selection, optimizer, or confirmation criterion changed.
+- Added `scripts/sage_pipeline/rain/test_rain_result_packaging.py` and updated the source-equivalence test to allow this explicit container-only delta. Python `py_compile` and the selected Rain static/regression suite pass `17/17`; MATLAB runtime syntax smoke remains not run under Codex.
+- The production entry remains unchanged at SHA-256 `BFFC123C97AF77F0A797F417D3866E9A34FEAB7729C5C1575352F53BC3571B9C`. Existing G24 Stage1–Stage4 artifacts were not modified, deleted, moved, or resumed. No HeavyRain, batch, overnight, raw IQ, or MATLAB execution was performed.
+
+Current Rain gate state:
+
+```text
+RAIN_RESULT_PACKAGING_FIX = IMPLEMENTED
+RAIN_RESULT_PACKAGING_SCALAR_STRUCT = PASS
+G24_STAGE1_STAGE2_STAGE3 = COMPLETE_FROM_PRESERVED_ARTIFACTS
+G24_STAGE4_OUTPUT = COMPLETE_FROM_PRESERVED_ARTIFACTS
+G24_CONFIRMED_EVENTS = 0
+G24_CONFIRMED_PATHS = 0
+RAIN_MATLAB_RUNTIME_VALIDATION = PENDING_NORMAL_USER
+RAIN_G24_RERUN_REQUIRED = NO_FOR_EXISTING_STAGE4_ANALYSIS
+RAIN_OVERNIGHT_RUNNER = STOPPED_BY_COMMANDER
+PRODUCTION_PIPELINE_FROZEN = YES
+```

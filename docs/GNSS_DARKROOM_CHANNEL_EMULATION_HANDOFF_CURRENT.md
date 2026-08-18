@@ -284,3 +284,164 @@ RAIN_SAGE_EXECUTION=NOT_STARTED
 
 No Rain, G24 preflight, production SAGE, raw-IQ, or 20.46 MHz task was run in
 this closure. Any next Rain action remains Commander-controlled.
+
+## Rain MVP execution preparation (Static validated; no execution, 2026-08-18)
+
+The nine-task Rain sequence remains not started. A read-only/static preflight was
+generated at `dataset_generation_logs/darkroom_channel_emulation/rain_sage_preflight_20260818.csv`:
+all 9/9 rows are `PASS_STATIC_INPUT_GATE`. The CSV verifies metadata-declared raw
+path/size, 10.23 MHz `ishort` input, tracking/telemetry presence, channel/PRN
+mapping, and fresh `rain_sage_v1/<PRN>` output namespaces. It does not replace
+the MATLAB runtime field-load and Stage0 checks.
+
+Rain-local Stage4 output export now records phase and relative
+amplitude/phase from the selected complex `alpha` only; this is an
+`OUTPUT_EXPORT_ONLY` change. No Stage1--Stage4 numerical operation, threshold,
+grid, model-order, persistence, joint criterion, or confirmed-path definition
+was changed. The updated file is
+`scripts/sage_pipeline/rain/run_rain_sage_stage1_stage4.m` with SHA-256
+`B98EF879004A6E682227A82B3DA72BA8CA667939D1797FA4CC18AE41DDC34AB9`.
+Rain Python/runner tests and compile checks passed 36/36; PowerShell AST and
+artifact-preservation audits also passed. The normal-user post-change MATLAB
+syntax smoke is `PASS`; existing Code Analyzer warnings are non-fatal and were
+not used to alter the algorithm.
+
+The one-start runner is
+`scripts/sage_pipeline/rain/run_all_rain_sage_overnight.ps1`. It uses a named
+mutex, executes G24 first as the global gate, then proceeds serially only after
+a valid G24 Stage0--Stage4 result. The helper
+`scripts/sage_pipeline/rain/audit_rain_sage_overnight_outputs.py` reads only
+Rain output files and writes new QA/parameter/report artifacts with exclusive
+creation semantics.
+
+```text
+RAIN_STATIC_PREFLIGHT = PASS (9/9)
+RAIN_MATLAB_POST_PATCH_SMOKE = PASS
+RAIN_SAGE_EXECUTION = NOT_STARTED
+RAIN_QA = NOT_STARTED
+RAIN_OVERNIGHT_RUNNER = IMPLEMENTED_STATIC_VALIDATED
+PRODUCTION_PIPELINE_FROZEN = YES
+```
+
+The next and only action is one normal-user start of the overnight runner.
+Clear `F1023_clear/G24/ch10` remains the first global execution gate; no Rain
+SAGE output has yet been produced.
+
+## Overnight runner interface-gate repair (Static validated; no re-execution, 2026-08-18)
+
+The first real runner start passed the production freeze checks and stopped
+before MATLAB because its literal marker check searched for the quoted text
+`"run_rain_sage_stage1_stage4"`. The actual Rain entry call is
+`coreResult = run_rain_sage_stage1_stage4( ... )` at lines 82--84 of
+`run_rain_sage_pipeline.m`; therefore the failure class is
+`MARKER_CHECK_TOO_BRITTLE`, not missing Rain wiring.
+
+`validate_rain_interface.ps1` now performs the required fail-closed checks:
+evaluator file existence, primary function name, whitespace/continuation-
+tolerant call relation, and rejection of `run_nav_sage_pipeline` or the shared
+core. Six interface positive/negative cases pass. The corrected overnight
+runner and validator are static-only changes; no MATLAB/SAGE rerun occurred.
+
+```text
+RAIN_INTERFACE_GATE = PASS_AFTER_FIX
+RAIN_SAGE_EXECUTION = NOT_STARTED
+RAIN_QA = NOT_STARTED
+PRODUCTION_PIPELINE_FROZEN = YES
+```
+
+The next action remains one normal-user start of the overnight runner, with
+Clear `F1023_clear/G24/ch10` as the first and only global execution gate.
+
+## Rain overnight runner PowerShell 5.1 compatibility repair (Implemented + dry-run validated; no execution, 2026-08-18)
+
+The second real start failed before MATLAB because Windows PowerShell 5.1 does
+not expose `-LiteralPath` on `New-Item`; the reported catch line was not the
+root cause. Only those directory-creation calls were changed to `-Path`.
+Other `-LiteralPath` calls were audited against the actual PS5.1 cmdlet
+parameter sets and retained where supported. The runner's
+`ProcessStartInfo.ArgumentList` was also replaced by the PS5.1-compatible
+`.Arguments` string; Rain task order, G24 gate, new-only behavior, mutex, and
+the MATLAB `'Resume',false` expression were preserved.
+
+`-DryRun` now performs all startup and nine-task planning gates without
+starting MATLAB, opening raw IQ, executing SAGE, or creating Rain output. The
+new compatibility test and diagnostics cover PS5.1 syntax/parameters and
+nonzero failure reporting. Results: Windows PowerShell 5.1 AST PASS, Python
+compile PASS, Rain Python tests `43/43 PASS`, interface tests `6/6 PASS`, and
+dry-run exit code 0 with `OVERNIGHT_RUNNER_DRY_RUN=PASS` and all nine output
+namespaces absent. Updated runner SHA-256 is
+`785AA510011FF0B7239026624F6F4BD723DA54313BF98F1C822AA32A44615C2C`.
+
+```text
+PRODUCTION_FREEZE_GATE=PASS
+RAIN_INTERFACE_GATE=PASS
+WINDOWS_POWERSHELL_5_1_DRY_RUN=PASS
+MATLAB_STARTED=NO
+RAW_IQ_OPENED=NO
+RAIN_SAGE_EXECUTION=NOT_STARTED
+GLOBAL_MUTEX_RELEASED=YES
+```
+
+The frozen production pipeline remains protected at SHA-256
+`BFFC123C97AF77F0A797F417D3866E9A34FEAB7729C5C1575352F53BC3571B9C` with no
+Git diff. No Rain output, raw file, or prior artifact was changed. Formal
+overnight execution remains Commander-controlled and must not start until the
+dry-run output is reviewed.
+
+## Rain overnight runner formal-path initialization repair (Implemented + validated; no SAGE execution, 2026-08-18)
+
+The formal runner failure was isolated to runtime infrastructure: `${NewLine}`
+was undefined under Windows PowerShell 5.1 `Set-StrictMode`, and the diagnostic
+handler passed a `-replace` expression directly into `WriteLine`, allowing error
+text with braces to trigger a format overload. The logger now uses
+`[Environment]::NewLine`; diagnostic text is completed and sanitized before a
+single-string `WriteLine`, with a nested fallback that cannot mask the original
+failure.
+
+Dry-run and formal mode now share the complete pre-MATLAB path: unique run/log
+directory, master logger, task schedule, unique summary namespace, diagnostics
+self-test, freeze/Python/interface gates, all nine task checks, and MATLAB
+expression construction. Dry-run stops before process launch. Existing root
+summary files from the failed run were not deleted or overwritten.
+
+PowerShell 5.1 dry-run passed in
+`rain_sage_overnight_20260817T181521Z` with
+`FORMAL_INITIALIZATION_PATH=PASS`,
+`FORMAL_PATH_RUNTIME_CHECK=PASS`,
+`ERROR_DIAGNOSTICS_NEVER_THROWS=PASS`,
+`OVERNIGHT_RUNNER_DRY_RUN=PASS`, `MATLAB_STARTED=NO`,
+`RAW_IQ_OPENED=NO`, `SAGE_EXECUTED=NO`, and
+`GLOBAL_MUTEX_RELEASED=YES`. Rain tests are `46/46 PASS`, interface tests
+`6/6 PASS`, and PowerShell 5.1 AST parsing passes. Runner SHA-256 is
+`15F2D50A676F462E2F543086D7FE0D254612D756C8FC52881FE91941A05970F0`.
+
+```text
+RAIN_SAGE_EXECUTION=NOT_STARTED
+RAIN_QA=NOT_STARTED
+PRODUCTION_PIPELINE_FROZEN=YES
+```
+
+The only next action is the reviewed `-DryRun` command; formal overnight
+execution remains blocked pending Commander review.
+
+## First formal Rain launch result: MATLAB environment block (2026-08-18)
+
+The repaired runner reached Clear `F1023_clear/G24/ch10` and successfully
+captured the MATLAB process result, but MATLAB exited with code `1` before
+Stage0. stderr reports `Fatal Startup Error: System Error: File system
+inconsistency`. The G24 Rain output namespace is absent; no Stage0--Stage4
+artifact was produced. This is a MATLAB startup environment failure, not a
+Rain algorithm/input result.
+
+The run artifact is retained at
+`rain_sage_overnight_20260817T182556Z`; its task record, receipt, stdout,
+stderr, and QA summary are available for audit. The runner now reports a
+nonzero status for software-failed tasks and explicitly rejects formal launch
+under `codexsandboxoffline`, elevated shells, or any identity other than
+`TJ-CHANNEL\\Jing_`. No cross-user launch mechanism was added.
+
+The latest Codex-side PowerShell 5.1 dry-run passed after this change in
+`rain_sage_overnight_20260817T182855Z`, including process-capture,
+`FORMAL_INITIALIZATION_PATH`, and `TASK_OUTPUT_CAPTURE_NEVER_THROWS` checks.
+Rain execution remains incomplete and all eight remaining tasks are not
+started. No artifact was deleted or moved.

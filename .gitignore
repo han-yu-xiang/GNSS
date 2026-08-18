@@ -53,5 +53,10 @@ __pycache__/
 *.zip
 *.7z
 *.rar
+*.inspect.ndjson
 _read_attachment_tmp.py
 /$null
+
+# Permanent local artifact quarantine; contents remain recoverable but are not
+# part of the versioned project source or evidence index.
+_trash/

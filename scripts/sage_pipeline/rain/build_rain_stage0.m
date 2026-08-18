@@ -163,8 +163,8 @@ for index = 1:recordCount
     prn(index) = fread(fileId, 1, "int32=>int32");
 end
 telemetry = table(towCurrentS, sampleCounter, towPreambleS, ...
-    navSymbol, prn, "VariableNames", ...
-    {"tow_s", "sample_counter", "preamble_tow_s", "nav_symbol", "prn"});
+    navSymbol, prn, 'VariableNames', ...
+    {'tow_s', 'sample_counter', 'preamble_tow_s', 'nav_symbol', 'prn'});
 end
 
 
