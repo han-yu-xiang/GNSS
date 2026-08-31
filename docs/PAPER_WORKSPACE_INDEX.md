@@ -2,6 +2,20 @@
 
 ## Paper Status
 
+### Current authoritative Phase-1 status (2026-08-31)
+
+| 项目 | 当前状态 |
+|---|---|
+| Phase-1 Stage3 traditional statistical model | **Completed / PASS_WITH_LIMITATIONS** |
+| Phase-1 scientific closure | **Completed / PASS_WITH_LIMITATIONS** |
+| Long-term manuscript synchronization | **Pending / In progress** |
+
+Canonical model/report：`dataset_generation_logs/channel_modeling/environment_elevation_stage3_path_model_v1_20260829_r3/`、`docs/ENVIRONMENT_ELEVATION_STAGE3_ACADEMIC_MODEL_V1_R3_REPORT.md`。Canonical closure/report：`dataset_generation_logs/channel_modeling/phase1_scientific_closure_20260830_r2/`、`docs/PHASE1_TRADITIONAL_CHANNEL_MODELING_SCIENTIFIC_CLOSURE.md`。
+
+Phase-1 Stage3 academic population：783 observations、445 centers、366 algorithm-level tracks、716 elevation-ready observations、50 runs、12 scenes、18 PRNs。主统计单位为 `WEIGHTED_OBSERVATION`，权重为 `1 / algorithm_track_size`；层次为 `Global → Environment → Environment×Elevation`。全局边际族为 delay `Lognormal`、signed relative Doppler `Normal`、relative power `Normal`；Gaussian Copula 只在 global / environment / support-gated cell 层使用。Stage4 仅作为 high-confidence selection-sensitivity subset，结果为 `MATERIAL_DIFFERENCE`，不是 ground truth。
+
+11/12 个 environment×elevation 组合有 Stage3 直接观测；Highway/Open–LOW 无直接支持，不做假填充。环境主效应与仰角主效应均为 `INCONCLUSIVE`，交互作用为 `PARTIAL`；Ricean K 不可识别，persistence 仅为算法观测持续性。**model results completed; manuscript Results synchronization pending**。本状态不表示完整 12-cell 实测覆盖、普适规律或完整物理信道生成器已完成。
+
 当前论文主题：
 
 **SAGE-based path extraction and statistical GNSS multipath channel modeling**
@@ -20,15 +34,15 @@ raw GNSS IQ
 
 当前论文生产状态：
 
-- 10.23 MHz full SAGE production：进行中。
+- 10.23 MHz full SAGE production：冻结批次已完成并通过独立批后 QA；formal accepted production 为 26/67，详见 Engineering Handoff。
 - 13 个 10.23 MHz measurement scenes：scene metadata layer 已建立。
 - 首个正式 production task `F1023_V70_D0117_P4/G11/ch2`：QA PASS。
 - `F1023_V70_D0120_P1/G18/ch2`：正式输出已完成并通过独立 post-run QA；属于第二个 QA-passed production result。
 - `F1023_V70_D0120_P5/G16/ch1`：Stage0–Stage4 科学 artifact 已完成并通过独立科学 QA；因历史 execution-policy deviation 不作为 Batch A release evidence。
 - `F1023_V70_D0117_P4/G12/ch4`：正常 Windows 用户执行已完成并通过独立 QA，executor exit code=0、目标目录21个输出文件、3 confirmed events/3 paths；可作为 Available evidence，不自动写入VTC核心Results。
-- path database：Planned / Not started。
-- channel parameter database：Planned / Not started。
-- statistical model database/model：Planned / Not started。
+- coverage-complete path database：Planned / Not started；Phase-1 Stage3 academic population 已审计并用于 canonical model。
+- standalone coverage-complete channel parameter database：Planned / Not started；Phase-1 closure 的派生统计输出已完成。
+- Phase-1 statistical model：Completed / PASS_WITH_LIMITATIONS；扩展模型/完整物理生成器不在当前完成声明内。
 - raw-coarse v3：negative result，Posterior Failed / Frozen，不是 production selector。
 
 ## Core Status Documents
@@ -52,13 +66,13 @@ raw GNSS IQ
 | 文件 | 作用 | 状态 |
 |---|---|---|
 | `docs/paper_draft/manuscript_outline.md` | 论文主线、章节结构、path-to-channel 建模路线和数据库路线 | Implemented / current outline |
-| `docs/paper_draft/sections/01_Introduction.md` | dynamic GNSS multipath、统计信道建模动机、receiver-level indicator 限制 | Implemented outline / results pending |
+| `docs/paper_draft/sections/01_Introduction.md` | dynamic GNSS multipath、统计信道建模动机、receiver-level indicator 限制 | Implemented outline / Phase-1 result context pending |
 | `docs/paper_draft/sections/02_Related_Work.md` | GNSS multipath characterization、高分辨率参数估计、统计无线信道建模文献框架 | Implemented outline / literature filling pending |
-| `docs/paper_draft/sections/03_Methodology.md` | end-to-end pipeline、NAV-aided SAGE Stage0–Stage4、path-level parameters、channel parameter derivation、environment-conditioned modeling | Implemented / draft updated; derivation and results pending |
+| `docs/paper_draft/sections/03_Methodology.md` | end-to-end pipeline、NAV-aided SAGE Stage0–Stage4、path-level parameters、channel parameter derivation、environment-conditioned modeling | Implemented / draft updated; Phase-1 model-result synchronization pending |
 | `docs/paper_draft/sections/04_Experimental_Setup.md` | TEST-TREE RF-Catcher V2、GNSS dome antenna、GPS L1 C/A、IQ格式、GNSS-SDR configuration、10.23 MHz dataset、scene metadata与执行环境 | Implemented / Draft completed; time synchronization details pending |
 | `docs/paper_draft/sections/05_Pipeline_Validation.md` | reference 多 PRN、Wave-A 跨任务复现、Wave-2A 长记录、A1/A2/G16 production QA 和 acceleration limitation | Implemented / G16 scientific case recorded; additional production QA pending |
-| `docs/paper_draft/sections/06_Results_PLACEHOLDER.md` | dataset、event/path、delay/Doppler/power、channel model 结果占位 | Placeholder / Not started for final results |
-| `docs/paper_draft/sections/07_Conclusion.md` | 最终 path extraction 和 statistical channel model 结论占位 | Implemented outline / final conclusion pending |
+| `docs/paper_draft/sections/06_Results_PLACEHOLDER.md` | dataset、event/path、delay/Doppler/power、channel model 结果占位 | Placeholder / model results completed; manuscript Results synchronization pending |
+| `docs/paper_draft/sections/07_Conclusion.md` | 最终 path extraction 和 statistical channel model 结论占位 | Implemented outline / Phase-1 conclusion synchronization pending |
 | `docs/paper_draft/GNSS_MULTIPATH_DATABASE_SCHEMA.md` | scene、path、channel parameter、statistical model 四层 schema 设计 | Designed / actual database Not started |
 
 ## VTC2027-Spring Submission Workspace
@@ -192,7 +206,7 @@ G12 的当前 Stage4 criterion 结果为 3 confirmed events 和 3 confirmed path
 | 文件 | 用途 | 状态 |
 |---|---|---|
 | `docs/MULTIPATH_EVENT_DATABASE_DESIGN.md` | 详细 run/window/candidate/confirmed-event/path 规范化事件库设计、ingestion 和 QA 规则 | Designed / actual database Not started |
-| `docs/paper_draft/GNSS_MULTIPATH_DATABASE_SCHEMA.md` | 论文面向的四层 schema：scene、SAGE path、channel parameter、statistical model | Designed / actual tables Not started |
+| `docs/paper_draft/GNSS_MULTIPATH_DATABASE_SCHEMA.md` | 论文面向的四层 schema：scene、SAGE path、channel parameter、statistical model | Designed / Phase-1 model outputs available; expanded tables pending |
 
 关系主线：
 
@@ -203,13 +217,18 @@ scene
   -> statistical model
 ```
 
-已完成的是 scene metadata layer；path database、channel parameter database 和 statistical model database 均未完成。
+已完成的是 scene metadata layer 以及 Phase-1 canonical statistical model 输出；coverage-complete path database 和独立 channel-parameter database 仍未完成。
 
 ## Channel Parameter Candidate Pool
 
-The current paper schema uses a candidate parameter pool; final parameter selection is not finalized and remains Planned / Not started until multi-scene production analysis.
+The current paper schema retains a broader candidate pool, but the Phase-1 canonical
+selection is now finalized for the bounded Stage3 population: excess delay is
+Lognormal, signed relative Doppler is Normal, and relative power is Normal. Further
+parameters and a coverage-complete database remain separately gated.
 
-- Mandatory candidates for initial channel observations: PDP, number of paths, mean excess delay, RMS delay spread, Doppler spread, Ricean K-factor.
+- Phase-1 fitted path parameters: excess delay, signed relative Doppler, and relative power.
+- Derived/extended candidates for later evaluation: PDP, number of paths, mean excess delay, RMS delay spread, and Doppler spread.
+- Ricean K-factor: retained as a scientific boundary; not identifiable from the current evidence.
 - Optional candidates for later evaluation: path power statistics, path lifetime, path temporal stability.
 - Selection criteria: statistical stability, physical interpretability, variable relationships and model requirements.
 - Source design: `docs/paper_draft/GNSS_MULTIPATH_DATABASE_SCHEMA.md`.
@@ -268,12 +287,12 @@ raw-coarse/sampling 资产必须作为方法探索、负结果或 limitation 归
 
 待生成或待完成：
 
-- path database；
-- channel parameter database；
-- statistical model database；
+- coverage-complete path database；
+- standalone coverage-complete channel parameter database；
+- expanded statistical model database beyond the canonical Phase-1 r3/r2 outputs；
 - event/path ingest validator and QA exports；
 - PDP、delay spread、Doppler spread、K-factor 等统计图；
-- environment/elevation 分层图表；
+- manuscript Results 中的 environment/elevation 分层图表同步；
 - dataset overview、Stage funnel、runtime/scalability 和 validation tables；
 - G18 及后续 Batch production 的独立 QA 结果。
 
@@ -290,16 +309,17 @@ raw-coarse/sampling 资产必须作为方法探索、负结果或 limitation 归
 - 第二个 10.23 MHz formal production task G18 已完成并通过独立 QA。
 - 修复后 G12 controlled acceptance 已完成真实执行并通过独立 QA，提供 3 confirmed events 和 3 confirmed paths 的 Available evidence。
 - 正式 A3 G16 已完成 Stage0–Stage4 科学 artifact 和独立科学 QA；因历史 execution-policy deviation 不作为 Batch A release evidence。
-- 论文 database schema 和 event database design 已完成设计，但真实数据库未建立。
+- 论文 database schema 和 event database design 已完成设计；coverage-complete fact tables 仍未建立。
+- Phase-1 Stage3 canonical traditional statistical model r3 与 scientific closure r2 已完成并通过独立 QA（PASS_WITH_LIMITATIONS）。
 
 ## Future Missing Items
 
 - 其余 10.23 MHz production tasks 的 execution receipts 和独立 QA。
 - VTC核心Results的证据筛选和G12是否纳入正文（G12执行与独立QA已完成，但尚未自动准入）。
 - coverage-complete path/event database。
-- channel parameter derivation and QA。
-- LOW/MID/HIGH elevation-conditioned statistical model。
-- final paper figures, tables and cross-scene conclusions。
+- coverage-complete channel parameter derivation/database and broader QA。
+- manuscript Results synchronization: model results completed; manuscript Results synchronization pending。
+- final paper figures, tables and cross-scene conclusions based on the bounded model。
 
 ## Safety and Status Rules
 

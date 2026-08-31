@@ -3,8 +3,21 @@
 **项目根目录：** `E:\GNSS_Multipath_Project`  
 **支线身份：** Long-Term Mainline / 主线运行  
 **本文件职责：** 让一个完全没有聊天上下文的新 AI，在读取工程交接、论文交接和本文件后，直接接任长期主线 Commander，继续推进“全数据 SAGE → event/path database → channel-parameter database → environment/elevation-conditioned statistical channel modeling”。  
-**当前日期：** 2026-08-17  
+**当前日期：** 2026-08-31
 **重要：** VTC 写作和暗室信道仿真已拆到其它对话；本对话只负责长期主线运行。  
+
+## Current Phase-1 Stage3 Academic Statistical Model Status (2026-08-31)
+
+本节是当前 Phase-1 scientific status 的优先来源；8 月 25 日前的建模
+blocked/not-started 记录保留为历史执行上下文，不再覆盖本节。
+
+- Canonical Stage3 model：`dataset_generation_logs/channel_modeling/environment_elevation_stage3_path_model_v1_20260829_r3/`；report：`docs/ENVIRONMENT_ELEVATION_STAGE3_ACADEMIC_MODEL_V1_R3_REPORT.md`。
+- Canonical scientific closure：`dataset_generation_logs/channel_modeling/phase1_scientific_closure_20260830_r2/`；report：`docs/PHASE1_TRADITIONAL_CHANNEL_MODELING_SCIENTIFIC_CLOSURE.md`。两者均已完成并通过独立 QA，状态为 `COMPLETE_WITH_LIMITATIONS / PASS_WITH_LIMITATIONS`。
+- Stage3 academic population 为 783 observations、445 centers、366 algorithm-level tracks、716 elevation-ready observations、50 runs、12 scenes、18 PRNs；主统计单位为 `WEIGHTED_OBSERVATION`，权重为 `1 / algorithm_track_size`。
+- 建模层次为 `Global → Environment → Environment×Elevation`；边际族为 delay `Lognormal`、signed relative Doppler `Normal`、relative power `Normal`。Gaussian Copula 只在 global / environment / support-gated cell 层使用，不声称 12 个 cell 都有独立 covariance。
+- 稳健性证据包括 scene-block bootstrap、run-level sensitivity 和 grouped LOSO。Stage4 100 条 strict-confirmed paths 仅为 high-confidence selection-sensitivity subset；其结果为 `MATERIAL_DIFFERENCE`，不是 ground truth。
+- Scientific closure 为 environment effect `INCONCLUSIVE`、elevation effect `INCONCLUSIVE`、environment×elevation interaction `PARTIAL`；Ricean K 不可识别，persistence 仅为算法观测持续性。
+- `PHASE_1_TRADITIONAL_STATISTICAL_MODELING = COMPLETE_WITH_LIMITATIONS`。coverage-complete event/path database、通用 channel-parameter database、Phase-2 AI、20.46 MHz 和完整暗室生成器仍不在本次完成范围；长期论文 Results 同步为 `Pending / In progress`。
 
 ---
 
@@ -88,7 +101,7 @@ scene
 - elevation dependence；
 - CN0 / speed / scene 条件。
 
-当前工程和论文交接都明确：完整 event/path database、channel-parameter database 和 statistical model 尚未完成。
+当前工程和论文交接明确：coverage-complete event/path database、独立通用 channel-parameter database 和完整暗室统计生成器尚未完成；但 bounded Phase-1 Stage3 traditional statistical model 已完成并通过 closure QA。
 
 ---
 
@@ -658,6 +671,10 @@ observation clock / TOW
 
 ## 16. LONG-TERM statistical modeling gate
 
+本节的门禁针对 coverage-complete occurrence/physical-channel 扩展模型。它不再表示
+canonical Phase-1 r3/r2 traditional model 尚未开始；r3/r2 已在有限 Stage3 population
+和 support-aware hierarchy 下完成。
+
 只有满足以下门禁，才进入正式统计模型：
 
 ```text
@@ -745,6 +762,10 @@ signed / magnitude 两种语义分开。
 ---
 
 ## 18. 环境与仰角统计
+
+Phase-1 已完成有限支持的 Environment×Elevation traditional model；本节保留的
+geometry/time-alignment要求仍适用于 coverage-complete occurrence、物理解释和未来扩展，
+不能反向覆盖 r3/r2 的当前完成状态。
 
 长期目标包括：
 
@@ -855,7 +876,8 @@ weather overlay
 - model validation；
 - synthetic channel generation。
 
-但当前主线对话优先**生产和数据库**，不要过早进入新论文写作。
+Phase-1 bounded traditional model 已完成；当前主线应优先保持生产/数据库 provenance，
+并把已完成结果同步到长期论文，不能再把统计建模写成尚未开始。
 
 ---
 
@@ -864,25 +886,24 @@ weather overlay
 主线建议固定为：
 
 ```text
-P0 current-state reconciliation
-P1 resume authorization / queue freeze
-P2 continue 10.23 MHz full SAGE one task at a time
-P3 independent QA after every task
-P4 build actual event/path database
-P5 geometry/time alignment
-P6 channel-parameter derivation
-P7 environment/elevation statistical model
-P8 20.46 MHz adaptation
-P9 model validation / simulation interface
+P0 read the current authoritative handoffs and canonical Phase-1 r3/r2 status
+P1 preserve the frozen full-SAGE production and QA record
+P2 complete coverage-complete event/path database work only when separately authorized
+P3 complete geometry/time alignment for future occurrence/generalization claims
+P4 complete the standalone channel-parameter database and its QA
+P5 synchronize bounded Phase-1 model results into the long-term manuscript
+P6 separately decide on coverage-complete extensions or Phase-2 AI
+P7 separately decide on 20.46 MHz adaptation
 ```
 
 ---
 
-## 23. 新 Commander 接手后的唯一下一步
+## 23. 新 Commander 接手后的下一步
 
 新对话启动后，**不要立即跑 MATLAB**。
 
-第一条 Codex 工作应该是：
+第一条 Codex 工作应该是只读恢复当前状态，特别核对 canonical Phase-1 r3/r2；
+不得因为本文件中的历史队列段落自动创建或启动新的 SAGE task。
 
 ```text
 GNSS Mainline Current-State Reconciliation
@@ -903,13 +924,13 @@ GNSS Mainline Current-State Reconciliation
 11. branch conflict check：
    - VTC
    - Darkroom
-12. proposed next single mainline task。
+12. whether a separately authorized next mainline task is actually needed。
 
 **不要执行 SAGE。**
 
 报告交给 Commander。
 
-Commander 再决定：
+Phase-1 当前已完成；Commander 再决定是否同步论文 Results 或授权新的独立路线：
 
 ```text
 RESUME_MAINLINE_PRODUCTION = YES/NO
@@ -1067,19 +1088,24 @@ CURRENT_PIPELINE_RATE = 10.23 MHz
 SAGE_PIPELINE_VALIDATED = YES
 FULL_SAGE_PRODUCTION_COMPLETE = NO
 
-LATEST_KNOWN_ACCEPTED_PRODUCTION_COUNT = 7/67
-ACCEPTED_STATE_RECONCILIATION_REQUIRED = YES
+LATEST_KNOWN_ACCEPTED_PRODUCTION_COUNT = 26/67
+ACCEPTED_STATE_RECONCILIATION_REQUIRED = NO (2026-08-25 QA reconciliation)
 
-EVENT_PATH_DATABASE = PLANNED / NOT COMPLETE
+EVENT_PATH_DATABASE = VERSIONED AUDIT PARTITION INGESTED; coverage-complete database not complete
 CHANNEL_PARAMETER_DATABASE = PLANNED / NOT COMPLETE
 GEOMETRY_ALIGNMENT = PARTIAL
-STATISTICAL_CHANNEL_MODEL = NOT STARTED
+PHASE_1_TRADITIONAL_STATISTICAL_MODELING = COMPLETE_WITH_LIMITATIONS
+PHASE_1_SCIENTIFIC_CLOSURE = PASS_WITH_LIMITATIONS
+STATISTICAL_CHANNEL_MODEL = COMPLETE_WITH_LIMITATIONS (Phase-1 bounded; full/general model not complete)
+DATABASE_RULES_V1 = FROZEN
+DATABASE_DRY_RUN = PASS (57 batch + 7 reference)
+FORMAL_EVENT_PATH_INGEST = COMPLETED_WITH_WARNINGS + INDEPENDENT_QA_PASS
 
 OLD_VTC_STOP_EXISTS = YES
-MAINLINE_RESUME_REQUIRES_CURRENT_STATE_RECONCILIATION = YES
+MAINLINE_RESUME_REQUIRES_CURRENT_STATE_RECONCILIATION = NO (reconciled 2026-08-25; Phase-1 closure 2026-08-30)
 
 CURRENT_NEXT_ACTION =
-    READ-ONLY MAINLINE CURRENT-STATE RECONCILIATION
+    SYNCHRONIZE PHASE-1 RESULTS INTO LONG-TERM MANUSCRIPT OR HOLD; NO AUTOMATIC EXTENSION
 ```
 
 ---
@@ -1110,15 +1136,16 @@ full SAGE
 → geometry alignment
 → statistical channel model
 
-当前已知 accepted production：7/67（需只读重核）
-当前 20.46 MHz：未放行
-当前数据库：未完成
+当前已知 accepted production：26/67（2026-08-25 independent batch QA）
+当前 Phase-1 traditional statistical model：COMPLETE_WITH_LIMITATIONS
+当前 Phase-1 scientific closure：PASS_WITH_LIMITATIONS
+当前数据库：coverage-complete event/path 与独立 channel-parameter database 未完成
 当前 geometry：PARTIAL
 当前旧 STOP：存在，源于 VTC 阶段
 
 唯一下一步：
-先让 Codex 做只读 current-state reconciliation，
-不运行 MATLAB/SAGE。
+同步 Phase-1 bounded model results 到长期论文 Results，或等待 Commander 指令；
+不自动启动新的 MATLAB/SAGE。
 ```
 
 然后直接给用户完整 Codex prompt。
@@ -1127,4 +1154,142 @@ full SAGE
 
 ## 32. 核心一句话
 
-> **主线现在的任务不是继续写 VTC，也不是做雨天暗室 demo，而是恢复长期 accuracy-first full-SAGE 数据生产，建立 coverage-complete event/path database，完成 geometry/time alignment，再进入 environment/elevation-conditioned GNSS multipath statistical channel modeling。**
+> **主线当前保留 accuracy-first full-SAGE、数据库和几何对齐路线；Phase-1 Stage3 Environment×Elevation 传统统计模型已经完成但有边界，下一步是论文 Results 同步或等待 Commander，而不是把它夸大为普适传播规律。**
+
+## 33. Commander-authorized C1 G03 production update (2026-08-18)
+
+Commander authorization `RESUME_LONG_TERM_MAINLINE_PRODUCTION=YES` was executed under the frozen manifest contract: `FROZEN_MANIFEST_ORIGINAL_ORDER`, `OVERRIDE_QUEUE_ORDER=NO`, `NEW_ONLY=true`, `RESUME_ALLOWED=false`, and `MAX_PARALLEL_MATLAB=1`.
+
+The first queue task, `F1023_V120_D0121_P2/G03/ch2`, completed through the normal-user Windows wrapper. The immutable request is `dataset_generation_logs/batch_sage_execution_requests/production_10mhz_c1_d0121p2_g03_20260818/execution_request.json` with SHA-256 `06ACB9FF1634C8B248ED6A46A63BF2E0BEE8934B61F8DE61CE56C11A56F5DC64`. The production source and manifest remain frozen and unchanged at SHA-256 `BFFC123C97AF77F0A797F417D3866E9A34FEAB7729C5C1575352F53BC3571B9C` and `77C20C0ED6C84FA0348DB429948A8BD4900B2E8D86A6D8843B159B9A7A35CF00`.
+
+Execution evidence:
+
+- normal identity `TJ-CHANNEL\\Jing_`, non-admin PowerShell `7.6.4`;
+- MATLAB startup smoke marker and exit code `0`;
+- Python executor exit code `0`, task exit code `0`, runtime `2073.646 s`;
+- execution log `dataset_generation_logs/batch_sage_execution/batch_sage_execution_20260818T110255Z/batch_execution_log.csv`;
+- independent QA `docs/10MHz_FULL_SAGE_PRODUCTION_C1_G03_QA_REPORT.md`.
+
+G03 output is `scenes/F1023_V120_D0121_P2/sage_results/nav_sage_v2/G03/`, with 21/21 expected artifacts non-empty. Stage4 has 8/8 valid joint rows but zero rows satisfying the strict confirmed criterion and zero `is_multipath=1` paths. Classification is `PASS_NO_CONFIRMED_MULTIPATH`, not a physical LOS claim.
+
+Current accepted-state and queue:
+
+```text
+ACCEPTED_PRODUCTION = 8/67
+REJECTED_PROTECTED = 1 (historical A3 G16; unchanged)
+ELIGIBLE_REMAINING = 58
+NEXT_FROZEN_TASK = F1023_V120_D0121_P2/G24/ch2
+QUEUE_POLICY = FROZEN_MANIFEST_ORIGINAL_ORDER
+MAX_PARALLEL_MATLAB = 1
+EVENT_PATH_DATABASE = PLANNED / NOT COMPLETE
+```
+
+The production summary CSV/report was refreshed as an artifact inventory. Accepted-state counting continues to exclude protected A3 G16 despite its retained scientific artifact and historical summary row. Paper handoff does not require a scientific update for this zero-confirmed canary; Engineering and Mainline Commander handoffs are updated here.
+
+## 34. C1 stop point and independent unattended runner (2026-08-19)
+
+G24 completed naturally after the stop instruction. Its independent QA is `docs/10MHz_FULL_SAGE_PRODUCTION_C1_G24_QA_REPORT.md`; classification is `PASS_NO_CONFIRMED_MULTIPATH` with `0` confirmed events and `0` confirmed paths. The current round therefore has `NEW_ACCEPTED=2` (G03, G24), `ACCEPTED=9/67`, `REJECTED_PROTECTED=1` (A3 G16), and `REMAINING_NOT_STARTED_ELIGIBLE=57`.
+
+All frozen engineering hashes were rechecked after G24:
+
+```text
+PRODUCTION_SOURCE_SHA256 = BFFC123C97AF77F0A797F417D3866E9A34FEAB7729C5C1575352F53BC3571B9C
+MANIFEST_SHA256 = 77C20C0ED6C84FA0348DB429948A8BD4900B2E8D86A6D8843B159B9A7A35CF00
+WRAPPER_SHA256 = DD8AFB1B3317BF920FE34474E3CEEDF06AC4580B2A13C21EA25F8365071143F3
+EXECUTOR_SHA256 = BAB7A0422975CB05BCDA9A80A75C3577EB7F408A83F2720AF2F1E13372B08F1B
+```
+
+Codex-managed automatic continuation is now stopped. The remaining queue is delegated to:
+
+```text
+RUNNER = scripts/sage_pipeline/Run-UnattendedMainlineBatch.ps1
+SCHEDULED_TASK = GNSS-SAGE-Unattended-Mainline-20260819
+RUN_AS = TJ-CHANNEL\Jing_ (Interactive, Limited/non-admin)
+RUN_DIRECTORY = dataset_generation_logs/batch_sage_unattended/run_20260819T004818Z
+RUNNER_PID = 25520
+CURRENT_TASK = F1023_V120_D0121_P2__G25
+QUEUE_TOTAL = 57
+QUEUE_POLICY = FROZEN_MANIFEST_ORIGINAL_ORDER
+MAX_PARALLEL_MATLAB = 1
+UNATTENDED_RUNNER_CREATED = YES
+UNATTENDED_RUNNER_DRY_RUN = PASS
+UNATTENDED_RUNNER_STARTED = YES
+UNATTENDED_RUNNER_INDEPENDENT_FROM_CODEX = YES
+FIRST_TASK_IDENTITY_VERIFIED = YES
+CODEX_MANAGED_BATCH = STOPPED
+```
+
+The runner uses the existing immutable-request → Windows-wrapper → Python executor → MATLAB chain, waits for each wrapper return, applies only the minimum execution-integrity gate, and fail-stops on drift/collision/receipt/output/exit-code ambiguity. It does not start event database, elevation matching, or statistical modeling. After the frozen queue finishes, the runner leaves `BATCH_POST_RUN_QA_REQUIRED`; unified scientific QA must then classify all new tasks before any downstream ingest.
+
+## 35. Mainline batch completion and accepted-state reconciliation (2026-08-25)
+
+The frozen queue run `20260819T004818Z` has completed all 57 requests. The retained runner state is `completed_pending_batch_qa`, and the independent post-run QA is now complete in `docs/10MHz_FULL_SAGE_UNATTENDED_BATCH_20260819_QA_REPORT.md`.
+
+```text
+REQUESTS = 57
+RECEIPTS = 57
+TASK_LEVEL_QA = 57/57 ACCEPTED, 0 REJECTED
+A_PIPELINE_VALIDATION = 40 (VALIDATED, not formal accepted production)
+B_MAIN_PRODUCTION = 14 (accepted)
+C_LONG_RUNNING = 3 (accepted)
+FORMAL_ACCEPTED_PRODUCTION = 26/67
+REJECTED_PROTECTED = 1 (historical A3 G16)
+NOT_STARTED_ELIGIBLE = 0
+QUEUE_POLICY = FROZEN_MANIFEST_ORIGINAL_ORDER
+MAX_PARALLEL_MATLAB = 1
+```
+
+The new batch aggregate is Stage0/Stage1 `162864/162864` windows, Stage2 `5639` selected windows, Stage3 `420` reliable centers, Stage4 `284` joint-valid rows, and strict confirmed `88` events / `93` paths. Twenty-six tasks are valid zero-confirmed-event outputs under the fixed Stage4 criterion.
+
+Authoritative monitoring was refreshed at:
+
+- `dataset_generation_logs/production_monitoring_10MHz/production_summary_10MHz.csv` — 77 rows, 57 new rows `completed/PASS`;
+- `dataset_generation_logs/production_monitoring_10MHz/production_summary_report.md`;
+- `docs/10MHz_FULL_SAGE_UNATTENDED_BATCH_20260819_QA_REPORT.md` — SHA-256 `11aa8f99f7e0245cd074ad31e1229d5c3cf803d1d071e5d0b64162a68a7dadf8`.
+
+The production source, wrapper, executor, manifest and inventory hashes remain frozen. The database rules are now frozen and the read-only dry-run validator has passed; no event/path database facts, geometry join, channel-parameter derivation or statistical modeling has started. Formal ingest still requires a separate Commander decision. Do not launch another MATLAB task automatically.
+
+## 36. Database rules freeze and dry-run gate (2026-08-25)
+
+The v1 schema/enum/label/derivation manifests are frozen under `dataset/multipath_event_database/v1/_schema/`. The reproducible validator is `scripts/event_database/validate_sage_database_dry_run.py`; evidence is `dataset_generation_logs/multipath_event_database_dry_run_20260825/database_dry_run_report.md` plus `database_dry_run_result.json`.
+
+```text
+DATABASE_RULES_V1 = FROZEN
+DATABASE_DRY_RUN = PASS (current batch 57/57; reference fixture 7/7)
+DRY_RUN_WARNING = legacy G06 run_context.json absent; adapter warning retained
+FORMAL_DATABASE_INGEST = COMPLETED_WITH_WARNINGS (Section 37)
+DATABASE_FACT_TABLES = NOT WRITTEN
+EVENT_GEOMETRY_CONTEXT = DEFERRED_UNAVAILABLE
+CHANNEL_PARAMETER_DERIVATION = NOT STARTED
+STATISTICAL_CHANNEL_MODEL = NOT STARTED
+NEXT_DECISION_REQUIRED = MODELING-READINESS QA COMPLETE; AUTHORIZE GEOMETRY/SCENE-CONTEXT QA OR HOLD
+```
+
+The dry-run reproduced current-batch strict confirmed events/paths `88/93` and reference regression `8/11`. It read no raw IQ and did not start MATLAB/SAGE. The subsequent authorized event/path audit ingest is recorded in Section 37; no channel-parameter or statistical-model tables were created. Paper Handoff remains unchanged because no paper fact, figure, table or claim changed.
+
+## 37. Formal event/path audit ingest and modeling gate (2026-08-25)
+
+The explicitly authorized ingest created `dataset/multipath_event_database/v1/partitions/ingestion_id=ingestion_20260825_event_path_v1/` and passed independent QA. It contains 64 unique runs, 308 Stage4 event rows, 412 Stage4 path rows and strict confirmed `96/104` events/paths. G06 legacy is retained for audit but excluded from modeling-ready input because `run_context.json` is missing; no source artifact was deleted.
+
+Event-time geometry remains deferred: all event context rows keep UTC/elevation/azimuth null, and five run/PRN geometry-summary warnings are recorded. No channel parameters or statistical modeling has started. Modeling-readiness QA is now complete and blocked; the next gate is geometry/scene-context QA, with G06 excluded unless a future independently verified legacy adapter is authorized.
+
+## 38. Modeling-readiness QA gate (2026-08-25)
+
+Modeling-readiness QA is complete but **BLOCKED**. The partition has 64 runs, 308 events and 412 paths, but verified event-time geometry is `0/308`, verified time alignment is `0/13`, and scene context is `not_annotated` for all 13 scenes. Five geometry summary PRN-missing warnings remain explicit. G06 is retained for audit and excluded from modeling-ready input because its legacy `run_context.json` is missing. No channel parameters or statistical model were computed.
+
+Next decision: authorize geometry/time-alignment and scene-context QA work, or hold. Statistical modeling remains blocked.
+
+## 39. Current Phase-1 Stage3 academic statistical model status (2026-08-31)
+
+This section supersedes the Phase-1 modeling status stated in Sections 35–38;
+those sections remain preserved as historical batch, ingest, and modeling-gate
+records.
+
+- The canonical Stage3 model is `dataset_generation_logs/channel_modeling/environment_elevation_stage3_path_model_v1_20260829_r3/`, with report `docs/ENVIRONMENT_ELEVATION_STAGE3_ACADEMIC_MODEL_V1_R3_REPORT.md`. The canonical scientific closure is `dataset_generation_logs/channel_modeling/phase1_scientific_closure_20260830_r2/`, with report `docs/PHASE1_TRADITIONAL_CHANNEL_MODELING_SCIENTIFIC_CLOSURE.md`.
+- Both canonical namespaces passed independent QA. Model manifest SHA-256 is `61c4b3aa171b6a59d17607394770b684251d656eeb19813ca13ebed2454b1782`; r3 QA SHA-256 is `916304ca04e5e84eb8e3349d9e072b1b36489a8aa0c95e34110b91f2012cfbf5`; closure manifest SHA-256 is `45282b4eb5f86e52f4cd39f9b94f04c1596b645cae3d0b6420a089717f429d52`; closure QA SHA-256 is `031f66441dbbfe0a9f5e8e98bdad863da7fc37b7514734649ba85561503480f4`.
+- The frozen production provenance still matches: source/pipeline `bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c`, wrapper `dd8afb1b3317bf920fe34474e3ceedf06ac4580b2a13c21ea25f8365071143f3`, executor `bab7a0422975cb05bcda9a80a75c3577eb7f408a83f2720af2f1e13372b08f1b`, and production manifest `77c20c0ed6c84fa0348db429948a8bd4900b2e8d86a6d8843b159b9a7a35cf00`.
+- The Stage3 academic population is 783 observations, 445 reliable centers, 366 conservative algorithm-level tracks, 716 elevation-ready observations, 50 runs, 12 scenes, and 18 PRNs. The primary statistical unit is `WEIGHTED_OBSERVATION` with weight `1 / algorithm_track_size`.
+- The hierarchy is `Global → Environment → Environment×Elevation`. Marginal families are delay `Lognormal`, signed relative Doppler `Normal`, and relative power `Normal`. Gaussian Copula dependence is used only at global / environment / support-gated cell levels; there is no claim of independently fitted covariance for all 12 cells.
+- Robustness uses scene-block bootstrap, run-level sensitivity, and grouped LOSO. Support remains 5 `DATA_SUPPORTED`, 4 `SPARSE_PARTIAL_POOLING`, 2 `PRIOR_DOMINANT`, and 1 `NO_DIRECT_SUPPORT`; Highway/Open–LOW has no direct support and receives no synthetic fill.
+- Stage4 strict-confirmed paths are a high-confidence selection-sensitivity subset only. `STAGE4_SENSITIVITY_RESULT = MATERIAL_DIFFERENCE`; Stage4 is not ground truth. Environment effect and elevation effect are `INCONCLUSIVE`, while environment×elevation interaction is `PARTIAL`.
+- `PHASE_1_TRADITIONAL_STATISTICAL_MODELING = COMPLETE_WITH_LIMITATIONS` and `PHASE_1_SCIENTIFIC_CLOSURE = PASS_WITH_LIMITATIONS`. Ricean K remains not identifiable; persistence is algorithm-observed persistence only, not physical reflector lifetime. Long-term manuscript Results synchronization is pending/in progress. No automatic MATLAB/SAGE continuation is authorized by this documentation update.

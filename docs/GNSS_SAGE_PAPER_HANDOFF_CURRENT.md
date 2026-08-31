@@ -2,11 +2,26 @@
 
 **项目根目录：** `E:\GNSS_Multipath_Project`  
 **论文状态唯一来源：** 本文件  
-**最后审计时点：** 2026-08-16（Asia/Shanghai）  
+**最后审计时点：** 2026-08-31（Asia/Shanghai）
 **面向对象：** 论文写作者、科研人员、方法分析人员  
-**研究阶段：** 已完成方法链和受控10.23 MHz验证；当前已从算法验证阶段进入论文数据生产阶段。主线是通过已验证的full SAGE pipeline继续生产coverage-complete的10.23 MHz多径事件/路径数据；A1 G11、A2 G18和修复后controlled G12已通过独立QA，正式A3 G16已完成科学artifact独立QA但不作为Batch A continuous production的最终放行依据，尚未完成全部scene处理。
+**研究阶段：** accuracy-first full SAGE 冻结批次及独立批后 QA 已完成；Phase-1 的 Stage3 传统统计建模和 scientific closure 已完成并通过 QA（带明确限制）。coverage-complete event/path database、通用 channel-parameter database、Phase-2 AI 和完整暗室生成器仍是独立后续范围。
 
 > 本文只负责科学问题、贡献、实验解释、论文可写事实、图表、限制和未来路线。工程文件路径、执行门禁、hash和receipt的唯一状态源是 `docs/GNSS_SAGE_ENGINEERING_HANDOFF_CURRENT.md`。本文不得把设计、计划或gold前预测写成实验结果。
+
+## Current Phase-1 status at a glance (2026-08-31)
+
+本节是当前 Phase-1 传统建模状态的优先来源，并 supersede 早期把统计模型写成
+`Planned / Not started` 的未加日期快照；早期段落仍保留作历史 provenance。下方带日期的
+VTC、production 和专题 layer 快照同样只描述各自时点，不覆盖本 current section。
+
+- **Canonical artifacts：** Stage3 模型为 `dataset_generation_logs/channel_modeling/environment_elevation_stage3_path_model_v1_20260829_r3/`，报告为 `docs/ENVIRONMENT_ELEVATION_STAGE3_ACADEMIC_MODEL_V1_R3_REPORT.md`；scientific closure 为 `dataset_generation_logs/channel_modeling/phase1_scientific_closure_20260830_r2/`，报告为 `docs/PHASE1_TRADITIONAL_CHANNEL_MODELING_SCIENTIFIC_CLOSURE.md`。r3 model manifest SHA-256=`61c4b3aa171b6a59d17607394770b684251d656eeb19813ca13ebed2454b1782`，r3 QA SHA-256=`916304ca04e5e84eb8e3349d9e072b1b36489a8aa0c95e34110b91f2012cfbf5`；r2 closure manifest SHA-256=`45282b4eb5f86e52f4cd39f9b94f04c1596b645cae3d0b6420a089717f429d52`，r2 QA SHA-256=`031f66441dbbfe0a9f5e8e98bdad863da7fc37b7514734649ba85561503480f4`。
+- **Stage3 academic population：** 783 observations、445 reliable centers、366 conservative algorithm-level tracks、716 elevation-ready observations、50 runs、12 scenes、18 PRNs。主统计单位为 `WEIGHTED_OBSERVATION`，权重为 `1 / algorithm_track_size`；不把同一 track 的多行当作完全独立样本。
+- **Hierarchy：** `Global → Environment → Environment×Elevation`。数据充分时使用本组观测，数据稀疏时部分共享上一级信息；Highway/Open–LOW 保持无直接支持，不人为补数据。
+- **Marginal families：** excess delay 使用 `Lognormal`，signed relative Doppler 使用 `Normal`，relative power 使用 `Normal`。联合层使用 Gaussian Copula，但只在 global / environment / support-gated cell 层使用，不声称 12 个 cell 都有独立 covariance 拟合。
+- **Robustness：** 使用 scene/run clustering、scene-block bootstrap、run-level sensitivity 和 grouped leave-one-scene-out（LOSO）检查结论稳定性。
+- **Stage4 boundary：** 100 条 strict-confirmed Stage4 paths 是 high-confidence selection-sensitivity subset；`STAGE4_SENSITIVITY_RESULT = MATERIAL_DIFFERENCE`。Stage4 不是 ground truth，Stage3 observation/track 也不是物理反射体身份。
+- **Scientific closure：** `ENVIRONMENT_EFFECT = INCONCLUSIVE`、`ELEVATION_EFFECT = INCONCLUSIVE`、`ENVIRONMENT_ELEVATION_INTERACTION = PARTIAL`；`RICEAN_K = NOT_IDENTIFIABLE`；persistence 仅表示算法连续观测，不等于真实反射体寿命。`JOURNAL_TRADITIONAL_MODELING_EVIDENCE` 与 `MASTER_THESIS_TRADITIONAL_MODELING_EVIDENCE` 均为 `READY_WITH_LIMITATIONS`。
+- **Current paper boundary：** Phase-1 traditional statistical modeling is now `COMPLETE_WITH_LIMITATIONS`。model results completed; manuscript Results synchronization pending（长期论文同步 `Pending / In progress`）。不得扩展为完整 12-cell 实测覆盖、普适环境/仰角规律、Ricean K 或完整物理信道生成器。
 
 ## 0. 科研状态词和论文证据规则
 
@@ -36,7 +51,7 @@ scene × PRN × tracking channel × time/window × path
 
 建模多径发生概率、path count、excess delay、relative power、Doppler offset、persistence，并分析CN0、速度、场景/环境等条件；联合模型级 `maximum_coherence` 如使用，仅作为可靠性/可分离性诊断量，不作为 path-level channel parameter。
 
-当前不能声称已经建立了这些统计模型：event database仍是设计，window-level geometry join尚未生产化，multi-scene coverage和negative denominator尚不完整。
+当前不能声称已经建立 coverage-complete occurrence/negative-denominator 或完整物理信道模型；但上述 bounded Phase-1 Stage3 传统统计模型已经完成并通过 scientific closure QA。
 
 ## 2. 数据和实验系统
 
@@ -202,9 +217,12 @@ validated full SAGE pipeline
 
 ### Limitations
 
-当前限制包括：单reference scene；样本数量和环境覆盖不足；无external truth；geometry window-level join未生产化；v1/v1.1/A0/v3 selector失败；event database和统计模型未实现；20.46 MHz未适配；可能存在选择与coverage偏差。
+当前限制包括：样本数量和环境覆盖不足；无external truth；geometry window-level join未生产化；v1/v1.1/A0/v3 selector失败；coverage-complete event database、negative denominator 和通用物理信道生成器未完成；20.46 MHz未适配；可能存在选择与coverage偏差。Phase-1 bounded traditional statistical model 已在 r3/r2 中完成。
 
-## 7. 未来统计建模路线（Planned / Not started）
+## 7. 历史统计建模路线（2026-08-16 snapshot；superseded by current Phase-1 r3/r2）
+
+本节保留早期路线设计及其当时的 `Planned / Not started` 状态；它不覆盖上面的
+Phase-1 canonical status。以下内容仍适用于 coverage-complete occurrence 模型和未来扩展。
 
 只有在event database建立、geometry join通过QA、negative/no-event分母coverage-complete后，才可执行：
 
@@ -250,7 +268,9 @@ event database设计中的`confirmed_multipath`、`rejected_candidate`、`los_re
 | v3 posterior selector | Failed / Frozen | 可写加速探索负结果和limitation，不放行production |
 | full SAGE production | In progress; A1/A2/G12 Completed + QA PASS；A3 G16 scientific validation completed，未作为Batch A release evidence；Batch A已由G12 controlled acceptance释放 | `F1023_V70_D0117_P4/G11/ch2`、`F1023_V70_D0120_P1/G18/ch2`、`F1023_V70_D0117_P4/G12/ch4`和正式`F1023_V70_D0120_P5/G16/ch1`均有可追溯结果；G16因已识别的初始execution-policy deviation不作为Batch A continuous production放行依据；G12独立QA已PASS，其余任务尚未执行 |
 | Event database | Planned / Not started | 只能写设计和future work |
-| LOW/MID/HIGH模型 | Not started | 不能写统计结论 |
+| Phase-1 Stage3 Environment×Elevation传统统计模型 | Completed / PASS_WITH_LIMITATIONS | 可写有边界的传统统计模型结果；不得外推为普适规律 |
+| Phase-1 scientific closure | Completed / PASS_WITH_LIMITATIONS | 可写科学结论、稳健性方法和限制 |
+| 长期论文 Results 同步 | Pending / In progress | model results completed; manuscript Results synchronization pending |
 | 20.46 MHz | Not started | 不能写跨采样率结果 |
 
 ## 9.1 首个正式10.23 MHz production result
@@ -382,29 +402,29 @@ VTC投稿门禁依次为：生产基础设施和QA可复现、代表性证据覆
 
 ## 12. 新论文作者接手后的第一条建议
 
-先阅读本文件和工程状态唯一来源；不要把旧handoff中的“可继续Wave-2A”、gold前预测或v3 ownership QA PASS误写成当前production selector成功。当前最适合写作的是：方法链、reference/Wave-A验证、G11运行规模观察、首个正式production task的可复现执行与QA、以及sampling/v3 posterior失败作为计算加速负结果和limitation。论文数据生产主线是已验证full SAGE pipeline；当前只完成首个production task，LOW/MID/HIGH统计模型仍未开始，等待coverage-complete多scene数据。
+先阅读本文件和工程状态唯一来源；不要把旧handoff中的“可继续Wave-2A”、gold前预测或v3 ownership QA PASS误写成当前production selector成功。当前可写材料包括方法链、reference/Wave-A验证、full-SAGE批次事实、sampling/v3 posterior失败作为计算加速负结果和 limitation，以及 r3/r2 的 bounded Phase-1 traditional statistical model。coverage-complete event/path database、通用扩展模型和长期论文 Results 同步仍需分别标注其状态。
 
 ## 13. 论文写作框架
 
 已建立论文草稿目录 `docs/paper_draft/`，包括总纲 `manuscript_outline.md` 和 Introduction、Related Work、Methodology、Experimental Setup、Pipeline Validation、Results placeholder、Conclusion 七个章节文件。
 
-- 该目录是论文写作框架，不代表统计模型、event database 或全部 scene 生产已经完成。
+- 该目录是论文写作框架，不代表 coverage-complete event database、通用扩展模型或全部 scene 生产已经完成；Phase-1 bounded statistical model 已在 r3/r2 中完成。
 - `06_Results_PLACEHOLDER.md` 明确保留未完成生产和统计分析的占位符，不填入预测数字。
 - 当前可直接使用的论文事实仍必须追溯到已有 artifact、execution receipt 和 QA report。
 
-状态：`Implemented / Planned`（论文框架已建立；完整论文结果待后续 production 和 database/model 实验）。
+状态：`Implemented / Phase-1 model results available; Results synchronization pending`（论文框架已建立；完整论文正文仍需按 canonical r3/r2 结果同步）。
 
 ### Methodology chapter draft status
 
 `docs/paper_draft/sections/03_Methodology.md` 已完成一次论文方法章节更新，状态为 `Implemented`。本次更新建立了中文的正式章节结构，覆盖 end-to-end GNSS raw IQ → GNSS-SDR → NAV-aided SAGE → Stage0–Stage4 证据层级 → confirmed path → channel parameter modeling framework，并明确区分 candidate、Stage3 reliable center 与 Stage4 confirmed criterion。
 
-该状态表示论文方法章节框架和初稿已建立，不是新的实验结果，也不改变 full SAGE production 的执行门禁、Batch A release、event database 或 statistical model 状态。path database、channel parameter database 及 LOW/MID/HIGH 统计建模仍分别保持 `Planned / Not started` 或 `Not started`。
+该状态表示论文方法章节框架和初稿已建立；Phase-1 r3/r2 的传统统计模型结果现已完成，但尚未同步进 Results 正文。full SAGE production 的执行门禁、Batch A release 和 coverage-complete event/path database 状态不因该模型完成而改变。
 
 ### Pipeline Validation chapter draft status
 
 `docs/paper_draft/sections/05_Pipeline_Validation.md` 已完成一次论文验证章节扩展，状态为 `Implemented`。本次整理了 reference scene 多 PRN 验证、Wave-A 跨任务复现、Wave-2A 长记录规模观察、A1/A2 正式 10.23 MHz production QA 事实，以及正式 A3 G16 的 Stage0–Stage4 科学验证记录；同时保留 sampling/raw-coarse/v3 为 posterior preservation 未通过的 acceleration investigation 与 limitation。
 
-该更新只改变论文草稿资产状态和论文可写验证事实，不改变 Engineering Handoff、production manifest、execution request、G16 artifact 或 Batch A release 状态。G16 的科学结果已可写入 Pipeline Validation，但 event database 和 statistical model 仍保持原状态。
+该更新只改变论文草稿资产状态和论文可写验证事实，不改变 Engineering Handoff、production manifest、execution request、G16 artifact 或 Batch A release 状态。G16 的科学结果已可写入 Pipeline Validation；Phase-1 传统统计模型另见上方 current canonical section，Results 正文同步仍待完成。
 
 ## 14. Handoff impact
 
@@ -423,7 +443,9 @@ Status expression: `Completed + Validated` for the new metadata layer; full 10.2
 
 ## 18. Statistical channel parameter candidate pool
 
-The statistical channel parameter set is currently a candidate parameter pool, not a finalized model parameter list.
+The statistical channel parameter set remains a broader candidate pool for future
+extensions; the bounded Phase-1 canonical selection is finalized for the Stage3
+population.
 
 Previous candidate parameters:
 
@@ -439,7 +461,10 @@ Expanded candidate pool:
 - Path power statistics
 - Path lifetime / temporal stability
 
-Status: `Planned / Not started`. Final parameter selection will take place only after multi-scene production data analysis, with explicit review of statistical stability, physical interpretability, variable relationships and model requirements. The candidate pool must not be presented as a completed final model, and no claim is made that every candidate has been validated or will be retained.
+Status: `Phase-1 canonical selection completed / PASS_WITH_LIMITATIONS`; further
+parameter selection for coverage-complete or physical-channel extensions remains
+planned. The candidate pool must not be presented as a universal final model, and
+Ricean K remains `NOT_IDENTIFIABLE`.
 
 ## 15. 论文核心贡献与研究路线更新
 
@@ -469,8 +494,8 @@ raw GNSS IQ
 - GNSS raw IQ measurement chain and GNSS-SDR provenance: current method/data foundation.
 - NAV-aided SAGE Stage0–Stage4 reliability hierarchy: implemented and validated within the completed validation scope.
 - Path-level delay/Doppler/power/phase extraction: production objective; only completed task artifacts may be presented as results.
-- Channel-parameter derivation: planned, not completed.
-- Environment-conditioned statistical modeling: planned, not completed.
+- Channel-parameter derivation: Phase-1 r3/r2 已产出 path-level fitted parameters 与 center/channel-level derived statistics；独立、coverage-complete channel-parameter database 仍未完成。
+- Environment-conditioned statistical modeling: Phase-1 Stage3 traditional model `Completed / PASS_WITH_LIMITATIONS`；更广泛的 coverage-complete 或普适模型仍未完成。
 
 论文贡献不依赖 raw-coarse v3。v3 保留为 computational acceleration investigation、negative result 和 limitation；其 posterior coverage FAIL/Frozen 状态不作为 production selector。
 
@@ -483,11 +508,11 @@ scene
 ```
 
 - Scene metadata layer：已完成并通过 13/13 scene 覆盖检查。
-- Path database：Planned / Not started。
-- Channel-parameter database：Planned / Not started。
-- Statistical model：Not started。
+- Path database：coverage-complete database 仍 Planned / Not started；Phase-1 使用的 Stage3 academic population 已审计并冻结。
+- Channel-parameter database：Phase-1 closure 已有派生统计输出；独立、coverage-complete database 仍 Planned / Not started。
+- Statistical model：Phase-1 canonical r3/r2 Completed / PASS_WITH_LIMITATIONS；扩展模型仍需单独授权和证据。
 
-未来需要建立 path database 和 channel-parameter database，再进行 PDP、RMS delay spread、Doppler spread、K-factor 及环境条件化统计建模。禁止将这些 planned items 写成 completed，也禁止写成 final dataset 或 statistical model 已完成。
+未来仍需完善 coverage-complete path/channel-parameter database、补充论文 Results 同步，并谨慎评估 PDP、RMS delay spread、Doppler spread 等扩展统计量。Ricean K 在当前 Phase-1 证据下保持 `NOT_IDENTIFIABLE`。禁止把 bounded Phase-1 结果写成 final dataset、普适规律或完整物理信道模型。
 
 ### Future work / Planned
 
@@ -497,7 +522,7 @@ scene
 4. 从 path-level 参数派生 PDP、RMS delay spread、Doppler spread 和 Ricean K-factor。
 5. 按环境类别及 LOW/MID/HIGH elevation 条件生成统计模型。
 
-当前不得表述为“statistical model completed”“path/channel database completed”或“final dataset completed”。
+当前可以表述为“Phase-1 traditional statistical model completed with limitations”；不得表述为“path/channel database completed”“complete 12-cell measured coverage”或“final dataset completed”。
 
 ## 16. 论文数据库 schema 设计
 
@@ -511,11 +536,11 @@ scene metadata
 ```
 
 - Scene Metadata Table：来源为 `scene_metadata_10MHz.csv`，当前 scene metadata layer 已建立。
-- SAGE Path Database：保存一行一条 path 的 delay、Doppler、power、amplitude、phase 及 Stage/provenance；Planned / Not started。
-- Channel Parameter Database：由 path 派生 PDP、mean excess delay、RMS delay spread、Doppler mean/spread、K-factor 和 path count；Planned / Not started。
-- Statistical Model Database：保存 environment/condition、parameter、distribution、mean、variance、confidence interval 及模型 provenance；Planned / Not started。
+- SAGE Path Database：保存一行一条 path 的 delay、Doppler、power、amplitude、phase 及 Stage/provenance；coverage-complete database Planned / Not started。
+- Channel Parameter Database：Phase-1 closure 已提供 derived statistics，但独立、coverage-complete database Planned / Not started；Ricean K 保持不可识别。
+- Statistical Model Database：r3/r2 已提供 canonical environment/elevation 模型表、分布族、联合依赖和 QA provenance；扩展数据库仍需单独设计。
 
-Schema 文档明确区分 SAGE 直接字段、未来计算字段和论文统计字段，并规定 `scene_id` 为主关联键、`run_id/window_id/event_id/path_id` 为下层唯一性和可追溯性键。它不包含任何未经实验验证的数字，也不代表 path database、channel parameter database 或 statistical model 已完成。
+Schema 文档明确区分 SAGE 直接字段、未来计算字段和论文统计字段，并规定 `scene_id` 为主关联键、`run_id/window_id/event_id/path_id` 为下层唯一性和可追溯性键。r3/r2 canonical model 已完成并通过 QA，但 schema 本身不代表 coverage-complete path database、channel-parameter database 或普适 statistical model 已完成。
 
 ## 17. 论文工作区索引
 
@@ -1082,4 +1107,339 @@ TABLE_DATA_CHANGED=NO
 ENGLISH_PAGE_COUNT=4
 CHINESE_CANONICAL_REPLACEMENT=PASS
 CHINESE_CANONICAL_HASH_MATCH=YES
+```
+
+### VTC P0/P1/P2 Targeted Revision (2026-08-22)
+
+状态：`Implemented / Validated`。本轮仅按已确认的 P0/P1/P2 revision plan 修改 VTC 双语 manuscript；未读取 raw IQ、未运行 MATLAB/SAGE/batch/production，未改变科学数据或证据边界。
+
+- English `manuscript/latex/main.tex` 完成定点修订，并同步英文 Markdown、中文 LaTeX review source 和中文 Markdown review copy。
+- 信号模型、confirmed event/path 定义、Figure 1--4 术语、Figure 2 代表性数值、Figure 3 确认层级、Table I/II 术语和跨环境描述已按清单完成；Figure/Table 底层数据未修改。
+- 论文标题更新为 `High-Resolution SAGE Characterization of GPS L1 C/A Multipath in Dynamic Road Environments`；中文标题同步更新。摘要、贡献点、环境分类和路径级参数表述已统一。
+- Figure 1--4 已由现有脚本重新生成，仅同步显示标签和展示数值；manifest 已更新，Doppler audit 为 `all_rows_match=true`。
+- 英文和中文 LaTeX 编译链均通过，PDF 均为 4 页；未发现 error、fatal、undefined citation/reference 或 overfull。剩余 underfull/字体 fallback warning 不构成科学阻塞。
+
+```text
+CURRENT_PHASE=USER_AUTHOR_REVIEW
+SCIENTIFIC_CONTENT_FROZEN=YES
+SAGE_PRODUCTION_STOPPED=YES
+NEW_EXPERIMENT_REQUIRED=NO
+CURRENT_WORK=VTC manuscript targeted revision
+MANUSCRIPT_TARGETED_REVISION=IMPLEMENTED
+MANUSCRIPT_DATA_CHANGED=NO
+FIGURE_DATA_CHANGED=NO
+TABLE_DATA_CHANGED=NO
+NEW_EXPERIMENT_EXECUTED=NO
+SAGE_EXECUTED=NO
+NEXT_ACTION=USER_AUTHOR_REVIEW
+```
+
+当前标题字段以本节为最新记录；历史章节保留原样用于审计。下一步为作者最终人工审阅、投稿格式/portal 检查和 PDF compliance 检查，不自动启动新实验或 SAGE production。
+
+### VTC User Follow-up Revision (2026-08-23)
+
+状态：`Implemented / Validated`。根据作者对中文审阅稿的意见，英文正式稿和中文审阅稿已同步完成定点调整。
+
+- 删除 II-A 车辆平台/车辆性能变量说明；删除 II-C 车辆特定运行条件说明。
+- 将 II-C 的环境定义改为：具有显著周围反射结构的道路，记为 `Reflective-Feature`，不指向某个已证明的具体反射体。
+- 删除 IV-A 中关于层级流程一般性拒绝行为的句子，保留 G28 和 G18 的实际案例描述。
+- 在 Table II 中说明独立测量运行：一次独立 raw-IQ 采集记录；一个运行可包含多个 PRN 轨迹。
+- 仅做语言和定义同步，科学数据、Table II 数值、Figure 数据、evidence 和 SAGE production 均未改变。
+- 中英文 PDF 均为 4 页，编译和视觉检查通过。
+
+```text
+CURRENT_PHASE=USER_AUTHOR_REVIEW
+SCIENTIFIC_CONTENT_FROZEN=YES
+SAGE_PRODUCTION_STOPPED=YES
+NEW_EXPERIMENT_REQUIRED=NO
+CURRENT_WORK=VTC manuscript targeted revision
+MANUSCRIPT_DATA_CHANGED=NO
+FIGURE_DATA_CHANGED=NO
+TABLE_DATA_CHANGED=NO
+NEW_EXPERIMENT_EXECUTED=NO
+SAGE_EXECUTED=NO
+NEXT_ACTION=USER_AUTHOR_REVIEW
+```
+
+### Reflective-Feature Definition and Validation Extension Proposal (2026-08-23)
+
+状态：wording=`Implemented / Validated`；semi-simulation/application validation=`Proposed / Not started`。
+
+- 英文正式源、中文 LaTeX review source 和两份 Markdown 副本已同步采用证据化 `Reflective-Feature` 定义：桥梁跨越宽阔水面；城市道路邻近铁路和通信设施。该定义来自现有 human measurement metadata 与 G05/G15 QA，不声称已识别具体反射体或统一镜面反射机制。
+- 计划文件：`docs/vtc2027_spring/VTC_SEMI_SIM_AND_APPLICATION_VALIDATION_PLAN.md`。推荐路线为：G18 无 Stage4-confirmed secondary path 的实测背景上注入已知路径；G25/G05 现有 Stage4 模型残差核查；基于记录的 0.5-chip early/late 配置开展 DLL 零交叉偏差和 SAGE 次级分量抵消案例。
+- 应用端计划仅允许 signal-level DLL/code-tracking bias；当前没有独立定位真值，不能预先承诺 positioning/pseudorange improvement。
+- 当前 manuscript scientific content 继续冻结；计划本身不改变贡献、数据或论文结论。执行需要作者/Commander 明确解冻和授权。
+- 中文 `main_cn_review.pdf` 为 4 页并通过编译/视觉检查。英文版本化 `main_reflective_detail.pdf` 为 4 页并通过编译/视觉检查；canonical `main.pdf` 当前被其他进程锁定，尚未替换。
+
+```text
+CURRENT_PHASE=USER_AUTHOR_REVIEW
+SCIENTIFIC_CONTENT_FROZEN=YES
+SAGE_PRODUCTION_STOPPED=YES
+NEW_EXPERIMENT_REQUIRED=NO
+VALIDATION_EXTENSION_PLAN=PROPOSED_NOT_STARTED
+VALIDATION_EXECUTION_AUTHORIZED=NO
+SCIENTIFIC_DATA_CHANGED=NO
+FIGURE_DATA_CHANGED=NO
+TABLE_DATA_CHANGED=NO
+RAW_IQ_READ=NO
+MATLAB_EXECUTED=NO
+SAGE_EXECUTED=NO
+NEXT_DECISION_REQUIRED=YES
+DECISION_OWNER=USER_AUTHOR_COMMANDER
+```
+
+### VTC Author Follow-up Revision: II-A, Table II, and IV-A (2026-08-23)
+
+状态：`Implemented / Validated`。根据作者本轮中文审阅意见，英文正式稿、中文 LaTeX 审阅稿及两份 Markdown 镜像已同步完成定点修改；没有新增实验或科学数据。
+
+- 删除 II-A 中在测量平台后提前预告环境类别的重复句，环境描述保留在 II-C 实验场景中。
+- 将 Table II 标题缩短为“Measurement coverage and confirmed multipath paths.”；独立测量运行、一个运行可包含多个 PRN 轨迹以及路径计数准则移至 IV-A 正文。
+- IV-A 明确写出 Reflective-Feature、Highway/Open 和 Mountain/Valley 的代表性 confirmed-multipath 保留案例，同时保留 G28 和 G18 的最终未确认案例；不改变 Figure 3 或 Table II 的数据。
+- 英文 `main.pdf` 和中文 `main_cn_review.pdf` 均重新编译为 4 页；最终编译无 error、fatal、undefined citation/reference 或 overfull。英文保留 3 个 underfull warning，中文保留既有字体 fallback warning。
+- 英文 PDF SHA-256=`861945F40B9F54BD02C45A00988A001DCE9A4E6ADF6470CD5BDDC2AC4DBB5A3F`；中文 PDF SHA-256=`97B153021D37C0CFADC53A0738F239525B3D27290B60A2DD217FF01F1D230FDC`。
+
+```text
+CURRENT_PHASE=USER_AUTHOR_REVIEW
+SCIENTIFIC_CONTENT_FROZEN=YES
+SAGE_PRODUCTION_STOPPED=YES
+NEW_EXPERIMENT_REQUIRED=NO
+CURRENT_WORK=VTC manuscript targeted revision
+MANUSCRIPT_DATA_CHANGED=NO
+FIGURE_DATA_CHANGED=NO
+TABLE_DATA_CHANGED=NO
+NEW_EXPERIMENT_EXECUTED=NO
+RAW_IQ_READ=NO
+MATLAB_EXECUTED=NO
+SAGE_EXECUTED=NO
+NEXT_ACTION=USER_AUTHOR_REVIEW
+```
+
+### VTC P1/P2 Final Canonical Overwrite (2026-08-25)
+
+状态：`Implemented / Validated`。作者已批准采纳 P1/P2 建议；英文正式稿、中文 LaTeX 审阅稿及两份 Markdown 镜像已同步，并已覆盖正式源文件和 PDF。
+
+- 当前英文标题为 `Hierarchical SAGE Extraction and Validation of GPS L1 C/A Multipath in Dynamic Road Environments`；中文标题同步为“动态道路环境中 GPS L1 C/A 多径的层级式 SAGE 提取与验证”。
+- 已完成 P1/P2 的术语和结构修订，包括 `Reflective-Feature` 物理描述边界、`Measurement runs` 表头、确认多径保留/拒绝案例衔接、Layer 1/Layer 3 支持证据、描述性环境比较、$C/N_0$ 术语和 Figure 4 版式调整。
+- 未改变 Table II 数值、Figure 1--4 底层数据、confirmed-path criterion、evidence 或 SAGE 结果；未新增实验，未读取 raw IQ，未运行 MATLAB/SAGE/production。
+- 英文正式 PDF 和中文审阅 PDF 均为 4 页；无 LaTeX Error、未定义 citation/reference 或 Overfull。英文仅有少量 Underfull，中文保留既有字体 fallback warning。
+- 英文 PDF SHA-256=`FF85A4B1D4D59ADADA2681D8AE6CCD9E5147ED16CA2E80A2A268EBF9E4FEA87B`；中文 PDF SHA-256=`1FAB45FA12DA3BAEBD3B99074AABDBAEE055049F34B2F89B9E8211B1FC7B1807`。
+
+```text
+CURRENT_PHASE=USER_AUTHOR_REVIEW
+SCIENTIFIC_CONTENT_FROZEN=YES
+SAGE_PRODUCTION_STOPPED=YES
+NEW_EXPERIMENT_REQUIRED=NO
+CURRENT_WORK=VTC manuscript targeted revision
+MANUSCRIPT_TARGETED_REVISION=IMPLEMENTED
+MANUSCRIPT_DATA_CHANGED=NO
+FIGURE_DATA_CHANGED=NO
+TABLE_DATA_CHANGED=NO
+NEW_EXPERIMENT_EXECUTED=NO
+RAW_IQ_READ=NO
+MATLAB_EXECUTED=NO
+SAGE_EXECUTED=NO
+PRODUCTION_EXECUTED=NO
+NEXT_ACTION=USER_AUTHOR_REVIEW
+```
+
+Engineering Handoff 不需要更新；下一步为作者最终人工审阅、投稿格式/portal 检查和 PDF compliance 检查。
+
+### Author Decision: DLL Study Abandoned and Wording Sync (2026-08-25)
+
+状态：`DLL study abandoned / no further execution / no paper admission`。
+
+- 作者决定放弃 DLL code-tracking-bias 实验；不得继续运行或将已有 partial/smoke 输出写入论文。已有文件仅保留作溯源，不改变 MATLAB/SAGE/production 状态。
+- 英文正式源和中文 LaTeX 审阅源已同步删除“但不将拟合路径视为物理真值”对应的最后一句；Layer 3 前面的 RSS/BIC 事实和数值未改变。未修改 Figure/Table 数据、evidence 数据或科学结论。
+- 英文 `main.pdf` 已重新编译为 4 页，SHA-256=`C02C1EDBAD27AC6A01F4BAB9734F3221E537DCFEEA4147CD4661F1F7581BAE83`；中文源使用 XeLaTeX 独立 job 编译为 4 页，验证副本为 `docs/vtc2027_spring/manuscript/latex_cn_review/main_cn_review_sync_20260825.pdf`，SHA-256=`6AE8A3CE98E4B6C0BA7D3A281A1B34A6CD7AB3D0691D012101AD64ABCD361448`。由于 canonical `main_cn_review.pdf` 被其他进程占用，当前不能覆盖该 PDF；中文源及其编译辅助文件已同步，待释放文件锁后再覆盖 canonical PDF。
+
+```text
+CURRENT_PHASE=USER_AUTHOR_REVIEW
+SCIENTIFIC_CONTENT_FROZEN=YES
+SAGE_PRODUCTION_STOPPED=YES
+NEW_EXPERIMENT_REQUIRED=NO
+DLL_EXECUTION=ABANDONED_BY_AUTHOR
+SCIENTIFIC_DATA_CHANGED=NO
+FIGURE_DATA_CHANGED=NO
+TABLE_DATA_CHANGED=NO
+NEW_EXPERIMENT_EXECUTED=NO
+RAW_IQ_READ=NO
+MATLAB_EXECUTED=NO
+SAGE_EXECUTED=NO
+NEXT_ACTION=USER_AUTHOR_REVIEW
+```
+
+### Stage4 Path-Parameter Derivation Available for VTC Evidence (historical snapshot, 2026-08-25)
+
+状态：`Completed / QA PASS / paper evidence available; manuscript admission pending author review`。本次仅从已通过 QA 的 event/path alignment overlay 派生描述性 Stage4 confirmed-path 参数，未运行新 SAGE 实验，未读取 raw IQ，未修改论文正文或 Figure/Table 数据。
+
+- 参数分区：`dataset/multipath_event_database/v1/partitions/parameter_set_id=parameters_20260825_stage4_path_v1/`。
+- 独立 QA：`dataset_generation_logs/multipath_event_channel_parameter_qa_20260825/qa_report.md`，结果 `PASS`。
+- 当前可供论文审阅的 bounded facts：100 条 environment-ready confirmed paths、94 个 represented confirmed events、84 条 elevation-ready paths；可追溯的字段包括 excess delay、excess path length、signed relative Doppler、relative power、confirmed path count，以及环境/仰角组的 descriptive median/min/max。
+- 16 条 path 缺少可靠事件级仰角，只进入环境描述，不进入 elevation summary。新的仰角统计不得与旧的 scene-level planning elevation 混用。
+- 本次 VTC evidence layer 不派生 RMS delay spread、Doppler spread、Ricean K-factor、path lifetime 或 fitted distribution family；这是当时的 VTC scope snapshot。后续 Phase-1 r3/r2 已独立完成 bounded traditional statistical modeling；所有 VTC 论文数字仍需在 Evidence Matrix 中完成 claim admission 后才能写入正文。
+
+```text
+VTC_PATH_PARAMETER_EVIDENCE = AVAILABLE_QA_PASS
+VTC_PARAMETER_CLAIM_ADMISSION = PENDING_AUTHOR_REVIEW
+MANUSCRIPT_DATA_CHANGED = NO
+FIGURE_DATA_CHANGED = NO
+VTC_STATISTICAL_CHANNEL_MODEL = NOT_STARTED_FOR_VTC_SCOPE
+NEXT_ACTION = AUTHOR_REVIEW_AND_EVIDENCE_MATRIX_ADMISSION
+```
+
+## 19. Environment-conditioned receiver lock-loss model (historical layer snapshot, 2026-08-26)
+
+状态：`Completed with limitations / implementation QA PASS / bounded tracking diagnostic`。
+
+- 基于已有 GNSS-SDR tracking 输出完成了一个按环境条件化的接收机锁定状态模型。模型使用 63 条 environment-eligible runs，明确排除缺少 `run_context.json` 的 G06 legacy run，并提取 48 个经固定去抖规则确认的诊断失锁区段。
+- 模型输出位于 `dataset_generation_logs/channel_modeling/environment_lock_model_v1_20260826_r2/`，包含环境条件化的锁定暴露、失锁区段、失锁进入率和持续时间参数，以及输入/输出 hash provenance。持续时间候选族中 Gamma 按固定 AICc 规则被选中；Highway/Open 的样本支持标记为 `PARTIAL_POOLING_REQUIRED`，其余环境也保留分组支持和有限样本边界。
+- 这是一项新的 receiver-level lock-loss / diagnostic simulation layer 事实，不是物理信号消失证明，不是 multipath occurrence probability，也不是从 confirmed path 推导出的路径级统计信道模型。`LOCK_BAD`、失锁持续时间和未来四路径幅度如何映射仍需独立的工程仿真假设。
+- 本次结果不改变 VTC 的窄 scope，也不改变 coverage-complete path/channel parameter database 或完整暗室生成器仍未完成的边界。Phase-1 bounded traditional statistical model 的当前状态以本文件的 canonical section 为准；本层若纳入论文，应作为接收机诊断层、仿真假设和局限性材料单独审阅。
+- 本次未读取 raw IQ，未运行 MATLAB/SAGE/batch，未修改生产结果；没有据此更新统计模型结论或声称完成最终数据集。
+
+```text
+ENVIRONMENT_LOCK_LOSS_MODEL = COMPLETED_WITH_LIMITATIONS
+ENVIRONMENT_LOCK_MODEL_PAPER_FACT = AVAILABLE_FOR REVIEW
+DARKROOM_COMPLETE_STATISTICAL_CHANNEL_MODEL = NOT_STARTED
+RAW_IQ_READ = NO
+MATLAB_EXECUTED = NO
+SAGE_EXECUTED = NO
+BATCH_EXECUTED = NO
+NEXT_ACTION = AUTHOR_REVIEW_OF_BOUNDED_LOCK_DIAGNOSTIC_LAYER
+```
+
+## 20. Environment × elevation confirmed-NLOS path distribution layer (Completed with sparse prior cells + independent QA PASS, 2026-08-26)
+
+状态：`Completed with limitations / independent QA PASS / conditional path layer`。本次从已经 QA 通过的 Stage4 confirmed multipath path 参数建立了环境×仰角条件化的候选分布层；没有运行 MATLAB/SAGE、读取 raw IQ 或声称完成最终暗室信道模型。
+
+- 输入为 `dataset/multipath_event_database/v1/partitions/parameter_set_id=parameters_20260825_stage4_path_v1/facts/path_parameters.csv`，100 条 environment-ready confirmed paths；其中 84 条具有可靠事件级仰角，16 条只用于环境/全局父分布，不被赋予仰角。源 SHA-256=`2a44913d1c06f78d2748428b1d72f1b4712a6b5d3f33fc598a14fe17a3e3414a`。
+- 新模型输出位于 `dataset_generation_logs/channel_modeling/environment_elevation_path_distribution_v1_20260826_r1/`，model manifest SHA-256=`4f24dd3a5532526ef9966288ea7de9d863fabd812abe07a811647095e5368f3c`；独立 QA 为 `PASS_WITH_LIMITATIONS`，两项空单元 Urban–LOW 与 Highway/Open–LOW 明确保留为 `PRIOR_ONLY`。
+- 12 个环境×仰角单元包含 36 个边际模型。固定 scene-grouped family selection 选择：`relative_delay_ns=lognormal`、signed `relative_doppler_hz=laplace`、`relative_power_db=normal`。功率保持 dB 拟合，线性相对幅度仅按 `10^(relative_power_db/20)` 派生，正 dB 值未裁剪。
+- 联合依赖使用环境级 Gaussian copula，并按固定 `n/(n+10)` 向全局模型收缩；没有为稀疏单元虚构 cell-specific covariance。1000 次 scene-block bootstrap 与每单元 4096 次确定性 QA draw 已写入输出并通过审计。
+- 该结果只能支撑“在确认存在多径时，环境和可用仰角条件下的 NLOS 路径相对参数分布”这一受限表述，不能单独估计多径发生率。主径/common gain、绝对功率、失锁到增益的映射、相位、path count/path lifetime 和固定四路径毫秒生成规则仍未完成；已有 receiver lock-loss model 仍是独立诊断层。
+
+```text
+PATH_DISTRIBUTION_MODEL = COMPLETED_WITH_SPARSE_PRIOR_CELLS
+PATH_DISTRIBUTION_MODEL_QA = PASS_WITH_LIMITATIONS
+STATISTICAL_CHANNEL_MODEL = BOUNDED_CONDITIONAL_NLOS_LAYER_ONLY
+DARKROOM_GENERATOR = NOT_STARTED
+EVENT_OCCURRENCE_MODEL = NOT DERIVED
+PHASE_MODEL = EXTERNAL_ASSUMPTION / NOT FITTED
+MAIN_GAIN_AND_ABSOLUTE_POWER = NOT DERIVED
+RAW_IQ_READ = NO
+MATLAB_EXECUTED = NO
+SAGE_EXECUTED = NO
+BATCH_EXECUTED = NO
+NEXT_DECISION_REQUIRED = AUTHORIZE SEPARATE DARKROOM COMPOSITION DESIGN OR HOLD
+```
+
+## 21. Main-path common-gain and observable fade modeling layer (Implemented + independent QA PASS_WITH_LIMITATIONS, 2026-08-26)
+
+状态：`Implemented / PASS_WITH_LIMITATIONS / bounded modeling layer`。本次形成了一个可供后续暗室组合使用的 receiver-tracking 公共增益与可观测衰落层；它不是最终统计信道模型，也不是完整四路径生成器。
+
+- 该层基于现有 GNSS-SDR tracking 的 C/N0、carrier lock 状态、采样计数和已核验 geometry provenance，覆盖 63 个 environment-eligible runs、307,572 个 20 ms 分析网格行和 91 个可观测 fade events，其中 30 个为右删失事件。输出位于 `dataset_generation_logs/channel_modeling/main_path_common_gain_fade_v1_20260826_r4/`，独立 QA 为 `PASS_WITH_LIMITATIONS`。
+- 可写入论文/研究材料的边界事实是：common gain 是 run 内归一化的 tracking C/N0 proxy，geometry 条件只有在同 scene、同 PRN、5 s 内最近 GSV 关联通过时才使用；不能将该量表述为绝对 RF 功率或物理 LOS 路径幅度。
+- 固定规则包括 3 dB/20 ms fade entry、1 dB/100 ms fade exit，以及对 LOCK_BAD、continuity gap 和记录终止的右删失处理。当前直接 fade-event 证据主要集中在 Highway/Open 的仰角 cell，其余环境×仰角 fade cell 明确采用 parent/PRIOR_ONLY 或 sparse partial pooling；因此不支持无条件的全环境/全仰角 fade 规律结论。
+- 正常公共增益、可观测衰落深度和持续时间的候选族选择为 Student-t、lognormal 和 Gamma；这些是当前冻结规则下的有界经验拟合结果，不等于最终模型参数，也不构成物理传播定律。
+- 该层仍未提供绝对功率、phase、NLOS activation、path count/lifetime、lock-recovery 到物理幅度的映射，也没有完成最终暗室随机四路径毫秒信号生成器。论文中不得据此写成“最终统计信道模型已经建立”。
+
+工程/论文来源文件：`docs/MAIN_PATH_COMMON_GAIN_FADE_MODEL_V1_REPORT.md`、`dataset_generation_logs/channel_modeling/main_path_common_gain_fade_v1_20260826_r4/independent_qa_report.md` 和 `independent_qa_result.json`。本次未运行 raw IQ、MATLAB、SAGE 或 batch，未改变既有 SAGE/production artifact。
+
+```text
+MAIN_PATH_COMMON_GAIN_FADE_MODEL = IMPLEMENTED_WITH_LIMITATIONS
+MAIN_PATH_COMMON_GAIN_FADE_MODEL_QA = PASS_WITH_LIMITATIONS
+MAIN_PATH_COMMON_GAIN_FADE_MODEL_PAPER_FACT = AVAILABLE_FOR REVIEW
+COMPLETE_STATISTICAL_CHANNEL_MODEL = NOT COMPLETED
+DARKROOM_FOUR_PATH_GENERATOR = NOT STARTED
+ABSOLUTE_RF_POWER = NOT_AVAILABLE
+PHASE_MODEL = EXTERNAL_ASSUMPTION / NOT FITTED
+RAW_IQ_READ = NO
+MATLAB_EXECUTED = NO
+SAGE_EXECUTED = NO
+BATCH_EXECUTED = NO
+NEXT_ACTION = AUTHOR_REVIEW_OF_BOUNDED_GAIN_FADE_LAYER
+```
+
+## 22. Fixed three-NLOS-slot activation layer (Completed with limitations + independent QA PASS_WITH_LIMITATIONS, 2026-08-26)
+
+状态：`Completed with limitations / independent QA PASS_WITH_LIMITATIONS / generator-composition input`。本次完成的是受限的 NLOS 槽位激活与条件路径数层，不是完整暗室统计信道模型，也没有声称建立物理多径发生率。
+
+- 该层基于 63 个 eligible runs、169,637 个 Stage0 exposure windows、94 个严格 confirmed events 和 100 条 confirmed NLOS paths；使用 confirmed event center ±2 的连续闭包作为 bounded support proxy。源和输出位于 `dataset_generation_logs/channel_modeling/nlos_slot_activation_v1_20260826_r1/`，model manifest SHA-256=`b47b2a09f9acc5f1ccd65dcf923623dbeea27e3aec3e3e3f04c2e094a3e486d2`。
+- 模型采用 environment×elevation 条件的两层结构：先采样支持代理激活状态 Z，再在 active 条件下采样 confirmed event path-count K；K=0/1/2/3 对应固定三 NLOS 槽位的 `000/100/110/111` mask。slot ordering、inactive null 语义和 block-fixed contract 均已写入机器可读产物。
+- 全局 confirmed event 的条件 path-count 分布为 K=1/2/3=`89/4/1`。12 个 environment×elevation cell 均有模型记录，但 Urban–LOW 和 Highway/Open–LOW 没有直接 confirmed event，稀疏/先验/partial-pooling 状态必须在论文中明确保留；零 confirmed exposure 不能写成 LOS 或“没有多径”。
+- 独立 QA 通过所有 provenance、Stage4 label、exposure closure、slot contract 和 determinism 门禁，结果为 `MODEL_QA=PASS_WITH_LIMITATIONS`。该证据支持论文中描述“confirmed-support 条件下的 NLOS 槽位组合设计”，不支持无条件的物理 occurrence probability、完整信道模型或环境泛化结论。
+- 本层没有从数据得到 phase、absolute RF power、path lifetime、inter-block persistence 或 lock-loss 联合物理映射；已有 lock-loss/gain 层仍是独立的 receiver diagnostic layer。最终四路径毫秒级参数表和可运行暗室生成器仍为 `Planned / Not started`。
+
+论文材料报告：`docs/NLOS_SLOT_ACTIVATION_MODEL_V1_REPORT.md`。如未来纳入论文，应作为受限的 generator-composition method/limitation 材料审阅，不能写成“统计信道模型已完成”或“已完成暗室生成器”。本次未改变既有 manuscript、figure/table 或 VTC evidence 内容，也未运行 raw IQ、MATLAB、SAGE、batch 或 20.46 MHz 处理。
+
+```text
+NLOS_SLOT_ACTIVATION_PAPER_FACT = AVAILABLE_WITH_LIMITATIONS
+NLOS_SLOT_ACTIVATION_MODEL = COMPLETED_WITH_LIMITATIONS
+NLOS_SLOT_ACTIVATION_MODEL_QA = PASS_WITH_LIMITATIONS
+COMPLETE_STATISTICAL_CHANNEL_MODEL = NOT_COMPLETED
+DARKROOM_FOUR_PATH_GENERATOR = NOT_STARTED
+PHYSICAL_OCCURRENCE_PROBABILITY = NOT_IDENTIFIED
+PATH_LIFETIME_AND_PHASE = NOT_DERIVED
+RAW_IQ_READ = NO
+MATLAB_EXECUTED = NO
+SAGE_EXECUTED = NO
+BATCH_EXECUTED = NO
+NEXT_ACTION = AUTHOR_REVIEW_OF_BOUNDED_ACTIVATION_LAYER_OR_HOLD
+```
+
+## 21. Lock-state amplitude, phase, and recovery composition layer (historical layer snapshot, 2026-08-26)
+
+状态：`Completed with limitations / implementation QA PASS_WITH_LIMITATIONS / bounded composition layer`。
+
+- 基于已冻结的 tracking lock、common-gain、path-distribution 和 NLOS-slot parent artifacts，完成了一个独立的 receiver lock-state 到相对幅度、恢复过程和相位演化的离线组合层。最终 namespace 为 `dataset_generation_logs/channel_modeling/lock_amplitude_phase_recovery_v1_20260826_r3/`，model manifest SHA-256=`9eb1847eac27618f80475ceafe62616285a346c5da847afdb0e8f2c5fc63a3ee`；独立 QA 为 `PASS_WITH_LIMITATIONS`。
+- 可供论文审阅的事实包括：48 个 environment-eligible lock events、307,572 行 20 ms common-gain grid、3,249 行 recovery traces，以及显式的 observed/right-censored/inconclusive 状态 accounting。该层使用 environment-only 的 tracking diagnostic timing；common gain 是 run-normalized C/N0 amplitude proxy，不是绝对 RF power。
+- 组合契约将同一 lock envelope 施加于 path 0 和 active NLOS slots；path 0 仍只是仿真参考槽位，不等同于 physical LOS 或必然最强路径。inactive NLOS slot 使用 amplitude=0、delay/Doppler/phase=null。相位采用 `Uniform(-pi,pi)` 初始相位和 Doppler-continuous 1 ms recurrence，是外加假设而非数据拟合结果。
+- 该结果不应写成硬件失锁概率、物理信号消失、绝对功率校准、物理 phase model 或完整四路径暗室生成器。强制 lock-loss stress floor 仍需外部明确假设；当前 `DARKROOM_FOUR_PATH_GENERATOR`、path lifetime/inter-block persistence 的联合建模和最终 statistical channel model 仍未完成。
+- 论文材料报告为 `docs/LOCK_AMPLITUDE_PHASE_RECOVERY_MODEL_V1_REPORT.md`；如果纳入正文，应作为受限的 receiver-diagnostic/composition method 和 limitation 单独审阅，不能替代已完成的 path-level bounded distribution 层，也不能被表述为最终环境×仰角统计信道模型。
+
+```text
+LOCK_TO_AMPLITUDE_PHASE_RECOVERY_LAYER = COMPLETED_WITH_LIMITATIONS
+LOCK_TO_AMPLITUDE_PHASE_RECOVERY_QA = PASS_WITH_LIMITATIONS
+LOCK_TO_AMPLITUDE_PHASE_RECOVERY_PAPER_FACT = AVAILABLE_FOR_REVIEW
+PHASE_MODEL = EXTERNAL_ASSUMPTION / NOT_DATA_FITTED
+ABSOLUTE_RF_POWER = NOT_AVAILABLE
+HARDWARE_LOCK_LOSS_CALIBRATION = NOT_AVAILABLE
+DARKROOM_FOUR_PATH_GENERATOR = NOT STARTED
+DARKROOM_COMPLETE_STATISTICAL_CHANNEL_MODEL = NOT_STARTED
+RAW_IQ_READ = NO
+MATLAB_EXECUTED = NO
+SAGE_EXECUTED = NO
+BATCH_EXECUTED = NO
+NEXT_ACTION = AUTHOR_REVIEW_OF_BOUNDED_LOCK_COMPOSITION_LAYER_OR_HOLD
+```
+
+## Phase-1 Stage3 Academic Statistical Channel Model — Current Canonical Status (2026-08-30)
+
+状态：Phase-1 traditional statistical modeling is now `COMPLETE_WITH_LIMITATIONS`；scientific closure 为 `PASS_WITH_LIMITATIONS`，bounded journal/thesis evidence 为 `READY_WITH_LIMITATIONS`。本节是当前传统建模科学结论的最新来源；前述专题层仍保留其各自的边界，不被合并成完整暗室生成器。
+
+- 冻结 canonical model 为 `dataset_generation_logs/channel_modeling/environment_elevation_stage3_path_model_v1_20260829_r3/`，model manifest SHA-256=`61c4b3aa171b6a59d17607394770b684251d656eeb19813ca13ebed2454b1782`，r3 independent QA=`PASS`。Phase-1 closure 结果位于 `dataset_generation_logs/channel_modeling/phase1_scientific_closure_20260830_r2/`，closure manifest SHA-256=`45282b4eb5f86e52f4cd39f9b94f04c1596b645cae3d0b6420a089717f429d52`，独立 QA 为 `PASS`（75 项）。
+- Closure 使用 783 条 academic Stage3 reliable/persistent path observations、445 centers、366 algorithm-level tracks、716 elevation-ready observations、50 runs、12 scenes 和 18 PRNs；主统计单位为 `WEIGHTED_OBSERVATION`，权重为 `1 / algorithm_track_size`，不把 row 当作独立样本，使用 scene/run clustering、scene-block bootstrap 和 grouped LOSO。
+- 全局候选族为 excess delay=`Lognormal`、signed relative Doppler=`Normal`、relative power=`Normal`。全局三参数 environment effect=`INCONCLUSIVE`，正式 LOW/MID/HIGH elevation effect=`INCONCLUSIVE`；environment×elevation interaction 采用 difference-in-differences、scene-block bootstrap 和 leave-one-scene-out，整体为 `PARTIAL`。12 个 cell 的支持分类保持 5 `DATA_SUPPORTED`、4 `SPARSE_PARTIAL_POOLING`、2 `PRIOR_DOMINANT`、1 `NO_DIRECT_SUPPORT`；Highway/Open–LOW 无直接支持且未作 synthetic fill。
+- Stage4 的 100 条 strict-confirmed paths 仅作 selection-sensitivity subset，不是 external truth；delay/Doppler/power 的参数级比较中 2/3 为 `MATERIAL_DIFFERENCE`。path-level fitted parameters 与 center/channel-level derived statistics 分开；conditional RMS spread、power-weighted centroid、component count、relative power 和 algorithm-observed persistence 可审阅，但 persistence 不是 physical reflector lifetime，`RICEAN_K = NOT_IDENTIFIABLE`。
+- Joint dependence 的 AI motivation=`STRONG`（尤其 delay–relative-power 的全局关联），但 continuous elevation=`CONDITIONAL`，Phase 2 仍是 planned-only，未训练 MDN/normalizing flow，也未冻结 AI architecture。当前 evidence 可用于有边界的 journal/master-thesis traditional-modeling 结果；不得扩展成 universal propagation law、complete 12-cell coverage、absolute RF power、physical K-factor 或完整暗室生成器结论。
+ - 论文证据计划和 derived plot data 在 closure namespace 内，Figure/Table 已按 `CORE`、`SUPPLEMENTARY`、`THESIS_ONLY` 排序。VTC2027-Spring 主文仍遵循较窄的 measurement-to-SAGE path-characterization scope；本次未修改 manuscript body、既有 VTC evidence matrix、Rain/Darkroom artifacts 或 SAGE production artifacts。长期论文的 model results 已完成，但 Results 正文同步仍为 `Pending / In progress`。
+
+```text
+PHASE_1_TRADITIONAL_MODEL_BUILD = COMPLETE
+PHASE_1_TRADITIONAL_STATISTICAL_MODELING = COMPLETE_WITH_LIMITATIONS
+PHASE_1_SCIENTIFIC_CLOSURE = PASS_WITH_LIMITATIONS
+JOURNAL_TRADITIONAL_MODELING_EVIDENCE = READY_WITH_LIMITATIONS
+MASTER_THESIS_TRADITIONAL_MODELING_EVIDENCE = READY_WITH_LIMITATIONS
+ENVIRONMENT_EFFECT = INCONCLUSIVE
+ELEVATION_EFFECT = INCONCLUSIVE
+ENVIRONMENT_ELEVATION_INTERACTION = PARTIAL
+AI_JOINT_DENSITY_MOTIVATION = STRONG
+CONTINUOUS_ELEVATION_FOR_PHASE2 = CONDITIONAL
+PHASE_2_EXECUTION_AUTHORIZED = NO
+DARKROOM_GENERATOR = NOT_STARTED
+RAW_IQ_READ = NO
+MATLAB_EXECUTED = NO
+SAGE_EXECUTED = NO
+BATCH_EXECUTED = NO
+NEXT_DECISION_REQUIRED = AUTHORIZE PHASE-2 DESIGN/TRAINING OR HOLD; no automatic execution
 ```
