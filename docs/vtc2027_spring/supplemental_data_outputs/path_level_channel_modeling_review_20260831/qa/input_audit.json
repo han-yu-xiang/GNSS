@@ -1,0 +1,81 @@
+{
+  "row_counts": {
+    "primary_population_rows": 518,
+    "elevation_ready_rows": 487,
+    "cell_ready_rows": 487,
+    "missing_elevation_rows": 31
+  },
+  "environment_counts": {
+    "Mountain/Valley": 172,
+    "Urban": 346
+  },
+  "cell_counts": {
+    "Mountain/Valley/HIGH": 32,
+    "Mountain/Valley/LOW": 22,
+    "Mountain/Valley/MID": 117,
+    "Urban/HIGH": 129,
+    "Urban/LOW": 18,
+    "Urban/MID": 169
+  },
+  "cell_scene_counts": {
+    "Mountain/Valley/HIGH": 2,
+    "Mountain/Valley/LOW": 3,
+    "Mountain/Valley/MID": 3,
+    "Urban/HIGH": 5,
+    "Urban/LOW": 3,
+    "Urban/MID": 5
+  },
+  "track_counts": {
+    "unique_tracks": 236,
+    "max_weight_sum_error": 9.99866855977416e-13
+  },
+  "run_window_group_counts": {
+    "environment_only": 290,
+    "elevation_ready": 279
+  },
+  "fields": {
+    "delay": {
+      "field": "excess_delay_samples",
+      "unit": "samples relative to the direct-path reference"
+    },
+    "doppler_primary": {
+      "field": "absolute_doppler_hz",
+      "unit": "Hz, absolute relative Doppler"
+    },
+    "doppler_signed": {
+      "field": "doppler_offset_hz",
+      "unit": "Hz, signed relative Doppler"
+    },
+    "power": {
+      "field": "relative_power_db",
+      "unit": "dB relative to the direct-path reference"
+    },
+    "weight": {
+      "field": "track_weight_recomputed_primary",
+      "unit": "track-balanced analysis weight"
+    }
+  },
+  "scope": {
+    "environments": [
+      "Urban",
+      "Mountain/Valley"
+    ],
+    "elevation_bands": [
+      "LOW",
+      "MID",
+      "HIGH"
+    ],
+    "observation_semantics": "retained or persistent path observations",
+    "not_full_channel_cir": true,
+    "stage4_not_used": true,
+    "dmc_not_used": true
+  },
+  "source": {
+    "population_csv": "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\supplemental_data_outputs\\urban_mountain_stage3_elevation_model_review_v3_conditional_gmm\\population\\gmm_feature_population.csv",
+    "population_csv_sha256": "123fa5f3c86cf4f5008a3f636b00df917923c11bbdd3eac009a0e9e10a506291",
+    "population_manifest": "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\supplemental_data_outputs\\urban_mountain_stage3_elevation_model_review_v3_conditional_gmm\\population\\gmm_feature_population_manifest.json",
+    "population_manifest_sha256": "72feccca322a02709a522a0b0f72c040cdcfc896265b2f6afd37f17b3ac693ae",
+    "independent_qa_report": "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\supplemental_data_outputs\\urban_mountain_stage3_elevation_model_review_v3_conditional_gmm\\qa\\independent_qa_report.md",
+    "independent_qa_report_sha256": "f64f6eaa46de48f3f7cac0b8a64c31733e533ea846e3284319b42258e2ac4439"
+  }
+}

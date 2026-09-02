@@ -1,0 +1,86 @@
+{
+  "confirmed_event_count": 96,
+  "confirmed_path_count": 104,
+  "created_utc": "2026-08-25T04:57:31+00:00",
+  "event_count": 308,
+  "event_path_count": 412,
+  "frozen_source_hashes": {
+    "executor_sha256": "bab7a0422975cb05bcda9a80a75c3577eb7f408a83f2720af2f1e13372b08f1b",
+    "inventory_sha256": "af368feba90797584d7690d4927ed32de604651a5a62662f4adce348a89e4bb4",
+    "manifest_sha256": "77c20c0ed6c84fa0348db429948a8bd4900b2e8d86a6d8843b159b9a7a35cf00",
+    "pipeline_sha256": "bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c",
+    "wrapper_sha256": "dd8afb1b3317bf920fe34474e3ceedf06ac4580b2a13c21ea25f8365071143f3"
+  },
+  "gate_record": {
+    "batch_started": false,
+    "channel_parameter_derivation_started": false,
+    "existing_sage_artifacts_modified": false,
+    "geometry_event_time_join": false,
+    "matlab_started": false,
+    "raw_iq_read": false,
+    "sage_started": false,
+    "statistical_modeling_started": false
+  },
+  "ingestion_id": "ingestion_20260825_event_path_v1",
+  "ingestion_version": "sage-event-path-db-v1/ingest-v1",
+  "modeling_excluded_runs": [
+    "F1023_V70_D0117_P2__G06__ch4__G06_nav_sage_v1__ingestion_20260825_event_path_v1"
+  ],
+  "partition_path": "dataset/multipath_event_database/v1/partitions/ingestion_id=ingestion_20260825_event_path_v1",
+  "rules": {
+    "derivation_version": "sage-event-path-derivation-v1",
+    "label_rule_version": "stage4-strict-confirmed-v1",
+    "schema_version": "sage-event-path-db-v1"
+  },
+  "run_count": 64,
+  "source_scope": {
+    "current_batch_run_id": "20260819T004818Z",
+    "current_batch_tasks": 57,
+    "reference_fixture_runs": 7
+  },
+  "status": "completed_with_warnings",
+  "independent_qa_status": "PASS",
+  "independent_qa_summary": {
+    "unique_runs": 64,
+    "unique_events": 308,
+    "unique_event_paths": 412,
+    "strict_confirmed_events": 96,
+    "strict_confirmed_paths": 104,
+    "g06_modeling_excluded": 1,
+    "geometry_prn_missing_warnings": 5,
+    "source_hashes_frozen": true,
+    "event_context_geometry_null_gate": true
+  },
+  "table_counts": {
+    "dimensions/geometry_observations.csv": 64,
+    "dimensions/scenes.csv": 13,
+    "dimensions/time_alignment.csv": 13,
+    "exports/modeling_eligibility.csv": 64,
+    "exports/no_confirmed_events.csv": 28,
+    "exports/run_summary.csv": 64,
+    "facts/candidate_events.csv": 447,
+    "facts/event_context.csv": 308,
+    "facts/event_paths.csv": 412,
+    "facts/events.csv": 308,
+    "facts/sage_runs.csv": 64,
+    "labels/event_labels.csv": 308,
+    "labels/run_labels.csv": 64,
+    "qa/ingestion_issues.csv": 7
+  },
+  "table_sha256": {
+    "dimensions/geometry_observations.csv": "f0a6c4802bed1aff8c14939b849b0780030beb543ac610a91f57ce27b28b4d7a",
+    "dimensions/scenes.csv": "35acddebbea41b01cead7f0b48425dfcaeda81767ddbc654783b05df9176dfd9",
+    "dimensions/time_alignment.csv": "86838ef74aeed6c745168b601f3e7071393762042b74945bea0f2eaf67d67c67",
+    "exports/modeling_eligibility.csv": "b72bc392b88c7f73a534c714c4f08665c173611c64bc6ab2212d0d58add452f0",
+    "exports/no_confirmed_events.csv": "a6276ae0929942ce5cb709fb70b9dea18f6c86b02e8c1161bcea19c8046edf78",
+    "exports/run_summary.csv": "b2251b2393ab6c7545dc444028e00f9d06e4200086d713211be26011a93e7a87",
+    "facts/candidate_events.csv": "83e4112edc48a4c0dd293dbca64c7dfc38fa83a94c72fd55653fd0c954f8395b",
+    "facts/event_context.csv": "588d52aa2bd45fd51d55ed5e8e51a117613accfa9c4eb258bf855a1051d7bcbe",
+    "facts/event_paths.csv": "80e0f0eb6a8bcaebb7dd50398994751aa422a0b5e8bd2c2833424d3e3731da2a",
+    "facts/events.csv": "b1340bb1f17bb2e52e2857234d61aa084fbc734cf352f32be7bdb4275661c9d1",
+    "facts/sage_runs.csv": "f4303749beeb73e922758ef6a1cfb0eef7b4e69d49b2f49ad8b6bf29cb3a7ae5",
+    "labels/event_labels.csv": "04a92b87b5a463a51541ed99f60f215a0b01b884679236bc15b38b803747335f",
+    "labels/run_labels.csv": "25aaaa4a6770f0238d45d301868b1b03c96a6694d6059eda5a61ee5825129019",
+    "qa/ingestion_issues.csv": "3a3261059bfb0c88d9fa5972eaf0e103046f3ac762c208e5d2956328c7d387af"
+  }
+}

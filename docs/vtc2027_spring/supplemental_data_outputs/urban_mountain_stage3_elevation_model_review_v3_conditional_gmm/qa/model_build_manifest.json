@@ -1,0 +1,37 @@
+{
+  "model_build_id": "vtc_stage3_urban_mountain_conditional_gmm_fit_v1",
+  "created_utc": "2026-08-31T08:56:00.430997+00:00",
+  "source_feature_population_sha256": "123fa5f3c86cf4f5008a3f636b00df917923c11bbdd3eac009a0e9e10a506291",
+  "candidate_grid": {
+    "K": [
+      1,
+      2,
+      3
+    ],
+    "kappa": [
+      4.0,
+      8.0,
+      16.0,
+      32.0
+    ]
+  },
+  "scene_loso_scene_count": 9,
+  "bootstrap_replicates": 1000,
+  "bootstrap_seed": 2026083105,
+  "paired_bootstrap_rows": 2000,
+  "scoring_draws_per_scope": 4096,
+  "final_draws_per_cell": 4096,
+  "selected_model_sha256": "903f5e46474d2ac5e6e7dfc584c7c3516841febad4de4aa77dde822e4d7dd3a9",
+  "execution_boundary": {
+    "raw_iq_read": false,
+    "matlab_started": false,
+    "sage_started": false,
+    "batch_started": false,
+    "stage4_source_used": false,
+    "formal_manuscript_modified": false,
+    "v1_modified": false,
+    "v2_modified": false,
+    "evidence_matrix_modified": false,
+    "handoff_modified": false
+  }
+}

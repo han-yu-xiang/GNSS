@@ -723,3 +723,165 @@ MATLAB_EXECUTED=NO
 SAGE_EXECUTED=NO
 CURRENT_NEXT_ACTION=USER_AUTHOR_REVIEW
 ```
+
+## VTC P0/P1/P2 Targeted Revision (2026-08-22)
+
+状态：`Implemented / Validated`。本轮严格按 `docs/vtc2027_spring/VTC2027_Spring_P0_P1_P2_revision_plan.md` 对正式英文稿和中文审阅稿做定点修改；未重新审稿、未规划新实验、未运行 SAGE production。
+
+- English-first 修改已写入 `manuscript/latex/main.tex`，并同步到英文 Markdown、中文 LaTeX review source 和中文 Markdown review copy。
+- 已完成 P0：信号模型索引、Figure 3 场景和确认层级、Table I 术语、event/path 定义、Figure 1--2 路径参数术语与代表性数值语义。
+- 已完成 P1：删除/替换内部工程化或易过度解读表述，统一导航辅助、环境类别、measurement run、PRN track、direct component、excess delay、relative Doppler、relative power 等术语，并合并环境级多径特征小节。
+- 已完成 P2：英文/中文标题、摘要和 contribution 语气修订；BibTeX 保护缩写大小写；正文代表性数值按计划取整。Figure/Table 的底层数据和证据 CSV 未修改。
+- Figure 1--4 已由现有生成脚本重新生成以同步标签；`doppler_audit all_rows_match=true`。未新增科学结果。
+- 英文 `main.pdf` 与中文 `main_cn_review.pdf` 均为 4 页，LaTeX 编译链通过；未发现 error、fatal、undefined citation/reference 或 overfull。仅保留少量 underfull/字体 fallback warning。
+
+```text
+CURRENT_PHASE=USER_AUTHOR_REVIEW
+SCIENTIFIC_CONTENT_FROZEN=YES
+SAGE_PRODUCTION_STOPPED=YES
+NEW_EXPERIMENT_REQUIRED=NO
+CURRENT_WORK=VTC manuscript targeted revision
+MANUSCRIPT_TARGETED_REVISION=IMPLEMENTED
+MANUSCRIPT_DATA_CHANGED=NO
+FIGURE_DATA_CHANGED=NO
+TABLE_DATA_CHANGED=NO
+NEW_EXPERIMENT_EXECUTED=NO
+SAGE_EXECUTED=NO
+CURRENT_NEXT_ACTION=USER_AUTHOR_REVIEW
+```
+
+Handoff impact：Engineering Handoff 不需要更新；本次论文资产状态已同步写入本文件和 `GNSS_SAGE_PAPER_HANDOFF_CURRENT.md`。下一步仅为作者人工审阅、投稿格式/portal 检查和最终 PDF compliance 检查。
+
+## VTC User Follow-up Revision (2026-08-23)
+
+状态：`Implemented / Validated`。按作者中文审阅意见同步修订英文正式稿、中文 LaTeX 审阅稿及两份 Markdown 副本。
+
+- 删除 II-A 中关于车辆仅作为动态天线平台、车辆型号和性能不作为变量的解释。
+- 删除 II-C 中关于车辆特定运行条件的解释；改为直接说明四类道路环境，并首次定义 `Reflective-Feature` 为具有显著周围反射结构的道路测量类别。
+- 删除实验结果 IV-A 中“相同的层级流程也会拒绝……”的泛化句，保留 G28/G18 的具体确认行为描述。
+- 在 Table II caption 中解释 `independent measurement run`：一次独立的 raw-IQ 采集记录；同一次记录可以分析多个 PRN 轨迹。
+- 仅修改表述和定义；Table II 数值、Figure/Table 数据、证据文件和科学结论未改变。
+- 中英文 PDF 均重新编译为 4 页并完成视觉检查；编译无 error/fatal/undefined/overfull。
+
+```text
+CURRENT_PHASE=USER_AUTHOR_REVIEW
+SCIENTIFIC_CONTENT_FROZEN=YES
+SAGE_PRODUCTION_STOPPED=YES
+NEW_EXPERIMENT_REQUIRED=NO
+CURRENT_WORK=VTC manuscript targeted revision
+MANUSCRIPT_DATA_CHANGED=NO
+FIGURE_DATA_CHANGED=NO
+TABLE_DATA_CHANGED=NO
+NEW_EXPERIMENT_EXECUTED=NO
+SAGE_EXECUTED=NO
+CURRENT_NEXT_ACTION=USER_AUTHOR_REVIEW
+```
+
+## Reflective-Feature Definition and Validation Extension Proposal (2026-08-23)
+
+状态：manuscript wording=`Implemented / Validated`；新增验证=`Proposed / Not started / Not authorized for execution`。
+
+- II-C 已根据当前 `scene_metadata_10MHz.csv` 和独立 QA 证据同步中英文：`Reflective-Feature` 的两个独立测量场景分别为跨越宽阔水面的桥梁，以及邻近铁路和通信设施的城市道路。未写入玻璃幕墙、金属护栏等无项目证据的对象，也未将两类场景统一解释为已证明的镜面反射机制。
+- 新计划 `docs/vtc2027_spring/VTC_SEMI_SIM_AND_APPLICATION_VALIDATION_PLAN.md` 已建立，包含：真实背景上的已知次级路径注入恢复、现有 Stage4 模型残差比较、基于 0.5-chip early/late 配置的 DLL 偏差案例、独立 QA 和论文准入门禁。
+- 计划不加入“主动示弱”句；任何新结果进入摘要、结论或 Results 前，必须先获得 Commander/作者批准、独立 QA PASS，并重新评估 scientific freeze。
+- 本轮未读取 raw IQ，未运行 MATLAB/SAGE/batch，未生成半仿真或应用端结果，未修改 Figure/Table/evidence 数据。
+- 中文 canonical `main_cn_review.pdf` 编译通过，4 页。英文 `main.tex` 的同源版本化 PDF `main_reflective_detail.pdf` 编译通过，4 页并完成视觉检查；canonical `main.pdf` 因被其他进程占用未能覆盖。
+
+```text
+CURRENT_PHASE=USER_AUTHOR_REVIEW
+SCIENTIFIC_CONTENT_FROZEN=YES
+SAGE_PRODUCTION_STOPPED=YES
+NEW_EXPERIMENT_REQUIRED=NO
+VALIDATION_EXTENSION_PLAN=PROPOSED_NOT_STARTED
+VALIDATION_EXECUTION_AUTHORIZED=NO
+RAW_IQ_READ=NO
+MATLAB_EXECUTED=NO
+SAGE_EXECUTED=NO
+FIGURE_DATA_CHANGED=NO
+TABLE_DATA_CHANGED=NO
+NEXT_VTC_DECISION_REQUIRED=YES
+DECISION_OWNER=USER_AUTHOR_COMMANDER
+```
+
+## VTC Author Follow-up Revision: II-A, Table II, and IV-A (2026-08-23)
+
+状态：`Implemented / Validated`。根据作者本轮审阅意见，同步修订英文正式稿、中文 LaTeX 审阅稿及两份 Markdown 镜像。
+
+- 删除 II-A 的环境类别预告句；环境类别只在 II-C 的实验场景中介绍。
+- Table II 改用简短标题，`independent measurement run` 的定义、PRN 轨迹关系和联合确认计数规则移入 IV-A 正文。
+- IV-A 现在先列出三个保留 confirmed multipath 的代表性环境案例，再说明 Mountain/Valley G28 与 Urban G18 的最终未确认行为，避免结果段只呈现负向案例。
+- Table II 数值、Figure 1--4、evidence、SAGE 结果和科学结论均未修改。
+- 英文/中文 PDF 均为 4 页并通过编译；英文最终 pass 无 error/fatal/undefined/overfull，中文最终 pass 无编译错误。英文剩余 3 个 underfull，中文为字体 fallback warning。
+- 英文 PDF SHA-256=`861945F40B9F54BD02C45A00988A001DCE9A4E6ADF6470CD5BDDC2AC4DBB5A3F`；中文 PDF SHA-256=`97B153021D37C0CFADC53A0738F239525B3D27290B60A2DD217FF01F1D230FDC`。
+
+```text
+CURRENT_PHASE=USER_AUTHOR_REVIEW
+SCIENTIFIC_CONTENT_FROZEN=YES
+SAGE_PRODUCTION_STOPPED=YES
+NEW_EXPERIMENT_REQUIRED=NO
+CURRENT_WORK=VTC manuscript targeted revision
+MANUSCRIPT_DATA_CHANGED=NO
+FIGURE_DATA_CHANGED=NO
+TABLE_DATA_CHANGED=NO
+NEW_EXPERIMENT_EXECUTED=NO
+RAW_IQ_READ=NO
+MATLAB_EXECUTED=NO
+SAGE_EXECUTED=NO
+CURRENT_NEXT_ACTION=USER_AUTHOR_REVIEW
+```
+
+Handoff impact：Engineering Handoff 不需要更新；本轮仅更新论文文字组织、双语镜像和 PDF 编译产物。
+
+## VTC P1/P2 Final Canonical Overwrite (2026-08-25)
+
+状态：`Implemented / Validated`。作者已批准采纳 P1/P2 建议；英文正式稿、中文 LaTeX 审阅稿及两份 Markdown 镜像已同步，并已用最终临时副本覆盖正式源文件和 PDF。
+
+- 当前英文标题：`Hierarchical SAGE Extraction and Validation of GPS L1 C/A Multipath in Dynamic Road Environments`；中文标题同步。
+- 已落实 P1/P2 的术语、结构和论述收口，包括 `Reflective-Feature` 定义、`Measurement runs` 表头、G05/G25/G11 与 G28/G18 的结果衔接、Layer 1/Layer 3 验证支持、环境级描述性路径观察、标准化 $C/N_0$ 表述和末页版式平衡。
+- Table II 数值、Figure 1--4 底层数据、证据文件、确认准则和 SAGE 结果未修改；未新增实验、未读取 raw IQ、未运行 MATLAB/SAGE/production。
+- 英文正式稿 `manuscript/latex/main.pdf` 4 页；中文审阅稿 `manuscript/latex_cn_review/main_cn_review.pdf` 4 页。编译无 LaTeX Error、未定义引用/交叉引用或 Overfull；仅保留少量 Underfull 与中文字体 fallback warning。
+- 英文 SHA-256：`FF85A4B1D4D59ADADA2681D8AE6CCD9E5147ED16CA2E80A2A268EBF9E4FEA87B`；中文 SHA-256：`1FAB45FA12DA3BAEBD3B99074AABDBAEE055049F34B2F89B9E8211B1FC7B1807`。
+
+```text
+CURRENT_PHASE=USER_AUTHOR_REVIEW
+SCIENTIFIC_CONTENT_FROZEN=YES
+SAGE_PRODUCTION_STOPPED=YES
+NEW_EXPERIMENT_REQUIRED=NO
+CURRENT_WORK=VTC manuscript targeted revision
+MANUSCRIPT_TARGETED_REVISION=IMPLEMENTED
+MANUSCRIPT_DATA_CHANGED=NO
+FIGURE_DATA_CHANGED=NO
+TABLE_DATA_CHANGED=NO
+NEW_EXPERIMENT_EXECUTED=NO
+RAW_IQ_READ=NO
+MATLAB_EXECUTED=NO
+SAGE_EXECUTED=NO
+PRODUCTION_EXECUTED=NO
+NEXT_ACTION=USER_AUTHOR_REVIEW
+```
+
+Handoff impact：Engineering Handoff 不需要更新；本次仅更新论文文字、双语镜像、正式源文件和编译 PDF。下一步为作者最终人工审阅、投稿格式/portal 检查和 PDF compliance 检查。
+
+## Author Decision: DLL Study Abandoned and Wording Sync (2026-08-25)
+
+状态：`DLL study abandoned / no further execution / no paper admission`。
+
+- 作者决定放弃 DLL code-tracking-bias 实验；不得继续运行或将已有 partial/smoke 输出写入论文。已有文件仅保留作溯源，不改变 MATLAB/SAGE/production 状态。
+- 英文正式源和中文 LaTeX 审阅源已同步删除“但不将拟合路径视为物理真值”对应的最后一句；Layer 3 前面的 RSS/BIC 事实和数值未改变。未修改 Figure/Table 数据、evidence 数据或科学结论。
+- 英文 `main.pdf` 已重新编译为 4 页，SHA-256=`C02C1EDBAD27AC6A01F4BAB9734F3221E537DCFEEA4147CD4661F1F7581BAE83`；中文源使用 XeLaTeX 独立 job 编译为 4 页，验证副本为 `docs/vtc2027_spring/manuscript/latex_cn_review/main_cn_review_sync_20260825.pdf`，SHA-256=`6AE8A3CE98E4B6C0BA7D3A281A1B34A6CD7AB3D0691D012101AD64ABCD361448`。由于 canonical `main_cn_review.pdf` 被其他进程占用，当前不能覆盖该 PDF；中文源及其编译辅助文件已同步，待释放文件锁后再覆盖 canonical PDF。
+
+```text
+CURRENT_PHASE=USER_AUTHOR_REVIEW
+SCIENTIFIC_CONTENT_FROZEN=YES
+SAGE_PRODUCTION_STOPPED=YES
+NEW_EXPERIMENT_REQUIRED=NO
+DLL_EXECUTION=ABANDONED_BY_AUTHOR
+SCIENTIFIC_DATA_CHANGED=NO
+FIGURE_DATA_CHANGED=NO
+TABLE_DATA_CHANGED=NO
+NEW_EXPERIMENT_EXECUTED=NO
+RAW_IQ_READ=NO
+MATLAB_EXECUTED=NO
+SAGE_EXECUTED=NO
+CURRENT_NEXT_ACTION=USER_AUTHOR_REVIEW
+```

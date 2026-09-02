@@ -12,7 +12,7 @@
 \node[box, right=of sdr] (s0) {Stage0\\NAV-aligned windows};
 \node[box, right=of s0] (hier) {Stage1--Stage4\\hierarchical SAGE};
 \node[box, right=of hier] (path) {Confirmed\\path components};
-\node[box, right=of path] (char) {Delay / Doppler\\power characterization};
+\node[box, right=of path] (char) {Excess delay / relative\\Doppler / relative power};
 \draw[arrow] (rf) -- (sdr);
 \draw[arrow] (sdr) -- (s0);
 \draw[arrow] (s0) -- (hier);

@@ -1,0 +1,41 @@
+{
+  "label_rule_version": "stage4-strict-confirmed-v1",
+  "status": "frozen_for_read_only_dry_run",
+  "confirmed_multipath": {
+    "scope": "event",
+    "expression": "stage4_joint_summary.joint_valid == 1 AND stage4_joint_summary.joint_multipath_count > 0 AND count(stage4_joint_paths where is_multipath == 1) > 0",
+    "count_consistency_required": true,
+    "on_count_mismatch": "qa_fail",
+    "label_source": "stage4_rule",
+    "review_status": "algorithm_only"
+  },
+  "rejected_candidate": {
+    "scope": "event",
+    "expression": "a Stage3 reliable center has a Stage4 result with joint_valid == 1 and joint_multipath_count == 0",
+    "missing_stage4_is_not_rejection": true,
+    "label_source": "stage4_rule"
+  },
+  "no_confirmed_event": {
+    "scope": "run_or_coverage_state",
+    "expression": "no strict confirmed event is present and no explicit reference-control label applies",
+    "physical_los_claim": false,
+    "label_source": "operational_state"
+  },
+  "los_reference": {
+    "scope": "run_or_control_sample",
+    "requires": [
+      "reference_manifest_explicitly_marks_run_as_los_or_low_multipath_control",
+      "confirmed_event_count == 0"
+    ],
+    "label_source": "reference_manifest",
+    "physical_truth_is_external": true
+  },
+  "candidate_boundary": {
+    "stage2_candidate_is_not_confirmed": true,
+    "stage3_persistent_is_not_confirmed": true,
+    "partial_run_is_not_los_or_rejected": true
+  },
+  "protected_namespaces": [
+    "scenes/F1023_V70_D0120_P5/sage_results/nav_sage_v2/G16"
+  ]
+}

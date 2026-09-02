@@ -2,9 +2,9 @@
 
 **项目根目录：** `E:\GNSS_Multipath_Project`  
 **工程状态唯一来源：** 本文件  
-**最后审计时点：** 2026-08-18（Asia/Shanghai）
+**最后审计时点：** 2026-08-30（Asia/Shanghai）
 **面向对象：** Codex、AI Agent、开发人员、实验执行人员  
-**当前阶段：** 从算法验证阶段进入论文数据生产阶段；当前主线是 accuracy-first full SAGE data production，已有6个10.23 MHz production task通过独立QA；G12 controlled acceptance、VTC Tier-1 T1-1 G05、T1-2 G25和T1-3 Mountain/Valley G11均已通过真实执行验收。根据 Commander 决策，SAGE production 当前已 STOPPED，转入 VTC evidence consolidation 和 event-level geometry/time-alignment QA。正式A3 G16仍因历史executor/request contract mismatch不计入production acceptance，其余任务保持 Planned / Not started。
+**当前阶段：** accuracy-first full SAGE 主线的冻结 unattended batch 已完成并通过独立批后 QA：57/57 task-level QA ACCEPTED、0 REJECTED；其中 A validation batch 40 个保持 VALIDATED，B/C 正式生产 batch 17 个计入 formal accepted production。当前 formal accepted production 为 26/67（历史 A3 G16 仍为 REJECTED_PROTECTED，不计入）；SAGE 不再自动续跑，database schema/enum/label/derivation v1 已冻结，64-run event/path audit ingest、modeling-context alignment overlay 和 Stage4 path-parameter derivation 已完成并通过独立 QA。G06 legacy 已保留审计但排除建模输入；canonical r3 traditional channel model 及 Phase-1 scientific closure 已完成并通过独立 QA（带明确限制），Phase 2 仍为 planned-only。
 
 > 本文只负责工程事实、文件、输入输出、执行、QA、hash、provenance 和下一步操作。论文科学叙事的唯一状态来源是 `docs/GNSS_SAGE_PAPER_HANDOFF_CURRENT.md`。其他 handoff、设计稿、诊断稿和日报均为历史/专题参考，不再作为独立的当前工程状态源。
 
@@ -992,6 +992,27 @@ RAIN_OVERNIGHT_RUNNER = STOPPED_BY_COMMANDER
 PRODUCTION_PIPELINE_FROZEN = YES
 ```
 
+## 44. Long-term mainline C1 G03 canary completion (Completed + QA PASS, 2026-08-18)
+
+- Commander authorization resumed the frozen 10.23 MHz mainline with `NEW_ONLY=true`, `RESUME_ALLOWED=false`, frozen manifest original order, and `MAX_PARALLEL_MATLAB=1`.
+- The first eligible manifest task was executed exactly as frozen: `F1023_V120_D0121_P2/G03/ch2`. The production source remained unchanged at SHA-256 `BFFC123C97AF77F0A797F417D3866E9A34FEAB7729C5C1575352F53BC3571B9C`; the manifest remained unchanged at SHA-256 `77C20C0ED6C84FA0348DB429948A8BD4900B2E8D86A6D8843B159B9A7A35CF00`.
+- Immutable request: `dataset_generation_logs/batch_sage_execution_requests/production_10mhz_c1_d0121p2_g03_20260818/execution_request.json`, SHA-256 `06ACB9FF1634C8B248ED6A46A63BF2E0BEE8934B61F8DE61CE56C11A56F5DC64`.
+- Normal-user execution passed under `TJ-CHANNEL\\Jing_`, PowerShell `7.6.4`, MATLAB `25.1.0.2802752`; MATLAB startup smoke passed; task exit code and Python executor exit code were both `0`; runtime was `2073.646 s`.
+- Execution log: `dataset_generation_logs/batch_sage_execution/batch_sage_execution_20260818T110255Z/batch_execution_log.csv`; wrapper receipts: `dataset_generation_logs/batch_sage_execution/windows_runner_receipts/windows_production_10mhz_c1_d0121p2_g03_20260818_20260818T110245152Z/`.
+- Output: `scenes/F1023_V120_D0121_P2/sage_results/nav_sage_v2/G03/`. All 21 expected files are present and non-empty. Stage counts are 232 valid NAV symbols, 230 Stage0 windows, 230 Stage1 scans, 384 Stage2 model-order rows over 96 selected windows, 8 Stage3 reliable centers, and 8 valid Stage4 joint rows.
+- Strict Stage4 classification: `joint_valid=1` for 8/8, `joint_multipath_count>0` for 0 rows, `is_multipath=1` for 0 paths. Result classification is `PASS_NO_CONFIRMED_MULTIPATH`; this is not a physical LOS conclusion.
+- Independent QA: `docs/10MHz_FULL_SAGE_PRODUCTION_C1_G03_QA_REPORT.md`. Production monitoring summary and report were refreshed by `scripts/sage_pipeline/audit_10MHz_production_summary.py`.
+- Accepted production state is now `8/67`: the prior 7 accepted tasks plus G03. Historical A3 G16 remains `REJECTED_PROTECTED` and is excluded from acceptance. The next eligible queue task is `F1023_V120_D0121_P2/G24/ch2`; 58 frozen eligible tasks remain after G03.
+- No production source, manifest, protected artifact, VTC/Paper artifact, Rain/Darkroom artifact, event database, statistical model, or 20.46 MHz task was modified or started by this update.
+
+## 45. C1 G24 completion and independent batch handoff (2026-08-19)
+
+- G24 (`F1023_V120_D0121_P2/G24/ch2`) completed through the normal-user wrapper with request SHA-256 `0C1AE58403396F5C68D2C952C493DBC7733ACC6989882B5DE26ED8ADAAB19676`, task/runtime `11185.234 s`, MATLAB and executor exit code `0`, and explicit `Resume=false`.
+- Final output `scenes/F1023_V120_D0121_P2/sage_results/nav_sage_v2/G24/` contains 21/21 non-empty expected files. Stage0=`8265` symbols/`8257` windows; Stage1=`8257` scanned; Stage2=`208` model rows/`52` selected windows; Stage3=`0` reliable centers; Stage4=`0` joint rows. Strict confirmed events/paths=`0/0`; this is a valid zero-event output, not a physical LOS conclusion.
+- Independent QA: `docs/10MHz_FULL_SAGE_PRODUCTION_C1_G24_QA_REPORT.md`. Production monitoring summary refreshed. The current round added two accepted tasks: G03 and G24; accepted production is `9/67`, A3 G16 remains `REJECTED_PROTECTED`, and `57` eligible tasks remain.
+- Codex-managed continuation is stopped. Independent runner: `scripts/sage_pipeline/Run-UnattendedMainlineBatch.ps1`, started by Scheduled Task `GNSS-SAGE-Unattended-Mainline-20260819` as normal `TJ-CHANNEL\\Jing_`, with queue first task G25, serial single-MATLAB policy, runner state/heartbeat/log and shared lock verified.
+- Mainline source SHA remains `BFFC123C97AF77F0A797F417D3866E9A34FEAB7729C5C1575352F53BC3571B9C`; manifest SHA remains `77C20C0ED6C84FA0348DB429948A8BD4900B2E8D86A6D8843B159B9A7A35CF00`. No database, elevation matching, statistical modeling, VTC/Paper, Rain/Darkroom, or 20.46 MHz work was started.
+
 The next permitted actions are the two explicitly scoped normal-user MATLAB
 commands for Clear `G24/ch10` and HeavyRain `G02/ch1`; do not start the
 overnight runner or any other Rain task from this change.
@@ -1029,4 +1050,1099 @@ RAIN_MATLAB_RUNTIME_VALIDATION = PENDING_NORMAL_USER
 RAIN_G24_RERUN_REQUIRED = NO_FOR_EXISTING_STAGE4_ANALYSIS
 RAIN_OVERNIGHT_RUNNER = STOPPED_BY_COMMANDER
 PRODUCTION_PIPELINE_FROZEN = YES
+
+## 46. Long-term mainline unattended batch reconciliation (Completed + QA PASS, 2026-08-25)
+
+- The frozen unattended run `dataset_generation_logs/batch_sage_unattended/run_20260819T004818Z/` completed all 57 queued requests. Its retained runner state remains `completed_pending_batch_qa`; the external independent QA is now complete. MATLAB had exited naturally and no batch lock remained.
+- Independent QA evidence is `docs/10MHz_FULL_SAGE_UNATTENDED_BATCH_20260819_QA_REPORT.md`, SHA-256=`11aa8f99f7e0245cd074ad31e1229d5c3cf803d1d071e5d0b64162a68a7dadf8`. Request/receipt cardinality is 57/57; all task receipts and execution logs are completed with exit code 0 and explicit `Resume=false`.
+- All 57 tasks passed request/provenance/hash, output completeness, run-context identity, Stage0/Stage1, Stage2, Stage3, Stage4 linkage, finite-path and strict Stage4 confirmation QA. The batch contains 40 `A_pipeline_validation_batch` tasks, 14 `B_main_production_batch` tasks and 3 `C_long_running_batch` tasks; these labels match the frozen manifest exactly.
+- Aggregate new-batch evidence: Stage0/Stage1 windows=`162864/162864`; Stage2 selected windows=`5639`; Stage3 reliable centers=`420`; Stage4 joint rows=`284`, all `joint_valid`; strict confirmed events/paths=`88/93`. Twenty-six tasks produced zero confirmed events under the current Stage4 criterion; these remain valid zero-event outputs, not physical-LOS conclusions.
+- The authoritative monitoring outputs were refreshed by `scripts/sage_pipeline/audit_10MHz_production_summary.py`: `dataset_generation_logs/production_monitoring_10MHz/production_summary_10MHz.csv` (77 rows, SHA-256=`097fec8ea82d3ef2dcbad8156be0b35a767c68be1e83ab8630bf9cdd3849e183`) and `production_summary_report.md` (SHA-256=`f8b1aac77cd22e30dff866944408918856acbe4827ae6b2f148e155fc74c1ee2`). All 57 new rows are `completed/PASS`, with no missing required files or warnings, and point to the batch QA report.
+- Formal accepted production is now `26/67`: the previous reconciled `9/67` plus the 17 B/C tasks. The 40 A tasks are `VALIDATED` only and are not counted as formal accepted production. Historical A3 G16 remains `REJECTED_PROTECTED`; no artifact was promoted, overwritten, resumed or deleted.
+- Frozen source, wrapper, executor, manifest and inventory hashes remain unchanged: production source=`bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c`, wrapper=`dd8afb1b3317bf920fe34474e3ceedf06ac4580b2a13c21ea25f8365071143f3`, executor=`bab7a0422975cb05bcda9a80a75c3577eb7f408a83f2720af2f1e13372b08f1b`, manifest=`77c20c0ed6c84fa0348db429948a8bd4900b2e8d86a6d8843b159b9a7a35cf00`, inventory=`af368feba90797584d7690d4927ed32de604651a5a62662f4adce348a89e4bb4`.
+- Current frozen-manifest queue reconciliation: `NOT_STARTED_ELIGIBLE=0`; the 57 queued tasks are now completed/QA-classified, and the only excluded manifest artifact is protected historical A3 G16. No database, geometry join, channel-parameter derivation or statistical modeling was started.
+
+```text
+MAINLINE_BATCH_QA = PASS (57/57)
+FORMAL_ACCEPTED_PRODUCTION = 26/67
+VALIDATED_ONLY_BATCH_A = 40
+REJECTED_PROTECTED = 1 (historical A3 G16)
+NOT_STARTED_ELIGIBLE = 0
+EVENT_PATH_DATABASE = PLANNED / NOT COMPLETE
+CHANNEL_PARAMETER_DATABASE = PLANNED / NOT COMPLETE
+GEOMETRY_ALIGNMENT = PARTIAL
+STATISTICAL_CHANNEL_MODEL = NOT STARTED
+```
+
+This reconciliation phase read no raw IQ and did not start MATLAB/SAGE/batch; it created only the QA evidence and refreshed designated monitoring outputs. Paper Handoff does not require a scientific update because no paper fact, figure, table, or claim changed. The next permitted step was database-rule freeze followed by a read-only dry-run validator; that gate is now recorded in Section 47, and formal ingest/statistical modeling remain blocked.
+```
+
+## 47. Event/path database rules freeze and read-only dry-run (Completed + PASS, 2026-08-25)
+
+- Frozen v1 rule artifacts are `dataset/multipath_event_database/v1/_schema/schema.json`, `enums.json`, `label_rules.json` and `derivation_manifest.json`. They define normalized run/window/candidate/event/path/context grains, immutable provenance fields, enum values, units, null policy, strict Stage4 confirmation and the formal-write boundary.
+- The strict confirmation rule is unchanged and explicit: `joint_valid=1 AND joint_multipath_count>0 AND corresponding stage4_joint_paths.is_multipath=1`, with summary/path multipath counts required to agree. A zero-event run remains `no_confirmed_event`, never an automatic physical LOS label; `los_reference` requires an explicit reference/control designation.
+- Read-only validator implementation is `scripts/event_database/validate_sage_database_dry_run.py`; its unit tests are `scripts/event_database/tests/test_validate_sage_database_dry_run.py`. The validator reads only request/manifest/provenance, run_context and Stage0–Stage4 CSVs; it does not open raw IQ, start MATLAB/SAGE or alter any existing artifact.
+- Dry-run evidence is `dataset_generation_logs/multipath_event_database_dry_run_20260825/database_dry_run_report.md` and `database_dry_run_result.json`. Result is `PASS`: current unattended batch `57/57` task namespaces PASS, reference seven-PRN regression PASS, with one retained warning for legacy G06 missing `run_context.json`.
+- Current batch aggregate dry-run counts reproduce Stage0 windows=`162864`, Stage2 selected windows=`5639`, Stage3 reliable centers=`420`, Stage4 rows=`284`, strict confirmed events/paths=`88/93`. Reference fixture reproduces `8/11` confirmed events/paths.
+- The only created database namespace content is `_schema`; no `facts`, `dimensions`, `labels`, `exports`, event/path tables or channel-parameter tables were written. Event-level geometry context remains `deferred_unavailable`; time alignment and channel-parameter derivation are not complete.
+- Frozen source/wrapper/executor/manifest/inventory hashes remain unchanged: `bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c`, `dd8afb1b3317bf920fe34474e3ceedf06ac4580b2a13c21ea25f8365071143f3`, `bab7a0422975cb05bcda9a80a75c3577eb7f408a83f2720af2f1e13372b08f1b`, `77c20c0ed6c84fa0348db429948a8bd4900b2e8d86a6d8843b159b9a7a35cf00`, `af368feba90797584d7690d4927ed32de604651a5a62662f4adce348a89e4bb4`.
+
+```text
+DATABASE_RULES_V1 = FROZEN
+DATABASE_DRY_RUN = PASS (57 batch + 7 reference)
+FORMAL_DATABASE_INGEST = COMPLETED_WITH_WARNINGS (Section 48)
+DATABASE_FACT_TABLES = NOT WRITTEN
+EVENT_GEOMETRY_CONTEXT = DEFERRED_UNAVAILABLE
+CHANNEL_PARAMETER_DERIVATION = NOT STARTED
+STATISTICAL_CHANNEL_MODEL = NOT STARTED
+NEXT_DECISION_REQUIRED = MODELING-READINESS QA COMPLETE; AUTHORIZE GEOMETRY/SCENE-CONTEXT QA OR HOLD
+```
+
+## 48. Formal event/path audit ingest and independent QA (Completed + PASS, 2026-08-25)
+
+- The explicitly authorized next step created the new versioned partition `dataset/multipath_event_database/v1/partitions/ingestion_id=ingestion_20260825_event_path_v1/` and manifest `dataset/multipath_event_database/v1/manifests/ingestions/ingestion_20260825_event_path_v1.json`.
+- Independent ingest QA is `PASS`: 64 unique runs (57 current batch + 7 reference), 308 unique Stage4 event rows, 412 Stage4 path rows, strict confirmed events/paths=`96/104`, unique parent/child keys and table hashes consistent.
+- G06 legacy is not deleted. Its source/event/path audit rows remain in the partition, while `exports/modeling_eligibility.csv` marks exactly one G06 run as `excluded_legacy_context_missing` and `include_in_modeling_ready_input=0` because no `run_context.json` exists. No timestamp or channel context was fabricated.
+- Five geometry summary PRN-missing warnings are recorded in `qa/ingestion_issues.csv`; event-time `event_utc`, elevation and azimuth remain null with `geometry_join_status=deferred_unavailable`. Run-level geometry summaries are retained only as context.
+- The ingest wrote only the new versioned database partition and manifest/report. It did not modify existing SAGE artifacts, raw files, manifest, requests, metadata, inventory, pipeline, wrapper or executor. No channel parameters or statistical models were computed.
+- Ingest evidence is `dataset_generation_logs/multipath_event_database_ingest_20260825/ingestion_report.md`. Paper Handoff remains unchanged because no paper fact, figure, table or claim changed.
+
+```text
+DATABASE_RULES_V1 = FROZEN
+EVENT_PATH_AUDIT_INGEST = COMPLETED_WITH_WARNINGS + INDEPENDENT_QA_PASS
+INGEST_RUNS = 64
+INGEST_EVENTS = 308
+INGEST_PATHS = 412
+STRICT_CONFIRMED = 96 EVENTS / 104 PATHS
+G06_MODELING_INPUT = EXCLUDED_LEGACY_CONTEXT_MISSING
+EVENT_GEOMETRY_CONTEXT = DEFERRED_UNAVAILABLE
+CHANNEL_PARAMETER_DATABASE = NOT STARTED
+STATISTICAL_CHANNEL_MODEL = NOT STARTED
+NEXT_DECISION_REQUIRED = AUTHORIZE GEOMETRY/SCENE-CONTEXT QA OR HOLD; STATISTICAL MODELING STILL BLOCKED
+```
+
+## 49. Modeling-readiness QA (Completed + BLOCKED, 2026-08-25)
+
+- This section records the pre-alignment blocker snapshot; it is superseded by the completed alignment overlay and independent QA in Section 50 below. It is retained for provenance rather than as the current modeling status.
+- Modeling-readiness evidence is `dataset_generation_logs/multipath_event_modeling_readiness_20260825/qa_report.md` and `qa_result.json`.
+- The audit partition is structurally valid, but modeling readiness is **BLOCKED**: 308 event-context rows have `0/308` verified event-time geometry joins; all 13 scene-context rows remain `not_annotated`; time alignment is `0/13 verified`; five run/PRN geometry summaries have missing requested PRNs.
+- Acceptance classes are preserved: 17 formal accepted production, 40 validated-only A batch, and 7 reference validation. These classes are not silently merged into a single modeling claim.
+- G06 legacy is explicitly excluded from modeling-ready input (`excluded_legacy_context_missing`, exactly one run) while its source/event/path audit rows remain retained. No deletion or source modification occurred.
+- No channel parameters or statistical model was computed. The next required gate is independently verified geometry/time alignment and scene-context annotation, followed by explicit authorization before statistical modeling.
+
+```text
+MODELING_READINESS = BLOCKED
+EVENT_GEOMETRY_VALID = 0/308
+TIME_ALIGNMENT_VERIFIED = 0/13
+SCENE_CONTEXT_ANNOTATED = 0/13
+G06_MODELING_INPUT = EXCLUDED
+CHANNEL_PARAMETER_DERIVATION = NOT STARTED
+STATISTICAL_CHANNEL_MODEL = NOT STARTED
+NEXT_DECISION_REQUIRED = AUTHORIZE GEOMETRY/SCENE-CONTEXT QA WORK OR HOLD
+```
+
+## 50. Modeling-context alignment overlay (Completed with exclusions + independent QA PASS, 2026-08-25)
+
+- This section records the alignment-only snapshot before channel-parameter derivation; its `CHANNEL_PARAMETER_DERIVATION = NOT STARTED` line is superseded by Section 51 below. It is retained for provenance.
+- The original modeling block was an implementation gap in the first audit-to-modeling context layer: the ingest intentionally emitted placeholder values (`event_utc=null`, null geometry, `deferred_unavailable`, `not_annotated`, and unverified time alignment) even though the frozen Stage0/NMEA/RINEX/geometry sources and validated scene metadata were available. This did not indicate a MATLAB/SAGE production failure.
+- A new immutable overlay partition was created at `dataset/multipath_event_database/v1/partitions/alignment_id=alignment_20260825_tow_geometry_scene_v1/`. The prior audit partition, SAGE artifacts, raw files, requests, production manifest, wrapper, executor and frozen inventory were not modified.
+- Time alignment uses the frozen GPS--UTC offset of 18 seconds, the RINEX/NMEA calendar-date anchor, and Stage0 TOW. All 13/13 scene anchors are verified. Geometry uses same-scene, same-PRN nearest GSV within 5 seconds; no interpolation or scene-average substitution is used.
+- The overlay contains 64 modeling runs, 308 event-context rows, 284/308 events with valid geometry, 100 confirmed paths environment-ready, and 84 confirmed paths elevation-ready. G06 legacy remains retained for audit but its 2 events/4 paths are excluded from modeling because the legacy context is missing. Ten events have the requested PRN absent from the geometry timeseries, and twelve events exceed the 5-second nearest-geometry tolerance; these exclusions are explicit in `qa/alignment_issues.csv`.
+- Independent QA is `PASS` in `dataset_generation_logs/multipath_event_modeling_alignment_qa_20260825/qa_report.md` and `qa_result.json`. It verifies table counts/hashes, unique keys, 13/13 time alignment, G06 fail-closed behavior, exact exclusion counts, and frozen source/wrapper/executor/production-manifest/inventory hashes.
+- This is an engineering data-alignment completion only. No raw IQ was read, and no MATLAB/SAGE/batch task was started. Channel-parameter derivation and statistical modeling remain unstarted. Paper Handoff remains unchanged because no paper fact, figure, table or claim was changed.
+
+```text
+MODELING_CONTEXT_ALIGNMENT = COMPLETED_WITH_EXCLUSIONS
+MODELING_CONTEXT_ALIGNMENT_QA = PASS
+TIME_ALIGNMENT_VERIFIED = 13/13
+EVENT_GEOMETRY_VALID = 284/308
+ENVIRONMENT_READY_CONFIRMED_PATHS = 100
+ELEVATION_READY_CONFIRMED_PATHS = 84
+G06_MODELING_INPUT = EXCLUDED_LEGACY_CONTEXT_MISSING
+CHANNEL_PARAMETER_DERIVATION = NOT STARTED
+STATISTICAL_MODELING = NOT STARTED
+NEXT_DECISION_REQUIRED = AUTHORIZE CHANNEL-PARAMETER DERIVATION OR HOLD
+```
+
+## 51. Stage4 path-parameter derivation (Completed + independent QA PASS, 2026-08-25)
+
+- The explicitly authorized derivation created the new versioned namespace `dataset/multipath_event_database/v1/partitions/parameter_set_id=parameters_20260825_stage4_path_v1/` and QA evidence `dataset_generation_logs/multipath_event_channel_parameter_qa_20260825/`.
+- The derivation consumes only the QA-passed alignment overlay. It produces bounded Stage4 path quantities: excess delay in seconds, excess path length in meters, signed relative Doppler, relative power provenance, confirmed-path counts, and descriptive event/environment/elevation summaries.
+- Result counts are 100 environment-ready confirmed paths, 94 represented confirmed events, 84 elevation-ready paths, 4 environment groups and 3 elevation groups. Sixteen paths remain in the environment population but are excluded from elevation summaries because event-level geometry is unavailable/inconclusive.
+- Independent QA is `PASS`: table counts/hashes, Stage4-only semantics, unit conversions, event aggregation, environment/elevation denominators, exclusion accounting, source/alignment hashes, frozen production hashes and unchanged source partition were all rechecked.
+- RMS delay spread, Doppler spread, Ricean K-factor, path lifetime and fitted distribution families remain `NOT_DERIVED`; no complete statistical channel model was produced. This is descriptive parameter derivation, not statistical modeling.
+- No raw IQ was read, and no MATLAB/SAGE/batch task was started. Existing SAGE artifacts, alignment/source partitions, requests, production manifest, wrapper, executor and inventory were not modified. Paper Handoff and the VTC Evidence Matrix were updated to record the new paper-usable evidence; the manuscript body and figures were not changed.
+
+```text
+CHANNEL_PARAMETER_DERIVATION = COMPLETED_WITH_EXCLUSIONS
+CHANNEL_PARAMETER_DERIVATION_QA = PASS
+DERIVED_CONFIRMED_PATHS = 100 ENVIRONMENT / 84 ELEVATION_READY
+DERIVED_CONFIRMED_EVENTS = 94
+DESCRIPTIVE_SUMMARY_GROUPS = 4 ENVIRONMENT / 3 ELEVATION
+STATISTICAL_CHANNEL_MODEL = NOT STARTED
+NEXT_DECISION_REQUIRED = AUTHORIZE STATISTICAL MODELING OR HOLD
+```
+
+## 52. Environment-conditioned receiver lock-loss model (Completed with limitations + implementation QA PASS, 2026-08-26)
+
+- A standalone tracking-only analysis tool, `scripts/analysis/build_environment_lock_model.py`, was implemented and executed in the immutable namespace `dataset_generation_logs/channel_modeling/environment_lock_model_v1_20260826_r2/`. It resolves modeling inputs through the existing event-database/alignment provenance and reads only existing GNSS-SDR tracking MAT fields; it does not read raw IQ or invoke MATLAB, SAGE or batch.
+- The build includes 63 environment-eligible runs out of 64 audit runs. The one G06 legacy run is retained in `excluded_runs.csv` and excluded from modeling because `run_context.json` is missing. The build extracted 48 debounced tracking-diagnostic lock-loss intervals from 894,470 tracking records (808,133 valid and 86,337 inconclusive records).
+- The frozen diagnostic semantics are `carrier_lock_test < -0.5` for `LOCK_BAD`, 20 ms bad-lock confirmation, 100 ms good reacquisition, sample-counter time at 10.23 MHz, explicit `INCONCLUSIVE_GAP` handling, acquisition ambiguity exclusion and terminal right-censoring support. Gaps were not bridged and no physical signal-loss claim is made.
+- The environment-conditioned entry-rate output uses a Gamma-Poisson posterior with fixed shape/rate prior `(1, 1 s)`; the duration candidates were lognormal, Weibull and Gamma, with Gamma selected by global AICc and deterministic tie-break. Environment support is explicit: Highway/Open is `PARTIAL_POOLING_REQUIRED`; Mountain/Valley, Special Reflective and Urban are `DATA_SUPPORTED_WITH_GROUPED_VALIDATION`. The actual output contains zero terminal right-censored events, although the likelihood implementation supports them.
+- Final output manifest SHA-256 is `21c04938cba559b3e042806b093eba82e4e86a44977e95831c715aa03ffc97a5`; the model-builder source SHA-256 is `980eb2de3c8e1375119c1a5fd6f26a73bffe2c76b3f9b6211062468a4562b3e4`; the existing read-only MAT-reader source SHA-256 is `7f4798f693fc1283d1d1a288c9336a6db0806ca8c7167791495a5f95d755391f`.
+- The complete result report is `docs/ENVIRONMENT_CONDITIONED_LOCK_MODEL_V1_REPORT.md`. The model output and receipt record `raw_iq_read=false`, `matlab_executed=false`, `sage_executed=false` and `batch_executed=false`. The protected production source remains unchanged at SHA-256 `bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c`.
+- This is `ENVIRONMENT_LOCK_LOSS_MODEL = COMPLETED_WITH_LIMITATIONS` and `MODEL_IMPLEMENTATION_QA = PASS` for a bounded receiver-tracking diagnostic/simulation layer. It is not the path-level multipath statistical channel model and does not complete elevation-conditioned lock-loss modeling, path lifetime modeling or statistical channel modeling.
+
+```text
+ENVIRONMENT_LOCK_LOSS_MODEL = COMPLETED_WITH_LIMITATIONS
+ENVIRONMENT_LOCK_MODEL_IMPLEMENTATION = IMPLEMENTED
+ENVIRONMENT_LOCK_MODEL_QA = PASS
+ENVIRONMENT_LOCK_MODEL_RUNS = 63 ELIGIBLE / 1 G06 EXCLUDED
+ENVIRONMENT_LOCK_MODEL_EVENTS = 48
+MULTIPATH_STATISTICAL_CHANNEL_MODEL = NOT STARTED
+RAW_IQ_READ = NO
+MATLAB_EXECUTED = NO
+SAGE_EXECUTED = NO
+BATCH_EXECUTED = NO
+NEXT_DECISION_REQUIRED = AUTHORIZE OR HOLD LOCK-LAYER INTEGRATION INTO THE DARKROOM GENERATOR
+```
+
+## 53. Environment × elevation confirmed-NLOS path distribution model (Completed with sparse prior cells + independent QA PASS, 2026-08-26)
+
+- The authorized Python-only modeling step built the new-only namespace `dataset_generation_logs/channel_modeling/environment_elevation_path_distribution_v1_20260826_r1/` from the frozen Stage4 path partition `dataset/multipath_event_database/v1/partitions/parameter_set_id=parameters_20260825_stage4_path_v1/`. No raw IQ, tracking input, MATLAB/SAGE execution, batch task or 20.46 MHz data was accessed.
+- Source and configuration provenance are frozen: source SHA-256=`2a44913d1c06f78d2748428b1d72f1b4712a6b5d3f33fc598a14fe17a3e3414a`, configuration SHA-256=`94ffdd882e70c2217e51a06deff7466bcccfc25f78d505f2d8dd9d4807bf2cb7`, and model manifest SHA-256=`4f24dd3a5532526ef9966288ea7de9d863fabd812abe07a811647095e5368f3c`. The protected production pipeline remains SHA-256=`bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c`.
+- The model uses 100 environment-ready confirmed multipath paths, 84 event-level elevation-ready paths and 16 paths retained only for environment/global parents. All 12 environment×elevation cells are represented; Urban–LOW and Highway/Open–LOW are exact `PRIOR_ONLY` cells. The output contains 36 cell marginal records and environment-level, not unsupported cell-level, Gaussian-copula dependence.
+- Frozen grouped selection selected lognormal for `relative_delay_ns`, Laplace for signed `relative_doppler_hz`, and normal for `relative_power_db`; fitting used scene-block leave-one-scene-out validation. The dB-to-linear amplitude transform is `10^(relative_power_db/20)` and positive relative-power values were not clipped.
+- Independent QA is `PASS_WITH_LIMITATIONS` in `dataset_generation_logs/channel_modeling/environment_elevation_path_distribution_v1_20260826_r1/independent_qa_report.md`, with source/label, cell coverage, marginal, copula, normalization, deterministic QA-draw, bootstrap and hash checks passing. The two prior-only cells and sparse support limitations are explicit; no universal empirical validity is claimed.
+- This is a bounded conditional confirmed-NLOS path-distribution layer, not the complete darkroom generator or a complete physical channel model. Main/common-path gain and absolute power, phase, lock-loss composition, occurrence/path count, path lifetime and fixed four-path millisecond output remain deferred. The previously completed receiver lock-loss model remains a separate layer.
+
+```text
+PATH_DISTRIBUTION_MODEL = COMPLETED_WITH_SPARSE_PRIOR_CELLS
+PATH_DISTRIBUTION_MODEL_QA = PASS_WITH_LIMITATIONS
+PATH_DISTRIBUTION_SOURCE = STAGE4_CONFIRMED_MULTIPATH_ONLY
+PATH_DISTRIBUTION_CELLS = 12 (2 PRIOR_ONLY)
+PATH_DISTRIBUTION_MARGINALS = 36
+DARKROOM_GENERATOR = NOT STARTED
+RAW_IQ_READ = NO
+MATLAB_EXECUTED = NO
+SAGE_EXECUTED = NO
+BATCH_EXECUTED = NO
+PROCESS_20_46_MHZ = NO
+NEXT_DECISION_REQUIRED = AUTHORIZE SEPARATE MAIN-GAIN/PHASE/LOCK/PATH-COMPOSITION DESIGN OR HOLD
+```
+
+## 54. Main-path common-gain and observable fade model (Completed with limitations + independent QA PASS, 2026-08-26)
+
+- The authorized Python-only build created the new-only namespace `dataset_generation_logs/channel_modeling/main_path_common_gain_fade_v1_20260826_r4/` from existing GNSS-SDR tracking records and verified time/geometry provenance. It did not read raw IQ, invoke MATLAB, invoke SAGE, start batch execution or process 20.46 MHz data. The earlier implementation-failure/diagnostic namespaces were retained and were not overwritten.
+- The build resolved 63 environment-eligible runs and 63 unique physical tracking inputs, representing 894,470 tracking records (808,133 valid and 86,337 inconclusive). It produced 307,572 canonical 20 ms grid rows and 91 observable fade events, including 30 right-censored events.
+- Scientific semantics are frozen and explicit: common gain is a per-run-normalized tracking C/N0 proxy; `common_gain_linear=10^(common_gain_db/20)` is a relative amplitude scale; it is not calibrated RF power and path 0 is not asserted to be physical LOS. The fixed fade rule is 3 dB for 20 ms to enter and 1 dB for 100 ms to exit. LOCK_BAD, gaps and record ends are not treated as exact fade depth.
+- Geometry uses same-scene, same-PRN nearest GSV within 5 s without interpolation or scene-average substitution. All 12 environment×elevation cells have explicit gain support records. Direct fade-event support is limited: Highway/Open has 13/7/7 events in LOW/MID/HIGH, while the other nine cells inherit environment parents and are marked `PRIOR_ONLY`; Highway/Open MID/HIGH remain sparse partial-pooling cells.
+- Deterministic scene-grouped selection chose Student-t for normal common gain, lognormal for observable fade depth and Gamma for observable fade duration. These are bounded empirical choices, not universal physical laws. Phase, absolute power, NLOS activation, path count/lifetime, lock-recovery mapping and the complete four-path generator remain outside this layer.
+- Independent QA is `PASS_WITH_LIMITATIONS` in `dataset_generation_logs/channel_modeling/main_path_common_gain_fade_v1_20260826_r4/independent_qa_report.md` and `independent_qa_result.json`. Model manifest SHA-256 is `6f36dab892622c9b9dc61ecde91fda85ff12ca60eeea4f81fe37760f0acb1e45`; config SHA-256 is `5baeb0567baf6b24b018c923f50709375271c653d330e6f1888b0469befa9b77`; protected production pipeline SHA remains `bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c`.
+- The bounded model report is `docs/MAIN_PATH_COMMON_GAIN_FADE_MODEL_V1_REPORT.md`. This completion changes the status of the main/common-gain observable-fade layer only; it does not mark the complete darkroom generator or final statistical channel model as completed.
+
+```text
+MAIN_PATH_COMMON_GAIN_FADE_MODEL = COMPLETED_WITH_LIMITATIONS
+MAIN_PATH_COMMON_GAIN_FADE_MODEL_QA = PASS_WITH_LIMITATIONS
+MAIN_PATH_COMMON_GAIN_FADE_MODEL_RUNS = 63 ELIGIBLE / 63 UNIQUE_PHYSICAL
+MAIN_PATH_COMMON_GAIN_FADE_MODEL_GRID = 307572 20MS ROWS
+MAIN_PATH_COMMON_GAIN_FADE_MODEL_EVENTS = 91 (30 RIGHT_CENSORED)
+MAIN_PATH_COMMON_GAIN_FADE_MODEL_GEOMETRY_ROWS = 173498 VALID
+ABSOLUTE_RF_POWER_MODEL = NOT_AVAILABLE
+PHYSICAL_LOS_GAIN_CLAIM = NOT_ALLOWED
+RAW_IQ_READ = NO
+MATLAB_EXECUTED = NO
+SAGE_EXECUTED = NO
+BATCH_EXECUTED = NO
+PROCESS_20_46_MHZ = NO
+NEXT_DECISION_REQUIRED = AUTHORIZE OR HOLD DARKROOM COMPOSITION INTEGRATION
+```
+
+## 55. Fixed three-NLOS-slot activation model (Completed with limitations + independent QA PASS_WITH_LIMITATIONS, 2026-08-26)
+
+- 按已批准的固定三槽位计划完成了 Python-only、new-only 离线构建，输出位于 `dataset_generation_logs/channel_modeling/nlos_slot_activation_v1_20260826_r1/`。model manifest SHA-256=`b47b2a09f9acc5f1ccd65dcf923623dbeea27e3aec3e3e3f04c2e094a3e486d2`，配置 SHA-256=`bd8d3aec2c576598a3ddeb0c24f14c520c0e5e6d1f7c8d321c5d586380da04aa`。
+- 输入为 63 个 modeling-eligible runs、169,637 个全量 Stage0 40 ms 窗口、94 个严格 Stage4 confirmed events 和 100 条 confirmed NLOS paths；94 个事件的连续 center ±2 closure 共 470 个 membership。缺少 `run_context.json` 的 G06 legacy run 保留审计但不进入模型。
+- 模型结构冻结为两层：`Z~Bernoulli(p_stage4_confirmed_support_active[environment,elevation])`，active 时 `K~Categorical(q1,q2,q3)`；K=0/1/2/3 映射到 `000/100/110/111` 三个 NLOS 槽位。occupancy 是 scene-balanced confirmed-support proxy；multiplicity 只来自 event-level confirmed path count。零确认暴露不是 LOS，也不是物理上无多径的证明。
+- 12 个 environment×elevation cell 均有输出；Urban–LOW、Highway/Open–LOW 的 exposure 有但没有直接 confirmed event，相关条件层明确保留有限支持/先验语义。全局 confirmed event 的 K 分布为 `89/4/1`（K=1/2/3）。
+- 固定槽位契约包括：主径外置；active slot 按 delay/linear-amplitude/Doppler/source ID 稳定排序；inactive slot 为 `PathActive=0`、`INACTIVE_NO_PATH`、amplitude=0、delay/Doppler/phase=null；块内固定，不宣称跨块 reflector identity。
+- 独立 QA 位于该 namespace 的 `independent_qa_report.md` 和 `independent_qa_result.json`，结果 `MODEL_QA=PASS_WITH_LIMITATIONS`、`READY_FOR_GENERATOR_COMPOSITION=YES`。source、Stage4 label、exposure/closure、occupancy、multiplicity、slot、determinism、namespace/hash hard gates 均通过；稀疏 cell 和 proxy 语义仍是限制条件。
+- 构建使用 `D:\Research\ChannelModeling-Agent\.venv\Scripts\python.exe`（Python 3.12.9 / NumPy 2.5.1 / SciPy 1.18.0 / OpenBLAS 0.3.33.112.0），执行策略固定为 raw IQ/MATLAB/SAGE/batch/20.46 MHz 全部 false；受保护的 `run_nav_sage_pipeline.m` SHA-256 仍为 `bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c`。
+- 正式技术报告为 `docs/NLOS_SLOT_ACTIVATION_MODEL_V1_REPORT.md`。本层已可作为后续暗室生成器组合输入，但 final four-path generator、phase、lock-loss composition、path lifetime/inter-block persistence、absolute power 和物理 occurrence model 仍未完成；不得把该层标为完整统计信道模型。
+
+```text
+NLOS_SLOT_ACTIVATION_MODEL = COMPLETED_WITH_LIMITATIONS
+NLOS_SLOT_ACTIVATION_MODEL_QA = PASS_WITH_LIMITATIONS
+NLOS_SLOT_ACTIVATION_MODEL_READY_FOR_GENERATOR_COMPOSITION = YES
+NLOS_SLOT_ACTIVATION_RUNS = 63 ELIGIBLE / 1 G06 LEGACY EXCLUDED
+NLOS_SLOT_ACTIVATION_EXPOSURE = 169637 STAGE0 WINDOWS / 470 CLOSURE MEMBERSHIPS
+NLOS_SLOT_ACTIVATION_EVENTS_PATHS = 94 EVENTS / 100 CONFIRMED NLOS PATHS
+DARKROOM_FOUR_PATH_GENERATOR = NOT STARTED
+PHYSICAL_MULTIPATH_OCCURRENCE_MODEL = NOT_IDENTIFIED
+RAW_IQ_READ = NO
+MATLAB_EXECUTED = NO
+SAGE_EXECUTED = NO
+BATCH_EXECUTED = NO
+PROCESS_20_46_MHZ = NO
+NEXT_DECISION_REQUIRED = AUTHORIZE SEPARATE DARKROOM COMPOSITION INTERFACE DESIGN OR HOLD
+```
+
+## 56. Lock-state amplitude/phase/recovery composition layer (Completed with limitations + independent QA PASS_WITH_LIMITATIONS, 2026-08-26)
+
+- 按已批准的 lock-state amplitude/phase/recovery 计划完成了 Python-only 离线实现。代码为 `scripts/analysis/channel_modeling/lock_amplitude_phase_recovery_core.py`、`build_lock_amplitude_phase_recovery_model.py` 和 `audit_lock_amplitude_phase_recovery_model.py`；retry3 配置为 `configs/channel_modeling/lock_amplitude_phase_recovery_v1_retry3.json`。实现只读取既有派生 CSV/CSV.GZ/JSON，不读取 raw IQ，不运行 MATLAB/SAGE/batch，不处理 20.46 MHz。
+- 最终结果使用独立 new-only namespace `dataset_generation_logs/channel_modeling/lock_amplitude_phase_recovery_v1_20260826_r3/`。model manifest SHA-256=`9eb1847eac27618f80475ceafe62616285a346c5da847afdb0e8f2c5fc63a3ee`；配置 SHA-256=`5d4230149629e77d0f77a54197a32361dfa877e87ad8980fa7274d89a3ba3efc`；build receipt=`build_receipt.json`；独立 QA=`independent_qa_result.json`/`independent_qa_report.md`。
+- 结果 accounting：48 个 environment-eligible lock events、307,572 行 common-gain 20 ms grid、3,249 行 recovery trace、16,384 个确定性 scalar draws 和 256 个确定性状态序列。特征状态为 19 个 observed recovery、15 个 right-censored recovery、11 个 continuity-gap inconclusive 和 3 个 no-valid-baseline；没有把缺失、断点或记录结束伪造成 physical outage/LOS。
+- 冻结语义为 environment-only lock timing、`carrier_lock_test < -0.5`、20 ms bad-lock debounce、100 ms good stability、显式 `INCONCLUSIVE_GAP` 和 right-censoring。common gain 是 run-normalized tracking C/N0 amplitude proxy；`10^(common_gain_db/20)` 不是绝对 RF power。失锁包络同时作用于 path 0 和 active NLOS 槽位，但 path 0 不被断言为 physical LOS 或最强路径。
+- 相位没有从数据拟合，使用外部假设 `Uniform(-pi,pi)` 初相及每 1 ms 的 Doppler 连续演化；lock loss/recovery 不重置相位。inactive NLOS slot 为 amplitude=0、delay/Doppler/phase=null。默认 `EMPIRICAL_DIAGNOSTIC_PROXY` 不保证硬件物理失锁；强制 stress 模式必须由用户显式提供正值 floor 并标记 `ASSUMPTION_ONLY`。
+- 独立 QA 的 source provenance、gain alignment、lock timing、amplitude mapping、recovery envelope、phase continuity、inactive-slot semantics、determinism、namespace/hash 和 protected-pipeline gates 全部通过；状态为 `MODEL_QA=PASS_WITH_LIMITATIONS`、`READY_FOR_GENERATOR_INTEGRATION=YES`、`HARDWARE_LOCK_LOSS_CALIBRATED=NO`。r1 partial build 和 r2 self-referential-manifest QA failure 均保留在各自 namespace，未删除、覆盖、resume 或静默修复。
+- 正式技术报告为 `docs/LOCK_AMPLITUDE_PHASE_RECOVERY_MODEL_V1_REPORT.md`。该层是受限 receiver-diagnostic/simulation composition layer，不是完整 statistical channel model、absolute-power calibration、物理失锁概率模型或四路径毫秒级生成器；`STATISTICAL_CHANNEL_MODEL` 与 `DARKROOM_FOUR_PATH_GENERATOR` 仍未完成。下一步仅为独立 generator-composition interface 设计和验证，必须继续沿用 immutable parent/hash/new-only 安全边界。
+
+```text
+LOCK_AMPLITUDE_PHASE_RECOVERY_MODEL = COMPLETED_WITH_LIMITATIONS
+LOCK_AMPLITUDE_PHASE_RECOVERY_IMPLEMENTATION = IMPLEMENTED
+LOCK_AMPLITUDE_PHASE_RECOVERY_QA = PASS_WITH_LIMITATIONS
+LOCK_AMPLITUDE_PHASE_RECOVERY_READY_FOR_GENERATOR_INTEGRATION = YES
+LOCK_AMPLITUDE_PHASE_RECOVERY_HARDWARE_CALIBRATED = NO
+ABSOLUTE_RF_POWER_CALIBRATION = NOT_AVAILABLE
+PHASE_DATA_FIT = NO_EXTERNAL_ASSUMPTION_ONLY
+DARKROOM_FOUR_PATH_GENERATOR = NOT_STARTED
+STATISTICAL_CHANNEL_MODEL = NOT STARTED
+RAW_IQ_READ = NO
+MATLAB_EXECUTED = NO
+SAGE_EXECUTED = NO
+BATCH_EXECUTED = NO
+PROCESS_20_46_MHZ = NO
+NEXT_DECISION_REQUIRED = AUTHORIZE SEPARATE GENERATOR COMPOSITION INTERFACE DESIGN OR HOLD
+```
+
+## 57. Darkroom four-path generator v1 implementation and 120 ms preview (Implemented; full independent QA pending, 2026-08-27)
+
+- 按已批准的四路径暗室参数生成计划新增了 `configs/channel_modeling/darkroom_four_path_generator_v1.json`、`scripts/analysis/channel_modeling/darkroom_generator_core.py`、`prepare_darkroom_generator_request.py` 和 `run_darkroom_four_path_generator.py`。实现只组合已冻结的派生模型，不读取 raw IQ，不运行 MATLAB/SAGE/batch，不处理 20.46 MHz；受保护 production pipeline SHA-256 仍为 `BFFC123C97AF77F0A797F417D3866E9A34FEAB7729C5C1575352F53BC3571B9C`。
+- 已通过核心聚焦测试 `9 passed` 和 `py_compile`。这表示当前生成器为 `Implemented`，不表示完整独立 QA、12-cell QA 或 darkroom export gate 已完成。
+- 已生成新的 120 ms 只读预览 request/run：`dataset_generation_logs/channel_modeling/darkroom_four_path_generator_v1_requests/preview_120ms_urban_mid_20260827/` 与 `dataset_generation_logs/channel_modeling/darkroom_four_path_generator_v1_runs/preview_120ms_urban_mid_20260827/`。request SHA-256=`44cd052ba358284df6e8a2149cd05432e54d18a2a5914aee2662b05756c621a1`；canonical table 为 480 行，严格七列；预览使用 `Urban × MID`、seed=`20260827`、`CONDITIONAL_ACTIVE_STRESS`，仅用于检查四槽位格式，不是 production 或物理多径结论。
+- 当前唯一下一步是由用户检查该 120 ms 表；未经后续独立 auditor/全量 QA，不得将生成器标记为 `Validated`，不得声称已完成暗室统计信道模型。
+
+```text
+DARKROOM_FOUR_PATH_GENERATOR = IMPLEMENTED
+DARKROOM_FOUR_PATH_GENERATOR_QA = NOT_STARTED
+DARKROOM_120MS_PREVIEW = GENERATED_FOR_USER_REVIEW
+RAW_IQ_READ = NO
+MATLAB_EXECUTED = NO
+SAGE_EXECUTED = NO
+BATCH_EXECUTED = NO
+PROCESS_20_46_MHZ = NO
+NEXT_DECISION_REQUIRED = REVIEW_120MS_PREVIEW_BEFORE_FULL_GENERATOR_QA
+```
+
+## 58. Multi-elevation fixed-four-slot generator v2 contract revision (Planned / Not started, 2026-08-27)
+
+- 用户检查 v1 120 ms preview 后明确修订最终暗室接口：一个环境 request 必须同时输出 `Low`、`Mid`、`High`；每毫秒顺序固定为 `Low path0–3 → Mid path0–3 → High path0–3`，共 12 行，120 ms 应为 1440 行。
+- “固定四条路径”被澄清为固定四个结构槽位，不是四条物理路径始终非零激活。NLOS 1/2/3 仍由已冻结 activation model 决定 active mask；inactive slot 的 canonical amplitude 为 0，但 delay、Doppler、phase 必须保留完整有限的 latent 数值，CSV 不允许空字段。inactive latent values 不得解释为 active/confirmed multipath。
+- 正式 v2 实施计划为 `docs/superpowers/plans/2026-08-27-darkroom-multi-elevation-four-slot-generator-v2.md`，SHA-256=`D4ADC54555B99F9B24559A1AE662C3F9EF3DEC38DAF3418DEEDA5860FB79040B`。计划要求全新 v2 config/source/request/run/auditor namespace，并冻结 `INTER_SATELLITE_CORRELATION_NOT_MODELED`、`LATENT_INACTIVE_PARAMETER_NOT_PHYSICAL_PATH` 和 prior/support provenance。
+- v1 代码、request、preview 和 hash 均保留为历史 artifact；本次只更新计划和工程路线，没有实现 v2、没有生成 v2 参数表、没有运行 Python generator/MATLAB/SAGE/batch。
+
+```text
+DARKROOM_GENERATOR_V1 = IMPLEMENTED_PREVIEW_ONLY_NOT_TARGET_CONTRACT
+DARKROOM_GENERATOR_V2 = PLANNED_NOT_STARTED
+V2_ROWS_PER_MILLISECOND = 12
+V2_INACTIVE_NLOS_AMPLITUDE = 0
+V2_INACTIVE_NLOS_DELAY_DOPPLER_PHASE = COMPLETE_LATENT_VALUES
+RAW_IQ_READ = NO
+MATLAB_EXECUTED = NO
+SAGE_EXECUTED = NO
+BATCH_EXECUTED = NO
+PROCESS_20_46_MHZ = NO
+NEXT_DECISION_REQUIRED = USER_APPROVAL_TO_IMPLEMENT_V2_PLAN
+```
+
+## 59. Multi-elevation fixed-four-slot generator v2 implementation and preview (Implemented; preview QA passed, full regression pending, 2026-08-27)
+
+- 已在 v1 独立 namespace 之外实现 v2 基础设施：`scripts/analysis/channel_modeling/darkroom_generator_v2_core.py`、`prepare_darkroom_generator_v2_request.py`、`run_darkroom_generator_v2.py` 和独立 `audit_darkroom_generator_v2.py`。v2 保留冻结父模型和 v1 correlation/model semantics，只改变多仰角固定结构槽位输出合同。
+- v2 合同已实现为一个环境 request 同时输出 `Low`、`Mid`、`High`；每个毫秒按 `Low path0–3 → Mid path0–3 → High path0–3` 输出 12 行。inactive NLOS 槽位保留有限 latent delay/Doppler/phase，canonical `RelativeAmplitude=0`，不得解释为物理传播路径。
+- 固定预览 request：`dataset_generation_logs/channel_modeling/darkroom_generator_v2_requests/preview_120ms_urban_all_bands_v2_20260827_r3/generation_request.json`，request SHA-256=`ddb6b26405184601b89d2c85e2934001c683f06795a938b0247e23d46920eb37`。环境为 `Urban`，持续 120 ms，seed=`20260827`，三仰角同时生成；v2 config SHA-256=`d38588144ce6775a959ba15f52f633923915ec9d146a910ea1239aba0326a50b`。
+- 成功预览输出 namespace：`dataset_generation_logs/channel_modeling/darkroom_generator_v2_runs/preview_120ms_urban_all_bands_v2_20260827_r3/`。canonical `darkroom_channel_parameters.csv` 恰有 1440 行、7 列固定顺序，SHA-256=`03950978902164737bc77e632734954a3908889713aa836bb9175dacb419c949`；独立 QA `independent_qa_result.json` SHA-256=`8a0299b67aa8722408be4f3e9288c169d767057dc5dec4cb53e68eff390934f7`，`overall_pass=true`。
+- 独立 gold-blind QA 已通过：请求/配置/父模型/源文件/受保护 pipeline hash、v2 namespace、三仰角完整性、12 行/毫秒、无空 canonical 字段、固定槽位、inactive 零幅度、块内参数与相位递推均通过；120 ms 共 3 个 40 ms block/仰角，1080 个 NLOS 行为 inactive latent zero-amplitude。此结果是参数生成预览，不是 raw IQ、MATLAB、SAGE 或论文实测结果。
+- v2 生成期间的早期失败 namespace（无覆盖行为）均保留为诊断证据：`preview_120ms_urban_all_bands_v2_20260827`、`_r1`、`_r2`；最终 r3 使用全新 request/run namespace。v1 config、v1 source、v1 request/run 和受保护 `run_nav_sage_pipeline.m` 均未修改。
+- v2 聚焦 py_compile/pytest 为 `15 passed`。完整 `scripts/analysis/channel_modeling/tests` 回归为 `106 passed, 1 failed`；该失败来自既有 v1 测试 payload 未提供当前 v1 校验所要求的 `request_purpose`，不是本次 v2 source 修改造成，v1 测试/代码未被改写。v2 全环境 12-cell regression 尚未完成，不能将 v2 标记为全量 `Validated`。
+
+```text
+DARKROOM_GENERATOR_V1 = IMPLEMENTED_PREVIEW_ONLY_NOT_TARGET_CONTRACT
+DARKROOM_GENERATOR_V2 = IMPLEMENTED_PREVIEW_QA_PASS_FULL_REGRESSION_PENDING
+DARKROOM_120MS_V2_PREVIEW = GENERATED_1440_ROWS_INDEPENDENT_QA_PASS
+V2_ROWS_PER_MILLISECOND = 12
+V2_INACTIVE_NLOS_AMPLITUDE = 0_WITH_FINITE_LATENT_PARAMETERS
+RAW_IQ_READ = NO
+MATLAB_EXECUTED = NO
+SAGE_EXECUTED = NO
+BATCH_EXECUTED = NO
+PROCESS_20_46_MHZ = NO
+NEXT_DECISION_REQUIRED = USER_REVIEW_OF_120MS_V2_PREVIEW_BEFORE_LONGER_OR_MULTI_ENVIRONMENT_RUN
+```
+
+## 60. Multi-elevation fixed-four-slot generator v2.1 all-positive NLOS contract (Implemented; 120 ms preview QA PASS, 2026-08-27)
+
+- 按用户批准的 v2.1 变更完成了独立 Python-only 生成基础设施。v2.1 不修改 v2.0 的数学/模型源文件，而是复用 v2.0 的父模型、随机流、40 ms block、common gain/fade/lock 和相位递推语义；新的 slot contract 将 NLOS 1/2/3 定义为条件性场景中的始终激活槽位，并要求每条输出 NLOS `RelativeAmplitude` 严格大于 0。
+- 该 all-positive 规则是 `CONDITIONAL_MULTIPATH_SCENARIO`，不是对真实环境多径发生率的结论，也不表示每个物理观测必然存在三条 NLOS 路径。v2.1 明确记录 `ACTIVATION_MODEL_NOT_USED_FOR_GENERATION`；旧 v2.0 的 empirical activation、zero-amplitude inactive-slot 结果继续作为 immutable 历史 artifact，未被覆盖、修改或重命名。
+- 新配置为 `configs/channel_modeling/darkroom_multi_elevation_four_slot_generator_v2_1.json`，SHA-256=`55befd54988b1aa8838e10a02deae7126305156013283ad52a8c449731ac5814`。v2.1 source hashes 为：core=`a2205bb43698e6c27f2e31a09e532a4cbafd10cafda04b69390d081d959e6a56`、request preparer=`bd14dceabe09b3a153be9bbb2e05799f7a04db49918db2890fb81120b2800e6f`、runner=`097290e97fef3342192cb815c6a08100e79d25a0ca418c4a8d6dfeca10d9b8de`、auditor=`3ae3798756a67ad76ecf290ef41249d6c6096b212d8b58b39643218b19aa5aa8`。受保护的 `run_nav_sage_pipeline.m` SHA-256 仍为 `bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c`。
+- v2.1 request preparer、new-only runner 和独立 auditor 分别位于 `scripts/analysis/channel_modeling/prepare_darkroom_generator_v2_1_request.py`、`run_darkroom_generator_v2_1.py` 和 `audit_darkroom_generator_v2_1.py`；core 位于 `darkroom_generator_v2_1_core.py`。执行策略固定为 raw IQ/MATLAB/SAGE/batch/20.46 MHz 全部 false，request 必须 all bands、12 rows/ms、new-only，且只能写入 v2.1 namespace。
+- 最终 preview request namespace 为 `dataset_generation_logs/channel_modeling/darkroom_generator_v2_1_requests/preview_120ms_urban_all_bands_v2_1_20260827_r1/`，request SHA-256=`f35af78cd2043d68c95ca55ff70aff080e3319fd0f550d8ec50adadddaf563dd`。输出 namespace 为 `dataset_generation_logs/channel_modeling/darkroom_generator_v2_1_runs/preview_120ms_urban_all_bands_v2_1_20260827_r1/`；环境=`Urban`、持续=`120 ms`、seed=`20260827`、三仰角同时输出。canonical `darkroom_channel_parameters.csv` 为 1440 行、固定七列，SHA-256=`474ea2780d591ec9e0391414190a30c7b7b446c334a03ba96621491be9ba076a`；generation manifest SHA-256=`b5c22c97d802ad6fbcefaea6bc43e09daf915225056acb3ea02e7f6126d01b4b`；generation receipt SHA-256=`55c866bc93302c68dac1cbf1314dddd8e83b6b6e11201075a743ecc389549ece`。
+- 生成前 runner validation-only 也由独立 request `dataset_generation_logs/channel_modeling/darkroom_generator_v2_1_requests/validation_only_v2_1_20260827/generation_request.json` 验证通过，request SHA-256=`889d0458fe184a01947ad07c1c25af3d63a9ee8e8248870ebc754ee943a4a03b`，`execution_eligible=true`、`generation_requested=false`、`raw_iq_read=false`；对应 run namespace 未创建。
+- preview 结果 accounting：`1440` rows、`360` receiver-timeline rows、`27` block-catalog rows、`1080` path-slot rows；NLOS 1/2/3 共 `1080/1080` 行严格为正，inactive NLOS 行=`0`，所有 block 和 slot activation mask=`111`。首行顺序保持 `Low path0–3 → Mid path0–3 → High path0–3`。
+- 独立 gold-blind QA 位于该 output namespace 的 `independent_qa_report.md` 和 `independent_qa_result.json`，QA result SHA-256=`f356d87730b7fec176765c34adf5823aafafadbfbf53a1a8dd9ae5a0f4754a0e`。QA `overall_pass=true`，request/config/父模型/source/protected-pipeline hash、namespace、三仰角完整性、12 rows/ms、all-positive NLOS、mask、block/phase consistency、output hash 和 gold-leakage gates 均通过。v2.1 仍是参数生成 preview，不是 raw IQ、MATLAB、SAGE 或论文实测结果。
+- 第一次未能完成 auditor 预检的 v2.1 preview namespace `preview_120ms_urban_all_bands_v2_1_20260827` 及 request SHA=`8a2872fcb771a0aec9662d62e423e1ded481fcac7c7eaf33c3954a0c9b8e3ead` 保留为历史诊断 artifact；原因是 auditor 初始实现误引用 core QA helper，修复后按 new-only 使用 `_r1` 重新生成，未覆盖旧 namespace。
+- v2.1 聚焦测试为 `12 passed`，四个新文件通过 `py_compile`。全套 channel-modeling regression 本轮未完成（不作为 v2.1 放行门禁），不能把 v2.1 标为全环境/全回归 `Validated`。下一步由用户审阅 v2.1 120 ms 预览，再决定是否开展更长时长或多环境生成；不得据此宣称最终统计信道模型完成。
+
+```text
+DARKROOM_GENERATOR_V1 = IMPLEMENTED_PREVIEW_ONLY_NOT_TARGET_CONTRACT
+DARKROOM_GENERATOR_V2 = IMPLEMENTED_PREVIEW_QA_PASS_FULL_REGRESSION_PENDING
+DARKROOM_GENERATOR_V2_1 = IMPLEMENTED_PREVIEW_QA_PASS_FULL_REGRESSION_PENDING
+DARKROOM_GENERATOR_V2_1_NLOS_CONTRACT = ALL_THREE_SLOTS_ALWAYS_ACTIVE_STRICTLY_POSITIVE
+DARKROOM_GENERATOR_V2_1_ACTIVATION_MODEL_USED = NO
+DARKROOM_GENERATOR_V2_1_CONDITIONAL_SCENARIO = YES
+DARKROOM_120MS_V2_1_PREVIEW = GENERATED_1440_ROWS_INDEPENDENT_QA_PASS
+DARKROOM_GENERATOR_V2_1_REQUEST_SHA256 = F35AF78CD2043D68C95CA55FF70AFF080E3319FD0F550D8EC50ADADDDAF563DD
+DARKROOM_GENERATOR_V2_1_CANONICAL_ROWS = 1440 (1080 POSITIVE NLOS / 0 INACTIVE)
+RAW_IQ_READ = NO
+MATLAB_EXECUTED = NO
+SAGE_EXECUTED = NO
+BATCH_EXECUTED = NO
+PROCESS_20_46_MHZ = NO
+NEXT_DECISION_REQUIRED = USER_REVIEW_OF_120MS_V2_1_PREVIEW_BEFORE_LONGER_OR_MULTI_ENVIRONMENT_RUN
+```
+
+## 61. Darkroom environment × quality paired generator v2.2 controlled pilot (Implemented + Validated, 2026-08-27)
+
+- 按批准的 v2.2 计划完成了独立 Python-only environment×quality paired generator。新增配置、quality-profile、generator core、immutable request/matrix preparer、new-only runner、独立 auditor 和矩阵汇总工具均位于 `configs/channel_modeling/` 与 `scripts/analysis/channel_modeling/`；v2.1 source/config、冻结 path/gain/lock/recovery model、production pipeline 和既有 v2.1/v2.0 artifact 均未修改。
+- 最终使用全新 matrix namespace `dataset_generation_logs/channel_modeling/darkroom_generator_v2_2_matrices/environment_quality_pair_20s_v2_2_r3_20260827/`，matrix manifest SHA-256=`389917e6810ae243434bec81df3409563a6491a81515b99f557dc3a2198f4a0a`。8 个 request 均 validation-only eligible，`new_only=true`、`resume_allowed=false`、raw/MATLAB/SAGE/batch/20.46 MHz 全部 false；r1/r2 旧 matrix 以及早期 sidecar schema failure run 均保留为 immutable diagnostic evidence。
+- 8 个 run 均已生成并通过独立 gold-blind QA：4 个环境（Urban、Special Reflective、Mountain/Valley、Highway/Open）分别配对 `GOOD_TRACKED_BASELINE` 与 `POOR_CONDITIONAL`。每张 canonical table 为 20,000 ms×12 rows/ms=`240,000` 行；矩阵合计 8 tables、24 environment×elevation×quality logical cells、1,920,000 canonical rows。4/4 Good/Poor pair QA 均证明 base common gain、path delay/Doppler/phase invariant，最终差异仅来自冻结 quality envelope。
+- 每个 Poor run 含 Low/Mid/High 各一个完整条件质量事件（矩阵共 12 个），每个 Good run 无质量事件；所有 8 个 run 的 NLOS 1/2/3 输出幅度严格为正。Urban LOW 和 Highway/Open LOW 的 path-support `PRIOR_ONLY` 标记继续保留，Highway/Open 的质量/路径层仍受 prior/partial-pooling 限制。
+- 矩阵级结果位于独立 QA namespace `dataset_generation_logs/channel_modeling/darkroom_generator_v2_2_matrices/environment_quality_pair_20s_v2_2_r3_qa2_20260827/`：`matrix_qa_summary.csv` SHA-256=`88ebc27971c5c60b33cbdda723d73a9ef145c2a2e45cb7dca5c01d5d313d8fcd`，`matrix_qa_report.md` SHA-256=`eab068ac949abb5b1a5d177610bd5d1ed41dab0c811fc1de4ec2098f618cc7a5`，`MATRIX_QA=true`。第一版 r3 summary 中的 Poor event-count 展示错误已通过新 QA namespace 校正，原报告未覆盖。
+- v2.2 关键 source/config hash 已随 request/receipt 冻结：config=`26003c7c0c0cabca45c6a9a175974f1ca336a301eff9c546a9c3bc99e38b5822`；quality=`9b1f3483e9f5a9eb9630afeb2111568aa015802dde6301b40546a8a0d9c3528b`；core=`fb0253c83b82c978c625c9ae22977beee4095155b48b171625f1607097d016cc`；request preparer=`f6a15b9dcf0c6819dc9792816670a7a3a73526112211383bbe00d7f82713b642`；matrix preparer=`6968c111b9e36e9adba96e2900cc9a4686803ae017106191631b35b71b166af0`；runner=`206d6924c8b2e56ba8a77194ee0ab8409b05af2fd50330af55625542b4e26fab`；auditor=`e8f1ad43697380562e68485a91b6d6067dcd03b0495f420e690a36b25f225b8c`；summarizer=`f82f10b4593ae0ca3469f82ec74b06ca49545108315de16e34914a779f34ed10`。
+- 代码验证结果为 v2.2 focused tests `31 passed`、v2.1 regression `12 passed`、四个冻结 parent core test `53 passed`，以及全部 v2.2 source `py_compile` PASS。完整 channel-modeling suite 的既有 v1 测试仍有已知 `request_purpose` payload failure；一组包含昂贵 builder/auditor 的 parent 全量组合在末段长时间运行后被安全中断，因此本节不把 full-suite 记为全量 PASS，也没有发现由 v2.2 引入的新科学回归。
+- 实际 Python 环境为 `D:\Research\ChannelModeling-Agent\.venv\Scripts\python.exe`（Python 3.12.9、NumPy 2.5.1、SciPy 1.18.0、OpenBLAS 0.3.33.112.0）。8 个 run 的单表 elapsed 约 25.581–36.966 s，合计约 247.579 s；这些是 Python 参数表生成时间，不是 SAGE 或 raw-IQ runtime。
+- 该 pilot 只验证了 20 秒、四环境 Good/Poor 条件性生成和配对 provenance。`POOR_CONDITIONAL` 是 receiver-diagnostic conditional impairment，不是硬件标定的物理失锁概率；三条 NLOS 始终激活是条件性四路径合同，不是实测发生率；phase 是外加假设，absolute RF power unavailable。final-duration export、暗室实际回放和完整 statistical channel model 仍未完成。
+
+```text
+DARKROOM_GENERATOR_V2_2_IMPLEMENTATION = IMPLEMENTED
+DARKROOM_GENERATOR_V2_2_PILOT = COMPLETED_20S
+DARKROOM_GENERATOR_V2_2_RUN_QA = PASS (8/8)
+DARKROOM_GENERATOR_V2_2_PAIR_QA = PASS (4/4)
+DARKROOM_GENERATOR_V2_2_MATRIX_QA = PASS
+DARKROOM_GENERATOR_V2_2_CANONICAL_TABLES = 8
+DARKROOM_GENERATOR_V2_2_LOGICAL_CELLS = 24
+DARKROOM_GENERATOR_V2_2_CANONICAL_ROWS = 1920000
+DARKROOM_GENERATOR_V2_2_POOR_EVENTS = 12 (3 PER POOR RUN)
+DARKROOM_GENERATOR_V2_2_ZERO_AMPLITUDE_NLOS_ROWS = 0
+DARKROOM_GENERATOR_V2_2_GOLD_LABELS_USED = NO
+DARKROOM_GENERATOR_V2_2_FINAL_DURATION_EXPORT = NOT STARTED
+STATISTICAL_CHANNEL_MODEL = NOT STARTED
+RAW_IQ_READ = NO
+MATLAB_EXECUTED = NO
+SAGE_EXECUTED = NO
+BATCH_EXECUTED = NO
+PROCESS_20_46_MHZ = NO
+NEXT_DECISION_REQUIRED = USER_DECISION_ON_LONGER_DARKROOM_EXPORT_OR_PAPER_ADMISSION
+```
+
+## 62. v2.2 batch generator wrapper and 20 ms contract smoke (Implemented; full eight-cell smoke blocked by frozen duration semantics, 2026-08-27)
+
+- 新增独立批量调用脚本 `scripts/analysis/channel_modeling/run_darkroom_generator_v2_2_batch.py` 及聚焦测试 `scripts/analysis/channel_modeling/tests/test_run_darkroom_generator_v2_2_batch.py`。脚本只编排既有 v2.2 request/runner，不改变 `darkroom_generator_v2_2_core.py` 的科学计算；支持 `--prepare`、`--validate-only` 和显式 `--execute --confirm-darkroom-batch-v2-2`，按 Urban、Special Reflective、Mountain/Valley、Highway/Open × Good/Poor 固定顺序逐项执行，并在全部成功后将 8 张 canonical table 以 hash 可追溯副本导出到集合目录。
+- 新脚本当前 SHA-256=`5b420575aa3236a17394b1edc481c02a046f5a52f5061e08bc0590d3451b8140`；既有 v2.2 config/core/request-preparer/matrix-preparer/runner hash 未改变，分别仍为 `26003c7c0c0cabca45c6a9a175974f1ca336a301eff9c546a9c3bc99e38b5822`、`fb0253c83b82c978c625c9ae22977beee4095155b48b171625f1607097d016cc`、`f6a15b9dcf0c6819dc9792816670a7a3a73526112211383bbe00d7f82713b642`、`6968c111b9e36e9adba96e2900cc9a4686803ae017106191631b35b71b166af0`、`206d6924c8b2e56ba8a77194ee0ab8409b05af2fd50330af55625542b4e26fab`。受保护 `run_nav_sage_pipeline.m` SHA-256 仍为 `bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c`。已有 20 ms smoke manifest 中记录的是冻结时的旧 wrapper hash，不能作为当前 wrapper provenance；该 smoke 只保留作历史诊断。
+- 20 ms smoke 集合使用全新 namespace `dataset_generation_logs/channel_modeling/0828darkroomPar_smoke_20ms_20260827/`，matrix manifest SHA-256=`4cfaf245c5af033c811993bf22109b8dcf462c4291925f1fcf5cbb6fc9f7e45d`。manifest/8 request/new-only/输出隔离 validation-only 通过；实际 8-cell smoke 在第一个 `GOOD_TRACKED_BASELINE` Urban 单元完成 240 行后，第二个 `POOR_CONDITIONAL` 单元由既有 frozen quality profile 以 `QUALITY_EPISODE_DOES_NOT_FIT` 拒绝，因为 20 ms 不能容纳完整质量事件。批处理按安全策略停止，未启动剩余 6 个单元，未导出集合 tables；Good 成功输出和 Poor failed receipt 均保留为诊断证据，未删除、覆盖或 resume。
+- 为防止短时长被误当作有效 8-cell 质量生成，wrapper 将 20 ms 明确定义为 validation-only；8-cell `--execute` 只允许 `300000 ms`。正式 5 分钟集合 `dataset_generation_logs/channel_modeling/0828darkroomPar/` 已由用户人工准备，matrix manifest SHA-256=`61ff9777087b2c82f297b649adea2ae5406b658f53cb4fa56342aca9373fcbe9`，8 个 request 均已冻结且输出 namespace、batch lock、tables 目录均不存在；5 分钟生成尚未执行。下一步由用户先运行该 manifest 的 validation-only，再自行决定是否执行 5 分钟 batch。
+
+```text
+DARKROOM_GENERATOR_V2_2_BATCH_WRAPPER = IMPLEMENTED
+DARKROOM_20MS_BATCH_CONTRACT_VALIDATION = PASS
+DARKROOM_20MS_FULL_EIGHT_CELL_SMOKE = BLOCKED_BY_QUALITY_EPISODE_DURATION
+DARKROOM_GENERATOR_V2_2_FINAL_DURATION_EXPORT = NOT STARTED
+DARKROOM_5MIN_MANIFEST = PREPARED_8_REQUESTS
+DARKROOM_5MIN_BATCH = NOT_STARTED
+RAW_IQ_READ = NO
+MATLAB_EXECUTED = NO
+SAGE_EXECUTED = NO
+BATCH_SAGE_EXECUTED = NO
+PROCESS_20_46_MHZ = NO
+NEXT_DECISION_REQUIRED = USER_VALIDATE_5MIN_MANIFEST_THEN_AUTHORIZE_5MIN_BATCH_CALL
+```
+
+## 63. Darkroom v2.2 5-minute eight-cell generation and export (Completed generation/export; independent 5-minute QA not separately recorded, 2026-08-27)
+
+- 本节覆盖 Section 62 中“5 分钟生成尚未执行”的当时状态；Section 62 作为历史执行准备与 20 ms smoke 记录保留，不删除、不改写。当前实际集合 `dataset_generation_logs/channel_modeling/0828darkroomPar/` 的 `batch_execution_receipt.json` 记录 `status=completed`、`completed_count=8`、`request_count=8`，八个环境×质量 request 均 exit code `0`。
+- 8 个 request 仍对应四类环境 `Urban`、`Special Reflective`、`Mountain/Valley`、`Highway/Open` 与两种质量模式 `GOOD_TRACKED_BASELINE`、`POOR_CONDITIONAL`；每张 canonical table 为 `300000 ms × 12 rows/ms = 3,600,000` 行，八张表合计 `28,800,000` 行。集合执行时间为 `2026-08-27T07:00:26.687705Z` 至 `2026-08-27T07:59:12.479781Z`，wall-clock 约 `3526 s`。
+- 集合 manifest `matrix_manifest.json` SHA-256=`61ff9777087b2c82f297b649adea2ae5406b658f53cb4fa56342aca9373fcbe9`；`request_matrix.csv` SHA-256=`303925e84fad0c02701332dc6110667b50e0866959be2894c24336d0f8ec7832`；batch receipt SHA-256=`c78a030006851fb2b1ff87fd5792368235b54a183d7750e2dd0e06dfc4e69d63`。
+- 八张集合导出表位于 `dataset_generation_logs/channel_modeling/0828darkroomPar/tables/`，由 `table_export_manifest.json` 记录；export manifest SHA-256=`f2de55f4803f237449c9f6b7f4722343e5d3c00a6601a0cc62106c5178669feb`。导出是 hash-traceable 副本，authoritative per-request outputs 仍位于 `dataset_generation_logs/channel_modeling/darkroom_generator_v2_2_runs/*_5min_v2_2_0828darkroomPar_20260827/`。
+- receipt 和 table-export manifest 均明确 `raw_iq_read=false`、`matlab=false`、`sage=false`、`gold_labels_used_for_generation=false`。这批结果证明 Python 参数生成与导出完成，不等同于暗室硬件回放验收，也不等同于完整统计信道模型完成。
+- 当前未发现与 20 秒 `environment_quality_pair_20s_v2_2_r3_qa2_20260827` 等价的独立 5 分钟矩阵 QA 报告。因此工程状态应区分为 `DARKROOM_5MIN_BATCH=COMPLETED_GENERATION_EXPORT` 与 `DARKROOM_5MIN_INDEPENDENT_QA=NOT_RECORDED`；如需用于回放或论文材料，应另行进行只读 QA，不得重写或复用现有 namespace。
+- 暗室支线参考文档为 `docs/DARKROOM_GENERATOR_V2_2_REFERENCE.md`，SHA-256=`a3ec004a47026504a6a53a78a33b4cd31f3c5ef6f029069e5a115082df7cd1e9`。该文档是资产导航与交接参考，不是新的工程唯一状态源。
+
+```text
+DARKROOM_GENERATOR_V2_2_5MIN_GENERATION = COMPLETED_8_OF_8
+DARKROOM_GENERATOR_V2_2_5MIN_EXPORT = COMPLETED_8_TABLES
+DARKROOM_GENERATOR_V2_2_5MIN_INDEPENDENT_QA = NOT_RECORDED
+DARKROOM_GENERATOR_V2_2_5MIN_CANONICAL_ROWS = 28800000
+DARKROOM_GENERATOR_V2_2_5MIN_RAW_IQ_READ = NO
+DARKROOM_GENERATOR_V2_2_5MIN_MATLAB = NO
+DARKROOM_GENERATOR_V2_2_5MIN_SAGE = NO
+DARKROOM_GENERATOR_V2_2_5MIN_GOLD_LABELS_USED = NO
+DARKROOM_GENERATOR_V2_2_STATISTICAL_CHANNEL_MODEL = NOT_STARTED
+NEXT_DECISION_REQUIRED = INDEPENDENT_5MIN_READ_ONLY_QA_OR_DARKROOM_REPLAY_AUTHORIZATION
+```
+
+## 64. Rain full-SAGE nine-task and canonical-table effect-layer execution plan (Planned / Not started, 2026-08-27)
+
+- 用户已确认 Rain Effect Layer 的最终接口固定为作用于现有 v2.2 canonical path table：`ms,SatelliteID,NLOSPathID,RelativeDelay,RelativeDoppler,RelativeAmplitude,RelativePhase_rad`。该层不直接修改 raw IQ，也不修改已有 v2.2 generator/core、5 分钟表或生产 SAGE。
+- 正式执行计划位于 `docs/superpowers/plans/2026-08-27-darkroom-rain-effect-layer-final-execution.md`，SHA-256=`57a6646a8a5f4795bfb1ce50937dc904f86f47f55ace870b85f2ed292790965c`。计划将工作串行拆为：9-task Rain full SAGE/independent QA/frozen event-path population，再进行 Clear→MidRain 与 Clear→HeavyRain 的 empirical distribution transport、canonical-table adapter、120 ms smoke 和 24 logical-cell package QA。
+- 机器可读 9-task checklist 位于 `dataset_generation_logs/darkroom_channel_emulation/rain_final_planning_20260827/rain_sage_9_task_checklist.csv`，SHA-256=`03dce06a9ffa4279982b89ad487f534f13821662016fc1f650ca8263ac8011a9`。清单包含 9 个唯一 scene/PRN/channel 任务，全部固定为 10.23 MHz；Clear G24 和 HeavyRain G02 标记为 `ARTIFACT_EXISTS_QA_REQUIRED`，其余 7 项标记为 `NOT_STARTED`。
+- 执行合同保持 `new_only=true`、`resume_allowed=false`、`max_parallel_matlab=1`、正常用户 PowerShell 7、一次一任务、每任务 QA 后人工放行下一项。现有 G24/G02 必须先独立 QA；如未通过，不得覆盖或在原 namespace 重跑，只能停止并等待新版本 namespace 决策。
+- 科学边界保持：三种天气没有共同 PRN，仅 Clear/MidRain 共有 G24；没有可用 geometry/elevation。雨效应层因此定位为 weather-conditioned empirical transform，禁止逐路径相减、仰角条件雨效应或普适因果雨衰声明。Stage4 relative amplitude 不能识别绝对主径雨衰，path0 公共增益/失锁仍由既有 quality/common-gain/lock 层负责。
+- 本节只记录已批准的规划资产。本轮未生成 execution request、未读取 raw IQ 内容、未运行 MATLAB/SAGE、未改变任何既有实验 artifact，Rain 9-task production 和雨效应层实现均仍为 `Planned / Not started`。
+
+```text
+RAIN_EFFECT_LAYER_INTERFACE = CANONICAL_PATH_TABLE_CONFIRMED
+RAIN_FULL_SAGE_FROZEN_TASK_COUNT = 9
+RAIN_EXISTING_ARTIFACTS_PENDING_QA = 2
+RAIN_FRESH_TASKS_NOT_STARTED = 7
+RAIN_FULL_SAGE_EXECUTION = NOT_STARTED
+RAIN_EVENT_PATH_DATABASE = NOT_STARTED
+RAIN_EFFECT_LAYER_IMPLEMENTATION = NOT_STARTED
+RAIN_24_LOGICAL_CELL_PACKAGE = NOT_STARTED
+RAW_IQ_CONTENT_READ = NO
+MATLAB_EXECUTED = NO
+SAGE_EXECUTED = NO
+EXECUTION_REQUEST_CREATED = NO
+NEXT_DECISION_REQUIRED = USER_SELECT_PLAN_EXECUTION_MODE_AND_AUTHORIZE_TASK_1
+```
+
+## 65. Existing Rain G24/G02 artifact QA (Implemented; artifact audit PASS, execution acceptance inconclusive, 2026-08-27)
+
+- Task 2 of the approved Rain execution plan was performed as an independent, read-only audit of the two pre-existing output directories. Auditor: `scripts/sage_pipeline/rain/audit_rain_sage_task.py` (SHA-256=`bd0dcff63955b0d6701471daf0aa48912a882d7024fcd916051dad28560ea69a`). Regression tests: `scripts/sage_pipeline/rain/test_audit_rain_sage_task.py` (SHA-256=`4579a2073795887fd2b695343e5ffed31de41c89547ee82fb70301a43cb81918`), 6/6 passed. The audit generated only new reports under `dataset_generation_logs/darkroom_channel_emulation/rain_full_sage_qa_20260827/`.
+- Clear G24/ch10 artifact `scenes/F1023_clear/sage_results/rain_sage_v1/G24` passed identity, completeness, stage-chain, and numerical checks. It contains 2,206 Stage0 symbols, 2,204 Stage0/Stage1 windows, 480 Stage2 model rows, 120 selected windows, 63 Stage3 persistence rows, 3 reliable centers, 3 Stage4 joint rows, and 0 confirmed events / 0 confirmed multipath paths under the strict Stage4 criterion. One Stage2 invalid model row is reported as a diagnostic count and does not make the written artifact incomplete.
+- HeavyRain G02/ch1 artifact `scenes/F1023_heavyrain/sage_results/rain_sage_v1/G02` passed identity, completeness, stage-chain, and numerical checks. It contains 2,865 Stage0 symbols, 2,863 Stage0/Stage1 windows, 480 Stage2 model rows, 120 selected windows, 183 Stage3 persistence rows, 6 reliable centers, 6 Stage4 joint rows, and 1 confirmed event / 1 confirmed multipath path (center window `2096`) under the strict Stage4 criterion. 141 Stage2 invalid model rows are reported as a diagnostic count; written Stage4 output remains structurally complete.
+- Neither existing output directory has a successful execution receipt bound to it. Historical overnight records associated with these tasks are failed/non-zero records and were not promoted to success evidence. Accordingly, both artifact audits are structurally PASS, but both overall task dispositions remain `INCONCLUSIVE_NO_EXECUTION_RECEIPT`; the checklist's prior `ARTIFACT_EXISTS_QA_REQUIRED` state is not changed into formal acceptance by this audit.
+- QA summary: `dataset_generation_logs/darkroom_channel_emulation/rain_full_sage_qa_20260827/existing_artifact_qa_summary.csv` and `existing_artifact_qa_summary.md`. The detailed per-task QA JSON/report/hash artifacts are in the two task subdirectories. Existing Rain SAGE artifacts and historical failed/partial records were not modified, deleted, moved, resumed, or reinterpreted as new results. The protected production pipeline hash remains `bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c`.
+
+```text
+RAIN_EXISTING_ARTIFACT_AUDIT_TASKS=2
+RAIN_CLEAR_G24_ARTIFACT_QA=PASS
+RAIN_HEAVYRAIN_G02_ARTIFACT_QA=PASS
+RAIN_EXISTING_EXECUTION_RECEIPT_ACCEPTANCE=INCONCLUSIVE_2_OF_2_NOT_FOUND
+RAIN_CLEAR_G24_CONFIRMED_EVENTS=0
+RAIN_CLEAR_G24_CONFIRMED_PATHS=0
+RAIN_HEAVYRAIN_G02_CONFIRMED_EVENTS=1
+RAIN_HEAVYRAIN_G02_CONFIRMED_PATHS=1
+RAIN_EXISTING_ARTIFACTS_MODIFIED=NO
+RAW_IQ_CONTENT_READ=NO
+MATLAB_EXECUTED=NO
+SAGE_EXECUTED=NO
+NEXT_DECISION_REQUIRED=RECOVER_OR_BIND_SUCCESS_EXECUTION_RECEIPT_BEFORE_FORMAL_RAIN_ACCEPTANCE
+```
+
+## 66. Fresh Rain rerun preparation after receipt ambiguity (Implemented; G24 request ready, execution not started, 2026-08-27)
+
+- Because the existing Clear G24 and HeavyRain G02 directories have no bindable successful execution receipt, the user authorized treating those results as abandoned for the new analysis while preserving them as historical evidence. No old artifact was deleted, moved, overwritten, resumed, or modified.
+- A separate fresh-task entry `scripts/sage_pipeline/rain/run_rain_sage_fresh_task.m` was added. It reuses the existing Rain `build_rain_stage0.m` and `run_rain_sage_stage1_stage4.m` implementations, requires an explicit new rerun namespace, rejects `Resume=true`, and does not alter the existing Rain or protected production mathematics. Its SHA-256 is `2b2cfd0e0a704dec5dee5c6c47dc89c77c8f3fbb23a76d10371cd7a002407e41`.
+- A separate task-aware wrapper `scripts/sage_pipeline/rain/Invoke-RainSageFreshTask.ps1` was added. It is validation-only by default, requires `-Execute -ConfirmRainSageRerun` for a real call, checks the manifest/source/input hashes, checks the global mutex, enforces normal-user `TJ-CHANNEL\\Jing_` execution, and records a new receipt without cleanup/resume behavior. SHA-256=`ea6e4450f25d354c463f451509c40b6c442317b344621fbd7785b6a17caa0099`.
+- Request preparation is provided by `scripts/sage_pipeline/rain/prepare_rain_sage_fresh_request.py`, SHA-256=`f152e25b1cd46bdfa30c49ec1662b27de6ea531ee582bf8747cb76db9fb69ecd`. Rain regression/static verification passed: all 62 Rain Python tests, `py_compile`, and the fresh wrapper PowerShell AST parse.
+- Current immutable first-task request is `dataset_generation_logs/darkroom_channel_emulation/rain_sage_rerun_requests_20260827/rain_sage_fresh_rerun_v1__F1023_clear__G24__ch10__20260827_r2/execution_manifest.json`, SHA-256=`e0e1c8bf8c4642c2c72efaf0f899e7186e5212e1021d5bec29659827ce52fa63`. It freezes `F1023_clear/G24/ch10/10230000`, raw byte size `2925003264`, raw SHA-256=`0be6adba273a81b21d6e84e93a4fa1450f7a4a76c093ef1ea17163015f616210`, `new_only=true`, `resume_allowed=false`, and `gold_labels_used_for_selection=false`.
+- Dry-run passed with `GLOBAL_LOCK=AVAILABLE`, `EXECUTION_ELIGIBLE=true`, `MATLAB_INVOKED=false`, `RAW_IQ_OPENED=false`, and `SAGE_EXECUTED=false`. The only approved new output namespace for this task is `scenes/F1023_clear/sage_results/rain_sage_rerun_v1_20260827_r2/G24`; it was absent at preparation time and remains absent. The prior `r1` request namespace is retained as a superseded, non-executed diagnostic artifact because a later wrapper hash/lock check required a new immutable request.
+- The rerun scope remains the nine-task frozen Rain population across Clear, MidRain, and HeavyRain. Execution policy remains serial: execute Clear G24 first, perform independent QA, then require a separate human release before any other Rain task. No G25/G11/mainline production task is released by this preparation.
+
+```text
+RAIN_FRESH_RERUN_SCOPE=THREE_RECORDINGS_NINE_TASKS
+RAIN_FRESH_G24_REQUEST=PREPARED_R2
+RAIN_FRESH_G24_EXECUTION=NOT_STARTED
+RAIN_FRESH_G24_DRY_RUN=PASS
+RAIN_FRESH_OUTPUT_NAMESPACE_ABSENT=YES
+RAIN_OLD_ARTIFACTS_PRESERVED=YES
+RAIN_FRESH_TESTS=PASS_62
+RAW_IQ_SHA256_PREPARATION=BYTE_HASH_ONLY
+MATLAB_EXECUTED=NO
+SAGE_EXECUTED=NO
+FILES_DELETED_COUNT=0
+FILES_MOVED_TO_TRASH=0
+TRASH_DIRECTORY_PRESERVED=YES
+NO_DELETE_POLICY_VIOLATION=YES
+NEXT_DECISION_REQUIRED=HUMAN_EXECUTE_G24_FRESH_RERUN_THEN_INDEPENDENT_QA
+```
+
+## 67. Fresh Rain G24 r2 execution audit (Receipt completed; output QA failed, 2026-08-27)
+
+- The normal-user execution of the immutable Clear `F1023_clear/G24/ch10` r2 request produced receipt `dataset_generation_logs/darkroom_channel_emulation/rain_sage_rerun_requests_20260827/rain_sage_fresh_rerun_v1__F1023_clear__G24__ch10__20260827_r2/receipts/rain_sage_fresh_rerun_v1__F1023_clear__G24__ch10__20260827_r2_20260827T122356Z_receipt.json`. The receipt records `status=COMPLETED`, `matlab_invoked=true`, and `matlab_exit_code=0`.
+- The receipt nevertheless records `output_files=[]`; both stdout and stderr logs are empty, and the frozen r2 output namespace `scenes/F1023_clear/sage_results/rain_sage_rerun_v1_20260827_r2/G24` does not exist. Therefore no r2 Stage0–Stage4 artifact or scientific result can be accepted from this execution record. The older `scenes/F1023_clear/sage_results/rain_sage_v1/G24` artifact remains preserved and was not substituted for r2.
+- Independent read-only audit output is `dataset_generation_logs/darkroom_channel_emulation/rain_full_sage_qa_20260827/rain__clear__G24__ch10__fresh_r2/`; it reports `FAIL_MISSING_OUTPUT`, with `scientific_status=NOT_ASSESSABLE`, no confirmed event/path count, and no raw IQ opened by the auditor. This is an output-binding/completeness anomaly; the available receipt and empty logs do not establish a unique internal MATLAB cause.
+
+```text
+RAIN_FRESH_G24_R2_EXECUTOR_RECEIPT=COMPLETED_EXIT_CODE_0
+RAIN_FRESH_G24_R2_OUTPUT_FILES=0
+RAIN_FRESH_G24_R2_OUTPUT_NAMESPACE_EXISTS=NO
+RAIN_FRESH_G24_R2_INDEPENDENT_QA=FAIL_MISSING_OUTPUT
+RAIN_FRESH_G24_R2_SCIENTIFIC_RESULT=NOT_ASSESSABLE
+RAIN_FRESH_G24_R2_AUDITOR_RAW_IQ_READ=NO
+RAIN_FRESH_G24_R2_OLD_ARTIFACT_USED_AS_SUBSTITUTE=NO
+RAIN_FRESH_G24_R2_ARTIFACTS_MODIFIED=NO
+RAW_IQ_EXECUTED_BY_AUDITOR=NO
+MATLAB_EXECUTED_BY_AUDITOR=NO
+SAGE_EXECUTED_BY_AUDITOR=NO
+NEXT_DECISION_REQUIRED=DIAGNOSE_MISSING_R2_OUTPUT_BEFORE_ANY_OTHER_RAIN_TASK
+```
+
+## 68. G24 r2 missing-output root-cause diagnosis (Diagnosis complete; repair not applied, 2026-08-27)
+
+- The confirmed receipt-semantics defect is in `scripts/sage_pipeline/rain/Invoke-RainSageFreshTask.ps1`: completion is assigned solely from `Start-Process` exit code (`0` becomes `COMPLETED`), while `Get-OutputFileRecords` may return an empty list and is not a completion gate. This permits `status=COMPLETED` with `output_files=[]` and no Stage artifact.
+- The high-confidence command-boundary cause is the fresh wrapper's `Start-Process -ArgumentList @("-batch", $expression)` call. The generated MATLAB expression contains spaces after semicolons, but the expression is not enclosed as one command-line argument. The working Rain overnight wrapper explicitly quotes the full expression, and the main Windows wrapper uses `.ArgumentList.Add()` for argument-safe process construction. The observed combination—zero-byte stdout/stderr, no expected output directory, and exit code `0`—is consistent with MATLAB receiving only an incomplete batch statement or otherwise not reaching `run_rain_sage_fresh_task`.
+- This last MATLAB-side detail is not directly proven because r2 did not record the child process argument vector or a function-entry marker. `build_rain_stage0.m` would create the supplied output directory and write Stage0 files before Stage1, so the absent r2 directory proves that no usable output reached the frozen namespace; it does not prove whether raw IQ was opened by the user-run MATLAB process.
+- Recommended repair is executor-only and versioned: use `ProcessStartInfo.ArgumentList` or a correctly quoted single `-batch` statement, add a required-output postcondition that writes a failure/incomplete receipt when outputs are absent, and record child-process/progress provenance. Do not reuse or resume r2; create a new request/output namespace only after the wrapper repair is independently validated.
+
+```text
+RAIN_FRESH_G24_R2_ROOT_CAUSE_CLASS=HIGH_CONFIDENCE_EXECUTOR_BATCH_ARGUMENT_BOUNDARY_ERROR
+RAIN_FRESH_G24_R2_FALSE_COMPLETION_BUG=CONFIRMED
+RAIN_FRESH_G24_R2_MATLAB_FUNCTION_ENTRY=NOT_PROVEN
+RAIN_FRESH_G24_R2_RAW_IQ_OPENED_BY_DIAGNOSTIC=NO
+RAIN_FRESH_G24_R2_REPAIR=NOT_APPLIED
+RAIN_FRESH_G24_R2_REUSE_OR_RESUME=FORBIDDEN
+NEXT_DECISION_REQUIRED=VERSIONED_EXECUTOR_REPAIR_AND_NEW_REQUEST_BEFORE_ANY_RAIN_TASK
+```
+
+## 69. G24 fresh executor contract repair (Implemented; static validation passed, runtime pending, 2026-08-27)
+
+- The executor-only repair for the preserved G24 r2 missing-output incident is implemented in `scripts/sage_pipeline/rain/Invoke-RainSageFreshTask.ps1`. MATLAB is now launched through `System.Diagnostics.ProcessStartInfo`; under PowerShell 7 the `-batch` switch and the complete expression are added as separate argument-list items, so the expression remains one child-process argument. A quoted `Arguments` fallback remains for Windows PowerShell/.NET Framework compatibility. The repaired wrapper SHA-256 is `08e372367e9130be2059200dde380b9206989f163cb9e0c133f854fff600eda2`.
+- Completion is no longer inferred from exit code alone. The wrapper records `process_id`, argument mode, stdout/stderr paths, output namespace existence, required output list, missing output list, and output file hashes. Exit code `0` with any missing required Rain Stage0–Stage4 artifact now produces `FAILED_OUTPUT_MISSING` and a nonzero process result; partial output is preserved and is never resumed or deleted.
+- The fresh entry and request preparer are versioned to the new `rain_sage_rerun_v1_20260827_r3` namespace. The entry SHA-256 is `dab8a8be2e2aae40e20e6f216baf09f7d882a2485e7a49470728f2f92f1d3e58`; the preparer SHA-256 is `383666864bc702f830bb07597fa2ba2ff41130469039c2e246d6c289e9e33427`. A new r3 request has not been generated in this step, and the r2 request remains immutable historical evidence rather than an executable request.
+- Test-first contract coverage is green: the new executor contract tests pass `11/11`; the complete Rain Python suite passes `67/67`; Rain interface tests pass `6/6`; all Rain Python files compile; and the repaired wrapper passes PowerShell AST parsing. The existing `git diff --check` command still reports a pre-existing trailing-whitespace line in unrelated `docs/GNSS_SAGE_MAINLINE_COMMANDER_HANDOFF_CURRENT.md`; it reports no whitespace error from the new patch itself.
+- Protected production entry `scripts/sage_pipeline/run_nav_sage_pipeline.m` remains unchanged at SHA-256 `bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c`. The r2 manifest SHA remains `e0e1c8bf8c4642c2c72efaf0f899e7186e5212e1021d5bec29659827ce52fa63`, its receipt remains preserved, and the r2 output namespace is still absent. No existing Rain artifact was deleted, moved, overwritten, resumed, or modified.
+
+```text
+RAIN_G24_R2_DIAGNOSIS=HIGH_CONFIDENCE_EXECUTOR_BATCH_ARGUMENT_BOUNDARY_ERROR
+RAIN_G24_R2_FALSE_COMPLETION_FIX=IMPLEMENTED
+RAIN_FRESH_R3_NAMESPACE=rain_sage_rerun_v1_20260827_r3
+RAIN_FRESH_R3_REQUEST=NOT_GENERATED
+RAIN_FRESH_R2_REUSE_OR_RESUME=FORBIDDEN
+RAIN_FRESH_EXECUTOR_TESTS=PASS_11
+RAIN_PYTHON_TESTS=PASS_67
+RAIN_INTERFACE_TESTS=PASS_6
+RAIN_PY_COMPILE=PASS
+RAIN_WRAPPER_AST=PASS
+PROTECTED_PRODUCTION_PIPELINE_MODIFIED=NO
+RAW_IQ_READ_BY_CODEX=NO
+MATLAB_EXECUTED_BY_CODEX=NO
+SAGE_EXECUTED_BY_CODEX=NO
+SAGE_RERUN_REQUIRED=YES
+NEXT_DECISION_REQUIRED=GENERATE_NEW_R3_REQUEST_THEN_HUMAN_EXECUTE_G24_FRESH_RERUN
+```
+
+## 70. Rain G24 r3 immutable request and dry-run (Prepared; execution not started, 2026-08-27)
+
+- A new r3 request was generated after the executor repair; the r2 request and missing-output receipt remain historical and are not reused. The immutable manifest is `dataset_generation_logs/darkroom_channel_emulation/rain_sage_rerun_requests_20260827/rain_sage_fresh_rerun_v1__F1023_clear__G24__ch10__20260827_r3/execution_manifest.json`, with SHA-256 `293f0f4a11b22a36918ecee63874a03431b1082ba81b2eb5a8490748816b38f1`.
+- The frozen task is `F1023_clear/G24/ch10/10230000`; raw metadata records `2925003264` bytes and byte SHA-256 `0be6adba273a81b21d6e84e93a4fa1450f7a4a76c093ef1ea17163015f616210`. The request explicitly freezes `new_only=true`, `resume_allowed=false`, `max_parallel_matlab=1`, and `gold_labels_used_for_selection=false`.
+- The only approved new output namespace is `scenes/F1023_clear/sage_results/rain_sage_rerun_v1_20260827_r3/G24`; it was absent during preparation and validation. The global Rain mutex was available. The repaired source provenance is frozen in the manifest, including entry SHA `dab8a8be2e2aae40e20e6f216baf09f7d882a2485e7a49470728f2f92f1d3e58`, wrapper SHA `08e372367e9130be2059200dde380b9206989f163cb9e0c133f854fff600eda2`, preparer SHA `383666864bc702f830bb07597fa2ba2ff41130469039c2e246d6c289e9e33427`, and protected production SHA `bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c`.
+- The PowerShell validation-only run passed with `EXECUTION_ELIGIBLE=true`, `MATLAB_INVOKED=false`, `RAW_IQ_OPENED=false`, and `SAGE_EXECUTED=false`; it printed the exact r3 MATLAB expression containing `Resume,false`. No MATLAB/SAGE task was started by this preparation, and no old artifact was changed.
+
+```text
+RAIN_FRESH_G24_R3_REQUEST=PREPARED
+RAIN_FRESH_G24_R3_MANIFEST_SHA256=293f0f4a11b22a36918ecee63874a03431b1082ba81b2eb5a8490748816b38f1
+RAIN_FRESH_G24_R3_OUTPUT_NAMESPACE_ABSENT=YES
+RAIN_FRESH_G24_R3_GLOBAL_LOCK=AVAILABLE
+RAIN_FRESH_G24_R3_DRY_RUN=PASS
+RAIN_FRESH_G24_R3_EXECUTION=NOT_STARTED
+RAIN_FRESH_G24_R2_REUSE_OR_RESUME=FORBIDDEN
+MATLAB_EXECUTED_BY_CODEX=NO
+SAGE_EXECUTED_BY_CODEX=NO
+NEXT_DECISION_REQUIRED=HUMAN_EXECUTE_G24_R3_THEN_INDEPENDENT_QA
+```
+
+## 71. Rain G24 r3 path-binding failure and r4 request (Implemented; execution pending, 2026-08-27)
+
+- The human execution of r3 reached MATLAB through `ProcessStartInfo.ArgumentList`, proving that the earlier command-line argument-boundary repair was effective. The r3 receipt records `matlab_argument_mode=ProcessStartInfo.ArgumentList`, process id `8448`, and MATLAB exit code `1`.
+- r3 failed before Stage0 at line 39 of `scripts/sage_pipeline/rain/run_rain_sage_fresh_task.m`. MATLAB reported that the supplied `outputDir` used `E:/...` while the `fullfile`-constructed frozen namespace used `E:\...`; the strict equality assertion therefore rejected an otherwise equivalent Windows path. The r3 namespace remained absent and all required output files were missing. This is a path-representation contract failure, not a Stage0–Stage4 algorithm or numerical failure.
+- The minimal fix preserves native Windows separators in `Invoke-RainSageFreshTask.ps1` instead of converting canonical paths to `/`. No Rain scientific parameter, threshold, grid, Stage0–Stage4 implementation, optimizer, or confirmation criterion changed. Because r3 is bound to the previous wrapper hash and new-only execution forbids reuse, r3 is permanently historical and must not be rerun.
+- A new r4 namespace/request was generated after the path fix. The immutable manifest is `dataset_generation_logs/darkroom_channel_emulation/rain_sage_rerun_requests_20260827/rain_sage_fresh_rerun_v1__F1023_clear__G24__ch10__20260827_r4/execution_manifest.json`, SHA-256 `13f945ced42dfb940cb952b8e2cdbb8097386dfe6a17538a869d7a123e001197`. It keeps `F1023_clear/G24/ch10/10230000`, the same raw byte hash/provenance, `new_only=true`, `resume_allowed=false`, and the same protected production pipeline.
+- The r4 validation-only dry-run passed with `GLOBAL_LOCK=AVAILABLE`, `EXECUTION_ELIGIBLE=true`, `MATLAB_INVOKED=false`, `RAW_IQ_OPENED=false`, `SAGE_EXECUTED=false`. Its emitted MATLAB expression uses native Windows separators and explicitly contains `Resume,false`. The r4 output namespace is absent. The r3 receipt and r3 request remain preserved; no existing artifact was deleted, moved, overwritten, or resumed.
+- Final static verification after the r4 preparation: Rain Python tests `68/68` passed, all Rain Python files compiled, Rain interface tests `6/6` passed, and the repaired wrapper passed PowerShell AST parsing. No MATLAB/SAGE execution was performed by Codex in this repair/preparation step.
+
+```text
+RAIN_G24_R3_EXECUTION=FAILED_AT_ENTRY_PATH_ASSERTION
+RAIN_G24_R3_OUTPUT_NAMESPACE_EXISTS=NO
+RAIN_G24_R3_SCIENTIFIC_STAGE_OUTPUT=NONE
+RAIN_G24_R4_REQUEST=PREPARED
+RAIN_G24_R4_MANIFEST_SHA256=13f945ced42dfb940cb952b8e2cdbb8097386dfe6a17538a869d7a123e001197
+RAIN_G24_R4_OUTPUT_NAMESPACE_ABSENT=YES
+RAIN_G24_R4_GLOBAL_LOCK=AVAILABLE
+RAIN_G24_R4_DRY_RUN=PASS
+RAIN_G24_R4_EXECUTION=NOT_STARTED
+RAIN_G24_R3_REUSE_OR_RESUME=FORBIDDEN
+RAIN_PYTHON_TESTS=PASS_68
+RAIN_PY_COMPILE=PASS
+RAIN_INTERFACE_TESTS=PASS_6
+RAIN_WRAPPER_AST=PASS
+PROTECTED_PRODUCTION_PIPELINE_MODIFIED=NO
+NEXT_DECISION_REQUIRED=HUMAN_EXECUTE_G24_R4_THEN_INDEPENDENT_QA
+```
+
+## 72. Rain Clear G24 r4 execution and independent QA (Completed; QA PASS, valid zero-event, 2026-08-28)
+
+- The normal-user execution of the immutable r4 request completed successfully. Receipt: `dataset_generation_logs/darkroom_channel_emulation/rain_sage_rerun_requests_20260827/rain_sage_fresh_rerun_v1__F1023_clear__G24__ch10__20260827_r4/receipts/rain_sage_fresh_rerun_v1__F1023_clear__G24__ch10__20260827_r4_20260827T144043Z_receipt.json`. It records `status=COMPLETED`, `matlab_invoked=true`, `matlab_argument_mode=ProcessStartInfo.ArgumentList`, and `matlab_exit_code=0`; the frozen request SHA is `13f945ced42dfb940cb952b8e2cdbb8097386dfe6a17538a869d7a123e001197`.
+- The output namespace is `scenes/F1023_clear/sage_results/rain_sage_rerun_v1_20260827_r4/G24`. It contains all 19 required Rain outputs (10 CSV, 8 MAT, and `rain_stage0_provenance.json`), with no missing output and no stderr content. The output was created in the r4 new-only namespace; r2/r3 namespaces and receipts remain preserved and were not reused, overwritten, moved, or deleted.
+- Independent read-only QA was completed with the version-aware, Windows-long-path-safe auditor `scripts/sage_pipeline/rain/audit_rain_sage_task.py` (post-fix SHA-256=`a2a6d51a6ea9389e66474dc923ab2a3e61025a91df8fa669848422493d8f48c1`). The final QA artifacts are `dataset_generation_logs/darkroom_channel_emulation/rain_full_sage_qa_20260828/rain__clear__G24__ch10__fresh_r4_final/qa_report.md`, `qa_result.json`, and `artifact_hashes.csv`; `overall_status=QA_PASS`, with identity, completeness, stage consistency, and numerical validity all `PASS`.
+- Stage statistics are: 2,206 Stage0 symbols; 2,204 complete 40-ms windows; 2,204 Stage1 scanned windows with 0 invalid scans; 480 Stage2 model rows (120 each for L=1,2,3,4); 120 selected windows; 63 Stage3 persistence rows; 3 Stage3 reliable centers; 3 Stage4 joint rows; and 3/3 `joint_valid`. One Stage2 invalid-model row remains recorded as a diagnostic count; it does not invalidate the complete Stage4 artifact under the independent QA rules.
+- Under the strict project confirmation criterion (`joint_valid=1` AND `joint_multipath_count>0` AND a matching Stage4 path with `is_multipath=1`), this task produced 0 confirmed multipath events and 0 confirmed multipath paths. This is a valid zero-event output under the current criterion and is not interpreted as LOS or physical absence of multipath.
+- The QA-tool compatibility repair was limited to audit behavior: accepting the versioned r4 Rain namespace and using the Windows extended-path prefix for read-only access to the long receipt path. It did not change Rain Stage0–Stage4 mathematics, thresholds, grids, optimizer, confirmation criterion, or any audited artifact. Rain tests now pass `70/70`; relevant Python files compile; the protected production entry remains unchanged at SHA-256=`bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c`.
+
+```text
+RAIN_G24_R4_EXECUTION=COMPLETED
+RAIN_G24_R4_RECEIPT_STATUS=VALID
+RAIN_G24_R4_MATLAB_EXIT_CODE=0
+RAIN_G24_R4_OUTPUT_FILES=19_OF_19
+RAIN_G24_R4_INDEPENDENT_QA=PASS
+RAIN_G24_R4_SCIENTIFIC_STATUS=PASS_NO_CONFIRMED_MULTIPATH
+RAIN_G24_R4_CONFIRMED_EVENTS=0
+RAIN_G24_R4_CONFIRMED_PATHS=0
+RAIN_G24_R4_ARTIFACT_MODIFIED_BY_AUDITOR=NO
+RAIN_G24_R4_RAW_IQ_READ_BY_AUDITOR=NO
+RAIN_G24_R4_MATLAB_EXECUTED_BY_AUDITOR=NO
+RAIN_G24_R4_SAGE_EXECUTED_BY_AUDITOR=NO
+RAIN_R2_R3_ARTIFACTS_PRESERVED=YES
+RAIN_AUDITOR_TESTS=PASS_70
+RAIN_AUDITOR_PY_COMPILE=PASS
+PROTECTED_PRODUCTION_PIPELINE_MODIFIED=NO
+NEXT_DECISION_REQUIRED=INDEPENDENTLY_AUDIT_HEAVYRAIN_G02_BEFORE_ANY_OTHER_RAIN_TASK
+```
+
+## 73. HeavyRain G02 r4 fresh request and dry-run (Prepared; execution not started, 2026-08-28)
+
+- Following the completed Clear G24 r4 QA, a separate immutable request was prepared for the next explicitly selected Rain task `F1023_heavyrain/G02/ch1/10230000`. The request manifest is `dataset_generation_logs/darkroom_channel_emulation/rain_sage_rerun_requests_20260827/rain_sage_fresh_rerun_v1__F1023_heavyrain__G02__ch1__20260827_r4/execution_manifest.json`, with SHA-256 `faf9c373548e68dbb83c18c3df0ee1877405244ce38e381912cf0bbaacd7b224`.
+- The request freezes the checklist-approved single channel mapping `G02 -> ch1`, 10.23 MHz, the existing HeavyRain raw provenance (2,916,090,368 bytes), GNSS-SDR tracking/telemetry/navigation/config/observables inputs, current Rain r4 source hashes, `new_only=true`, `resume_allowed=false`, and `gold_labels_used_for_selection=false`. The historical `scenes/F1023_heavyrain/sage_results/rain_sage_v1/G02` artifact remains preserved and is not used as the new output.
+- The new-only output namespace is `scenes/F1023_heavyrain/sage_results/rain_sage_rerun_v1_20260827_r4/G02`; it was absent during preparation and validation. The global Rain mutex was available. The validation-only wrapper check passed with `EXECUTION_ELIGIBLE=true`, `MATLAB_INVOKED=false`, `RAW_IQ_OPENED=false`, and `SAGE_EXECUTED=false`, and emitted the exact `Resume,false` MATLAB expression.
+- No MATLAB, SAGE, or batch execution was started by Codex for G02. Human execution remains a separate gate; after a successful receipt, the output must receive independent read-only Stage0–Stage4 QA before any other Rain task is considered.
+
+```text
+RAIN_G02_R4_REQUEST=PREPARED
+RAIN_G02_R4_MANIFEST_SHA256=faf9c373548e68dbb83c18c3df0ee1877405244ce38e381912cf0bbaacd7b224
+RAIN_G02_R4_OUTPUT_NAMESPACE_ABSENT=YES
+RAIN_G02_R4_GLOBAL_LOCK=AVAILABLE
+RAIN_G02_R4_DRY_RUN=PASS
+RAIN_G02_R4_EXECUTION=NOT_STARTED
+RAIN_G02_R4_OLD_ARTIFACT_PRESERVED=YES
+MATLAB_EXECUTED_BY_CODEX=NO
+SAGE_EXECUTED_BY_CODEX=NO
+NEXT_DECISION_REQUIRED=HUMAN_EXECUTE_G02_R4_THEN_INDEPENDENT_QA
+```
+
+## 74. Rain HeavyRain G02 r4 execution and independent QA (Completed; QA PASS, 2026-08-29)
+
+- The normal-user execution of the immutable HeavyRain request completed successfully. Receipt: `dataset_generation_logs/darkroom_channel_emulation/rain_sage_rerun_requests_20260827/rain_sage_fresh_rerun_v1__F1023_heavyrain__G02__ch1__20260827_r4/receipts/rain_sage_fresh_rerun_v1__F1023_heavyrain__G02__ch1__20260827_r4_20260828T151735Z_receipt.json`. It records `status=COMPLETED`, `matlab_invoked=true`, `matlab_argument_mode=ProcessStartInfo.ArgumentList`, and `matlab_exit_code=0`; the frozen request SHA is `faf9c373548e68dbb83c18c3df0ee1877405244ce38e381912cf0bbaacd7b224`.
+- The output namespace is `scenes/F1023_heavyrain/sage_results/rain_sage_rerun_v1_20260827_r4/G02`. It contains all 19 required Rain outputs, with no missing output. The historical `rain_sage_v1/G02` artifact remains preserved and was not reused, overwritten, moved, or deleted.
+- Independent read-only QA was completed with `scripts/sage_pipeline/rain/audit_rain_sage_task.py`. Final QA artifacts are in `dataset_generation_logs/darkroom_channel_emulation/rain_full_sage_qa_20260829/rain__heavyrain__G02__ch1__fresh_r4_final/`; `overall_status=QA_PASS`, with identity, artifact completeness, stage consistency, and numerical validity all `PASS`.
+- Stage statistics are: 2,865 Stage0 symbols; 2,863 complete 40-ms windows; 2,863 Stage1 scanned windows with 0 invalid scans; 480 Stage2 model rows (120 each for L=1,2,3,4); 120 selected windows; 183 Stage3 persistence rows; 6 Stage3 reliable centers; 6 Stage4 joint rows; and 6/6 `joint_valid`. One Stage4 center (`2096`) has `joint_multipath_count=1`; the other five valid joint rows are non-multipath rows.
+- Under the strict project confirmation criterion (`joint_valid=1` AND `joint_multipath_count>0` AND a matching Stage4 path with `is_multipath=1`), this task produced 1 confirmed multipath event and 1 confirmed multipath path. The confirmed row is center window `2096`, with Stage4 `excess_delay_samples=1.1`, `doppler_offset_hz=24.6643020952847`, and `mean_relative_power_db=-16.0941765143958`; these values are recorded as artifact facts, not a broader weather conclusion.
+- The independent QA did not open raw IQ, invoke MATLAB, invoke SAGE, or modify the audited output. The next Rain task remains gated on the user's explicit decision; no G31/G01 execution was started automatically.
+
+```text
+RAIN_G02_R4_EXECUTION=COMPLETED
+RAIN_G02_R4_RECEIPT_STATUS=VALID
+RAIN_G02_R4_MATLAB_EXIT_CODE=0
+RAIN_G02_R4_OUTPUT_FILES=19_OF_19
+RAIN_G02_R4_INDEPENDENT_QA=PASS
+RAIN_G02_R4_SCIENTIFIC_STATUS=PASS_WITH_CONFIRMED_MULTIPATH
+RAIN_G02_R4_CONFIRMED_EVENTS=1
+RAIN_G02_R4_CONFIRMED_PATHS=1
+RAIN_G02_R4_CONFIRMED_CENTER=2096
+RAIN_G02_R4_ARTIFACT_MODIFIED_BY_AUDITOR=NO
+RAIN_G02_R4_RAW_IQ_READ_BY_AUDITOR=NO
+RAIN_G02_R4_MATLAB_EXECUTED_BY_AUDITOR=NO
+RAIN_G02_R4_SAGE_EXECUTED_BY_AUDITOR=NO
+RAIN_G02_R4_OLD_ARTIFACT_PRESERVED=YES
+NEXT_DECISION_REQUIRED=USER_AUTHORIZE_NEXT_RAIN_TASK
+```
+
+## 75. Rain MidRain G24/ch8 single-task request and dry-run (Prepared; execution not started, 2026-08-29)
+
+- The next explicitly selected Rain task is `F1023_midrain/G24/ch8/10230000`. The checklist records it as `NOT_STARTED`, `PASS_STATIC_INPUT_GATE`, with no existing Rain output namespace. A dedicated single-task request preparer `scripts/sage_pipeline/rain/prepare_rain_sage_single_task_request.py` was added so a not-started task is not incorrectly routed through the historical-artifact replacement preparer; it reuses the validated r4 Rain entry/wrapper and does not change Stage0–Stage4 mathematics.
+- The immutable request manifest is `dataset_generation_logs/darkroom_channel_emulation/rain_sage_task_requests_20260829/rain_sage_single_task_v1__F1023_midrain__G24__ch8__20260829_r4/execution_manifest.json`, SHA-256 `048bd7286c8f46a780f9d3fc8b569ea94fe1a5f5563c2ce3e71420811337b442`. It freezes the unique `G24 -> ch8` mapping, 10.23 MHz, input provenance and byte hashes, `new_only=true`, `resume_allowed=false`, `max_parallel_matlab=1`, and `gold_labels_used_for_selection=false`.
+- The new-only output namespace is `scenes/F1023_midrain/sage_results/rain_sage_rerun_v1_20260827_r4/G24`; it was absent before and after preparation. The global Rain mutex was available. Wrapper validation-only passed with `EXECUTION_ELIGIBLE=true`, `MATLAB_INVOKED=false`, `RAW_IQ_OPENED=false`, `SAGE_EXECUTED=false`, and the emitted MATLAB expression explicitly uses `Resume,false` and `TrackingChannel,8`.
+- No MATLAB/SAGE/batch execution was started by Codex. Human execution remains required; after completion, the resulting receipt and output must receive independent read-only Stage0–Stage4 QA before another Rain task is considered.
+
+```text
+RAIN_MIDRAIN_G24_CH8_REQUEST=PREPARED
+RAIN_MIDRAIN_G24_CH8_MANIFEST_SHA256=048bd7286c8f46a780f9d3fc8b569ea94fe1a5f5563c2ce3e71420811337b442
+RAIN_MIDRAIN_G24_CH8_OUTPUT_NAMESPACE_ABSENT=YES
+RAIN_MIDRAIN_G24_CH8_GLOBAL_LOCK=AVAILABLE
+RAIN_MIDRAIN_G24_CH8_DRY_RUN=PASS
+RAIN_MIDRAIN_G24_CH8_EXECUTION=NOT_STARTED
+MATLAB_EXECUTED_BY_CODEX=NO
+SAGE_EXECUTED_BY_CODEX=NO
+NEXT_DECISION_REQUIRED=HUMAN_EXECUTE_MIDRAIN_G24_CH8_THEN_INDEPENDENT_QA
+```
+
+## 76. Rain MidRain G24/ch8 execution and independent QA (Completed; QA PASS, valid zero-event, 2026-08-29)
+
+- The normal-user execution of the immutable MidRain request completed successfully. Receipt: `dataset_generation_logs/darkroom_channel_emulation/rain_sage_task_requests_20260829/rain_sage_single_task_v1__F1023_midrain__G24__ch8__20260829_r4/receipts/rain_sage_single_task_v1__F1023_midrain__G24__ch8__20260829_r4_20260829T074335Z_receipt.json`. It records `status=COMPLETED`, `matlab_invoked=true`, `matlab_exit_code=0`, `new_only=true`, and `resume_allowed=false`; the frozen request manifest SHA-256 is `048bd7286c8f46a780f9d3fc8b569ea94fe1a5f5563c2ce3e71420811337b442`.
+- The output namespace is `scenes/F1023_midrain/sage_results/rain_sage_rerun_v1_20260827_r4/G24`. All 19 required Rain outputs are present and non-empty; no required output is missing. The new r4 namespace is distinct from and preserves the historical `scenes/F1023_midrain/sage_results/rain_sage_v1/G24` artifact.
+- Independent read-only QA was completed with `scripts/sage_pipeline/rain/audit_rain_sage_task.py`. The QA artifacts are `dataset_generation_logs/darkroom_channel_emulation/rain_full_sage_qa_20260829/rain__midrain__G24__ch8__fresh_r4_final/qa_report.md`, `qa_result.json`, and `artifact_hashes.csv`. Identity, artifact completeness, stage consistency, and numerical validity all passed; the overall QA result is `QA_PASS`.
+- Stage statistics are: 2,688 Stage0 valid symbols; 2,686 complete 40-ms windows; 2,686 Stage1 scanned windows with 0 invalid scans; 468 Stage2 model rows (117 each for L=1,2,3,4), with 3 invalid-model rows retained as a diagnostic count; 117 selected windows; 68 Stage3 persistence rows; 3 Stage3 reliable centers; 3 Stage4 joint rows; and 3/3 `joint_valid` rows. The measured receipt interval was approximately 3,508.688 s (58.48 min).
+- Under the strict project confirmation criterion (`joint_valid=1` AND `joint_multipath_count>0` AND a matching Stage4 path with `is_multipath=1`), this task produced 0 confirmed multipath events and 0 confirmed multipath paths. This is a valid zero-event result under the current criterion and is not interpreted as LOS or physical absence of multipath. Stage2 L>=2 and Stage3 reliable centers are not confirmed multipath.
+- The independent QA did not open raw IQ, invoke MATLAB, invoke SAGE, or modify the existing output. No subsequent Rain task was started automatically; the next task remains subject to an explicit user decision.
+
+```text
+RAIN_MIDRAIN_G24_CH8_EXECUTION=COMPLETED
+RAIN_MIDRAIN_G24_CH8_RECEIPT_STATUS=VALID
+RAIN_MIDRAIN_G24_CH8_MATLAB_EXIT_CODE=0
+RAIN_MIDRAIN_G24_CH8_OUTPUT_FILES=19_OF_19
+RAIN_MIDRAIN_G24_CH8_INDEPENDENT_QA=PASS
+RAIN_MIDRAIN_G24_CH8_SCIENTIFIC_STATUS=PASS_NO_CONFIRMED_MULTIPATH
+RAIN_MIDRAIN_G24_CH8_CONFIRMED_EVENTS=0
+RAIN_MIDRAIN_G24_CH8_CONFIRMED_PATHS=0
+RAIN_MIDRAIN_G24_CH8_ARTIFACT_MODIFIED_BY_AUDITOR=NO
+RAIN_MIDRAIN_G24_CH8_RAW_IQ_READ_BY_AUDITOR=NO
+RAIN_MIDRAIN_G24_CH8_MATLAB_EXECUTED_BY_AUDITOR=NO
+RAIN_MIDRAIN_G24_CH8_SAGE_EXECUTED_BY_AUDITOR=NO
+RAIN_MIDRAIN_G24_CH8_OLD_ARTIFACT_PRESERVED=YES
+NEXT_DECISION_REQUIRED=USER_AUTHORIZE_NEXT_RAIN_TASK
+```
+
+## 77. Rain MidRain G20/ch9 single-task request and dry-run (Prepared; execution not started, 2026-08-29)
+
+- The next explicitly selected Rain task is `F1023_midrain/G20/ch9/10230000`. The current Rain checklist records it as `NOT_STARTED`, `PASS_STATIC_INPUT_GATE`, with the unique channel mapping `G20 -> ch9` and no existing new r4 output leaf. The historical `scenes/F1023_midrain/sage_results/rain_sage_v1/G20` namespace remains preserved.
+- The immutable request manifest is `dataset_generation_logs/darkroom_channel_emulation/rain_sage_task_requests_20260829/rain_sage_single_task_v1__F1023_midrain__G20__ch9__20260829_r4/execution_manifest.json`, SHA-256 `e241977aac6611d707d20cdf0d72540ae7c535cd0eac6ef869385f1843d52c49`. It freezes the checklist-approved `G20 -> ch9` mapping, 10.23 MHz, the actual input provenance and byte hashes, `new_only=true`, `resume_allowed=false`, `max_parallel_matlab=1`, and `gold_labels_used_for_selection=false`.
+- The expected new-only output namespace is `scenes/F1023_midrain/sage_results/rain_sage_rerun_v1_20260827_r4/G20`; it was absent during preparation and dry-run. The global Rain mutex was available. Validation-only wrapper execution passed with `EXECUTION_ELIGIBLE=true`, `MATLAB_INVOKED=false`, `RAW_IQ_OPENED=false`, and `SAGE_EXECUTED=false`; the emitted MATLAB expression explicitly uses `TrackingChannel,9` and `Resume,false`.
+- No MATLAB, SAGE, or batch execution was started by Codex. Human normal-user execution is required. After completion, the receipt and all 19 required Rain outputs must receive independent read-only Stage0–Stage4 QA before the next Rain task is considered.
+
+```text
+RAIN_MIDRAIN_G20_CH9_REQUEST=PREPARED
+RAIN_MIDRAIN_G20_CH9_MANIFEST_SHA256=e241977aac6611d707d20cdf0d72540ae7c535cd0eac6ef869385f1843d52c49
+RAIN_MIDRAIN_G20_CH9_OUTPUT_NAMESPACE_ABSENT=YES
+RAIN_MIDRAIN_G20_CH9_GLOBAL_LOCK=AVAILABLE
+RAIN_MIDRAIN_G20_CH9_DRY_RUN=PASS
+RAIN_MIDRAIN_G20_CH9_EXECUTION=NOT_STARTED
+MATLAB_EXECUTED_BY_CODEX=NO
+SAGE_EXECUTED_BY_CODEX=NO
+NEXT_DECISION_REQUIRED=HUMAN_EXECUTE_MIDRAIN_G20_CH9_THEN_INDEPENDENT_QA
+```
+
+## 78. Rain MidRain G20/ch9 execution and independent QA (Completed; QA PASS, valid zero-event, 2026-08-29)
+
+- The normal-user execution of the immutable MidRain request completed successfully. Receipt: `dataset_generation_logs/darkroom_channel_emulation/rain_sage_task_requests_20260829/rain_sage_single_task_v1__F1023_midrain__G20__ch9__20260829_r4/receipts/rain_sage_single_task_v1__F1023_midrain__G20__ch9__20260829_r4_20260829T104637Z_receipt.json`. It records `status=COMPLETED`, `matlab_invoked=true`, `matlab_exit_code=0`, `new_only=true`, and `resume_allowed=false`; the frozen request manifest SHA-256 is `e241977aac6611d707d20cdf0d72540ae7c535cd0eac6ef869385f1843d52c49`.
+- The output namespace is `scenes/F1023_midrain/sage_results/rain_sage_rerun_v1_20260827_r4/G20`. All 19 required Rain outputs are present and non-empty; no required output is missing. The new r4 namespace is distinct from and preserves the historical `scenes/F1023_midrain/sage_results/rain_sage_v1/G20` artifact.
+- Independent read-only QA was completed with `scripts/sage_pipeline/rain/audit_rain_sage_task.py`. The QA artifacts are `dataset_generation_logs/darkroom_channel_emulation/rain_full_sage_qa_20260829/rain__midrain__G20__ch9__fresh_r4_final/qa_report.md`, `qa_result.json`, and `artifact_hashes.csv`. Identity, artifact completeness, stage consistency, and numerical validity all passed; the overall QA result is `QA_PASS`.
+- Stage statistics are: 2,689 Stage0 valid symbols; 2,687 complete 40-ms windows; 2,687 Stage1 scanned windows with 0 invalid scans; 480 Stage2 model rows (120 each for L=1,2,3,4); 120 selected windows; 121 Stage3 persistence rows; 14 Stage3 reliable centers; 8 Stage4 joint rows; and 8/8 `joint_valid` rows. No invalid Stage2 model rows were reported.
+- Under the strict project confirmation criterion (`joint_valid=1` AND `joint_multipath_count>0` AND a matching Stage4 path with `is_multipath=1`), this task produced 0 confirmed multipath events and 0 confirmed multipath paths. All eight Stage4 path rows are non-multipath (`is_multipath=0`). This is a valid zero-event result under the current criterion and is not interpreted as LOS or physical absence of multipath. Stage2 L>=2 and Stage3 reliable centers are not confirmed multipath.
+- The measured receipt interval was approximately 3,545.391875 s (59.09 min). The independent QA did not open raw IQ, invoke MATLAB, invoke SAGE, or modify the existing output. No subsequent Rain task was started automatically; the next task remains subject to an explicit user decision.
+
+```text
+RAIN_MIDRAIN_G20_CH9_EXECUTION=COMPLETED
+RAIN_MIDRAIN_G20_CH9_RECEIPT_STATUS=VALID
+RAIN_MIDRAIN_G20_CH9_MATLAB_EXIT_CODE=0
+RAIN_MIDRAIN_G20_CH9_OUTPUT_FILES=19_OF_19
+RAIN_MIDRAIN_G20_CH9_INDEPENDENT_QA=PASS
+RAIN_MIDRAIN_G20_CH9_SCIENTIFIC_STATUS=PASS_NO_CONFIRMED_MULTIPATH
+RAIN_MIDRAIN_G20_CH9_CONFIRMED_EVENTS=0
+RAIN_MIDRAIN_G20_CH9_CONFIRMED_PATHS=0
+RAIN_MIDRAIN_G20_CH9_ARTIFACT_MODIFIED_BY_AUDITOR=NO
+RAIN_MIDRAIN_G20_CH9_RAW_IQ_READ_BY_AUDITOR=NO
+RAIN_MIDRAIN_G20_CH9_MATLAB_EXECUTED_BY_AUDITOR=NO
+RAIN_MIDRAIN_G20_CH9_SAGE_EXECUTED_BY_AUDITOR=NO
+RAIN_MIDRAIN_G20_CH9_OLD_ARTIFACT_PRESERVED=YES
+NEXT_DECISION_REQUIRED=USER_AUTHORIZE_NEXT_RAIN_TASK
+```
+
+## 79. Rain Clear G29/ch3 single-task request and dry-run (Prepared; execution not started, 2026-08-29)
+
+- The next explicitly selected Rain task is `F1023_clear/G29/ch3/10230000`. The current Rain checklist records it as `NOT_STARTED`, `PASS_STATIC_INPUT_GATE`, with the unique channel mapping `G29 -> ch3` and no existing new r4 output leaf. The historical `scenes/F1023_clear/sage_results/rain_sage_v1/G29` namespace remains preserved.
+- The immutable request manifest is `dataset_generation_logs/darkroom_channel_emulation/rain_sage_task_requests_20260829/rain_sage_single_task_v1__F1023_clear__G29__ch3__20260829_r4/execution_manifest.json`, SHA-256 `ecfbc361883f299c59a99f88488fb45b89cfdd9d66ec52ed3175b66813d2dc0e`. It freezes the checklist-approved `G29 -> ch3` mapping, Clear, 10.23 MHz, the actual input provenance and byte hashes, `new_only=true`, `resume_allowed=false`, `max_parallel_matlab=1`, and `gold_labels_used_for_selection=false`.
+- The expected new-only output namespace is `scenes/F1023_clear/sage_results/rain_sage_rerun_v1_20260827_r4/G29`; it was absent during preparation and dry-run. The global Rain mutex was available. Validation-only wrapper execution passed with `EXECUTION_ELIGIBLE=true`, `MATLAB_INVOKED=false`, `RAW_IQ_OPENED=false`, and `SAGE_EXECUTED=false`; the emitted MATLAB expression explicitly uses `TrackingChannel,3` and `Resume,false`.
+- No MATLAB, SAGE, or batch execution was started by Codex. Human normal-user execution is required. After completion, the receipt and all 19 required Rain outputs must receive independent read-only Stage0–Stage4 QA before the next Rain task is considered.
+
+```text
+RAIN_CLEAR_G29_CH3_REQUEST=PREPARED
+RAIN_CLEAR_G29_CH3_MANIFEST_SHA256=ecfbc361883f299c59a99f88488fb45b89cfdd9d66ec52ed3175b66813d2dc0e
+RAIN_CLEAR_G29_CH3_OUTPUT_NAMESPACE_ABSENT=YES
+RAIN_CLEAR_G29_CH3_GLOBAL_LOCK=AVAILABLE
+RAIN_CLEAR_G29_CH3_DRY_RUN=PASS
+RAIN_CLEAR_G29_CH3_EXECUTION=NOT_STARTED
+MATLAB_EXECUTED_BY_CODEX=NO
+SAGE_EXECUTED_BY_CODEX=NO
+NEXT_DECISION_REQUIRED=HUMAN_EXECUTE_CLEAR_G29_CH3_THEN_INDEPENDENT_QA
+```
+
+## 80. Rain Clear G29/ch3 execution and independent QA (Completed; QA PASS, valid zero-event, 2026-08-29)
+
+- The normal-user execution of the immutable Clear request completed successfully. Receipt: `dataset_generation_logs/darkroom_channel_emulation/rain_sage_task_requests_20260829/rain_sage_single_task_v1__F1023_clear__G29__ch3__20260829_r4/receipts/rain_sage_single_task_v1__F1023_clear__G29__ch3__20260829_r4_20260829T115348Z_receipt.json`. It records `status=COMPLETED`, `matlab_invoked=true`, `matlab_exit_code=0`, `new_only=true`, and `resume_allowed=false`; the frozen request manifest SHA-256 is `ecfbc361883f299c59a99f88488fb45b89cfdd9d66ec52ed3175b66813d2dc0e`.
+- The output namespace is `scenes/F1023_clear/sage_results/rain_sage_rerun_v1_20260827_r4/G29`. All 19 required Rain outputs are present and non-empty; no required output is missing. The new r4 namespace is distinct from and preserves the historical `scenes/F1023_clear/sage_results/rain_sage_v1/G29` artifact.
+- Independent read-only QA was completed with `scripts/sage_pipeline/rain/audit_rain_sage_task.py`. The QA artifacts are `dataset_generation_logs/darkroom_channel_emulation/rain_full_sage_qa_20260829/rain__clear__G29__ch3__fresh_r4_final/qa_report.md`, `qa_result.json`, and `artifact_hashes.csv`. Identity, artifact completeness, stage consistency, and numerical validity all passed; the overall QA result is `QA_PASS`.
+- Stage statistics are: 2,806 Stage0 valid symbols; 2,804 complete 40-ms windows; 2,804 Stage1 scanned windows with 0 invalid scans; 472 Stage2 model rows (118 each for L=1,2,3,4); 118 selected windows; 88 Stage3 persistence rows; 9 Stage3 reliable centers; 8 Stage4 joint rows; and 8/8 `joint_valid` rows. Six invalid Stage2 model rows remain recorded as a diagnostic count and did not prevent the complete Stage4 artifact from passing independent QA.
+- Under the strict project confirmation criterion (`joint_valid=1` AND `joint_multipath_count>0` AND a matching Stage4 path with `is_multipath=1`), this task produced 0 confirmed multipath events and 0 confirmed multipath paths. All eight Stage4 path rows have `is_multipath=0`. This is a valid zero-event result under the current criterion and is not interpreted as LOS or physical absence of multipath. Stage2 L>=2 and Stage3 reliable centers are not confirmed multipath.
+- The measured receipt interval was approximately 8,972.357 s (149.54 min). The independent QA did not open raw IQ, invoke MATLAB, invoke SAGE, or modify the existing output. No subsequent Rain task was started automatically; the next task remains subject to an explicit user decision.
+
+```text
+RAIN_CLEAR_G29_CH3_EXECUTION=COMPLETED
+RAIN_CLEAR_G29_CH3_RECEIPT_STATUS=VALID
+RAIN_CLEAR_G29_CH3_MATLAB_EXIT_CODE=0
+RAIN_CLEAR_G29_CH3_OUTPUT_FILES=19_OF_19
+RAIN_CLEAR_G29_CH3_INDEPENDENT_QA=PASS
+RAIN_CLEAR_G29_CH3_SCIENTIFIC_STATUS=PASS_NO_CONFIRMED_MULTIPATH
+RAIN_CLEAR_G29_CH3_CONFIRMED_EVENTS=0
+RAIN_CLEAR_G29_CH3_CONFIRMED_PATHS=0
+RAIN_CLEAR_G29_CH3_ARTIFACT_MODIFIED_BY_AUDITOR=NO
+RAIN_CLEAR_G29_CH3_RAW_IQ_READ_BY_AUDITOR=NO
+RAIN_CLEAR_G29_CH3_MATLAB_EXECUTED_BY_AUDITOR=NO
+RAIN_CLEAR_G29_CH3_SAGE_EXECUTED_BY_AUDITOR=NO
+RAIN_CLEAR_G29_CH3_OLD_ARTIFACT_PRESERVED=YES
+NEXT_DECISION_REQUIRED=USER_AUTHORIZE_NEXT_RAIN_TASK
+```
+
+## 81. Rain Clear G13/ch8 single-task request and dry-run (Prepared; execution not started, 2026-08-29)
+
+- The next explicitly selected Rain task is `F1023_clear/G13/ch8/10230000`. The current Rain checklist records it as `NOT_STARTED`, `PASS_STATIC_INPUT_GATE`, with the unique channel mapping `G13 -> ch8` and no existing new r4 output leaf. The historical `scenes/F1023_clear/sage_results/rain_sage_v1/G13` namespace remains preserved.
+- The immutable request manifest is `dataset_generation_logs/darkroom_channel_emulation/rain_sage_task_requests_20260829/rain_sage_single_task_v1__F1023_clear__G13__ch8__20260829_r4/execution_manifest.json`, SHA-256 `e0f5219e3e2c4eea602efbb21811bae64d5c57cc333853ce27095e3f4ee8af5a`. It freezes the checklist-approved `G13 -> ch8` mapping, Clear, 10.23 MHz, the actual input provenance and byte hashes, `new_only=true`, `resume_allowed=false`, `max_parallel_matlab=1`, and `gold_labels_used_for_selection=false`.
+- The expected new-only output namespace is `scenes/F1023_clear/sage_results/rain_sage_rerun_v1_20260827_r4/G13`; it was absent during preparation and dry-run. The global Rain mutex was available. Validation-only wrapper execution passed with `EXECUTION_ELIGIBLE=true`, `MATLAB_INVOKED=false`, `RAW_IQ_OPENED=false`, and `SAGE_EXECUTED=false`; the emitted MATLAB expression explicitly uses `TrackingChannel,8` and `Resume,false`.
+- No MATLAB, SAGE, or batch execution was started by Codex. Human normal-user execution is required. After completion, the receipt and all 19 required Rain outputs must receive independent read-only Stage0–Stage4 QA before the next Rain task is considered.
+
+```text
+RAIN_CLEAR_G13_CH8_REQUEST=PREPARED
+RAIN_CLEAR_G13_CH8_MANIFEST_SHA256=e0f5219e3e2c4eea602efbb21811bae64d5c57cc333853ce27095e3f4ee8af5a
+RAIN_CLEAR_G13_CH8_OUTPUT_NAMESPACE_ABSENT=YES
+RAIN_CLEAR_G13_CH8_GLOBAL_LOCK=AVAILABLE
+RAIN_CLEAR_G13_CH8_DRY_RUN=PASS
+RAIN_CLEAR_G13_CH8_EXECUTION=NOT_STARTED
+MATLAB_EXECUTED_BY_CODEX=NO
+SAGE_EXECUTED_BY_CODEX=NO
+NEXT_DECISION_REQUIRED=HUMAN_EXECUTE_CLEAR_G13_CH8_THEN_INDEPENDENT_QA
+```
+
+## 82. Rain Clear G13/ch8 execution and independent QA (Completed; QA PASS, valid zero-event, 2026-08-30)
+
+- The normal-user execution of the immutable Clear request completed successfully. Receipt: `dataset_generation_logs/darkroom_channel_emulation/rain_sage_task_requests_20260829/rain_sage_single_task_v1__F1023_clear__G13__ch8__20260829_r4/receipts/rain_sage_single_task_v1__F1023_clear__G13__ch8__20260829_r4_20260829T143207Z_receipt.json`. It records `status=COMPLETED`, `matlab_invoked=true`, `matlab_exit_code=0`, `new_only=true`, and `resume_allowed=false`; the frozen request manifest SHA-256 is `e0f5219e3e2c4eea602efbb21811bae64d5c57cc333853ce27095e3f4ee8af5a`.
+- The output namespace is `scenes/F1023_clear/sage_results/rain_sage_rerun_v1_20260827_r4/G13`. All 19 required Rain outputs are present and non-empty; no required output is missing. The new r4 namespace is distinct from and preserves the historical `scenes/F1023_clear/sage_results/rain_sage_v1/G13` artifact.
+- Independent read-only QA was completed with `scripts/sage_pipeline/rain/audit_rain_sage_task.py`. The QA artifacts are `dataset_generation_logs/darkroom_channel_emulation/rain_full_sage_qa_20260830/rain__clear__G13__ch8__fresh_r4_final/qa_report.md`, `qa_result.json`, and `artifact_hashes.csv`. Identity, artifact completeness, stage consistency, and numerical validity all passed; the overall QA result is `QA_PASS`.
+- Stage statistics are: 2,806 Stage0 valid symbols; 2,804 complete 40-ms windows; 2,804 Stage1 scanned windows with 0 invalid scans; 480 Stage2 model rows (120 each for L=1,2,3,4); 120 selected windows; 89 Stage3 persistence rows; 2 Stage3 reliable centers; 2 Stage4 joint rows; and 2/2 `joint_valid` rows. Two invalid Stage2 model rows remain recorded as a diagnostic count and did not prevent the complete Stage4 artifact from passing independent QA.
+- Under the strict project confirmation criterion (`joint_valid=1` AND `joint_multipath_count>0` AND a matching Stage4 path with `is_multipath=1`), this task produced 0 confirmed multipath events and 0 confirmed multipath paths. This is a valid zero-event result under the current criterion and is not interpreted as LOS or physical absence of multipath. Stage2 L>=2 and Stage3 reliable centers are not confirmed multipath.
+- The measured receipt interval was approximately 7,236.083 s (120.60 min). The independent QA did not open raw IQ, invoke MATLAB, invoke SAGE, or modify the existing output. No subsequent Rain task was started automatically; the next task remains subject to an explicit user decision.
+
+```text
+RAIN_CLEAR_G13_CH8_EXECUTION=COMPLETED
+RAIN_CLEAR_G13_CH8_RECEIPT_STATUS=VALID
+RAIN_CLEAR_G13_CH8_MATLAB_EXIT_CODE=0
+RAIN_CLEAR_G13_CH8_OUTPUT_FILES=19_OF_19
+RAIN_CLEAR_G13_CH8_INDEPENDENT_QA=PASS
+RAIN_CLEAR_G13_CH8_SCIENTIFIC_STATUS=PASS_NO_CONFIRMED_MULTIPATH
+RAIN_CLEAR_G13_CH8_CONFIRMED_EVENTS=0
+RAIN_CLEAR_G13_CH8_CONFIRMED_PATHS=0
+RAIN_CLEAR_G13_CH8_ARTIFACT_MODIFIED_BY_AUDITOR=NO
+RAIN_CLEAR_G13_CH8_RAW_IQ_READ_BY_AUDITOR=NO
+RAIN_CLEAR_G13_CH8_MATLAB_EXECUTED_BY_AUDITOR=NO
+RAIN_CLEAR_G13_CH8_SAGE_EXECUTED_BY_AUDITOR=NO
+RAIN_CLEAR_G13_CH8_OLD_ARTIFACT_PRESERVED=YES
+NEXT_DECISION_REQUIRED=USER_AUTHORIZE_NEXT_RAIN_TASK
+```
+
+## 83. Rain Clear G12/ch11 single-task request and dry-run (Prepared; execution not started, 2026-08-30)
+
+- The next explicitly selected Rain task is `F1023_clear/G12/ch11/10230000`. The current Rain checklist records it as `NOT_STARTED`, `PASS_STATIC_INPUT_GATE`, with the unique channel mapping `G12 -> ch11` and no existing new r4 output leaf. The historical `scenes/F1023_clear/sage_results/rain_sage_v1/G12` namespace remains preserved.
+- The immutable request manifest is `dataset_generation_logs/darkroom_channel_emulation/rain_sage_task_requests_20260829/rain_sage_single_task_v1__F1023_clear__G12__ch11__20260829_r4/execution_manifest.json`, SHA-256 `a9430b713b1c172a19c7d6d5a35d5ef983185d5f1e306a1049d6e638c2281a5d`. It freezes the checklist-approved `G12 -> ch11` mapping, Clear, 10.23 MHz, the actual input provenance and byte hashes, `new_only=true`, `resume_allowed=false`, `max_parallel_matlab=1`, and `gold_labels_used_for_selection=false`.
+- The expected new-only output namespace is `scenes/F1023_clear/sage_results/rain_sage_rerun_v1_20260827_r4/G12`; it was absent during preparation and dry-run. The global Rain mutex was available. Validation-only wrapper execution passed with `EXECUTION_ELIGIBLE=true`, `MATLAB_INVOKED=false`, `RAW_IQ_OPENED=false`, and `SAGE_EXECUTED=false`; the emitted MATLAB expression explicitly uses `TrackingChannel,11` and `Resume,false`.
+- No MATLAB, SAGE, or batch execution was started by Codex. Human normal-user execution is required. After completion, the receipt and all 19 required Rain outputs must receive independent read-only Stage0–Stage4 QA before the next Rain task is considered.
+
+```text
+RAIN_CLEAR_G12_CH11_REQUEST=PREPARED
+RAIN_CLEAR_G12_CH11_MANIFEST_SHA256=a9430b713b1c172a19c7d6d5a35d5ef983185d5f1e306a1049d6e638c2281a5d
+RAIN_CLEAR_G12_CH11_OUTPUT_NAMESPACE_ABSENT=YES
+RAIN_CLEAR_G12_CH11_GLOBAL_LOCK=AVAILABLE
+RAIN_CLEAR_G12_CH11_DRY_RUN=PASS
+RAIN_CLEAR_G12_CH11_EXECUTION=NOT_STARTED
+MATLAB_EXECUTED_BY_CODEX=NO
+SAGE_EXECUTED_BY_CODEX=NO
+NEXT_DECISION_REQUIRED=HUMAN_EXECUTE_CLEAR_G12_CH11_THEN_INDEPENDENT_QA
+```
+
+## 84. Phase-1 traditional channel-modeling scientific closure (Completed with limitations + independent QA PASS, 2026-08-30)
+
+- The canonical traditional model remains the frozen r3 namespace `dataset_generation_logs/channel_modeling/environment_elevation_stage3_path_model_v1_20260829_r3/`, model manifest SHA-256=`61c4b3aa171b6a59d17607394770b684251d656eeb19813ca13ebed2454b1782`, with its independent QA still `PASS`.
+- Phase-1 closure was completed in the new-only namespace `dataset_generation_logs/channel_modeling/phase1_scientific_closure_20260830_r2/`; closure manifest SHA-256=`45282b4eb5f86e52f4cd39f9b94f04c1596b645cae3d0b6420a089717f429d52`; independent closure QA is `PASS` with 75 checks. The earlier r1 closure namespace is retained only as superseded audit history.
+- The closure is an academic/statistical interpretation layer over r3, not a new SAGE or MATLAB production capability. It preserves the weighted-observation contract, scene/run clustering, scene-block bootstrap, grouped LOSO, the 12-cell support matrix, Stage4 selection-only semantics, and the `RICEAN_K = NOT_IDENTIFIABLE` boundary.
+- No production request, MATLAB/SAGE task, raw-IQ read, Stage0–Stage4 rerun, 20.46 MHz processing, source/wrapper/executor/manifest/inventory modification, Stage4 modification, or darkroom execution was performed. Frozen source/wrapper/executor/manifest/inventory hashes were independently rechecked and matched r3 records.
+
+```text
+PHASE_1_TRADITIONAL_MODEL_BUILD = COMPLETE
+PHASE_1_SCIENTIFIC_CLOSURE = PASS_WITH_LIMITATIONS
+PHASE_1_CLOSURE_INDEPENDENT_QA = PASS
+JOURNAL_TRADITIONAL_MODELING_EVIDENCE = READY_WITH_LIMITATIONS
+MASTER_THESIS_TRADITIONAL_MODELING_EVIDENCE = READY_WITH_LIMITATIONS
+ENVIRONMENT_EFFECT = INCONCLUSIVE
+ELEVATION_EFFECT = INCONCLUSIVE
+ENVIRONMENT_ELEVATION_INTERACTION = PARTIAL
+AI_JOINT_DENSITY_MOTIVATION = STRONG
+CONTINUOUS_ELEVATION_FOR_PHASE2 = CONDITIONAL
+PHASE_2_EXECUTION_AUTHORIZED = NO
+MATLAB_EXECUTED_BY_CODEX = NO
+SAGE_EXECUTED_BY_CODEX = NO
+BATCH_EXECUTED_BY_CODEX = NO
+NEXT_DECISION_REQUIRED=AUTHORIZE PHASE-2 DESIGN/TRAINING OR HOLD
+```
+
+## 85. Rain Clear G12/ch11 execution and independent QA (Completed; QA PASS, confirmed event, 2026-08-30)
+
+- The normal-user execution of the immutable Clear request completed successfully. Receipt: `dataset_generation_logs/darkroom_channel_emulation/rain_sage_task_requests_20260829/rain_sage_single_task_v1__F1023_clear__G12__ch11__20260829_r4/receipts/rain_sage_single_task_v1__F1023_clear__G12__ch11__20260829_r4_20260829T171405Z_receipt.json`. It records `status=COMPLETED`, `matlab_invoked=true`, `matlab_exit_code=0`, `new_only=true`, and `resume_allowed=false`; the frozen request manifest SHA-256 is `a9430b713b1c172a19c7d6d5a35d5ef983185d5f1e306a1049d6e638c2281a5d`.
+- The output namespace is `scenes/F1023_clear/sage_results/rain_sage_rerun_v1_20260827_r4/G12`. All 19 required Rain outputs are present and non-empty; no required output is missing. The new r4 namespace is distinct from and preserves the historical `scenes/F1023_clear/sage_results/rain_sage_v1/G12` artifact.
+- Independent read-only QA was completed with `scripts/sage_pipeline/rain/audit_rain_sage_task.py`. The QA artifacts are `dataset_generation_logs/darkroom_channel_emulation/rain_full_sage_qa_20260830/rain__clear__G12__ch11__fresh_r4_final/qa_report.md`, `qa_result.json`, and `artifact_hashes.csv`. Identity, artifact completeness, stage consistency, and numerical validity all passed; the overall result is `QA_PASS`.
+- Stage statistics are: 2,805 Stage0 valid symbols; 2,803 complete 40-ms windows; 2,803 Stage1 scanned windows with 0 invalid scans; 480 Stage2 model rows (120 each for L=1,2,3,4); 120 selected windows; 193 Stage3 persistence rows; 7 Stage3 reliable centers; 7 Stage4 joint rows; and 7/7 `joint_valid` rows. Forty-five invalid Stage2 model rows remain recorded as a diagnostic count and did not prevent the complete Stage4 artifact from passing independent QA.
+- Under the strict project confirmation criterion (`joint_valid=1` AND `joint_multipath_count>0` AND a matching Stage4 path with `is_multipath=1`), this task produced 1 confirmed multipath event and 1 confirmed multipath path. The confirmed center is window `1624`; its confirmed path has `excess_delay_samples=1`, `doppler_offset_hz=9.66430209528471`, and `mean_relative_power_db=-7.85881504136226`. These are artifact-level facts and are not generalized as a weather or environment conclusion. Stage2 L>=2 and Stage3 reliable centers are not themselves confirmed multipath.
+- The measured receipt interval was approximately 6,884.261 s (114.74 min). The independent QA did not open raw IQ, invoke MATLAB, invoke SAGE, or modify the existing output. No subsequent Rain task was started automatically; the next task remains subject to an explicit user decision.
+
+```text
+RAIN_CLEAR_G12_CH11_EXECUTION=COMPLETED
+RAIN_CLEAR_G12_CH11_RECEIPT_STATUS=VALID
+RAIN_CLEAR_G12_CH11_MATLAB_EXIT_CODE=0
+RAIN_CLEAR_G12_CH11_OUTPUT_FILES=19_OF_19
+RAIN_CLEAR_G12_CH11_INDEPENDENT_QA=PASS
+RAIN_CLEAR_G12_CH11_SCIENTIFIC_STATUS=PASS_WITH_CONFIRMED_MULTIPATH
+RAIN_CLEAR_G12_CH11_CONFIRMED_EVENTS=1
+RAIN_CLEAR_G12_CH11_CONFIRMED_PATHS=1
+RAIN_CLEAR_G12_CH11_CONFIRMED_CENTER=1624
+RAIN_CLEAR_G12_CH11_ARTIFACT_MODIFIED_BY_AUDITOR=NO
+RAIN_CLEAR_G12_CH11_RAW_IQ_READ_BY_AUDITOR=NO
+RAIN_CLEAR_G12_CH11_MATLAB_EXECUTED_BY_AUDITOR=NO
+RAIN_CLEAR_G12_CH11_SAGE_EXECUTED_BY_AUDITOR=NO
+RAIN_CLEAR_G12_CH11_OLD_ARTIFACT_PRESERVED=YES
+NEXT_DECISION_REQUIRED=USER_AUTHORIZE_NEXT_RAIN_TASK
+```
+
+## 86. Rain HeavyRain G31/ch4 single-task request and dry-run (Prepared; execution not started, 2026-08-30)
+
+- The next explicitly selected Rain task is `F1023_heavyrain/G31/ch4/10230000`. The current Rain checklist records it as `NOT_STARTED`, `PASS_STATIC_INPUT_GATE`, with the unique channel mapping `G31 -> ch4` and no existing new r4 output leaf. The historical `scenes/F1023_heavyrain/sage_results/rain_sage_v1/G31` namespace remains preserved.
+- The immutable request manifest is `dataset_generation_logs/darkroom_channel_emulation/rain_sage_task_requests_20260829/rain_sage_single_task_v1__F1023_heavyrain__G31__ch4__20260829_r4/execution_manifest.json`, SHA-256 `e477ae6ffe0a35c40b07395b1ffefacba58113887a3e272eb74e465e8dcd0709`. It freezes the checklist-approved `G31 -> ch4` mapping, HeavyRain, 10.23 MHz, the actual input provenance and byte hashes, `new_only=true`, `resume_allowed=false`, `max_parallel_matlab=1`, and `gold_labels_used_for_selection=false`.
+- The expected new-only output namespace is `scenes/F1023_heavyrain/sage_results/rain_sage_rerun_v1_20260827_r4/G31`; it was absent during preparation and dry-run. The global Rain mutex was available. Validation-only wrapper execution passed with `EXECUTION_ELIGIBLE=true`, `MATLAB_INVOKED=false`, `RAW_IQ_OPENED=false`, and `SAGE_EXECUTED=false`; the emitted MATLAB expression explicitly uses `TrackingChannel,4` and `Resume,false`.
+- No MATLAB, SAGE, or batch execution was started by Codex. Human normal-user execution is required. After completion, the receipt and all 19 required Rain outputs must receive independent read-only Stage0–Stage4 QA before the next Rain task is considered.
+
+```text
+RAIN_HEAVYRAIN_G31_CH4_REQUEST=PREPARED
+RAIN_HEAVYRAIN_G31_CH4_MANIFEST_SHA256=e477ae6ffe0a35c40b07395b1ffefacba58113887a3e272eb74e465e8dcd0709
+RAIN_HEAVYRAIN_G31_CH4_OUTPUT_NAMESPACE_ABSENT=YES
+RAIN_HEAVYRAIN_G31_CH4_GLOBAL_LOCK=AVAILABLE
+RAIN_HEAVYRAIN_G31_CH4_DRY_RUN=PASS
+RAIN_HEAVYRAIN_G31_CH4_EXECUTION=NOT_STARTED
+MATLAB_EXECUTED_BY_CODEX=NO
+SAGE_EXECUTED_BY_CODEX=NO
+NEXT_DECISION_REQUIRED=HUMAN_EXECUTE_HEAVYRAIN_G31_CH4_THEN_INDEPENDENT_QA
+```
+
+## 87. Rain HeavyRain G31/ch4 execution and independent QA (Completed; QA PASS, confirmed event, 2026-08-30)
+
+- The normal-user execution of the immutable HeavyRain request completed successfully. Receipt: `dataset_generation_logs/darkroom_channel_emulation/rain_sage_task_requests_20260829/rain_sage_single_task_v1__F1023_heavyrain__G31__ch4__20260829_r4/receipts/rain_sage_single_task_v1__F1023_heavyrain__G31__ch4__20260829_r4_20260830T052857Z_receipt.json`. It records `status=COMPLETED`, `matlab_invoked=true`, `matlab_exit_code=0`, `new_only=true`, and `resume_allowed=false`; the frozen request manifest SHA-256 is `e477ae6ffe0a35c40b07395b1ffefacba58113887a3e272eb74e465e8dcd0709`.
+- The output namespace is `scenes/F1023_heavyrain/sage_results/rain_sage_rerun_v1_20260827_r4/G31`. All 19 required Rain outputs are present and non-empty; no required output is missing. The new r4 namespace is distinct from and preserves the historical `scenes/F1023_heavyrain/sage_results/rain_sage_v1/G31` artifact. The execution stdout ends with `RAIN_FRESH_RERUN_COMPLETED` and the expected task/output summary; stderr is empty.
+- Independent read-only QA was completed with `scripts/sage_pipeline/rain/audit_rain_sage_task.py`. The QA artifacts are `dataset_generation_logs/darkroom_channel_emulation/rain_full_sage_qa_20260830/rain__heavyrain__G31__ch4__fresh_r4_final/qa_report.md`, `qa_result.json`, and `artifact_hashes.csv`. Identity, artifact completeness, stage consistency, and numerical validity all passed; the overall QA result is `QA_PASS`.
+- Stage statistics are: 2,565 Stage0 valid symbols; 2,563 complete 40-ms windows; 2,563 Stage1 scanned windows with 0 invalid scans; 460 Stage2 model rows (115 each for L=1,2,3,4); 115 selected windows; 164 Stage3 persistence rows; 6 Stage3 reliable centers; 6 Stage4 joint rows; and 6/6 `joint_valid` rows. Thirty-five invalid Stage2 model rows remain recorded as a diagnostic count and did not prevent the complete Stage4 artifact from passing independent QA.
+- Under the strict project confirmation criterion (`joint_valid=1` AND `joint_multipath_count>0` AND a matching Stage4 path with `is_multipath=1`), this task produced 1 confirmed multipath event and 1 confirmed multipath path. The confirmed center is window `488`; its Stage4 path has `excess_delay_samples=1.1`, `doppler_offset_hz=4.66430209528517`, `mean_relative_power_db=-0.288160839981504`, `relative_phase_rad=-3.10657929808978`, and `relative_amplitude=0.557247640438373`. These are artifact-level facts and are not generalized as a weather conclusion. Stage2 L>=2 and Stage3 reliable centers are not themselves confirmed multipath.
+- The measured receipt interval was approximately 8,943.809 s (149.06 min). The independent QA did not open raw IQ, invoke MATLAB, invoke SAGE, or modify the existing output. No subsequent Rain task was started automatically; the next task remains subject to an explicit user decision.
+
+```text
+RAIN_HEAVYRAIN_G31_CH4_EXECUTION=COMPLETED
+RAIN_HEAVYRAIN_G31_CH4_RECEIPT_STATUS=VALID
+RAIN_HEAVYRAIN_G31_CH4_MATLAB_EXIT_CODE=0
+RAIN_HEAVYRAIN_G31_CH4_OUTPUT_FILES=19_OF_19
+RAIN_HEAVYRAIN_G31_CH4_INDEPENDENT_QA=PASS
+RAIN_HEAVYRAIN_G31_CH4_SCIENTIFIC_STATUS=PASS_WITH_CONFIRMED_MULTIPATH
+RAIN_HEAVYRAIN_G31_CH4_CONFIRMED_EVENTS=1
+RAIN_HEAVYRAIN_G31_CH4_CONFIRMED_PATHS=1
+RAIN_HEAVYRAIN_G31_CH4_CONFIRMED_CENTER=488
+RAIN_HEAVYRAIN_G31_CH4_ARTIFACT_MODIFIED_BY_AUDITOR=NO
+RAIN_HEAVYRAIN_G31_CH4_RAW_IQ_READ_BY_AUDITOR=NO
+RAIN_HEAVYRAIN_G31_CH4_MATLAB_EXECUTED_BY_AUDITOR=NO
+RAIN_HEAVYRAIN_G31_CH4_SAGE_EXECUTED_BY_AUDITOR=NO
+RAIN_HEAVYRAIN_G31_CH4_OLD_ARTIFACT_PRESERVED=YES
+NEXT_DECISION_REQUIRED=USER_AUTHORIZE_NEXT_RAIN_TASK
+```
+
+## 88. Rain HeavyRain G01/ch7 single-task request and dry-run (Prepared; execution not started, 2026-08-30)
+
+- The next explicitly selected Rain task is `F1023_heavyrain/G01/ch7/10230000`. The current Rain checklist records it as `NOT_STARTED`, `PASS_STATIC_INPUT_GATE`, with the unique channel mapping `G01 -> ch7` and no existing new r4 output leaf. The historical `scenes/F1023_heavyrain/sage_results/rain_sage_v1/G01` namespace is not present as a completed artifact.
+- The immutable request manifest is `dataset_generation_logs/darkroom_channel_emulation/rain_sage_task_requests_20260829/rain_sage_single_task_v1__F1023_heavyrain__G01__ch7__20260829_r4/execution_manifest.json`, SHA-256 `ddd7efa55c4fca75d13ac7072b753e9fffbc2a4d268d3e68faf9bc7155fb617e`. It freezes the checklist-approved `G01 -> ch7` mapping, HeavyRain, 10.23 MHz, the actual input provenance and byte hashes, `new_only=true`, `resume_allowed=false`, `max_parallel_matlab=1`, and `gold_labels_used_for_selection=false`.
+- The expected new-only output namespace is `scenes/F1023_heavyrain/sage_results/rain_sage_rerun_v1_20260827_r4/G01`; it was absent during preparation and dry-run. The global Rain mutex was available. Validation-only wrapper execution passed with `EXECUTION_ELIGIBLE=true`, `MATLAB_INVOKED=false`, `RAW_IQ_OPENED=false`, and `SAGE_EXECUTED=false`; the emitted MATLAB expression explicitly uses `TrackingChannel,7` and `Resume,false`.
+- No MATLAB, SAGE, or batch execution was started by Codex. Human normal-user execution is required. After completion, the receipt and all 19 required Rain outputs must receive independent read-only Stage0–Stage4 QA before the next Rain task is considered.
+
+```text
+RAIN_HEAVYRAIN_G01_CH7_REQUEST=PREPARED
+RAIN_HEAVYRAIN_G01_CH7_MANIFEST_SHA256=ddd7efa55c4fca75d13ac7072b753e9fffbc2a4d268d3e68faf9bc7155fb617e
+RAIN_HEAVYRAIN_G01_CH7_OUTPUT_NAMESPACE_ABSENT=YES
+RAIN_HEAVYRAIN_G01_CH7_GLOBAL_LOCK=AVAILABLE
+RAIN_HEAVYRAIN_G01_CH7_DRY_RUN=PASS
+RAIN_HEAVYRAIN_G01_CH7_EXECUTION=NOT_STARTED
+MATLAB_EXECUTED_BY_CODEX=NO
+SAGE_EXECUTED_BY_CODEX=NO
+NEXT_DECISION_REQUIRED=HUMAN_EXECUTE_HEAVYRAIN_G01_CH7_THEN_INDEPENDENT_QA
+```
+
+## 89. Rain HeavyRain G01/ch7 execution and independent QA (Completed; QA PASS, confirmed event, 2026-08-30)
+
+- The normal-user execution of the immutable HeavyRain request completed successfully. Receipt: `dataset_generation_logs/darkroom_channel_emulation/rain_sage_task_requests_20260829/rain_sage_single_task_v1__F1023_heavyrain__G01__ch7__20260829_r4/receipts/rain_sage_single_task_v1__F1023_heavyrain__G01__ch7__20260829_r4_20260830T083805Z_receipt.json`. It records `status=COMPLETED`, `matlab_invoked=true`, `matlab_exit_code=0`, `new_only=true`, and `resume_allowed=false`; the frozen request manifest SHA-256 is `ddd7efa55c4fca75d13ac7072b753e9fffbc2a4d268d3e68faf9bc7155fb617e`.
+- The output namespace is `scenes/F1023_heavyrain/sage_results/rain_sage_rerun_v1_20260827_r4/G01`. All 19 required Rain outputs are present and non-empty; no required output is missing. The new r4 namespace is distinct from and preserves the historical Rain namespace policy; no previous artifact was reused or overwritten. The execution stdout ends with `RAIN_FRESH_RERUN_COMPLETED` and the expected G01/ch7 summary; stderr is empty.
+- Independent read-only QA was completed with `scripts/sage_pipeline/rain/audit_rain_sage_task.py`. The final QA artifacts are `dataset_generation_logs/darkroom_channel_emulation/rain_full_sage_qa_20260830/rain__heavyrain__G01__ch7__fresh_r4_final_v2/qa_report.md`, `qa_result.json`, and `artifact_hashes.csv`. Identity, artifact completeness, stage consistency, and numerical validity all passed; the overall QA result is `QA_PASS`. An earlier audit invocation used an invalid extended-path spelling and produced a separate inconclusive diagnostic namespace; that diagnostic artifact was retained and is not the final QA result.
+- Stage statistics are: 2,865 Stage0 valid symbols; 2,863 complete 40-ms windows; 2,863 Stage1 scanned windows with 0 invalid scans; 480 Stage2 model rows (120 each for L=1,2,3,4); 120 selected windows; 197 Stage3 persistence rows; 5 Stage3 reliable centers; 5 Stage4 joint rows; and 5/5 `joint_valid` rows. Twenty-five invalid Stage2 model rows remain recorded as a diagnostic count and did not prevent the complete Stage4 artifact from passing independent QA.
+- Under the strict project confirmation criterion (`joint_valid=1` AND `joint_multipath_count>0` AND a matching Stage4 path with `is_multipath=1`), this task produced 1 confirmed multipath event and 1 confirmed multipath path. The confirmed center is window `2519`; its Stage4 path has `excess_delay_samples=1.1`, `doppler_offset_hz=14.6643020952847`, `mean_relative_power_db=-9.18660454185309`, `relative_phase_rad=-3.08911682293025`, and `relative_amplitude=0.541765400486335`. These are artifact-level facts and are not generalized as a weather conclusion. Stage2 L>=2 and Stage3 reliable centers are not themselves confirmed multipath.
+- The measured receipt interval was approximately 16,231.773 s (270.53 min). The independent QA did not open raw IQ, invoke MATLAB, invoke SAGE, or modify the existing output. No subsequent Rain task was started automatically; the next task remains subject to an explicit user decision.
+
+```text
+RAIN_HEAVYRAIN_G01_CH7_EXECUTION=COMPLETED
+RAIN_HEAVYRAIN_G01_CH7_RECEIPT_STATUS=VALID
+RAIN_HEAVYRAIN_G01_CH7_MATLAB_EXIT_CODE=0
+RAIN_HEAVYRAIN_G01_CH7_OUTPUT_FILES=19_OF_19
+RAIN_HEAVYRAIN_G01_CH7_INDEPENDENT_QA=PASS
+RAIN_HEAVYRAIN_G01_CH7_SCIENTIFIC_STATUS=PASS_WITH_CONFIRMED_MULTIPATH
+RAIN_HEAVYRAIN_G01_CH7_CONFIRMED_EVENTS=1
+RAIN_HEAVYRAIN_G01_CH7_CONFIRMED_PATHS=1
+RAIN_HEAVYRAIN_G01_CH7_CONFIRMED_CENTER=2519
+RAIN_HEAVYRAIN_G01_CH7_ARTIFACT_MODIFIED_BY_AUDITOR=NO
+RAIN_HEAVYRAIN_G01_CH7_RAW_IQ_READ_BY_AUDITOR=NO
+RAIN_HEAVYRAIN_G01_CH7_MATLAB_EXECUTED_BY_AUDITOR=NO
+RAIN_HEAVYRAIN_G01_CH7_SAGE_EXECUTED_BY_AUDITOR=NO
+RAIN_HEAVYRAIN_G01_CH7_OLD_ARTIFACT_PRESERVED=YES
+NEXT_DECISION_REQUIRED=USER_AUTHORIZE_NEXT_RAIN_TASK
+```
+
+## 90. Rain Stage3 effect-layer route decision and nine-task audit (Planned / Not started, 2026-08-30)
+
+- All nine approved 10.23 MHz Rain tasks now have completed r4 outputs and at least one independent QA result with `overall_status=QA_PASS` and `execution_receipt_status=VALID`: Clear `G24/ch10`, `G29/ch3`, `G13/ch8`, `G12/ch11`; MidRain `G24/ch8`, `G20/ch9`; HeavyRain `G02/ch1`, `G31/ch4`, `G01/ch7`.
+- A read-only Stage3 audit found 24,277 complete Stage0 windows, 1,070 Stage2 selected windows, 1,166 Stage3 persistence rows, 55 Stage3 reliable centers, and 90 path rows that both have `persistence_pass=1` and belong to a reliable center. Structural checks found no duplicate center/path keys, no non-finite delay/Doppler/power values, no selected-order/path-count mismatch, and no accepted run shorter than the frozen three-window persistence requirement.
+- Weather support is uneven and internally correlated. Clear contributes 21 centers/31 path rows across four tasks; MidRain contributes 17/17 across two tasks; HeavyRain contributes 17/42 across three tasks. Connecting reliable centers whose frozen `center +/- 2` support intervals overlap gives only 10 Clear, 8 MidRain, and 8 HeavyRain episodes. These episode counts, not the raw 90 rows, define the primary independence boundary for fitting and resampling.
+- Commander direction for the Darkroom Rain branch is now to use Stage3 reliable evidence as the inclusion layer for weather-effect modeling because the Stage4 joint-confirmation subset is too restrictive for this specific exploratory model. This does **not** alter, delete, or weaken Stage4 or the global production confirmed-multipath criterion. Stage3 records remain `reliable multipath evidence`, not `confirmed multipath path`; all model manifests and reports must retain that wording. Stage4 artifacts remain immutable and may be retained only as a strict-reference subset, not as the fitting gate.
+- The Rain recordings have no validated elevation conditioning and no PRN common to all three weather states. Only G24 forms a Clear/MidRain matched-PRN sensitivity pair; HeavyRain is unpaired. Therefore the planned deliverable is a weather-conditioned empirical transformation layer under an explicit separability assumption, not a causal rain-only propagation law and not an elevation-conditioned model.
+- No effect-layer evidence table, fitted distribution, canonical-table transformation, request, or generated weather table was created in this audit. The recommended design is pending user approval. No raw IQ was opened, and no MATLAB, SAGE, or batch task was executed.
+
+```text
+RAIN_NINE_TASK_EXECUTION=COMPLETE
+RAIN_NINE_TASK_INDEPENDENT_QA=PASS
+RAIN_STAGE3_RELIABLE_CENTERS=55
+RAIN_STAGE3_RELIABLE_PATH_ROWS=90
+RAIN_STAGE3_OVERLAP_EPISODES=26
+RAIN_EFFECT_LAYER_INPUT_SEMANTICS=STAGE3_RELIABLE_EVIDENCE
+RAIN_EFFECT_LAYER_STAGE4_USED_AS_FIT_GATE=NO
+GLOBAL_STAGE4_CONFIRMATION_CRITERION_CHANGED=NO
+RAIN_EFFECT_LAYER_STATUS=PLANNED_NOT_STARTED
+RAW_IQ_READ_IN_THIS_AUDIT=NO
+MATLAB_EXECUTED_IN_THIS_AUDIT=NO
+SAGE_EXECUTED_IN_THIS_AUDIT=NO
+NEXT_DECISION_REQUIRED=USER_APPROVE_STAGE3_RAIN_EFFECT_LAYER_DESIGN
+```
+
+## 91. Rain Stage3 effect layer implementation and eight-table generation (Implemented / QA Validated, 2026-08-30)
+
+- The approved Stage3 Rain route has been implemented as independent Python tooling: `scripts/analysis/channel_modeling/rain_stage3_effect_layer_v1.py`, `run_rain_stage3_effect_layer_v1.py`, and `audit_rain_stage3_effect_layer_v1.py`. The v2.2 canonical generator/core and all nine Rain SAGE artifacts remain unchanged.
+- The final new-only namespace is `dataset_generation_logs/channel_modeling/rain_effect_layer_stage3_v1_20260830_r5`. It contains 90 Stage3 reliable path-evidence rows, 26 support episodes, a separate Clear/MidRain/HeavyRain/RainPooled empirical model, and eight 5-minute Rain-transformed canonical tables. Each table has 3,600,000 rows and preserves the seven-column canonical schema.
+- `RainPooled` is the pooled MidRain+HeavyRain transformation used for the requested eight tables: Urban, Special Reflective, Mountain/Valley, and Highway/Open, each in GOOD and POOR modes. The same layer is applied to Low/Mid/High bands under the documented no-elevation-conditioning separability assumption.
+- The transformation keeps path 0 unchanged, applies deterministic per-`SatelliteID × NLOSPathID × 40 ms block` effects to NLOS slots 1–3, preserves positive NLOS amplitude, and propagates phase from Doppler. Stage3 evidence is used for fitting; Stage4 and gold labels are not used for selection or fitting.
+- Independent QA passed: source/output hashes, 8/8 table presence, 3,600,000 rows per table, row identity/order, main-path preservation, finite values, positive NLOS amplitude, 40-ms block constancy, phase recurrence, and namespace isolation. Final collection manifest SHA-256 is `a7dd28086b5b76821b6202f8f9efe6c7386e7f6db4680ae4353682982825c621`; QA SHA-256 is `8b890163e9d0b501fe6f24c44217602340c7803cd413a03b40bb1e7604ab3efd`.
+- Earlier r1/r2/r3 namespaces remain preserved diagnostic artifacts; no file was deleted, moved, overwritten, or resumed. The final report is `docs/RAIN_STAGE3_EFFECT_LAYER_REPORT.md`.
+
+```text
+RAIN_EFFECT_LAYER_IMPLEMENTATION=COMPLETED
+RAIN_EFFECT_LAYER_FINAL_NAMESPACE=rain_effect_layer_stage3_v1_20260830_r5
+RAIN_EFFECT_LAYER_EVIDENCE_ROWS=90
+RAIN_EFFECT_LAYER_EPISODES=26
+RAIN_EFFECT_LAYER_TABLES=8
+RAIN_EFFECT_LAYER_ROWS_PER_TABLE=3600000
+RAIN_EFFECT_LAYER_QA=PASS
+RAIN_EFFECT_LAYER_STAGE4_USED_FOR_FIT=NO
+RAIN_EFFECT_LAYER_GOLD_LABELS_USED_FOR_SELECTION=NO
+RAIN_EFFECT_LAYER_RAW_IQ_READ=NO
+RAIN_EFFECT_LAYER_MATLAB_EXECUTED=NO
+RAIN_EFFECT_LAYER_SAGE_EXECUTED=NO
+NEXT_DECISION_REQUIRED=INDEPENDENT_REVIEW_OR_DARKROOM_INTEGRATION_APPROVAL
 ```

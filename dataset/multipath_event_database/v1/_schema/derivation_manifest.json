@@ -1,0 +1,61 @@
+{
+  "derivation_version": "sage-event-path-derivation-v1",
+  "status": "frozen_for_read_only_dry_run",
+  "frozen_date": "2026-08-25",
+  "source_contract": {
+    "sample_rate_hz": 10230000,
+    "pipeline_sha256": "bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c",
+    "wrapper_sha256": "dd8afb1b3317bf920fe34474e3ceedf06ac4580b2a13c21ea25f8365071143f3",
+    "executor_sha256": "bab7a0422975cb05bcda9a80a75c3577eb7f408a83f2720af2f1e13372b08f1b",
+    "manifest_sha256": "77c20c0ed6c84fa0348db429948a8bd4900b2e8d86a6d8843b159b9a7a35cf00",
+    "inventory_sha256": "af368feba90797584d7690d4927ed32de604651a5a62662f4adce348a89e4bb4"
+  },
+  "stage_sources": {
+    "stage0": "stage0_valid_symbols.csv and stage0_valid_40ms_windows.csv",
+    "stage1": "stage1_nav_fast_scan.csv",
+    "stage2_models": "stage2_model_orders.csv",
+    "stage2_windows": "stage2_selected_windows.csv",
+    "stage2_paths": "stage2_selected_paths.csv",
+    "stage3_persistence": "stage3_persistence.csv",
+    "stage3_centers": "stage3_reliable_centers.csv",
+    "stage4_summary": "stage4_joint_summary.csv",
+    "stage4_paths": "stage4_joint_paths.csv"
+  },
+  "field_semantics": {
+    "stage2_relative_power_db": "source field relative_power_db",
+    "stage4_relative_power_db": "source field mean_relative_power_db; keep source name",
+    "event_maximum_coherence": "event/model-level maximum_coherence; do not copy to path-level coherence",
+    "zero_event": "no_confirmed_event unless explicit reference-control label applies"
+  },
+  "units": {
+    "delay_samples": "samples",
+    "excess_delay_chips": "chips",
+    "derived_excess_delay_s": "seconds; future controlled derivation only",
+    "derived_excess_path_length_m": "meters; future controlled derivation only",
+    "doppler_hz": "signed Hz",
+    "relative_power_db": "dB",
+    "cn0_db_hz": "dB-Hz",
+    "elevation_deg": "degrees",
+    "azimuth_deg": "degrees"
+  },
+  "geometry_rule": {
+    "event_context_status_for_this_dry_run": "deferred_unavailable",
+    "event_utc_requires_verified_time_alignment": true,
+    "elevation_and_azimuth_without_verified_alignment": null,
+    "summary_geometry_may_be_run_level_only": true,
+    "tracking_cn0_and_nmea_snr_are_separate_fields": true
+  },
+  "null_policy": {
+    "unknown_is_null_not_zero": true,
+    "missing_reason_required": true,
+    "fallback_vehicle_speed_is_not_measured_speed": true
+  },
+  "read_only_gate": {
+    "raw_iq_opened": false,
+    "matlab_started": false,
+    "sage_started": false,
+    "existing_stage_artifacts_modified": false,
+    "formal_database_tables_written": false,
+    "statistical_modeling_started": false
+  }
+}

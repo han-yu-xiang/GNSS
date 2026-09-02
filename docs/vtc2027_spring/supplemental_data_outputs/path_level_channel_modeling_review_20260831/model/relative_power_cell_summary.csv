@@ -1,0 +1,7 @@
+cell_id,row_count,track_count,scene_count,selected_family,selected_validation_nlpd,selected_validation_ecdf_distance,selected_bic
+Urban/LOW,18,8,3,beta_linear_ratio,2.554098006961455,0.2881012969610187,39.965937946552835
+Urban/MID,169,74,5,gaussian_mixture_db,2.929567894096921,0.190793082749685,438.15451880043975
+Urban/HIGH,129,64,5,gaussian_mixture_db,2.9074484261184055,0.09410787662753595,384.5176226081458
+Mountain/Valley/LOW,22,12,3,beta_linear_ratio,3.0480171306477075,0.19621870623686818,76.044256535058
+Mountain/Valley/MID,117,53,3,gaussian_mixture_db,2.8235900075367937,0.05402311159466341,316.51878931160104
+Mountain/Valley/HIGH,32,15,2,single_gaussian_db,3.0324725673380306,0.1653929426747945,95.2925434979883

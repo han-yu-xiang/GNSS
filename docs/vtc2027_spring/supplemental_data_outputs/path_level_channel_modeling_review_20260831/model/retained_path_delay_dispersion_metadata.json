@@ -1,0 +1,14 @@
+{
+  "formula": "tau_rms=sqrt(sum_l p_l tau_l^2/sum_l p_l - (sum_l p_l tau_l/sum_l p_l)^2)",
+  "direct_reference": {
+    "delay_samples": 0.0,
+    "relative_power_db": 0.0
+  },
+  "secondary_power_transform": "p_l=10^(relative_power_db/10)",
+  "scope_counts": {
+    "environment_only": 290,
+    "elevation_ready": 279
+  },
+  "source_population": "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\supplemental_data_outputs\\urban_mountain_stage3_elevation_model_review_v3_conditional_gmm\\population\\gmm_feature_population.csv",
+  "interpretation": "retained-path delay dispersion, not full-channel RMS delay spread"
+}

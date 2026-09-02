@@ -1,0 +1,87 @@
+{
+  "alignment_id": "alignment_20260825_tow_geometry_scene_v1",
+  "alignment_version": "sage-event-context-alignment-v1",
+  "created_utc": "2026-08-25T09:17:36.970Z",
+  "source_partition": "dataset/multipath_event_database/v1/partitions/ingestion_id=ingestion_20260825_event_path_v1",
+  "rules": {
+    "gps_utc_leap_seconds": 18,
+    "geometry_join": "same_prn_nearest_gsv_no_interpolation",
+    "max_geometry_delta_seconds": 5.0,
+    "g06_policy": "exclude_legacy_context_missing_retain_audit"
+  },
+  "source_hashes": {
+    "source_ingestion_manifest_sha256": "2663fcd366ae55bfea91cafd459e7aad730eee56b8e5aa7900b8a285f6653fe5",
+    "source_sage_runs_sha256": "f4303749beeb73e922758ef6a1cfb0eef7b4e69d49b2f49ad8b6bf29cb3a7ae5",
+    "source_events_sha256": "b1340bb1f17bb2e52e2857234d61aa084fbc734cf352f32be7bdb4275661c9d1",
+    "source_event_paths_sha256": "80e0f0eb6a8bcaebb7dd50398994751aa422a0b5e8bd2c2833424d3e3731da2a",
+    "source_event_context_sha256": "588d52aa2bd45fd51d55ed5e8e51a117613accfa9c4eb258bf855a1051d7bcbe",
+    "pipeline_sha256": "bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c",
+    "wrapper_sha256": "dd8afb1b3317bf920fe34474e3ceedf06ac4580b2a13c21ea25f8365071143f3",
+    "executor_sha256": "bab7a0422975cb05bcda9a80a75c3577eb7f408a83f2720af2f1e13372b08f1b",
+    "production_manifest_sha256": "77c20c0ed6c84fa0348db429948a8bd4900b2e8d86a6d8843b159b9a7a35cf00",
+    "inventory_sha256": "af368feba90797584d7690d4927ed32de604651a5a62662f4adce348a89e4bb4"
+  },
+  "scene_metadata_sha256": "dd2ed29cac6bb2eee4074752ec89af85baf6a6e37479b30e39f89222aaaa23db",
+  "table_counts": {
+    "dimensions/scene_context.csv": 13,
+    "dimensions/time_alignment.csv": 13,
+    "facts/event_context_aligned.csv": 308,
+    "exports/modeling_run_eligibility.csv": 64,
+    "exports/modeling_event_eligibility.csv": 308,
+    "exports/confirmed_paths_environment_ready.csv": 100,
+    "exports/confirmed_paths_elevation_ready.csv": 84,
+    "qa/alignment_issues.csv": 24
+  },
+  "table_sha256": {
+    "dimensions/scene_context.csv": "8a50fcc3196a2256735c45c77119d8a8b6447532a503aeb5a075e103ed1877e3",
+    "dimensions/time_alignment.csv": "442a7845e52841696eae7be22076e20bb76daf283fa033d6bb675deb8e3b154e",
+    "exports/confirmed_paths_elevation_ready.csv": "d4dda0eef89f6e2ae4d8e4da14d8583ce8f74ca679d93273b92b10c67d5dc998",
+    "exports/confirmed_paths_environment_ready.csv": "7291322cd8f03caa136bcd4ed869c1f1a80b13c9c6c2fdb18e033f8e4e99075b",
+    "exports/modeling_event_eligibility.csv": "ec1ce1c27e707f98c4feb3b0f4be93e83cb49474fff9f58d47d7766c17afe6fb",
+    "exports/modeling_run_eligibility.csv": "163bd5d9ce8cf3d0681e29c46b3d3fac3a9cce92877c3288207c789b6123638e",
+    "facts/event_context_aligned.csv": "38b5cdc8aedb1c4576952d7e9fd2344b3414f67ddca2443e4a20a63ca813e41f",
+    "qa/alignment_issues.csv": "f9805d275eae03edab851d2471632ec504f8c00210a513284c256bffba924ce7"
+  },
+  "result_counts": {
+    "run_count": 64,
+    "scene_count": 13,
+    "time_alignment_verified": 13,
+    "event_context_count": 308,
+    "event_geometry_valid_count": 284,
+    "confirmed_event_count": 96,
+    "confirmed_path_count": 104,
+    "environment_ready_confirmed_path_count": 100,
+    "elevation_ready_confirmed_path_count": 84,
+    "g06_modeling_excluded_count": 1
+  },
+  "gate_record": {
+    "raw_iq_read": false,
+    "matlab_started": false,
+    "sage_started": false,
+    "batch_started": false,
+    "existing_sage_artifacts_modified": false,
+    "statistical_modeling_started": false,
+    "channel_parameter_derivation_started": false
+  },
+  "status": "completed_with_exclusions",
+  "independent_qa_status": "PASS",
+  "independent_qa_summary": {
+    "run_count": 64,
+    "scene_count": 13,
+    "time_alignment_verified": 13,
+    "event_context_count": 308,
+    "event_geometry_valid_count": 284,
+    "environment_ready_confirmed_path_count": 100,
+    "elevation_ready_confirmed_path_count": 84,
+    "g06_excluded_event_count": 2,
+    "alignment_issue_counts": {
+      "legacy_context_missing": 2,
+      "geometry_prn_missing_in_timeseries": 10,
+      "nearest_geometry_delta_exceeds_5s": 12
+    },
+    "frozen_source_hashes": true,
+    "source_partition_unchanged": true,
+    "raw_iq_read": false,
+    "matlab_or_sage_started": false
+  }
+}

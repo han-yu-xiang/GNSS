@@ -1,0 +1,171 @@
+{
+  "schema_version": "path_relative_power_distribution_v1",
+  "source_population": "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\supplemental_data_outputs\\urban_mountain_stage3_elevation_model_review_v3_conditional_gmm\\population\\gmm_feature_population.csv",
+  "source_rows": 487,
+  "quantity_definition": "relative_power_db is path power relative to the direct-path reference; it is not a received fading-envelope sample",
+  "cells": {
+    "Urban/LOW": {
+      "model_family": "beta_linear_ratio",
+      "quantity": "path-relative power",
+      "unit": "dB relative to the direct-path reference",
+      "model": {
+        "alpha": 1.717092596938022,
+        "beta": 1.5682947595047236
+      },
+      "transformation": "r=10^(P_db/10), f_Pdb=f_r(r)*ln(10)/10*r",
+      "selection": {
+        "validation_nlpd": 2.554098006961455,
+        "validation_ecdf_distance": 0.2881012969610187,
+        "bic": 39.965937946552835,
+        "validation_fold_count": 2,
+        "validation_scenes": [
+          "F1023_V70_D0120_P1",
+          "F1023_V70_D0120_P8"
+        ],
+        "selection_rule": "lowest scene-grouped held-out weighted NLPD; ECDF distance and BIC tie-breaks"
+      }
+    },
+    "Urban/MID": {
+      "model_family": "gaussian_mixture_db",
+      "quantity": "path-relative power",
+      "unit": "dB relative to the direct-path reference",
+      "model": {
+        "means_db": [
+          -13.04115257192137,
+          -2.8463914172596145
+        ],
+        "stds_db": [
+          2.5462772060691745,
+          1.5966176641955077
+        ],
+        "proportions": [
+          0.523948082162665,
+          0.4760519178373351
+        ]
+      },
+      "transformation": "identity in dB",
+      "selection": {
+        "validation_nlpd": 2.929567894096921,
+        "validation_ecdf_distance": 0.190793082749685,
+        "bic": 438.15451880043975,
+        "validation_fold_count": 5,
+        "validation_scenes": [
+          "F1023_V70_D0120_P1",
+          "F1023_V70_D0120_P7",
+          "F1023_V70_D0120_P8",
+          "F1023_V70_D0122_P1",
+          "F1023_v50_D0127_P1"
+        ],
+        "selection_rule": "lowest scene-grouped held-out weighted NLPD; ECDF distance and BIC tie-breaks"
+      }
+    },
+    "Urban/HIGH": {
+      "model_family": "gaussian_mixture_db",
+      "quantity": "path-relative power",
+      "unit": "dB relative to the direct-path reference",
+      "model": {
+        "means_db": [
+          -13.44755461424248,
+          -3.450974719671795
+        ],
+        "stds_db": [
+          2.7420836401288287,
+          1.4580305719624518
+        ],
+        "proportions": [
+          0.6272472765816646,
+          0.37275272341833554
+        ]
+      },
+      "transformation": "identity in dB",
+      "selection": {
+        "validation_nlpd": 2.9074484261184055,
+        "validation_ecdf_distance": 0.09410787662753595,
+        "bic": 384.5176226081458,
+        "validation_fold_count": 5,
+        "validation_scenes": [
+          "F1023_V70_D0120_P1",
+          "F1023_V70_D0120_P5",
+          "F1023_V70_D0120_P7",
+          "F1023_V70_D0120_P8",
+          "F1023_V70_D0122_P1"
+        ],
+        "selection_rule": "lowest scene-grouped held-out weighted NLPD; ECDF distance and BIC tie-breaks"
+      }
+    },
+    "Mountain/Valley/LOW": {
+      "model_family": "beta_linear_ratio",
+      "quantity": "path-relative power",
+      "unit": "dB relative to the direct-path reference",
+      "model": {
+        "alpha": 0.7276109242922416,
+        "beta": 1.9326411668830126
+      },
+      "transformation": "r=10^(P_db/10), f_Pdb=f_r(r)*ln(10)/10*r",
+      "selection": {
+        "validation_nlpd": 3.0480171306477075,
+        "validation_ecdf_distance": 0.19621870623686818,
+        "bic": 76.044256535058,
+        "validation_fold_count": 3,
+        "validation_scenes": [
+          "F1023_V70_D0117_P2",
+          "F1023_V70_D0117_P4",
+          "F1023_v90_D0117_P7"
+        ],
+        "selection_rule": "lowest scene-grouped held-out weighted NLPD; ECDF distance and BIC tie-breaks"
+      }
+    },
+    "Mountain/Valley/MID": {
+      "model_family": "gaussian_mixture_db",
+      "quantity": "path-relative power",
+      "unit": "dB relative to the direct-path reference",
+      "model": {
+        "means_db": [
+          -13.322717326830317,
+          -3.965035319391657
+        ],
+        "stds_db": [
+          2.0636720130298816,
+          1.9216287341520455
+        ],
+        "proportions": [
+          0.6038897935763516,
+          0.3961102064236481
+        ]
+      },
+      "transformation": "identity in dB",
+      "selection": {
+        "validation_nlpd": 2.8235900075367937,
+        "validation_ecdf_distance": 0.05402311159466341,
+        "bic": 316.51878931160104,
+        "validation_fold_count": 3,
+        "validation_scenes": [
+          "F1023_V70_D0117_P2",
+          "F1023_V70_D0117_P4",
+          "F1023_v90_D0117_P7"
+        ],
+        "selection_rule": "lowest scene-grouped held-out weighted NLPD; ECDF distance and BIC tie-breaks"
+      }
+    },
+    "Mountain/Valley/HIGH": {
+      "model_family": "single_gaussian_db",
+      "quantity": "path-relative power",
+      "unit": "dB relative to the direct-path reference",
+      "model": {
+        "mean_db": -9.255724585241703,
+        "std_db": 4.703110236255497
+      },
+      "transformation": "identity in dB",
+      "selection": {
+        "validation_nlpd": 3.0324725673380306,
+        "validation_ecdf_distance": 0.1653929426747945,
+        "bic": 95.2925434979883,
+        "validation_fold_count": 1,
+        "validation_scenes": [
+          "F1023_V70_D0117_P4"
+        ],
+        "selection_rule": "lowest scene-grouped held-out weighted NLPD; ECDF distance and BIC tie-breaks"
+      }
+    }
+  }
+}

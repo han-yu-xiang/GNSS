@@ -1,0 +1,4 @@
+layer,relative_power_db,trial_count,recovery_count,recovery_rate,median_abs_delay_error_samples,median_abs_doppler_error_hz,median_abs_power_error_db,finite_error_count
+Layer1_Controlled,-5.0,72,61,0.8472222222222222,1.1102230246251565e-16,2.434677241112695,0.3634800372714433,72
+Layer1_Controlled,-10.0,72,58,0.8055555555555556,4.440892098500626e-16,2.434677241112695,0.5564879947862096,71
+Layer1_Controlled,-15.0,72,45,0.625,0.09999999999999964,2.565322758887305,1.0181615326378974,67

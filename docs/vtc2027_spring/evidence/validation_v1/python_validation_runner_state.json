@@ -1,0 +1,16 @@
+{
+  "status": "RUNNING",
+  "current_step": "dll",
+  "completed_steps": [
+    "layer1",
+    "layer1_audit",
+    "layer2",
+    "layer2_audit",
+    "layer3_audit"
+  ],
+  "error": "",
+  "updated_at_utc": "2026-08-23T17:44:09.836785+00:00",
+  "matlab_interaction": false,
+  "production_runner_interaction": false,
+  "max_parallel_python": 1
+}

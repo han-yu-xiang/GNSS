@@ -156,3 +156,29 @@ The evidence index is a paper traceability layer, not the long-term event databa
 | Paper inclusion decision | `KEEP_IN_MAIN_ENVIRONMENT_COMPARISON` | `VTC_SPECIAL_REFLECTIVE_SUPPLEMENT_G15_QA_REPORT.md` | Bounded descriptive comparison only; the current main comparison uses delay, relative Doppler and relative power |
 
 The G15 supplement was independently executed and QA-passed before this section was added. It does not authorize another production task: Commander `STOP SAGE PRODUCTION` remains in force, and `NEXT_VTC_DECISION_REQUIRED = YES` remains the current decision gate.
+
+## 16. Versioned Stage4 path-parameter derivation (2026-08-25)
+
+| Evidence cell | Status | Source | Notes |
+|---|---|---|---|
+| Stage4 confirmed-path parameter derivation | `Available / QA PASS` | `dataset/multipath_event_database/v1/partitions/parameter_set_id=parameters_20260825_stage4_path_v1/parameter_manifest.json`; `dataset_generation_logs/multipath_event_channel_parameter_qa_20260825/qa_report.md` | 100 environment-ready paths and 94 represented confirmed events; descriptive derivation only |
+| Excess delay / excess path length / signed relative Doppler / relative power | `Available / QA PASS` | `facts/path_parameters.csv` and `facts/event_parameters.csv` in the parameter partition | Derived from Stage4 confirmed path rows; source fields and hashes retained |
+| Event-level elevation-conditioned parameter population | `Available / bounded` | `facts/path_parameters.csv`; `summaries/parameter_summary.csv` | 84 elevation-ready paths; 16 paths excluded from elevation summaries because event-level geometry is unavailable/inconclusive |
+| Environment/elevation descriptive summaries | `Available / bounded` | `summaries/parameter_summary.csv` | 4 environment groups and 3 elevation groups; medians/minima/maxima only, no fitted distribution |
+| Complete stochastic channel model / RMS-delay-spread model / K-factor model | `Not started` | Engineering handoff and parameter manifest | Remains outside the current VTC claim boundary; no paper claim is admitted automatically |
+
+The new parameter layer is paper-usable evidence after author review, but it does not automatically change the frozen manuscript. Any number admitted to the paper must cite the parameter partition and QA report, preserve Stage4-confirmed semantics, and remain a bounded descriptive observation rather than a complete channel model.
+
+## 17. Urban/Mountain environment--elevation conditional GMM admission (2026-08-31)
+
+This section records a separate author-approved manuscript route based on persistent path observations. It does not change the Stage4-confirmed evidence rows above and does not relabel the modeling population as confirmed paths.
+
+| Evidence cell | Status | Source | Permitted paper statement |
+|---|---|---|---|
+| Persistent-observation population | `Available / QA PASS_WITH_LIMITATIONS` | `supplemental_data_outputs/urban_mountain_stage3_elevation_model_review_v3_conditional_gmm/population/`; independent QA report | 518 observations, 236 tracks, 36 runs and 9 scenes; 487 elevation-ready and 31 environment-parent-only observations |
+| Conditional partially pooled 3-D GMM | `Author admitted / QA PASS_WITH_LIMITATIONS` | `model/selected_conditional_gmm.json`; `qa/independent_qa_report.md` in the v3 review namespace | Joint conditional model of excess delay, absolute relative Doppler and relative power; selected `K=3`, `kappa=16` |
+| Environment--elevation support | `Bounded` | `tables/conditional_gmm_cell_summary.csv`; independent QA | Urban-MID, Urban-HIGH and Mountain/Valley-MID are data-supported; the other three cells are strongly partially pooled |
+| Empirical-versus-fitted PDF figure | `Author admitted` | `figures/conditional_empirical_vs_model_pdf_environment_elevation.pdf`; figure tests and output manifest | The fitted marginals reproduce dominant delay/Doppler modes and bimodal relative-power structure while smoothing sparse fluctuations |
+| Signed-Doppler interpretation | `Sensitivity checked` | selected-model JSON; signed sensitivity outputs | Absolute Doppler is the primary model variable; no physical symmetry claim is permitted |
+
+Forbidden claims remain: the observations are confirmed physical paths; GMM components are reflector classes; the model estimates multipath occurrence; elevation causes the fitted differences; the nine scenes establish universal environment rankings; or the model is a complete stochastic channel model.

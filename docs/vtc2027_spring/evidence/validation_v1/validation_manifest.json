@@ -1,0 +1,20 @@
+{
+  "qa_report": "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\evidence\\VTC_THREE_LAYER_DLL_VALIDATION_QA_REPORT.md",
+  "contract_sha256": "35C8526F6CE8CB4BB147A0E190A2FE9B83B8FEC6A4B72E9FA61C59ED12B1F273",
+  "statuses": {
+    "LAYER1_CONTROLLED_QA": "BLOCKED",
+    "LAYER2_MULTIPATH_STRESS_QA": "BLOCKED",
+    "LAYER3_NATIVE_MODEL_QA": "BLOCKED",
+    "DLL_BIAS_QA": "BLOCKED",
+    "PAPER_ADMISSION_RECOMMENDATION": "BLOCKED"
+  },
+  "gate": {
+    "layer1_minus5_rate": null,
+    "layer1_minus10_rate": null,
+    "layer2_minus8_rate": null,
+    "layer2_minus12_rate": null,
+    "dll_improved_event_count": null,
+    "recommendation": "BLOCKED"
+  },
+  "paper_admission_authorized": false
+}

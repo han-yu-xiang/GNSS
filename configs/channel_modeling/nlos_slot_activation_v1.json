@@ -1,0 +1,125 @@
+{
+  "model_id": "nlos-slot-activation-v1",
+  "model_version": "v1",
+  "sample_rate_hz": 10230000,
+  "environments": [
+    "Urban",
+    "Special Reflective",
+    "Mountain/Valley",
+    "Highway/Open"
+  ],
+  "elevation_bands": ["LOW", "MID", "HIGH"],
+  "elevation_definition_deg": {
+    "LOW": [0.0, 30.0],
+    "MID": [30.0, 60.0],
+    "HIGH": [60.0, 90.0]
+  },
+  "source": {
+    "event_parameters_relative_path": "dataset/multipath_event_database/v1/partitions/parameter_set_id=parameters_20260825_stage4_path_v1/facts/event_parameters.csv",
+    "event_parameters_sha256": "a182c740961dde0fbe9e1df8525ae15bc42e0d4e4992060b77656f45bc2f7e91",
+    "path_parameters_relative_path": "dataset/multipath_event_database/v1/partitions/parameter_set_id=parameters_20260825_stage4_path_v1/facts/path_parameters.csv",
+    "path_parameters_sha256": "2a44913d1c06f78d2748428b1d72f1b4712a6b5d3f33fc598a14fe17a3e3414a",
+    "events_relative_path": "dataset/multipath_event_database/v1/partitions/ingestion_id=ingestion_20260825_event_path_v1/facts/events.csv",
+    "events_sha256": "b1340bb1f17bb2e52e2857234d61aa084fbc734cf352f32be7bdb4275661c9d1",
+    "event_paths_relative_path": "dataset/multipath_event_database/v1/partitions/ingestion_id=ingestion_20260825_event_path_v1/facts/event_paths.csv",
+    "event_paths_sha256": "80e0f0eb6a8bcaebb7dd50398994751aa422a0b5e8bd2c2833424d3e3731da2a",
+    "sage_runs_relative_path": "dataset/multipath_event_database/v1/partitions/ingestion_id=ingestion_20260825_event_path_v1/facts/sage_runs.csv",
+    "sage_runs_sha256": "f4303749beeb73e922758ef6a1cfb0eef7b4e69d49b2f49ad8b6bf29cb3a7ae5",
+    "run_summary_relative_path": "dataset/multipath_event_database/v1/partitions/ingestion_id=ingestion_20260825_event_path_v1/exports/run_summary.csv",
+    "run_summary_sha256": "b2251b2393ab6c7545dc444028e00f9d06e4200086d713211be26011a93e7a87",
+    "modeling_run_eligibility_relative_path": "dataset/multipath_event_database/v1/partitions/alignment_id=alignment_20260825_tow_geometry_scene_v1/exports/modeling_run_eligibility.csv",
+    "modeling_run_eligibility_sha256": "163bd5d9ce8cf3d0681e29c46b3d3fac3a9cce92877c3288207c789b6123638e",
+    "event_context_aligned_relative_path": "dataset/multipath_event_database/v1/partitions/alignment_id=alignment_20260825_tow_geometry_scene_v1/facts/event_context_aligned.csv",
+    "event_context_aligned_sha256": "38b5cdc8aedb1c4576952d7e9fd2344b3414f67ddca2443e4a20a63ca813e41f",
+    "scene_context_relative_path": "dataset/multipath_event_database/v1/partitions/alignment_id=alignment_20260825_tow_geometry_scene_v1/dimensions/scene_context.csv",
+    "scene_context_sha256": "8a50fcc3196a2256735c45c77119d8a8b6447532a503aeb5a075e103ed1877e3",
+    "geometry_grid_relative_path": "dataset_generation_logs/channel_modeling/main_path_common_gain_fade_v1_20260826_r4/common_gain_analysis_grid.csv.gz",
+    "geometry_grid_sha256": "c5691a42e160e85b5106293499f0ea9e6af96016f27933f29913e8e2e0d8ce09",
+    "path_model_manifest_relative_path": "dataset_generation_logs/channel_modeling/environment_elevation_path_distribution_v1_20260826_r1/model_manifest.json",
+    "path_model_manifest_sha256": "4f24dd3a5532526ef9966288ea7de9d863fabd812abe07a811647095e5368f3c",
+    "gain_model_manifest_relative_path": "dataset_generation_logs/channel_modeling/main_path_common_gain_fade_v1_20260826_r4/model_manifest.json",
+    "gain_model_manifest_sha256": "6f36dab892622c9b9dc61ecde91fda85ff12ca60eeea4f81fe37760f0acb1e45"
+  },
+  "stage4_confirmation": {
+    "joint_valid": 1,
+    "joint_multipath_count_min_exclusive": 0,
+    "path_is_multipath": 1,
+    "path_role": "multipath",
+    "label_value": "confirmed_multipath",
+    "estimate_stage": "stage4_joint",
+    "event_status": "confirmed_multipath",
+    "parameter_source_status": "complete"
+  },
+  "exposure": {
+    "stage0_filename": "stage0_valid_40ms_windows.csv",
+    "geometry_join_max_delta_s": 0.011,
+    "closure_radius_windows": 2,
+    "window_step_ms": 20,
+    "window_duration_ms": 40,
+    "require_same_run": true,
+    "require_continuity_for_closure": true,
+    "geometry_interpolation": false,
+    "exact_tie_break": "lower_time_bin_index"
+  },
+  "occupancy": {
+    "base_prior_alpha": 0.5,
+    "base_prior_beta": 0.5,
+    "parent_equivalent_scene_count": 8.0,
+    "grouped_supported_min_core_events": 10,
+    "grouped_supported_min_scenes": 2,
+    "selected_estimator": "scene_balanced_beta_pseudo_posterior",
+    "selected_quantity": "p_stage4_confirmed_support_active"
+  },
+  "multiplicity": {
+    "categories": [1, 2, 3],
+    "base_dirichlet_prior": [0.5, 0.5, 0.5],
+    "parent_equivalent_event_count": 8.0,
+    "grouped_supported_min_events": 10,
+    "grouped_supported_min_scenes": 2,
+    "selected_estimator": "hierarchical_dirichlet_conditional_on_active"
+  },
+  "slot_mapping": {
+    "path_zero_external": true,
+    "mask_by_k": {
+      "0": [false, false, false],
+      "1": [true, false, false],
+      "2": [true, true, false],
+      "3": [true, true, true]
+    },
+    "ordering": [
+      "relative_delay_ns_ascending",
+      "relative_amplitude_linear_descending",
+      "relative_doppler_hz_ascending",
+      "stable_source_path_id_ascending"
+    ],
+    "inactive_status": "INACTIVE_NO_PATH",
+    "inactive_amplitude": 0.0,
+    "inactive_delay": null,
+    "inactive_doppler": null,
+    "inactive_phase": null
+  },
+  "uncertainty": {
+    "bootstrap_seed": 20260828,
+    "bootstrap_replicates": 1000,
+    "qa_draw_seed": 20260829,
+    "qa_draw_count": 4096,
+    "qa_frequency_absolute_floor": 0.02,
+    "qa_frequency_sigma_multiplier": 5.0
+  },
+  "output_namespace": "dataset_generation_logs/channel_modeling/nlos_slot_activation_v1_20260826_r1",
+  "execution_policy": {
+    "raw_iq_read": false,
+    "matlab": false,
+    "sage": false,
+    "batch": false,
+    "process_20_46_mhz": false,
+    "gold_labels_used_for_selection": false,
+    "stage1_stage2_stage3_used_for_selection": false,
+    "new_only": true,
+    "resume_allowed": false
+  },
+  "protected_source": {
+    "pipeline_relative_path": "scripts/sage_pipeline/run_nav_sage_pipeline.m",
+    "pipeline_sha256": "bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c"
+  }
+}

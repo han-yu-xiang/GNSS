@@ -1,0 +1,96 @@
+{
+  "model_id": "environment-elevation-path-distribution-v1",
+  "model_version": "v1",
+  "parameter_set_id": "parameters_20260825_stage4_path_v1",
+  "source_relative_path": "dataset/multipath_event_database/v1/partitions/parameter_set_id=parameters_20260825_stage4_path_v1/facts/path_parameters.csv",
+  "source_sha256": "2a44913d1c06f78d2748428b1d72f1b4712a6b5d3f33fc598a14fe17a3e3414a",
+  "expected_counts": {
+    "environment_ready_paths": 100,
+    "elevation_ready_paths": 84,
+    "elevation_excluded_paths": 16,
+    "environment_count": 4,
+    "elevation_band_count": 3
+  },
+  "environments": [
+    "Urban",
+    "Special Reflective",
+    "Mountain/Valley",
+    "Highway/Open"
+  ],
+  "elevation_bands": ["LOW", "MID", "HIGH"],
+  "elevation_definition_deg": {
+    "LOW": [0.0, 30.0],
+    "MID": [30.0, 60.0],
+    "HIGH": [60.0, 90.0]
+  },
+  "model_parameters": [
+    "relative_delay_ns",
+    "relative_doppler_hz",
+    "relative_power_db",
+    "relative_amplitude_linear"
+  ],
+  "fit_parameters": [
+    "relative_delay_ns",
+    "relative_doppler_hz",
+    "relative_power_db"
+  ],
+  "candidate_families": {
+    "relative_delay_ns": ["lognormal", "gamma", "weibull"],
+    "relative_doppler_hz": ["student_t", "normal", "laplace"],
+    "relative_power_db": ["student_t", "normal", "laplace"]
+  },
+  "family_tie_tolerance": 1e-9,
+  "hierarchical_prior": {
+    "parent_quantile_count": 64,
+    "prior_equivalent_weight": 8.0
+  },
+  "copula": {
+    "shrinkage_denominator": 10.0,
+    "eigenvalue_floor": 1e-6
+  },
+  "uncertainty": {
+    "bootstrap_seed": 20260826,
+    "bootstrap_replicates": 1000,
+    "qa_draw_seed": 20260827,
+    "qa_draw_count": 4096
+  },
+  "output_namespace": "E:/GNSS_Multipath_Project/dataset_generation_logs/channel_modeling/environment_elevation_path_distribution_v1_20260826_r1",
+  "execution_policy": {
+    "raw_iq_read": false,
+    "matlab": false,
+    "sage": false,
+    "batch": false,
+    "process_20_46_mhz": false,
+    "gold_labels_used_for_selection": false,
+    "posterior_gold_used_for_selection": false,
+    "new_only": true,
+    "resume_allowed": false
+  },
+  "sampling_contract": {
+    "path_count_per_observation": 3,
+    "output_delay_unit": "ns",
+    "output_doppler_unit": "Hz",
+    "output_amplitude_unit": "linear_amplitude_ratio",
+    "main_path_default": {
+      "relative_delay_ns": 0.0,
+      "relative_doppler_hz": 0.0,
+      "relative_amplitude_linear": 1.0
+    },
+    "phase_policy": "external Uniform(-pi, pi) initial phase plus Doppler-continuous evolution",
+    "multi_millisecond_policy": "block-fixed path parameters within a generated block",
+    "dependence_policy": "three NLOS draws are conditionally IID unless a downstream generator explicitly specifies otherwise",
+    "not_included": [
+      "main_path_gain",
+      "absolute_power",
+      "phase_distribution_fit",
+      "lock_loss",
+      "event_occurrence_rate",
+      "path_lifetime",
+      "fixed_four_row_generation"
+    ]
+  },
+  "protected_source": {
+    "pipeline_relative_path": "scripts/sage_pipeline/run_nav_sage_pipeline.m",
+    "pipeline_sha256": "bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c"
+  }
+}

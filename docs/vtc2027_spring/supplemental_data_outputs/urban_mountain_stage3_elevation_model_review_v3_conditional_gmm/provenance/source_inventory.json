@@ -1,0 +1,77 @@
+{
+  "inventory_id": "vtc_stage3_urban_mountain_conditional_gmm_source_inventory_v1",
+  "created_utc": "2026-08-31T07:32:40.842079+00:00",
+  "project_root": "E:\\GNSS_Multipath_Project",
+  "output_root": "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\supplemental_data_outputs\\urban_mountain_stage3_elevation_model_review_v3_conditional_gmm",
+  "source_count": 7,
+  "sources": [
+    {
+      "role": "primary_population",
+      "path": "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\supplemental_data_outputs\\urban_mountain_stage3_elevation_model_review_v2_doppler_audit\\population\\population_primary_admitted.csv",
+      "relative_path": "docs/vtc2027_spring/supplemental_data_outputs/urban_mountain_stage3_elevation_model_review_v2_doppler_audit/population/population_primary_admitted.csv",
+      "size_bytes": 330170,
+      "sha256": "a6fb32831559b6be4a256f8a544a404f2bb12818c798a80226116145bae79a86",
+      "read_only": true
+    },
+    {
+      "role": "population_build_manifest",
+      "path": "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\supplemental_data_outputs\\urban_mountain_stage3_elevation_model_review_v2_doppler_audit\\qa\\population_build_manifest.json",
+      "relative_path": "docs/vtc2027_spring/supplemental_data_outputs/urban_mountain_stage3_elevation_model_review_v2_doppler_audit/qa/population_build_manifest.json",
+      "size_bytes": 4916,
+      "sha256": "77ab5c41576a6c171cfcd547a6bb19fdf5360a8de7f1ff001e472ab2d299da87",
+      "read_only": true
+    },
+    {
+      "role": "population_independent_qa",
+      "path": "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\supplemental_data_outputs\\urban_mountain_stage3_elevation_model_review_v2_doppler_audit\\qa\\population_independent_qa_result.json",
+      "relative_path": "docs/vtc2027_spring/supplemental_data_outputs/urban_mountain_stage3_elevation_model_review_v2_doppler_audit/qa/population_independent_qa_result.json",
+      "size_bytes": 2185,
+      "sha256": "c633645d8411d6eb3ecd1c3fc931d4eb1d3638cfe781ed5dd58b45e2a1878d0f",
+      "read_only": true
+    },
+    {
+      "role": "doppler_provenance_result",
+      "path": "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\supplemental_data_outputs\\urban_mountain_stage3_elevation_model_review_v2_doppler_audit\\qa\\doppler_provenance_result.json",
+      "relative_path": "docs/vtc2027_spring/supplemental_data_outputs/urban_mountain_stage3_elevation_model_review_v2_doppler_audit/qa/doppler_provenance_result.json",
+      "size_bytes": 2269,
+      "sha256": "3dcc5351c624ed95450a7214cdcd759c03b090d08481d458b6eee50db147247d",
+      "read_only": true
+    },
+    {
+      "role": "selected_marginal_models",
+      "path": "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\supplemental_data_outputs\\urban_mountain_stage3_elevation_model_review_v2_doppler_audit\\model\\selected_model_by_parameter.csv",
+      "relative_path": "docs/vtc2027_spring/supplemental_data_outputs/urban_mountain_stage3_elevation_model_review_v2_doppler_audit/model/selected_model_by_parameter.csv",
+      "size_bytes": 1126,
+      "sha256": "a5f659d28700d3fdac79f328f6ec917a1483e914eb648f027cdbe2e0c1ce22d7",
+      "read_only": true
+    },
+    {
+      "role": "selected_joint_dependence_models",
+      "path": "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\supplemental_data_outputs\\urban_mountain_stage3_elevation_model_review_v2_doppler_audit\\model\\joint_dependence_models.csv",
+      "relative_path": "docs/vtc2027_spring/supplemental_data_outputs/urban_mountain_stage3_elevation_model_review_v2_doppler_audit/model/joint_dependence_models.csv",
+      "size_bytes": 1943,
+      "sha256": "4c454155078e65038429d7d3c1375c464d67680f308344add7bf05ee75f69e97",
+      "read_only": true
+    },
+    {
+      "role": "selected_joint_model_qa",
+      "path": "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\supplemental_data_outputs\\urban_mountain_stage3_elevation_model_review_v2_doppler_audit\\qa\\joint_model_build_result.json",
+      "relative_path": "docs/vtc2027_spring/supplemental_data_outputs/urban_mountain_stage3_elevation_model_review_v2_doppler_audit/qa/joint_model_build_result.json",
+      "size_bytes": 1666,
+      "sha256": "6f4eab227b19b45d5cc6fe4f4e271f7dc40247d72531fe584ec66e7edb4cc243",
+      "read_only": true
+    }
+  ],
+  "execution_policy": {
+    "raw_iq_read": false,
+    "matlab_started": false,
+    "sage_started": false,
+    "batch_started": false,
+    "stage4_used": false,
+    "formal_manuscript_modified": false,
+    "v1_modified": false,
+    "v2_modified": false,
+    "evidence_matrix_modified": false,
+    "handoff_modified": false
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "generator_id": "darkroom-multi-elevation-four-slot-generator-v2-2",
+  "generator_version": "2.2.0",
+  "schema_version": "darkroom-generator-schema-2.2",
+  "sample_rate_hz": 10230000,
+  "time_step_ms": 1,
+  "path_parameter_block_ms": 40,
+  "environments": ["Urban", "Special Reflective", "Mountain/Valley", "Highway/Open"],
+  "elevation_bands": ["LOW", "MID", "HIGH"],
+  "satellite_id_by_band": {"LOW": "Low", "MID": "Mid", "HIGH": "High"},
+  "final_columns": [
+    "ms",
+    "SatelliteID",
+    "NLOSPathID",
+    "RelativeDelay",
+    "RelativeDoppler",
+    "RelativeAmplitude",
+    "RelativePhase_rad"
+  ],
+  "units": {
+    "RelativeDelay": "ns",
+    "RelativeDoppler": "Hz",
+    "RelativeAmplitude": "linear_amplitude_ratio",
+    "RelativePhase_rad": "rad"
+  },
+  "slot_policy": {
+    "fixed_structural_slots_per_band": 4,
+    "path0_slot_id": 0,
+    "nlos_slot_ids": [1, 2, 3],
+    "nlos_activation_policy": "ALL_THREE_SLOTS_ALWAYS_ACTIVE",
+    "nlos_amplitude_constraint": "STRICTLY_POSITIVE",
+    "conditional_multipath_scenario": true,
+    "activation_model_used_for_generation": false,
+    "assumption_status": "ALL_THREE_NLOS_SLOTS_ALWAYS_ACTIVE_CONTRACT"
+  },
+  "quality_policy": {
+    "quality_modes": ["GOOD_TRACKED_BASELINE", "POOR_CONDITIONAL"],
+    "good_mode": {
+      "quality_state": "TRACKED_GOOD",
+      "quality_event_count_per_band": 0,
+      "ordinary_fade_event_process": "DISABLED_FOR_PAIRED_QUALITY_EXPERIMENT",
+      "quality_envelope": "ONES"
+    },
+    "poor_mode": {
+      "quality_state_sequence": ["FADING_TO_LOCK_BAD", "LOCK_BAD_HOLD", "RECOVERING"],
+      "quality_event_count_per_band": 1,
+      "entry_ramp_cap_ms": 20,
+      "pre_event_guard_ms": 100,
+      "post_event_guard_ms": 100,
+      "duration_source": "FROZEN_ENVIRONMENT_LOCK_MODEL",
+      "recovery_source": "FROZEN_ENVIRONMENT_RECOVERY_MODEL_OR_PARENT",
+      "depth_source": "FROZEN_OBSERVABLE_FADE_PARENT_PROXY",
+      "envelope_shape": "RAISED_COSINE",
+      "event_fit_policy": "FAIL_CLOSED_NO_TRUNCATION",
+      "entry_probability_used": false
+    },
+    "cross_band_correlation": "INTER_SATELLITE_QUALITY_EVENT_CORRELATION_NOT_MODELED",
+    "path_quality_independence": "P_PATH_GIVEN_ENV_ELEV_QUALITY_APPROX_P_PATH_GIVEN_ENV_ELEV",
+    "hardware_lock_loss_calibrated": false,
+    "absolute_rf_power_available": false
+  },
+  "parent_v21_config": {
+    "relative_path": "configs/channel_modeling/darkroom_multi_elevation_four_slot_generator_v2_1.json",
+    "sha256": "55befd54988b1aa8838e10a02deae7126305156013283ad52a8c449731ac5814"
+  },
+  "parent_v21_core": {
+    "relative_path": "scripts/analysis/channel_modeling/darkroom_generator_v2_1_core.py",
+    "sha256": "a2205bb43698e6c27f2e31a09e532a4cbafd10cafda04b69390d081d959e6a56"
+  },
+  "parent_model_manifests": {
+    "path": "4f24dd3a5532526ef9966288ea7de9d863fabd812abe07a811647095e5368f3c",
+    "gain": "6f36dab892622c9b9dc61ecde91fda85ff12ca60eeea4f81fe37760f0acb1e45",
+    "lock": "21c04938cba559b3e042806b093eba82e4e86a44977e95831c715aa03ffc97a5",
+    "recovery": "9eb1847eac27618f80475ceafe62616285a346c5da847afdb0e8f2c5fc63a3ee"
+  },
+  "output_root_relative_path": "dataset_generation_logs/channel_modeling/darkroom_generator_v2_2_runs",
+  "request_root_relative_path": "dataset_generation_logs/channel_modeling/darkroom_generator_v2_2_requests",
+  "matrix_root_relative_path": "dataset_generation_logs/channel_modeling/darkroom_generator_v2_2_matrices",
+  "execution_policy": {
+    "new_only": true,
+    "resume_allowed": false,
+    "raw_iq_read": false,
+    "matlab": false,
+    "sage": false,
+    "batch": false,
+    "process_20_46_mhz": false,
+    "gold_labels_used_for_generation": false
+  },
+  "protected_pipeline": {
+    "relative_path": "scripts/sage_pipeline/run_nav_sage_pipeline.m",
+    "sha256": "bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c"
+  },
+  "source_scene_provenance": {
+    "Urban": [
+      "F1023_V70_D0120_P1",
+      "F1023_V70_D0120_P5",
+      "F1023_V70_D0120_P7",
+      "F1023_V70_D0120_P8",
+      "F1023_V70_D0122_P1",
+      "F1023_v50_D0127_P1"
+    ],
+    "Special Reflective": ["F1023_V70_D0120_P9", "F1023_V70_D0122_P2"],
+    "Mountain/Valley": ["F1023_V70_D0117_P2", "F1023_V70_D0117_P4", "F1023_v90_D0117_P7"],
+    "Highway/Open": ["F1023_V120_D0121_P2", "F1023_V80_D0117_P8"]
+  }
+}

@@ -1,0 +1,14 @@
+scene_id,scene_role,signal_type,sampling_rate_hz,metadata_path,geometry_summary_source_count,scene_context_status,schema_version
+F1023_V120_D0121_P2,standard_scene,GPS_L1_CA,10230000,scenes/F1023_V120_D0121_P2/metadata.json,1,not_annotated,sage-event-path-db-v1
+F1023_v50_D0127_P1,standard_scene,GPS_L1_CA,10230000,scenes/F1023_v50_D0127_P1/metadata.json,1,not_annotated,sage-event-path-db-v1
+F1023_V70_D0117_P4,standard_scene,GPS_L1_CA,10230000,scenes/F1023_V70_D0117_P4/metadata.json,1,not_annotated,sage-event-path-db-v1
+F1023_V70_D0120_P1,standard_scene,GPS_L1_CA,10230000,scenes/F1023_V70_D0120_P1/metadata.json,1,not_annotated,sage-event-path-db-v1
+F1023_V70_D0120_P5,standard_scene,GPS_L1_CA,10230000,scenes/F1023_V70_D0120_P5/metadata.json,1,not_annotated,sage-event-path-db-v1
+F1023_V70_D0120_P7,standard_scene,GPS_L1_CA,10230000,scenes/F1023_V70_D0120_P7/metadata.json,1,not_annotated,sage-event-path-db-v1
+F1023_V70_D0120_P8,standard_scene,GPS_L1_CA,10230000,scenes/F1023_V70_D0120_P8/metadata.json,1,not_annotated,sage-event-path-db-v1
+F1023_V70_D0120_P9,standard_scene,GPS_L1_CA,10230000,scenes/F1023_V70_D0120_P9/metadata.json,1,not_annotated,sage-event-path-db-v1
+F1023_V70_D0122_P1,standard_scene,GPS_L1_CA,10230000,scenes/F1023_V70_D0122_P1/metadata.json,1,not_annotated,sage-event-path-db-v1
+F1023_V70_D0122_P2,standard_scene,GPS_L1_CA,10230000,scenes/F1023_V70_D0122_P2/metadata.json,1,not_annotated,sage-event-path-db-v1
+F1023_V80_D0117_P8,standard_scene,GPS_L1_CA,10230000,scenes/F1023_V80_D0117_P8/metadata.json,1,not_annotated,sage-event-path-db-v1
+F1023_v90_D0117_P7,standard_scene,GPS_L1_CA,10230000,scenes/F1023_v90_D0117_P7/metadata.json,1,not_annotated,sage-event-path-db-v1
+F1023_V70_D0117_P2,reference_scene,GPS_L1_CA,10230000,scenes/F1023_V70_D0117_P2/metadata.json,1,not_annotated,sage-event-path-db-v1

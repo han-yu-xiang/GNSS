@@ -1,0 +1,71 @@
+{
+  "schema_version": "sage-event-path-db-v1",
+  "status": "frozen_for_read_only_dry_run",
+  "run_status": [
+    "complete",
+    "partial",
+    "failed",
+    "not_ingested"
+  ],
+  "stage_status": [
+    "complete",
+    "empty_valid",
+    "partial",
+    "missing",
+    "invalid"
+  ],
+  "qa_status": [
+    "pass",
+    "warning",
+    "fail"
+  ],
+  "estimate_stage": [
+    "stage2_candidate",
+    "stage3_persistent",
+    "stage4_joint"
+  ],
+  "path_role": [
+    "los",
+    "multipath",
+    "candidate"
+  ],
+  "label_value": [
+    "confirmed_multipath",
+    "rejected_candidate",
+    "los_reference",
+    "no_confirmed_event",
+    "not_joint_evaluated",
+    "stage4_missing",
+    "stage4_invalid",
+    "unresolved_candidate"
+  ],
+  "label_source": [
+    "stage4_rule",
+    "reference_manifest",
+    "human_review",
+    "operational_state"
+  ],
+  "review_status": [
+    "algorithm_only",
+    "reviewed",
+    "external_truth"
+  ],
+  "geometry_join_status": [
+    "valid",
+    "invalid",
+    "unavailable",
+    "inconclusive",
+    "deferred_unavailable"
+  ],
+  "geometry_scope": [
+    "event_time",
+    "window_time",
+    "run_summary"
+  ],
+  "observation_quality": [
+    "valid",
+    "warning",
+    "inconclusive",
+    "invalid"
+  ]
+}

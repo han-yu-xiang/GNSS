@@ -1,0 +1,106 @@
+{
+  "generator_id": "darkroom-multi-elevation-four-slot-generator-v2-1",
+  "generator_version": "2.1.0",
+  "schema_version": "darkroom-generator-schema-2.1",
+  "sample_rate_hz": 10230000,
+  "time_step_ms": 1,
+  "path_parameter_block_ms": 40,
+  "environments": [
+    "Urban",
+    "Special Reflective",
+    "Mountain/Valley",
+    "Highway/Open"
+  ],
+  "elevation_bands": ["LOW", "MID", "HIGH"],
+  "satellite_id_by_band": {
+    "LOW": "Low",
+    "MID": "Mid",
+    "HIGH": "High"
+  },
+  "final_columns": [
+    "ms",
+    "SatelliteID",
+    "NLOSPathID",
+    "RelativeDelay",
+    "RelativeDoppler",
+    "RelativeAmplitude",
+    "RelativePhase_rad"
+  ],
+  "units": {
+    "RelativeDelay": "ns",
+    "RelativeDoppler": "Hz",
+    "RelativeAmplitude": "linear_amplitude_ratio",
+    "RelativePhase_rad": "rad"
+  },
+  "slot_policy": {
+    "fixed_structural_slots_per_band": 4,
+    "path0_slot_id": 0,
+    "nlos_slot_ids": [1, 2, 3],
+    "nlos_activation_policy": "ALL_THREE_SLOTS_ALWAYS_ACTIVE",
+    "nlos_amplitude_constraint": "STRICTLY_POSITIVE",
+    "conditional_multipath_scenario": true,
+    "activation_model_used_for_generation": false,
+    "inactive_nlos_policy": "NOT_APPLICABLE_ALL_SLOTS_ACTIVE",
+    "inactive_values_are_physical_paths": false,
+    "assumption_status": "ALL_THREE_NLOS_SLOTS_ALWAYS_ACTIVE_CONTRACT"
+  },
+  "path_zero": {
+    "RelativeDelay": 0.0,
+    "RelativeDoppler": 0.0,
+    "RelativeAmplitude_base": 1.0,
+    "is_physical_los": false
+  },
+  "phase_policy": {
+    "initial_distribution": "Uniform(-pi,pi)",
+    "recurrence": "phi_next=wrap_to_pi(phi+2*pi*relative_doppler_hz*0.001)",
+    "wrap_interval": "[-pi,pi)",
+    "phase_is_data_fitted": false,
+    "lock_bad_resets_phase": false,
+    "recovery_resets_phase": false,
+    "assumption_status": "ASSUMPTION_ONLY_UNIFORM_INITIAL_PLUS_DOPPLER_CONTINUOUS"
+  },
+  "band_policy": {
+    "band_order": ["LOW", "MID", "HIGH"],
+    "satellite_id_order": ["Low", "Mid", "High"],
+    "inter_satellite_correlation_modeled": false,
+    "assumption_status": "INTER_SATELLITE_CORRELATION_NOT_MODELED"
+  },
+  "block_policy": {
+    "base_delay_doppler_amplitude_fixed_per_block": true,
+    "block_ms": 40,
+    "activation_independent_between_blocks": true,
+    "latent_slots_drawn_for_all_three_nlos_slots": true,
+    "inter_block_path_identity_modeled": false,
+    "assumption_status": "INDEPENDENT_40MS_BLOCK_ASSUMPTION"
+  },
+  "parent_v2_config": {
+    "relative_path": "configs/channel_modeling/darkroom_multi_elevation_four_slot_generator_v2.json",
+    "sha256": "d38588144ce6775a959ba15f52f633923915ec9d146a910ea1239aba0326a50b"
+  },
+  "parent_v2_core": {
+    "relative_path": "scripts/analysis/channel_modeling/darkroom_generator_v2_core.py",
+    "sha256": "3c43edfa224062244b973dd29891a780d6791a802be9e50449d2aa0b542046ce"
+  },
+  "parent_model_manifest_sha256": "4f24dd3a5532526ef9966288ea7de9d863fabd812abe07a811647095e5368f3c",
+  "output_root_relative_path": "dataset_generation_logs/channel_modeling/darkroom_generator_v2_1_runs",
+  "request_root_relative_path": "dataset_generation_logs/channel_modeling/darkroom_generator_v2_1_requests",
+  "execution_policy": {
+    "new_only": true,
+    "resume_allowed": false,
+    "raw_iq_read": false,
+    "matlab": false,
+    "sage": false,
+    "batch": false,
+    "process_20_46_mhz": false,
+    "gold_labels_used_for_generation": false
+  },
+  "protected_pipeline": {
+    "relative_path": "scripts/sage_pipeline/run_nav_sage_pipeline.m",
+    "sha256": "bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c"
+  },
+  "v2_history": {
+    "relative_config": "configs/channel_modeling/darkroom_multi_elevation_four_slot_generator_v2.json",
+    "status": "IMPLEMENTED_PREVIEW_QA_PASS_IMMUTABLE_PARENT",
+    "not_overwritten": true
+  }
+}

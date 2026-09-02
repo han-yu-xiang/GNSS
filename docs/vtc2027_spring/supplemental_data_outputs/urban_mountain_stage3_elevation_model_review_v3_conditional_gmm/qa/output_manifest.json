@@ -1,0 +1,127 @@
+{
+  "status": "PASS_AUTHOR_REVIEW_ONLY",
+  "figures": {
+    "conditional_joint_environment_elevation": {
+      "panel_count": 6,
+      "cell_ready_rows": 487,
+      "path": "figures/conditional_joint_environment_elevation.png"
+    },
+    "corner_diagnostic_pages": {
+      "page_count": 6,
+      "cdf_panels": 0
+    },
+    "conditional_component_weight_heatmap": {
+      "panel_count": 6,
+      "path": "figures/conditional_component_weight_heatmap.png"
+    },
+    "conditional_parameter_curves_vs_elevation": {
+      "panel_count": 3,
+      "path": "figures/conditional_parameter_curves_vs_elevation.png"
+    },
+    "conditional_marginal_pdf_environment_elevation": {
+      "panel_count": 6,
+      "path": "figures/conditional_marginal_pdf_environment_elevation.png"
+    },
+    "conditional_empirical_vs_model_pdf_environment_elevation": {
+      "panel_count": 6,
+      "cell_ready_rows": 487,
+      "path": "figures/conditional_empirical_vs_model_pdf_environment_elevation.png"
+    }
+  },
+  "tables": {
+    "cell_summary_rows": 6,
+    "selection_summary_rows": 1
+  },
+  "outputs": {
+    "figures/conditional_component_weight_heatmap.pdf": {
+      "sha256": "9d4e59c9478e1474b41821da883b3400228e29c78217c00d93304cb0389d27f6",
+      "size_bytes": 20588
+    },
+    "figures/conditional_component_weight_heatmap.png": {
+      "sha256": "835f5b3e369f8c487c4df8e8a28caf2a5b1584ee35b45b0c8febf0a27f479526",
+      "size_bytes": 120124
+    },
+    "figures/conditional_empirical_vs_model_pdf_environment_elevation.pdf": {
+      "sha256": "d5f964d18512df8026835f95fb0834ecb381efe90e953047254a40764ca0ee1e",
+      "size_bytes": 41636
+    },
+    "figures/conditional_empirical_vs_model_pdf_environment_elevation.png": {
+      "sha256": "c35d67e81b294d0283c9c8d14928794c87063e763b3a40e8875981339070456e",
+      "size_bytes": 499098
+    },
+    "figures/conditional_joint_environment_elevation.pdf": {
+      "sha256": "be27e43c6a10587c51cd5ff987f3784c227b995b6acd0ab658364bc474ec91db",
+      "size_bytes": 107827
+    },
+    "figures/conditional_joint_environment_elevation.png": {
+      "sha256": "c43486349719131692f3e0e2085d3682cccae28bb4531b14c1f65151a5b3ee9a",
+      "size_bytes": 619020
+    },
+    "figures/conditional_marginal_pdf_environment_elevation.pdf": {
+      "sha256": "043594634949601dd09e68a3f639953c749544068c890e13c69deac0a763ca3d",
+      "size_bytes": 39705
+    },
+    "figures/conditional_marginal_pdf_environment_elevation.png": {
+      "sha256": "e92a0413b6a5514066e5596f1a8972f48271caa3d0caf88f5bc99766aac139cf",
+      "size_bytes": 480642
+    },
+    "figures/conditional_parameter_curves_vs_elevation.pdf": {
+      "sha256": "737fe1102b001637ad09fed055df5ef78ad32a2ac9406b41b9c4219062b98ff7",
+      "size_bytes": 28432
+    },
+    "figures/conditional_parameter_curves_vs_elevation.png": {
+      "sha256": "5b61da37ec0ec09bd3f119d9164179d7ac72088773e8acdde5e3cffbcdcca078",
+      "size_bytes": 174850
+    },
+    "figures/corner_diagnostic_Mountain_Valley__HIGH.png": {
+      "sha256": "8f838c611a548fadebec98d8ae05014eb3429c9a1b1f6dfea35e61d10e899d24",
+      "size_bytes": 280347
+    },
+    "figures/corner_diagnostic_Mountain_Valley__LOW.png": {
+      "sha256": "6a4b669ab23708fd45a764fb2123a8c5dbb8ffaaa91fac7a1b473d3fc5edf47b",
+      "size_bytes": 298987
+    },
+    "figures/corner_diagnostic_Mountain_Valley__MID.png": {
+      "sha256": "5bbe88619924936633a4695031ac1d15437a1d9faf607cd1c2efd3ffab301b6b",
+      "size_bytes": 339473
+    },
+    "figures/corner_diagnostic_Urban__HIGH.png": {
+      "sha256": "5f98109df76afce7dfc5a614c000e99b778a099a0c74771cb93cb1fc3ef46191",
+      "size_bytes": 320598
+    },
+    "figures/corner_diagnostic_Urban__LOW.png": {
+      "sha256": "9eb290d6f1ca7d7586331e5ced349bc2a544b193c4cc9a8fa6fba307665d7773",
+      "size_bytes": 292477
+    },
+    "figures/corner_diagnostic_Urban__MID.png": {
+      "sha256": "6338b2704a9dda186bf477bcaff9fe026efad2c951b3ecca15f13ebcc6bf930e",
+      "size_bytes": 332781
+    },
+    "tables/conditional_gmm_cell_summary.csv": {
+      "sha256": "ba50c99327f9ef01194822f7172010185cf7a332648fb1f8c9cdfa16a1f5c6b2",
+      "size_bytes": 1695
+    },
+    "tables/conditional_gmm_cell_summary.tex": {
+      "sha256": "f30936438676fe6989e56bb022f14182be14e2d2d620394385b8f24c01a3c3bf",
+      "size_bytes": 2095
+    },
+    "tables/conditional_gmm_selection_summary.csv": {
+      "sha256": "bfa390de76c26b1ae3175380d53fc01ab74f4905e5e8b1d24147d51ed636e67d",
+      "size_bytes": 391
+    },
+    "tables/conditional_gmm_selection_summary.tex": {
+      "sha256": "0af00c7422e90c9b408a75e33dd13fb2fca78c1044e6253206c4a2f8cd6e88cd",
+      "size_bytes": 554
+    }
+  },
+  "execution_boundary": {
+    "formal_manuscript_modified": false,
+    "canonical_figures_modified": false,
+    "canonical_tables_modified": false,
+    "evidence_matrix_modified": false,
+    "handoff_modified": false,
+    "raw_iq_read": false,
+    "matlab_started": false,
+    "sage_started": false
+  }
+}

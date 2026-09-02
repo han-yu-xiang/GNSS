@@ -1,0 +1,909 @@
+{
+  "contract_version": 1,
+  "created_at_utc": "2026-08-23T11:39:32.809724+00:00",
+  "status": "FROZEN_CONTRACT_EXECUTION_AUTHORIZED_PYTHON",
+  "execution_authorized_by": "author_python_confirmation_2026-08-23",
+  "production_execution": false,
+  "resume": false,
+  "implementation": {
+    "language": "python",
+    "max_workers": 1,
+    "matlab_process_started": false,
+    "matlab_process_attached": false,
+    "production_runner_interaction": false,
+    "entrypoints": [
+      {
+        "path": "scripts/analysis/vtc_validation/run_layer1_controlled_recovery.py",
+        "sha256": "40D1A742453CCD5B32061B031D1DB76760BFC2D75D03216A9E707A1EAB4E5BF0"
+      },
+      {
+        "path": "scripts/analysis/vtc_validation/run_layer2_multipath_stress.py",
+        "sha256": "9F6E67A5576DF0B9184989115152516161069E3267B7B91CC0F89BC8E42682CB"
+      },
+      {
+        "path": "scripts/analysis/vtc_validation/export_layer3_native_model_support.py",
+        "sha256": "4F2F977D8F0F66F9B4996AFA816B12207E6E10F6234E3BD6F74013C7CB3A6605"
+      },
+      {
+        "path": "scripts/analysis/vtc_validation/run_dll_code_bias_study.py",
+        "sha256": "F7C73AB4C71DA0B985BB13CEAA50B6364F1668FA3EFF0D77C4264C20C19CC171"
+      }
+    ],
+    "modules": [
+      {
+        "path": "scripts/analysis/vtc_validation/vtc_validation_common.py",
+        "sha256": "2C5B41D7F94B0B1DA781CA55A7E071B29FBB8968040C61BA43D2B84FC456D9B8"
+      },
+      {
+        "path": "scripts/analysis/vtc_validation/mat_v5_reader.py",
+        "sha256": "81639E71824716B2833A389AFD7265B3384EFCFF1BFF8F68FBF59609D66CE0B9"
+      }
+    ]
+  },
+  "sample_rate_hz": 10230000,
+  "samples_per_chip": 10.0,
+  "samples_per_ms": 10230,
+  "samples_per_20ms": 204600,
+  "samples_per_40ms": 409200,
+  "output_namespace": "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\evidence\\validation_v1",
+  "source_paths": [
+    {
+      "role": "frozen_pipeline_source",
+      "path": "E:\\GNSS_Multipath_Project\\scripts\\sage_pipeline\\run_nav_sage_pipeline.m",
+      "bytes": 81423,
+      "sha256": "BFFC123C97AF77F0A797F417D3866E9A34FEAB7729C5C1575352F53BC3571B9C"
+    },
+    {
+      "role": "G18_run_context",
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0120_P1\\sage_results\\nav_sage_v2\\G18\\run_context.json",
+      "bytes": 1609,
+      "sha256": "E0F56A71244D6869750E49BF62243CB3F2E6D71BC336B0265413E8415AE77A62"
+    },
+    {
+      "role": "G18_gnss_sdr_config",
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0120_P1\\gnss_sdr\\config\\F1023_V70_D0120_P1.conf",
+      "bytes": 4834,
+      "sha256": "4194829F23959AB87125190CB670CCA13F9F32EB01308BB3739E053BCB58292E"
+    },
+    {
+      "role": "G18_stage0_windows",
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0120_P1\\sage_results\\nav_sage_v2\\G18\\stage0_valid_40ms_windows.csv",
+      "bytes": 383215,
+      "sha256": "469B94CB8FDF1AD0093F0F19D42B58E4E36861A86FF065EF61D723CBFDEEF6C6"
+    },
+    {
+      "role": "G18_stage0_symbols",
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0120_P1\\sage_results\\nav_sage_v2\\G18\\stage0_valid_symbols.csv",
+      "bytes": 416088,
+      "sha256": "F3567EA442C70567BDA4CB2E003D3A2FE0B29DD78193BC0F68C1EF608EB6679E"
+    },
+    {
+      "role": "G18_stage4_summary",
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0120_P1\\sage_results\\nav_sage_v2\\G18\\stage4_joint_summary.csv",
+      "bytes": 812,
+      "sha256": "5B17678C3EDE1C7CB04B5F3A217C307C52E03405EBB25CAC89E192BCCD108D1E"
+    },
+    {
+      "role": "G18_stage4_paths",
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0120_P1\\sage_results\\nav_sage_v2\\G18\\stage4_joint_paths.csv",
+      "bytes": 491,
+      "sha256": "7B2739CD3BCFDEE8EB7F4F7E4F1A38BD3D8A0038AB4B0C0BFC95E512E606082B"
+    },
+    {
+      "role": "G18_stage4_mat",
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0120_P1\\sage_results\\nav_sage_v2\\G18\\stage4_nav_joint_100ms.mat",
+      "bytes": 11399,
+      "sha256": "8EA57E817C74CE2A7E6BCFF729217BDC0EFF90152373BDDFBC9DF2A8CFBEF111"
+    },
+    {
+      "role": "G18_tracking_mat",
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0120_P1\\gnss_sdr\\tracking\\F1023_V70_D0120_P1_track_ch_2.mat",
+      "bytes": 658275,
+      "sha256": "E2F73B196B8D128DE3D650A66814E7E3E9A027C394BA6287173ACAC595CCC353"
+    },
+    {
+      "role": "G18_telemetry_dat",
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0120_P1\\gnss_sdr\\telemetry\\F1023_V70_D0120_P1_telemetry_ch_2.dat",
+      "bytes": 83552,
+      "sha256": "26A5F469FE5426AE4114FB7CB9853672D32D91F1197991515E86D2BE4580060B"
+    },
+    {
+      "role": "G18_raw_iq",
+      "path": "E:\\AAGNSSSDR_input\\raw_data\\F1023_V70_D0120_P1.bin",
+      "bytes": 3657957888,
+      "sha256": "ADF3BE13A89BF9F1D823FABC512337E1C4AA966AF4E49720D9715FD05D0309C9"
+    },
+    {
+      "role": "G25_run_context",
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V80_D0117_P8\\sage_results\\nav_sage_v2\\G25\\run_context.json",
+      "bytes": 1612,
+      "sha256": "9189EC1E13CD5579DBF85676BC4D75CC2AF3DFE6B4FBFF5AE77FEC6FE92821F8"
+    },
+    {
+      "role": "G25_gnss_sdr_config",
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V80_D0117_P8\\gnss_sdr\\config\\F1023_V80_D0117_P8.conf",
+      "bytes": 4834,
+      "sha256": "B7613AB2781032CE1C82B6CEF3BD0E73B113FE1B6A048C5FEC55DADBA1FC0173"
+    },
+    {
+      "role": "G25_stage0_windows",
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V80_D0117_P8\\sage_results\\nav_sage_v2\\G25\\stage0_valid_40ms_windows.csv",
+      "bytes": 166684,
+      "sha256": "58798F05398CF857460D0A80CD79F07FE85CA3A4443B14B36108A8149E50E558"
+    },
+    {
+      "role": "G25_stage0_symbols",
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V80_D0117_P8\\sage_results\\nav_sage_v2\\G25\\stage0_valid_symbols.csv",
+      "bytes": 180935,
+      "sha256": "C9EDE70D45C87CCCAF5E014B455F9D203BFDB89BFA27D7EAA05D0401135A3AF8"
+    },
+    {
+      "role": "G25_stage4_summary",
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V80_D0117_P8\\sage_results\\nav_sage_v2\\G25\\stage4_joint_summary.csv",
+      "bytes": 897,
+      "sha256": "A7748508ADE7A2BB63214676D247BE75AF9662A852D36DAC52218B6DBB32F9AF"
+    },
+    {
+      "role": "G25_stage4_paths",
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V80_D0117_P8\\sage_results\\nav_sage_v2\\G25\\stage4_joint_paths.csv",
+      "bytes": 643,
+      "sha256": "DF5B3BE141436AFCDC5CFCE71BAF6AA3A936C0AA0393352764375C02D4BCFFBF"
+    },
+    {
+      "role": "G25_stage4_mat",
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V80_D0117_P8\\sage_results\\nav_sage_v2\\G25\\stage4_nav_joint_100ms.mat",
+      "bytes": 11794,
+      "sha256": "2A9F10B977E6960EE768F9646C400E1CB0F3179C18D56589C7CDC08948FBAFB1"
+    },
+    {
+      "role": "G25_tracking_mat",
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V80_D0117_P8\\gnss_sdr\\tracking\\F1023_V80_D0117_P8_track_ch_10.mat",
+      "bytes": 591582,
+      "sha256": "26BD209D689FBCB5F4DC511250E19198EA9EA5663E5ADE7A6E7C1C17A51D283C"
+    },
+    {
+      "role": "G25_telemetry_dat",
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V80_D0117_P8\\gnss_sdr\\telemetry\\F1023_V80_D0117_P8_telemetry_ch_10.dat",
+      "bytes": 36608,
+      "sha256": "5352205B745AD93AF88D4C9D29267C1248DC0E4A26F778F4637725EF4A8836DC"
+    },
+    {
+      "role": "G25_raw_iq",
+      "path": "E:\\AAGNSSSDR_input\\raw_data\\F1023_V80_D0117_P8.bin",
+      "bytes": 2609840640,
+      "sha256": "1F2CB86C4187F4774F78B4E9AB8F36E23366B949464F53DC90B437277BFF0AB7"
+    },
+    {
+      "role": "G05_run_context",
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0120_P9\\sage_results\\nav_sage_v2\\G05\\run_context.json",
+      "bytes": 1611,
+      "sha256": "CFFE064C38E97F1F4DDE8D2DD71958472B7ADDA1E1560C3D988EA63A8E329C9B"
+    },
+    {
+      "role": "G05_gnss_sdr_config",
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0120_P9\\gnss_sdr\\config\\F1023_V70_D0120_P9.conf",
+      "bytes": 4834,
+      "sha256": "2D058862FFF39C71D192A0E9D8E524B1AA296A836BB10A9470B530970726C61F"
+    },
+    {
+      "role": "G05_stage0_windows",
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0120_P9\\sage_results\\nav_sage_v2\\G05\\stage0_valid_40ms_windows.csv",
+      "bytes": 386135,
+      "sha256": "DA90A18B8F29E5F39CC44D355DFE70E9911B3AFC82E06EDE326D800F3E0DF02F"
+    },
+    {
+      "role": "G05_stage0_symbols",
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0120_P9\\sage_results\\nav_sage_v2\\G05\\stage0_valid_symbols.csv",
+      "bytes": 416446,
+      "sha256": "A1A470592DD41C9243813C8E51618524B16359BCFB4BAFB4888D969214FC0F21"
+    },
+    {
+      "role": "G05_stage4_summary",
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0120_P9\\sage_results\\nav_sage_v2\\G05\\stage4_joint_summary.csv",
+      "bytes": 894,
+      "sha256": "C79DCCA674790AB23EE255400ECD88D58F22018C3178B5F1180D960E268DF83B"
+    },
+    {
+      "role": "G05_stage4_paths",
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0120_P9\\sage_results\\nav_sage_v2\\G05\\stage4_joint_paths.csv",
+      "bytes": 648,
+      "sha256": "7F7EB736B970521BFFDCB112A8C061122EA75797020078BD2D90C715D54110F5"
+    },
+    {
+      "role": "G05_stage4_mat",
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0120_P9\\sage_results\\nav_sage_v2\\G05\\stage4_nav_joint_100ms.mat",
+      "bytes": 11366,
+      "sha256": "C3D94BD20231701F28C0E898EFA3A9BC15D48EC29B1CD395879C6730F2AC250F"
+    },
+    {
+      "role": "G05_tracking_mat",
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0120_P9\\gnss_sdr\\tracking\\F1023_V70_D0120_P9_track_ch_10.mat",
+      "bytes": 641883,
+      "sha256": "07ECB3437617A3D55464DE052802DC9FC16B5EF49530E38378719214BF1909D1"
+    },
+    {
+      "role": "G05_telemetry_dat",
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0120_P9\\gnss_sdr\\telemetry\\F1023_V70_D0120_P9_telemetry_ch_10.dat",
+      "bytes": 84224,
+      "sha256": "59C00B0EDA2B738CA38EE80E899F0F0FC23AB9F59D952B35A8021CF954DA3507"
+    },
+    {
+      "role": "G05_raw_iq",
+      "path": "E:\\AAGNSSSDR_input\\raw_data\\F1023_V70_D0120_P9.bin",
+      "bytes": 3405578752,
+      "sha256": "4475671E5DC29F139715E67419215530C5AD519AE5BD90035F537F7DBC7E157A"
+    }
+  ],
+  "source_scene_summary": {
+    "G18": {
+      "scene_id": "F1023_V70_D0120_P1",
+      "prn_label": "G18",
+      "environment": "Urban",
+      "raw_path": "E:\\AAGNSSSDR_input\\raw_data\\F1023_V70_D0120_P1.bin",
+      "raw_bytes": 3657957888
+    },
+    "G25": {
+      "scene_id": "F1023_V80_D0117_P8",
+      "prn_label": "G25",
+      "environment": "Highway/Open",
+      "raw_path": "E:\\AAGNSSSDR_input\\raw_data\\F1023_V80_D0117_P8.bin",
+      "raw_bytes": 2609840640
+    },
+    "G05": {
+      "scene_id": "F1023_V70_D0120_P9",
+      "prn_label": "G05",
+      "environment": "Special Reflective",
+      "raw_path": "E:\\AAGNSSSDR_input\\raw_data\\F1023_V70_D0120_P9.bin",
+      "raw_bytes": 3405578752
+    }
+  },
+  "layer1": {
+    "name": "controlled_injected_path_recovery",
+    "scene_key": "G18",
+    "confirmed_criterion_note": "No Stage4-confirmed secondary path under the current criterion; not LOS or multipath-free.",
+    "center_window_ids": [
+      155,
+      156,
+      157
+    ],
+    "cases": [
+      {
+        "scene_id": "F1023_V70_D0120_P1",
+        "prn_label": "G18",
+        "prn": 18,
+        "tracking_channel": 2,
+        "environment": "Urban",
+        "center_window_id": 155,
+        "confirmed_under_stage4_criterion": false,
+        "five_snapshot_symbols": [
+          {
+            "symbol_id": 153,
+            "sample_start_zero_based": 410926676,
+            "recording_time_s": 40.1687855327468,
+            "tow_s": 228099.04,
+            "nav_symbol": 1,
+            "tracking_doppler_hz": -4357.78662109375,
+            "code_frequency_hz": 1022997.3125
+          },
+          {
+            "symbol_id": 154,
+            "sample_start_zero_based": 411131277,
+            "recording_time_s": 40.1887856304985,
+            "tow_s": 228099.06,
+            "nav_symbol": 1,
+            "tracking_doppler_hz": -4359.93212890625,
+            "code_frequency_hz": 1022998.125
+          },
+          {
+            "symbol_id": 155,
+            "sample_start_zero_based": 411335877,
+            "recording_time_s": 40.2087856304985,
+            "tow_s": 228099.08,
+            "nav_symbol": 1,
+            "tracking_doppler_hz": -4358.27099609375,
+            "code_frequency_hz": 1022996.4375
+          },
+          {
+            "symbol_id": 156,
+            "sample_start_zero_based": 411540478,
+            "recording_time_s": 40.2287857282502,
+            "tow_s": 228099.1,
+            "nav_symbol": -1,
+            "tracking_doppler_hz": -4359.25537109375,
+            "code_frequency_hz": 1022998.0
+          },
+          {
+            "symbol_id": 157,
+            "sample_start_zero_based": 411745078,
+            "recording_time_s": 40.2487857282502,
+            "tow_s": 228099.12,
+            "nav_symbol": -1,
+            "tracking_doppler_hz": -4356.904296875,
+            "code_frequency_hz": 1022996.4375
+          }
+        ],
+        "native_stage4_paths": [
+          {
+            "center_window_id": 155,
+            "joint_selected_L": 1,
+            "path_id": 1,
+            "is_multipath": 0,
+            "delay_samples": 0.5,
+            "excess_delay_samples": 0.0,
+            "excess_delay_chips": 0.0,
+            "doppler_hz": -4358.27099609375,
+            "doppler_offset_hz": 0.0,
+            "mean_relative_power_db": 0.0
+          }
+        ]
+      },
+      {
+        "scene_id": "F1023_V70_D0120_P1",
+        "prn_label": "G18",
+        "prn": 18,
+        "tracking_channel": 2,
+        "environment": "Urban",
+        "center_window_id": 156,
+        "confirmed_under_stage4_criterion": false,
+        "five_snapshot_symbols": [
+          {
+            "symbol_id": 154,
+            "sample_start_zero_based": 411131277,
+            "recording_time_s": 40.1887856304985,
+            "tow_s": 228099.06,
+            "nav_symbol": 1,
+            "tracking_doppler_hz": -4359.93212890625,
+            "code_frequency_hz": 1022998.125
+          },
+          {
+            "symbol_id": 155,
+            "sample_start_zero_based": 411335877,
+            "recording_time_s": 40.2087856304985,
+            "tow_s": 228099.08,
+            "nav_symbol": 1,
+            "tracking_doppler_hz": -4358.27099609375,
+            "code_frequency_hz": 1022996.4375
+          },
+          {
+            "symbol_id": 156,
+            "sample_start_zero_based": 411540478,
+            "recording_time_s": 40.2287857282502,
+            "tow_s": 228099.1,
+            "nav_symbol": -1,
+            "tracking_doppler_hz": -4359.25537109375,
+            "code_frequency_hz": 1022998.0
+          },
+          {
+            "symbol_id": 157,
+            "sample_start_zero_based": 411745078,
+            "recording_time_s": 40.2487857282502,
+            "tow_s": 228099.12,
+            "nav_symbol": -1,
+            "tracking_doppler_hz": -4356.904296875,
+            "code_frequency_hz": 1022996.4375
+          },
+          {
+            "symbol_id": 158,
+            "sample_start_zero_based": 411949679,
+            "recording_time_s": 40.268785826002,
+            "tow_s": 228099.14,
+            "nav_symbol": 1,
+            "tracking_doppler_hz": -4359.67041015625,
+            "code_frequency_hz": 1022996.75
+          }
+        ],
+        "native_stage4_paths": [
+          {
+            "center_window_id": 156,
+            "joint_selected_L": 1,
+            "path_id": 1,
+            "is_multipath": 0,
+            "delay_samples": 0.4,
+            "excess_delay_samples": 0.0,
+            "excess_delay_chips": 0.0,
+            "doppler_hz": -4359.25537109375,
+            "doppler_offset_hz": 0.0,
+            "mean_relative_power_db": 0.0
+          }
+        ]
+      },
+      {
+        "scene_id": "F1023_V70_D0120_P1",
+        "prn_label": "G18",
+        "prn": 18,
+        "tracking_channel": 2,
+        "environment": "Urban",
+        "center_window_id": 157,
+        "confirmed_under_stage4_criterion": false,
+        "five_snapshot_symbols": [
+          {
+            "symbol_id": 155,
+            "sample_start_zero_based": 411335877,
+            "recording_time_s": 40.2087856304985,
+            "tow_s": 228099.08,
+            "nav_symbol": 1,
+            "tracking_doppler_hz": -4358.27099609375,
+            "code_frequency_hz": 1022996.4375
+          },
+          {
+            "symbol_id": 156,
+            "sample_start_zero_based": 411540478,
+            "recording_time_s": 40.2287857282502,
+            "tow_s": 228099.1,
+            "nav_symbol": -1,
+            "tracking_doppler_hz": -4359.25537109375,
+            "code_frequency_hz": 1022998.0
+          },
+          {
+            "symbol_id": 157,
+            "sample_start_zero_based": 411745078,
+            "recording_time_s": 40.2487857282502,
+            "tow_s": 228099.12,
+            "nav_symbol": -1,
+            "tracking_doppler_hz": -4356.904296875,
+            "code_frequency_hz": 1022996.4375
+          },
+          {
+            "symbol_id": 158,
+            "sample_start_zero_based": 411949679,
+            "recording_time_s": 40.268785826002,
+            "tow_s": 228099.14,
+            "nav_symbol": 1,
+            "tracking_doppler_hz": -4359.67041015625,
+            "code_frequency_hz": 1022996.75
+          },
+          {
+            "symbol_id": 159,
+            "sample_start_zero_based": 412154280,
+            "recording_time_s": 40.2887859237537,
+            "tow_s": 228099.16,
+            "nav_symbol": 1,
+            "tracking_doppler_hz": -4361.4794921875,
+            "code_frequency_hz": 1022997.625
+          }
+        ],
+        "native_stage4_paths": [
+          {
+            "center_window_id": 157,
+            "joint_selected_L": 1,
+            "path_id": 1,
+            "is_multipath": 0,
+            "delay_samples": 0.4,
+            "excess_delay_samples": 0.0,
+            "excess_delay_chips": 0.0,
+            "doppler_hz": -4356.904296875,
+            "doppler_offset_hz": 0.0,
+            "mean_relative_power_db": 0.0
+          }
+        ]
+      }
+    ],
+    "excess_delay_samples": [
+      1.1,
+      3.0
+    ],
+    "relative_doppler_hz": [
+      -30.0,
+      0.0,
+      30.0
+    ],
+    "relative_power_db": [
+      -5.0,
+      -10.0,
+      -15.0
+    ],
+    "relative_phase_rad": [
+      0.0,
+      1.5707963267948966,
+      3.141592653589793,
+      4.71238898038469
+    ],
+    "snapshot_count": 5,
+    "trial_count": 216
+  },
+  "layer2": {
+    "name": "incremental_recovery_on_confirmed_multipath_backgrounds",
+    "events": [
+      {
+        "scene_id": "F1023_V80_D0117_P8",
+        "prn_label": "G25",
+        "prn": 25,
+        "tracking_channel": 10,
+        "environment": "Highway/Open",
+        "center_window_id": 985,
+        "confirmed_under_stage4_criterion": true,
+        "five_snapshot_symbols": [
+          {
+            "symbol_id": 983,
+            "sample_start_zero_based": 618883774,
+            "recording_time_s": 60.4969476050831,
+            "tow_s": 564085.64,
+            "nav_symbol": 1,
+            "tracking_doppler_hz": -5885.83447265625,
+            "code_frequency_hz": 1022996.0
+          },
+          {
+            "symbol_id": 984,
+            "sample_start_zero_based": 619088375,
+            "recording_time_s": 60.5169477028348,
+            "tow_s": 564085.66,
+            "nav_symbol": -1,
+            "tracking_doppler_hz": -5886.4013671875,
+            "code_frequency_hz": 1022996.5625
+          },
+          {
+            "symbol_id": 985,
+            "sample_start_zero_based": 619292975,
+            "recording_time_s": 60.5369477028348,
+            "tow_s": 564085.68,
+            "nav_symbol": -1,
+            "tracking_doppler_hz": -5882.86572265625,
+            "code_frequency_hz": 1022996.75
+          },
+          {
+            "symbol_id": 986,
+            "sample_start_zero_based": 619497576,
+            "recording_time_s": 60.5569478005865,
+            "tow_s": 564085.7,
+            "nav_symbol": 1,
+            "tracking_doppler_hz": -5883.01220703125,
+            "code_frequency_hz": 1022996.125
+          },
+          {
+            "symbol_id": 987,
+            "sample_start_zero_based": 619702177,
+            "recording_time_s": 60.5769478983382,
+            "tow_s": 564085.72,
+            "nav_symbol": 1,
+            "tracking_doppler_hz": -5885.708984375,
+            "code_frequency_hz": 1022996.5625
+          }
+        ],
+        "native_stage4_paths": [
+          {
+            "center_window_id": 985,
+            "joint_selected_L": 2,
+            "path_id": 1,
+            "is_multipath": 0,
+            "delay_samples": 0.1,
+            "excess_delay_samples": 0.0,
+            "excess_delay_chips": 0.0,
+            "doppler_hz": -5882.86572265625,
+            "doppler_offset_hz": 0.0,
+            "mean_relative_power_db": 0.0
+          },
+          {
+            "center_window_id": 985,
+            "joint_selected_L": 2,
+            "path_id": 2,
+            "is_multipath": 1,
+            "delay_samples": 1.2,
+            "excess_delay_samples": 1.1,
+            "excess_delay_chips": 0.11,
+            "doppler_hz": -5887.58162996263,
+            "doppler_offset_hz": -4.71590730637763,
+            "mean_relative_power_db": -7.85260728700885
+          }
+        ]
+      },
+      {
+        "scene_id": "F1023_V80_D0117_P8",
+        "prn_label": "G25",
+        "prn": 25,
+        "tracking_channel": 10,
+        "environment": "Highway/Open",
+        "center_window_id": 970,
+        "confirmed_under_stage4_criterion": true,
+        "five_snapshot_symbols": [
+          {
+            "symbol_id": 968,
+            "sample_start_zero_based": 615814762,
+            "recording_time_s": 60.1969464320626,
+            "tow_s": 564085.34,
+            "nav_symbol": -1,
+            "tracking_doppler_hz": -5885.302734375,
+            "code_frequency_hz": 1022995.875
+          },
+          {
+            "symbol_id": 969,
+            "sample_start_zero_based": 616019363,
+            "recording_time_s": 60.2169465298143,
+            "tow_s": 564085.36,
+            "nav_symbol": -1,
+            "tracking_doppler_hz": -5884.7470703125,
+            "code_frequency_hz": 1022997.4375
+          },
+          {
+            "symbol_id": 970,
+            "sample_start_zero_based": 616223964,
+            "recording_time_s": 60.236946627566,
+            "tow_s": 564085.38,
+            "nav_symbol": 1,
+            "tracking_doppler_hz": -5886.51611328125,
+            "code_frequency_hz": 1022994.75
+          },
+          {
+            "symbol_id": 971,
+            "sample_start_zero_based": 616428565,
+            "recording_time_s": 60.2569467253177,
+            "tow_s": 564085.4,
+            "nav_symbol": 1,
+            "tracking_doppler_hz": -5884.09033203125,
+            "code_frequency_hz": 1022995.625
+          },
+          {
+            "symbol_id": 972,
+            "sample_start_zero_based": 616633165,
+            "recording_time_s": 60.2769467253177,
+            "tow_s": 564085.42,
+            "nav_symbol": -1,
+            "tracking_doppler_hz": -5883.89599609375,
+            "code_frequency_hz": 1022995.5
+          }
+        ],
+        "native_stage4_paths": [
+          {
+            "center_window_id": 970,
+            "joint_selected_L": 2,
+            "path_id": 1,
+            "is_multipath": 0,
+            "delay_samples": 0.3,
+            "excess_delay_samples": 0.0,
+            "excess_delay_chips": 0.0,
+            "doppler_hz": -5881.51611328125,
+            "doppler_offset_hz": 0.0,
+            "mean_relative_power_db": 0.0
+          },
+          {
+            "center_window_id": 970,
+            "joint_selected_L": 2,
+            "path_id": 2,
+            "is_multipath": 1,
+            "delay_samples": 1.5,
+            "excess_delay_samples": 1.2,
+            "excess_delay_chips": 0.12,
+            "doppler_hz": -5892.22961932502,
+            "doppler_offset_hz": -10.7135060437722,
+            "mean_relative_power_db": -11.387872918357
+          }
+        ]
+      },
+      {
+        "scene_id": "F1023_V70_D0120_P9",
+        "prn_label": "G05",
+        "prn": 5,
+        "tracking_channel": 10,
+        "environment": "Special Reflective",
+        "center_window_id": 493,
+        "confirmed_under_stage4_criterion": true,
+        "five_snapshot_symbols": [
+          {
+            "symbol_id": 491,
+            "sample_start_zero_based": 412677839,
+            "recording_time_s": 40.3399647116325,
+            "tow_s": 228957.8,
+            "nav_symbol": 1,
+            "tracking_doppler_hz": -6837.3623046875,
+            "code_frequency_hz": 1022998.3125
+          },
+          {
+            "symbol_id": 492,
+            "sample_start_zero_based": 412882440,
+            "recording_time_s": 40.3599648093842,
+            "tow_s": 228957.82,
+            "nav_symbol": -1,
+            "tracking_doppler_hz": -6835.9296875,
+            "code_frequency_hz": 1022997.5625
+          },
+          {
+            "symbol_id": 493,
+            "sample_start_zero_based": 413087041,
+            "recording_time_s": 40.3799649071359,
+            "tow_s": 228957.84,
+            "nav_symbol": -1,
+            "tracking_doppler_hz": -6837.48583984375,
+            "code_frequency_hz": 1022996.375
+          },
+          {
+            "symbol_id": 494,
+            "sample_start_zero_based": 413291642,
+            "recording_time_s": 40.3999650048876,
+            "tow_s": 228957.86,
+            "nav_symbol": 1,
+            "tracking_doppler_hz": -6844.20458984375,
+            "code_frequency_hz": 1022996.25
+          },
+          {
+            "symbol_id": 495,
+            "sample_start_zero_based": 413496242,
+            "recording_time_s": 40.4199650048876,
+            "tow_s": 228957.88,
+            "nav_symbol": 1,
+            "tracking_doppler_hz": -6839.20947265625,
+            "code_frequency_hz": 1022993.6875
+          }
+        ],
+        "native_stage4_paths": [
+          {
+            "center_window_id": 493,
+            "joint_selected_L": 2,
+            "path_id": 1,
+            "is_multipath": 0,
+            "delay_samples": -0.3,
+            "excess_delay_samples": 0.0,
+            "excess_delay_chips": 0.0,
+            "doppler_hz": -6842.48583984375,
+            "doppler_offset_hz": 0.0,
+            "mean_relative_power_db": 0.0
+          },
+          {
+            "center_window_id": 493,
+            "joint_selected_L": 2,
+            "path_id": 2,
+            "is_multipath": 1,
+            "delay_samples": 0.8,
+            "excess_delay_samples": 1.1,
+            "excess_delay_chips": 0.11,
+            "doppler_hz": -6830.77047352823,
+            "doppler_offset_hz": 11.7153663155214,
+            "mean_relative_power_db": -8.4373821093183
+          }
+        ]
+      },
+      {
+        "scene_id": "F1023_V70_D0120_P9",
+        "prn_label": "G05",
+        "prn": 5,
+        "tracking_channel": 10,
+        "environment": "Special Reflective",
+        "center_window_id": 495,
+        "confirmed_under_stage4_criterion": true,
+        "five_snapshot_symbols": [
+          {
+            "symbol_id": 493,
+            "sample_start_zero_based": 413087041,
+            "recording_time_s": 40.3799649071359,
+            "tow_s": 228957.84,
+            "nav_symbol": -1,
+            "tracking_doppler_hz": -6837.48583984375,
+            "code_frequency_hz": 1022996.375
+          },
+          {
+            "symbol_id": 494,
+            "sample_start_zero_based": 413291642,
+            "recording_time_s": 40.3999650048876,
+            "tow_s": 228957.86,
+            "nav_symbol": 1,
+            "tracking_doppler_hz": -6844.20458984375,
+            "code_frequency_hz": 1022996.25
+          },
+          {
+            "symbol_id": 495,
+            "sample_start_zero_based": 413496242,
+            "recording_time_s": 40.4199650048876,
+            "tow_s": 228957.88,
+            "nav_symbol": 1,
+            "tracking_doppler_hz": -6839.20947265625,
+            "code_frequency_hz": 1022993.6875
+          },
+          {
+            "symbol_id": 496,
+            "sample_start_zero_based": 413700843,
+            "recording_time_s": 40.4399651026393,
+            "tow_s": 228957.9,
+            "nav_symbol": -1,
+            "tracking_doppler_hz": -6842.00537109375,
+            "code_frequency_hz": 1022994.5625
+          },
+          {
+            "symbol_id": 497,
+            "sample_start_zero_based": 413905444,
+            "recording_time_s": 40.459965200391,
+            "tow_s": 228957.92,
+            "nav_symbol": -1,
+            "tracking_doppler_hz": -6841.66748046875,
+            "code_frequency_hz": 1022994.5625
+          }
+        ],
+        "native_stage4_paths": [
+          {
+            "center_window_id": 495,
+            "joint_selected_L": 2,
+            "path_id": 1,
+            "is_multipath": 0,
+            "delay_samples": -0.5,
+            "excess_delay_samples": 0.0,
+            "excess_delay_chips": 0.0,
+            "doppler_hz": -6844.20947265625,
+            "doppler_offset_hz": 0.0,
+            "mean_relative_power_db": 0.0
+          },
+          {
+            "center_window_id": 495,
+            "joint_selected_L": 2,
+            "path_id": 2,
+            "is_multipath": 1,
+            "delay_samples": 0.7,
+            "excess_delay_samples": 1.2,
+            "excess_delay_chips": 0.12,
+            "doppler_hz": -6832.26269326322,
+            "doppler_offset_hz": 11.9467793930344,
+            "mean_relative_power_db": -4.11970433692207
+          }
+        ]
+      }
+    ],
+    "excess_delay_samples": [
+      2.5,
+      4.0
+    ],
+    "relative_doppler_hz": [
+      -30.0,
+      30.0
+    ],
+    "relative_power_db": [
+      -8.0,
+      -12.0,
+      -16.0
+    ],
+    "relative_phase_rad": [
+      0.0,
+      1.5707963267948966,
+      3.141592653589793,
+      4.71238898038469
+    ],
+    "snapshot_count": 5,
+    "trial_count": 192,
+    "native_path_truth_note": "Only the added synthetic path has known truth; native paths are consistency references."
+  },
+  "matching": {
+    "delay_tolerance_samples": 0.2,
+    "doppler_tolerance_hz": 5.0,
+    "power_tolerance_db": 2.0,
+    "normalized_cost": "abs(delay_error)/0.2 + abs(doppler_error)/5 + abs(power_error)/2",
+    "one_to_one": true
+  },
+  "estimator": {
+    "maximum_model_order": 4,
+    "delay_step_samples": 0.1,
+    "minimum_path_separation_samples": 1.0,
+    "local_delay_half_width_samples": 0.8,
+    "local_doppler_step_hz": 5.0,
+    "local_doppler_half_width_hz": 30.0,
+    "minimum_path_power_db": -25.0,
+    "maximum_path_coherence": 0.98,
+    "minimum_sequential_bic_gain": 10.0,
+    "minimum_joint_snapshot_wins": 4,
+    "joint_snapshot_count": 5,
+    "sage_iterations": 10,
+    "sage_tolerance": 1e-06
+  },
+  "dll": {
+    "early_late_space_chips": 0.5,
+    "dll_bw_hz": 4.0,
+    "code_rate_hz": 1023000.0,
+    "meters_per_chip": 293.0522561094819,
+    "case_count": 4,
+    "discriminator": "verify_local_gnss_sdr_formula_else_normalized_noncoherent_early_late_envelope"
+  },
+  "paper_admission_gate": {
+    "layer1_recovery_rate_minimum_by_power_db": {
+      "-5": 0.8,
+      "-10": 0.8
+    },
+    "layer2_recovery_rate_minimum_by_power_db": {
+      "-8": 0.7,
+      "-12": 0.7
+    },
+    "dll_events_with_median_absolute_bias_reduction_minimum": 3,
+    "all_adverse_cases_retained": true
+  },
+  "scientific_constraints": {
+    "no_production_namespace_write": true,
+    "no_stage0_stage4_production_rerun": true,
+    "no_threshold_tuning": true,
+    "no_pvt_or_positioning_claim": true,
+    "no_pseudorange_improvement_claim": true,
+    "no_20_46_mhz": true
+  }
+}

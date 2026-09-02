@@ -1,0 +1,223 @@
+{
+  "model_id": "vtc_stage3_urban_mountain_conditional_partially_pooled_3d_gmm_v1",
+  "model_version": "absolute-doppler-conditional-shared-covariance-gmm-v1",
+  "status": "BUILT_PENDING_INDEPENDENT_QA",
+  "primary_doppler_variable": "absolute_relative_doppler_magnitude_hz",
+  "signed_doppler_sensitivity_required": true,
+  "selection": {
+    "candidate_index": 10,
+    "component_count": 3,
+    "pooling_kappa": 16.0,
+    "selection_status": "SELECTED_BY_SCENE_LOSO_NLPD_WITH_ADJACENT_K_COMPLEXITY_RULE",
+    "mean_weighted_nlpd": 3.25714935235,
+    "mean_energy_score": 3.23978004675,
+    "complexity_comparisons": [
+      {
+        "larger_component_count": 3,
+        "larger_candidate_index": 10,
+        "smaller_component_count": 2,
+        "smaller_candidate_index": 7,
+        "mean_nlpd_difference_larger_minus_smaller": -0.15919980403822126,
+        "q025": -0.2420674081013859,
+        "q975": -0.06016684863201955,
+        "decision": "RETAIN_LARGER_K"
+      }
+    ]
+  },
+  "population": {
+    "rows": 518,
+    "cell_ready_rows": 487,
+    "missing_elevation_rows": 31,
+    "track_count": 236,
+    "scene_count": 9
+  },
+  "model": {
+    "component_count": 3,
+    "pooling_kappa": 16.0,
+    "doppler_feature_field": "log1p_absolute_doppler",
+    "transform_center": [
+      0.6284777393502644,
+      3.9432599863329663,
+      -8.891722334381713
+    ],
+    "transform_scale": [
+      0.37697774027862163,
+      0.47697133492982935,
+      5.310552206489922
+    ],
+    "global_weights": [
+      0.5344683153313857,
+      0.4037279176016621,
+      0.06180376706695215
+    ],
+    "global_means": [
+      [
+        0.6232933712126586,
+        0.24355787692207448,
+        -0.8582606352173552
+      ],
+      [
+        -0.7407760068275813,
+        -0.12421374515268839,
+        0.9451880005878504
+      ],
+      [
+        -0.5510764964630152,
+        -1.2948306437297663,
+        1.2477286783654689
+      ]
+    ],
+    "environment_weights": {
+      "Mountain/Valley": [
+        0.5560774761713491,
+        0.4328204307310093,
+        0.011102093097641694
+      ],
+      "Urban": [
+        0.5222104872525758,
+        0.3872251469961258,
+        0.09056436575129835
+      ]
+    },
+    "environment_means": {
+      "Mountain/Valley": [
+        [
+          0.6425328361988754,
+          0.29205175703794184,
+          -0.8312112989903206
+        ],
+        [
+          -0.6986601554903541,
+          -0.09105474452598919,
+          0.9210177791684236
+        ],
+        [
+          -0.550925306876276,
+          -1.2898674129707832,
+          1.2479332540544437
+        ]
+      ],
+      "Urban": [
+        [
+          0.611085459823165,
+          0.21278732317687546,
+          -0.8754241010435025
+        ],
+        [
+          -0.769420319999337,
+          -0.1467662228601505,
+          0.9616269272576471
+        ],
+        [
+          -0.5511562516190153,
+          -1.297448834915978,
+          1.2476207611051604
+        ]
+      ]
+    },
+    "cell_weights": {
+      "Mountain/Valley__HIGH": [
+        0.5452111823359054,
+        0.4488512881576461,
+        0.0059375295064484825
+      ],
+      "Mountain/Valley__LOW": [
+        0.5142802590804475,
+        0.4771881156512509,
+        0.008531625268301415
+      ],
+      "Mountain/Valley__MID": [
+        0.5909897279164334,
+        0.4061767909635927,
+        0.002833481119973817
+      ],
+      "Urban__HIGH": [
+        0.5841079176208831,
+        0.3538152150455718,
+        0.06207686733354504
+      ],
+      "Urban__LOW": [
+        0.3482382799289726,
+        0.4953552332385624,
+        0.15640648683246502
+      ],
+      "Urban__MID": [
+        0.49693739231109324,
+        0.39073603948753943,
+        0.11232656820136723
+      ]
+    },
+    "shared_covariances": [
+      [
+        [
+          0.7609080103961321,
+          0.6006826816918653,
+          -0.09368718837492192
+        ],
+        [
+          0.6006826816918654,
+          1.3627884652684072,
+          -0.0436414927289178
+        ],
+        [
+          -0.09368718837492192,
+          -0.04364149272891779,
+          0.17114647232131153
+        ]
+      ],
+      [
+        [
+          0.2933242046158781,
+          -0.014125358049058514,
+          -0.021673344217992153
+        ],
+        [
+          -0.014125358049058514,
+          0.031338354050301595,
+          -0.04287541758357881
+        ],
+        [
+          -0.021673344217992156,
+          -0.04287541758357881,
+          0.13297896609243226
+        ]
+      ],
+      [
+        [
+          0.4194602592113456,
+          -0.47516660372549396,
+          -0.008214583041437068
+        ],
+        [
+          -0.47516660372549396,
+          1.8718384148668097,
+          -0.04509245951638867
+        ],
+        [
+          -0.00821458304143707,
+          -0.04509245951638867,
+          0.05811395995381512
+        ]
+      ]
+    ],
+    "log_likelihood_iterations": 53
+  },
+  "signed_sensitivity": {
+    "scene_count": 9,
+    "mean_energy_difference_signed_minus_absolute": 0.052106059919393904,
+    "q025": -0.06043341785942689,
+    "q975": 0.24585941709303727
+  },
+  "execution_boundary": {
+    "raw_iq_read": false,
+    "matlab_started": false,
+    "sage_started": false,
+    "batch_started": false,
+    "stage4_source_used": false,
+    "formal_manuscript_modified": false,
+    "v1_modified": false,
+    "v2_modified": false,
+    "evidence_matrix_modified": false,
+    "handoff_modified": false
+  }
+}

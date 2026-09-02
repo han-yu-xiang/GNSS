@@ -206,3 +206,32 @@ Execution record:
 - batch production: no
 - new experiment: no
 - production artifact modified: no
+
+## 14. Subsequent author follow-up revision
+
+After the previous targeted revision check, the author requested three presentation adjustments to the synchronized manuscript sources:
+
+1. remove the redundant environment-category preview from Section II-A;
+2. shorten the Table II caption and move the definition of an independent measurement run and the path-counting rule into Section IV-A;
+3. state the representative confirmed-multipath retention cases in Section IV-A before describing the G28/G18 final non-confirmation cases.
+
+The English LaTeX source, Chinese review LaTeX source, and both Markdown mirrors were updated consistently. Table II values, figure assets, evidence files, and scientific conclusions were not changed. The updated English and Chinese canonical PDFs were compiled with the existing `pdflatex -> bibtex -> pdflatex -> pdflatex` and `xelatex -> bibtex -> xelatex -> xelatex` chains, respectively; all commands exited with code `0`, and both PDFs remain **4 pages**.
+
+Final PDF hashes:
+
+- English `docs/vtc2027_spring/manuscript/latex/main.pdf`: `861945F40B9F54BD02C45A00988A001DCE9A4E6ADF6470CD5BDDC2AC4DBB5A3F`
+- Chinese `docs/vtc2027_spring/manuscript/latex_cn_review/main_cn_review.pdf`: `97B153021D37C0CFADC53A0738F239525B3D27290B60A2DD217FF01F1D230FDC`
+
+The final English pass has no LaTeX error, fatal error, undefined citation/reference, or overfull box; three underfull-box warnings remain. The Chinese pass has no compilation error and retains the known font fallback warnings.
+
+```text
+SCIENTIFIC_CONTENT_CHANGED = NO
+SCIENTIFIC_DATA_CHANGED = NO
+FIGURE_DATA_CHANGED = NO
+TABLE_DATA_CHANGED = NO
+NEW_EXPERIMENT_EXECUTED = NO
+RAW_IQ_READ = NO
+MATLAB_EXECUTED = NO
+SAGE_EXECUTED = NO
+PRODUCTION_EXECUTED = NO
+```

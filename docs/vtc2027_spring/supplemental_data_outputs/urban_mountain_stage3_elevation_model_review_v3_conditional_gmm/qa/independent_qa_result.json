@@ -1,0 +1,136 @@
+{
+  "qa_id": "vtc_stage3_urban_mountain_conditional_gmm_independent_qa_v1",
+  "status": "PASS_WITH_LIMITATIONS",
+  "hard_failures": [],
+  "limitations": [
+    "31 rows lack elevation and are retained only for environment-parent fitting",
+    "LOW cells and Mountain/Valley-HIGH remain strongly partially pooled",
+    "the selected GMM is not a complete stochastic channel model",
+    "no direct comparison with the existing v2 marginal-plus-copula baseline was implemented in Task 5"
+  ],
+  "counts": {
+    "primary_rows": 518,
+    "cell_ready_rows": 487,
+    "missing_elevation_rows": 31,
+    "track_count": 236,
+    "scene_count": 9,
+    "conditioned_cells": 6,
+    "candidate_rows": 12,
+    "scene_loso_rows": 108,
+    "model_bootstrap_rows": 12000,
+    "paired_bootstrap_rows": 2000,
+    "review_draw_rows": 24576
+  },
+  "cell_support": {
+    "Mountain/Valley__HIGH": {
+      "observation_count": 32,
+      "track_count": 15,
+      "run_count": 3,
+      "scene_count": 2,
+      "sum_weights": 14.999999999997
+    },
+    "Mountain/Valley__LOW": {
+      "observation_count": 22,
+      "track_count": 12,
+      "run_count": 3,
+      "scene_count": 3,
+      "sum_weights": 11.999999999996
+    },
+    "Mountain/Valley__MID": {
+      "observation_count": 117,
+      "track_count": 53,
+      "run_count": 8,
+      "scene_count": 3,
+      "sum_weights": 52.999999999975
+    },
+    "Urban__HIGH": {
+      "observation_count": 129,
+      "track_count": 64,
+      "run_count": 8,
+      "scene_count": 5,
+      "sum_weights": 63.999999999973
+    },
+    "Urban__LOW": {
+      "observation_count": 18,
+      "track_count": 8,
+      "run_count": 3,
+      "scene_count": 3,
+      "sum_weights": 7.9999999999960005
+    },
+    "Urban__MID": {
+      "observation_count": 169,
+      "track_count": 74,
+      "run_count": 10,
+      "scene_count": 5,
+      "sum_weights": 73.999999999978
+    }
+  },
+  "support_status": {
+    "Urban__LOW": "STRONGLY_PARTIALLY_POOLED",
+    "Urban__MID": "DATA_SUPPORTED",
+    "Urban__HIGH": "DATA_SUPPORTED",
+    "Mountain/Valley__LOW": "STRONGLY_PARTIALLY_POOLED",
+    "Mountain/Valley__MID": "DATA_SUPPORTED",
+    "Mountain/Valley__HIGH": "STRONGLY_PARTIALLY_POOLED"
+  },
+  "checks": {
+    "source_inventory_integrity": {
+      "status": "PASS",
+      "details": "seven inventory records with matching existence, size, SHA-256, and read_only flags"
+    },
+    "execution_boundary": {
+      "status": "PASS",
+      "details": "all forbidden execution and formal-write flags are false"
+    },
+    "population_denominators": {
+      "status": "PASS",
+      "details": "{'primary_rows': 518, 'cell_ready_rows': 487, 'missing_elevation_rows': 31, 'track_count': 236, 'scene_count': 9, 'conditioned_cells': 6}"
+    },
+    "feature_transform_and_missing_elevation_policy": {
+      "status": "PASS",
+      "details": "log/exact absolute-Doppler transforms and no-imputation policy verified"
+    },
+    "track_weight_sums": {
+      "status": "PASS",
+      "details": "all 236 recomputed primary track weights sum to one"
+    },
+    "cell_support_recomputation": {
+      "status": "PASS",
+      "details": "six cell counts, run counts, scene counts, and weight mass match independently"
+    },
+    "model_mathematics": {
+      "status": "PASS",
+      "details": "3-D model, normalized weights, finite values, ordered components, and SPD covariances verified"
+    },
+    "candidate_loso_bootstrap_completeness": {
+      "status": "PASS",
+      "details": "candidates=12, LOSO rows=108, model bootstrap rows=12000, paired NLPD rows=2000"
+    },
+    "complexity_selection_rule": {
+      "status": "PASS",
+      "details": "selected candidate=10, best NLPD candidate=10, comparison={'larger_component_count': 3, 'larger_candidate_index': 10, 'smaller_component_count': 2, 'smaller_candidate_index': 7, 'mean_nlpd_difference_larger_minus_smaller': -0.15919980403822126, 'q025': -0.2420674081013859, 'q975': -0.06016684863201955, 'decision': 'RETAIN_LARGER_K'}"
+    },
+    "review_draws": {
+      "status": "PASS",
+      "details": "six cells with 4096 finite draws each"
+    },
+    "scientific_boundary_language": {
+      "status": "PASS",
+      "details": "no forbidden Stage3/physical-truth/imputation claims and explicit bounded-model language present"
+    }
+  },
+  "execution_boundary": {
+    "raw_iq_read": false,
+    "matlab_started": false,
+    "sage_started": false,
+    "batch_started": false,
+    "stage4_source_used": false,
+    "formal_manuscript_modified": false,
+    "v1_modified": false,
+    "v2_modified": false,
+    "evidence_matrix_modified": false,
+    "handoff_modified": false
+  },
+  "source_inventory_sha256": "f5e8072edef9a7bed4a8c1d27c3582f50eb6f7b98204add3d96f98980be00fae",
+  "selected_model_sha256": "903f5e46474d2ac5e6e7dfc584c7c3516841febad4de4aa77dde822e4d7dd3a9"
+}

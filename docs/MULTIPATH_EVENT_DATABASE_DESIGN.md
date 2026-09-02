@@ -18,7 +18,7 @@
 - `dataset/dataset_inventory.csv`
 - reference scene 的 `metadata.json`、satellite geometry CSV 和通用 `run_context.json`
 
-本文只做结构与流程设计。当前未运行 SAGE，未修改 pipeline、metadata、inventory 或任何已有 Stage 结果。文中出现的未来脚本名和数据库目录均为**建议方案，目前不代表文件已经存在**。
+本文定义结构、派生规则与入库门禁。2026-08-25 已冻结 schema/enum/label/derivation v1，并对当前 57-task batch 与 reference 七 PRN 执行只读 dry-run validator；随后已将 QA 通过的 64 个 run 转换到新的版本化 event/path audit partition，完成 modeling-context alignment overlay，并完成 Stage4 confirmed path 的 bounded channel-parameter derivation 与独立 QA。全过程未运行 SAGE、未读取 raw IQ、未修改 pipeline、metadata、inventory 或任何已有 Stage 结果；statistical modeling 仍未开始。
 
 ## 2. 当前输出结构与设计约束
 
@@ -473,7 +473,7 @@ Stage0 window 已有 `recording_time_s` 与 `tow_s`；Stage3/Stage4 只有 `reco
 - CSV 便于人工核查 reference 基线和小批量结果，但不适合作为唯一主库。
 - JSON 适合记录嵌套输入路径、文件指纹、参数快照和 schema version。
 
-建议未来创建以下目录；当前设计阶段不创建这些数据文件：
+正式数据库 data directories 按以下结构规划；当前已在独立版本化 partition 中创建 CSV audit/fact tables、modeling-context alignment overlay 和 Stage4 path-parameter derivation tables；Parquet 主库及 statistical-model tables 仍未创建：
 
 ```text
 dataset/
@@ -693,7 +693,7 @@ scripts/event_database/
     export_event_views.py
 ```
 
-这些是建议名称，当前尚未创建。实现时必须遵守：
+其中 `scripts/event_database/validate_sage_database_dry_run.py` 已作为只读门禁 validator 实现；其余转换器仍为后续建议。实现时必须遵守：
 
 - 不修改 `run_nav_sage_pipeline.m` 以适配数据库；转换器读取现有输出。
 - 不向已有 `nav_sage_v2/Gxx` 或 `G06_nav_sage_v1` 目录写入任何数据库辅助文件。
@@ -704,17 +704,41 @@ scripts/event_database/
 
 ## 16. 推荐实施顺序
 
-1. 冻结 schema v1、枚举和 label rule v1。
-2. 编写只读 validator，先验证七 PRN，不生成数据库。
-3. 编写 reference-scene ingestion dry-run，只输出临时 QA/预览。
-4. 对照本设计中的七 PRN 回归矩阵和 8 event/11 path 基线。
-5. 生成正式 reference partition，并保留 ingestion manifest。
-6. 设计 batch SAGE dry-run manifest，与数据库 run schema 使用同一逻辑运行键。
-7. 选少量 standard scene 做端到端小批量测试。
-8. 完成时间对齐与 elevation/CN0/environment join QA 后，再扩大到全量运行。
+1. **Completed (2026-08-25)：** 冻结 schema v1、枚举、label rule v1 和 derivation manifest v1。
+2. **Completed (2026-08-25)：** 只读 validator 已验证当前 57-task batch，不生成数据库。
+3. **Completed (2026-08-25)：** reference-scene dry-run 已完成，只输出 validator QA/预览证据。
+4. **Completed (2026-08-25)：** 七 PRN 回归矩阵复现为 8 confirmed events / 11 confirmed multipath paths。
+5. **Completed with QA (2026-08-25)：** 生成版本化 event/path audit partition 和 ingestion manifest；G06 legacy 保留审计但排除建模输入。
+6. **Completed with QA (2026-08-25)：** 使用固定 18 秒 GPS–UTC 偏移、RINEX/NMEA 日历锚点和同 PRN nearest-GSV 规则完成 13/13 scene 的时间对齐；导入既有 13/13 人工 scene context。
+7. 设计 batch SAGE dry-run manifest，与数据库 run schema 使用同一逻辑运行键。
+8. 选少量 standard scene 做端到端小批量测试。
+9. **Completed with QA (2026-08-25)：** 在显式授权后完成 Stage4 confirmed path 的 bounded channel-parameter derivation；统计模型仍需单独门禁。
 
 ## Current Status
 
-reference scene 七 PRN Stage0–Stage4 验证已经完成并封存。当前处于 multipath event database 的 schema 设计阶段，尚未创建数据库、转换脚本或 batch runner，也未对任何现有结果执行迁移。
+reference scene 七 PRN Stage0–Stage4 验证已经完成并封存。当前 schema/enum/label/derivation v1 已冻结，且已创建只读 validator、dry-run 证据、版本化 event/path audit partition 和 modeling-context alignment overlay；64 个 run、308 个 Stage4 event、412 条 Stage4 path 已完成独立 QA。当前 alignment 已验证 13/13 scene、284/308 event geometry rows，环境建模入口保留 100 条 confirmed paths，仰角建模入口保留 84 条 confirmed paths；G06 和无法可靠对齐的记录保留审计但不进入相应建模入口。
 
-下一项推荐任务是：依据本文冻结 schema v1 和标签规则，先设计一个**只读的 reference-scene ingestion validator/dry-run**。在 validator 能完整复现七 PRN 的运行统计、8 个 confirmed event 和 11 条 confirmed path 之前，不应直接开始多 scene SAGE 或正式数据库写入。
+channel-parameter derivation v1 已完成独立 QA；下一项门禁任务是显式授权后的统计建模。当前未对任何现有 SAGE 结果执行迁移。
+
+## 17. 2026-08-25 modeling-context alignment
+
+新增版本化 overlay：`dataset/multipath_event_database/v1/partitions/alignment_id=alignment_20260825_tow_geometry_scene_v1/`。
+
+- 时间规则：RINEX 首条导航记录日期与 NMEA active RMC 日期一致；GPS week 由该 UTC 锚点确定；GPS–UTC 固定使用冻结 pipeline 的 18 s；事件只使用 Stage0 `tow_s` 转换 UTC。
+- 几何规则：同 scene、同 PRN、nearest GSV，最大时间差 5 s；不插值、不使用 scene/PRN 均值替代 event geometry。
+- 结果：64 runs、13/13 time alignment、308 event contexts、284 geometry-valid event contexts、100 environment-ready confirmed paths、84 elevation-ready confirmed paths。
+- G06 legacy `run_context.json` 缺失：2 个事件和 4 条 confirmed paths 保留审计，排除建模；另外 10 个 PRN-missing event rows 和 12 个超出 5 s 的 event rows 保留并排除 elevation-conditioned modeling。
+- 独立 QA：`dataset_generation_logs/multipath_event_modeling_alignment_qa_20260825/qa_report.md`，结果 `PASS`。
+- 本次未读取 raw IQ、未启动 MATLAB/SAGE/batch、未修改原始 SAGE artifact、production manifest、request、inventory 或 pipeline；channel-parameter derivation 已完成，statistical model 仍未开始。
+
+## 18. 2026-08-25 Stage4 path-parameter derivation
+
+新增版本化参数分区：`dataset/multipath_event_database/v1/partitions/parameter_set_id=parameters_20260825_stage4_path_v1/`。
+
+- 输入仅为 QA 通过的 alignment overlay 中的 `confirmed_paths_environment_ready.csv` 和 `confirmed_paths_elevation_ready.csv`；每一行均保持 `estimate_stage=stage4_joint`、`is_multipath=1`、`label_value=confirmed_multipath`。
+- 派生规则：`excess_delay_s = excess_delay_samples / 10230000`；`excess_path_length_m = excess_delay_s × 299792458`；有符号 `relative_doppler_hz` 取 Stage4 `doppler_offset_hz`；relative power 保留 Stage4 `mean_relative_power_db` 来源。
+- 结果：100 条 environment-ready confirmed paths、94 个 confirmed events、84 条 elevation-ready paths；生成逐路径参数、逐事件描述性参数，以及 4 个环境组和 3 个仰角组的 median/min/max 摘要。
+- 16 条缺少可靠事件级仰角的 path 仍保留在环境参数表，但明确排除 elevation summary；未用 scene mean、插值或文件名推断仰角。
+- RMS delay spread、Doppler spread、Ricean K-factor、path lifetime 和 fitted distribution family 在本版本保持 `NOT_DERIVED`，没有把不完整字段提升为统计模型。
+- 独立 QA：`dataset_generation_logs/multipath_event_channel_parameter_qa_20260825/qa_report.md`，结果 `PASS`。
+- 本次未读取 raw IQ、未启动 MATLAB/SAGE/batch，未修改原始 SAGE artifact、alignment/source partition、production manifest、request、inventory 或 pipeline；statistical modeling 仍未开始。

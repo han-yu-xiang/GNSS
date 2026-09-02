@@ -1,0 +1,13 @@
+# Retained-path delay-dispersion summary
+
+Each row represents one unique run/window path set. A normalized direct-path reference is included in the moment calculation.
+
+scope,cell_id,group_count,retained_path_observation_count,median_rms_delay_dispersion_samples,q25_rms_delay_dispersion_samples,q75_rms_delay_dispersion_samples
+elevation_ready,Mountain/Valley/HIGH,14,32,0.8104088463124834,0.7103371117921634,0.9081970910868056
+elevation_ready,Mountain/Valley/LOW,15,22,0.6260291821512896,0.5068448532710441,0.8279495907870233
+elevation_ready,Mountain/Valley/MID,52,117,0.7488398938105887,0.6604355865783611,0.8411527866086266
+elevation_ready,Urban/HIGH,63,129,0.7729934800205235,0.6022312766685598,0.8874028745602038
+elevation_ready,Urban/LOW,18,18,0.6452998860541277,0.5968055852475568,0.7786289000683102
+elevation_ready,Urban/MID,117,169,0.6818997659307239,0.5666357307238403,0.7967119394902225
+environment_only,Mountain/Valley,82,172,0.7434962336131158,0.6333427391662211,0.8509568427820069
+environment_only,Urban,208,346,0.7109489344805211,0.5866229611865378,0.8381277689142405

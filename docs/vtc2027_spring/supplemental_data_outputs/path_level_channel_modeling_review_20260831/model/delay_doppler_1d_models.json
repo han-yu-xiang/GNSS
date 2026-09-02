@@ -1,0 +1,678 @@
+{
+  "schema_version": "path_level_delay_doppler_1d_v1",
+  "source_population": "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\supplemental_data_outputs\\urban_mountain_stage3_elevation_model_review_v3_conditional_gmm\\population\\gmm_feature_population.csv",
+  "source_rows": 487,
+  "delay_model": "weighted lognormal in excess-delay samples",
+  "doppler_model": "selected one- or two-component weighted Gaussian mixture in log1p absolute-relative-Doppler coordinates",
+  "cells": {
+    "Urban/LOW": {
+      "cell_id": "Urban/LOW",
+      "row_count": 18,
+      "track_count": 8,
+      "scene_count": 3,
+      "delay_model": {
+        "family": "lognormal",
+        "mean_log": 0.3752918532622605,
+        "std_log": 0.1889234411240467,
+        "weighted_log_likelihood": -1.0225357364978644,
+        "parameter_count": 2,
+        "status": "fit_ok",
+        "validation_nlpd": 0.2702612106861437,
+        "validation_scenes": [
+          "F1023_V70_D0120_P1",
+          "F1023_V70_D0120_P8"
+        ],
+        "skipped_validation_scenes": [
+          "F1023_V70_D0120_P5:insufficient_training_mass"
+        ],
+        "bic": 7.430163502127449
+      },
+      "doppler_candidates": [
+        {
+          "family": "log1p_gaussian_mixture",
+          "n_components": 1,
+          "means_log1p": [
+            3.782893284575489
+          ],
+          "stds_log1p": [
+            0.15971254679284114
+          ],
+          "proportions": [
+            1.0
+          ],
+          "component_effective_mass": [
+            7.999999999996
+          ],
+          "weighted_log_likelihood": -26.939617245563586,
+          "parameter_count": 2,
+          "status": "fit_ok",
+          "iterations": 3,
+          "validation_nlpd": 3.2258333804382593,
+          "validation_scenes": [
+            "F1023_V70_D0120_P1",
+            "F1023_V70_D0120_P8"
+          ],
+          "skipped_validation_scenes": [
+            "F1023_V70_D0120_P5:insufficient_training_mass"
+          ],
+          "bic": 59.26432652025889
+        },
+        {
+          "family": "log1p_gaussian_mixture",
+          "n_components": 2,
+          "means_log1p": [
+            3.6417624505313477,
+            3.9267931099468356
+          ],
+          "stds_log1p": [
+            0.0965935455443689,
+            0.03142337797214398
+          ],
+          "proportions": [
+            0.5048573569820245,
+            0.49514264301797556
+          ],
+          "component_effective_mass": [
+            4.038851273422133,
+            3.961148726573867
+          ],
+          "weighted_log_likelihood": -23.80819850278478,
+          "parameter_count": 5,
+          "status": "rejected",
+          "iterations": 12,
+          "rejection_reason": "component_effective_mass_below_5"
+        }
+      ],
+      "selected_doppler_model": {
+        "family": "log1p_gaussian_mixture",
+        "n_components": 1,
+        "means_log1p": [
+          3.782893284575489
+        ],
+        "stds_log1p": [
+          0.15971254679284114
+        ],
+        "proportions": [
+          1.0
+        ],
+        "component_effective_mass": [
+          7.999999999996
+        ],
+        "weighted_log_likelihood": -26.939617245563586,
+        "parameter_count": 2,
+        "status": "fit_ok",
+        "iterations": 3,
+        "validation_nlpd": 3.2258333804382593,
+        "validation_scenes": [
+          "F1023_V70_D0120_P1",
+          "F1023_V70_D0120_P8"
+        ],
+        "skipped_validation_scenes": [
+          "F1023_V70_D0120_P5:insufficient_training_mass"
+        ],
+        "bic": 59.26432652025889
+      }
+    },
+    "Urban/MID": {
+      "cell_id": "Urban/MID",
+      "row_count": 169,
+      "track_count": 74,
+      "scene_count": 5,
+      "delay_model": {
+        "family": "lognormal",
+        "mean_log": 0.5864273291210377,
+        "std_log": 0.3821731374352792,
+        "weighted_log_likelihood": -77.21784031841833,
+        "parameter_count": 2,
+        "status": "fit_ok",
+        "validation_nlpd": 1.0093027353886697,
+        "validation_scenes": [
+          "F1023_V70_D0120_P1",
+          "F1023_V70_D0120_P7",
+          "F1023_V70_D0120_P8",
+          "F1023_V70_D0122_P1",
+          "F1023_v50_D0127_P1"
+        ],
+        "skipped_validation_scenes": [],
+        "bic": 164.10259138109896
+      },
+      "doppler_candidates": [
+        {
+          "family": "log1p_gaussian_mixture",
+          "n_components": 1,
+          "means_log1p": [
+            3.926854775354877
+          ],
+          "stds_log1p": [
+            0.489806487050695
+          ],
+          "proportions": [
+            1.0
+          ],
+          "component_effective_mass": [
+            73.999999999978
+          ],
+          "weighted_log_likelihood": -342.77158295354866,
+          "parameter_count": 2,
+          "status": "fit_ok",
+          "iterations": 3,
+          "validation_nlpd": 5.006677889859529,
+          "validation_scenes": [
+            "F1023_V70_D0120_P1",
+            "F1023_V70_D0120_P7",
+            "F1023_V70_D0120_P8",
+            "F1023_V70_D0122_P1",
+            "F1023_v50_D0127_P1"
+          ],
+          "skipped_validation_scenes": [],
+          "bic": 695.2100766513596
+        },
+        {
+          "family": "log1p_gaussian_mixture",
+          "n_components": 2,
+          "means_log1p": [
+            1.7555585793115724,
+            3.987284329328234
+          ],
+          "stds_log1p": [
+            0.4649214988530224,
+            0.32512985908280473
+          ],
+          "proportions": [
+            0.027077499989819807,
+            0.9729225000101803
+          ],
+          "component_effective_mass": [
+            2.0037344230392398,
+            71.99626557693882
+          ],
+          "weighted_log_likelihood": -322.34495284775164,
+          "parameter_count": 5,
+          "status": "rejected",
+          "iterations": 26,
+          "rejection_reason": "component_effective_mass_below_5"
+        }
+      ],
+      "selected_doppler_model": {
+        "family": "log1p_gaussian_mixture",
+        "n_components": 1,
+        "means_log1p": [
+          3.926854775354877
+        ],
+        "stds_log1p": [
+          0.489806487050695
+        ],
+        "proportions": [
+          1.0
+        ],
+        "component_effective_mass": [
+          73.999999999978
+        ],
+        "weighted_log_likelihood": -342.77158295354866,
+        "parameter_count": 2,
+        "status": "fit_ok",
+        "iterations": 3,
+        "validation_nlpd": 5.006677889859529,
+        "validation_scenes": [
+          "F1023_V70_D0120_P1",
+          "F1023_V70_D0120_P7",
+          "F1023_V70_D0120_P8",
+          "F1023_V70_D0122_P1",
+          "F1023_v50_D0127_P1"
+        ],
+        "skipped_validation_scenes": [],
+        "bic": 695.2100766513596
+      }
+    },
+    "Urban/HIGH": {
+      "cell_id": "Urban/HIGH",
+      "row_count": 129,
+      "track_count": 64,
+      "scene_count": 5,
+      "delay_model": {
+        "family": "lognormal",
+        "mean_log": 0.6573810312571235,
+        "std_log": 0.3987141292949886,
+        "weighted_log_likelihood": -74.03577456965544,
+        "parameter_count": 2,
+        "status": "fit_ok",
+        "validation_nlpd": 1.2048610623913618,
+        "validation_scenes": [
+          "F1023_V70_D0120_P1",
+          "F1023_V70_D0120_P5",
+          "F1023_V70_D0120_P7",
+          "F1023_V70_D0120_P8",
+          "F1023_V70_D0122_P1"
+        ],
+        "skipped_validation_scenes": [],
+        "bic": 157.3044775245238
+      },
+      "doppler_candidates": [
+        {
+          "family": "log1p_gaussian_mixture",
+          "n_components": 1,
+          "means_log1p": [
+            3.8667266745955096
+          ],
+          "stds_log1p": [
+            0.561125632640919
+          ],
+          "proportions": [
+            1.0
+          ],
+          "component_effective_mass": [
+            63.999999999973
+          ],
+          "weighted_log_likelihood": -301.3027042155826,
+          "parameter_count": 2,
+          "status": "fit_ok",
+          "iterations": 3,
+          "validation_nlpd": 4.938228183647654,
+          "validation_scenes": [
+            "F1023_V70_D0120_P1",
+            "F1023_V70_D0120_P5",
+            "F1023_V70_D0120_P7",
+            "F1023_V70_D0120_P8",
+            "F1023_V70_D0122_P1"
+          ],
+          "skipped_validation_scenes": [],
+          "bic": 611.838336816378
+        },
+        {
+          "family": "log1p_gaussian_mixture",
+          "n_components": 2,
+          "means_log1p": [
+            3.7984440444396697,
+            3.9186660498142234
+          ],
+          "stds_log1p": [
+            0.84298983157647,
+            0.08703013193815086
+          ],
+          "proportions": [
+            0.43202885409284014,
+            0.5679711459071598
+          ],
+          "component_effective_mass": [
+            27.65039463646704,
+            36.34960536350597
+          ],
+          "weighted_log_likelihood": -272.92547950119945,
+          "parameter_count": 5,
+          "status": "fit_ok",
+          "iterations": 19,
+          "validation_nlpd": 4.632548279176685,
+          "validation_scenes": [
+            "F1023_V70_D0120_P1",
+            "F1023_V70_D0120_P5",
+            "F1023_V70_D0120_P7",
+            "F1023_V70_D0120_P8",
+            "F1023_V70_D0122_P1"
+          ],
+          "skipped_validation_scenes": [],
+          "bic": 568.9332799654311
+        }
+      ],
+      "selected_doppler_model": {
+        "family": "log1p_gaussian_mixture",
+        "n_components": 2,
+        "means_log1p": [
+          3.7984440444396697,
+          3.9186660498142234
+        ],
+        "stds_log1p": [
+          0.84298983157647,
+          0.08703013193815086
+        ],
+        "proportions": [
+          0.43202885409284014,
+          0.5679711459071598
+        ],
+        "component_effective_mass": [
+          27.65039463646704,
+          36.34960536350597
+        ],
+        "weighted_log_likelihood": -272.92547950119945,
+        "parameter_count": 5,
+        "status": "fit_ok",
+        "iterations": 19,
+        "validation_nlpd": 4.632548279176685,
+        "validation_scenes": [
+          "F1023_V70_D0120_P1",
+          "F1023_V70_D0120_P5",
+          "F1023_V70_D0120_P7",
+          "F1023_V70_D0120_P8",
+          "F1023_V70_D0122_P1"
+        ],
+        "skipped_validation_scenes": [],
+        "bic": 568.9332799654311
+      }
+    },
+    "Mountain/Valley/LOW": {
+      "cell_id": "Mountain/Valley/LOW",
+      "row_count": 22,
+      "track_count": 12,
+      "scene_count": 3,
+      "delay_model": {
+        "family": "lognormal",
+        "mean_log": 0.4722174236908452,
+        "std_log": 0.3198387265289153,
+        "weighted_log_likelihood": -9.014610804832325,
+        "parameter_count": 2,
+        "status": "fit_ok",
+        "validation_nlpd": 0.7815468758794353,
+        "validation_scenes": [
+          "F1023_V70_D0117_P2",
+          "F1023_V70_D0117_P4",
+          "F1023_v90_D0117_P7"
+        ],
+        "skipped_validation_scenes": [],
+        "bic": 23.728321136415776
+      },
+      "doppler_candidates": [
+        {
+          "family": "log1p_gaussian_mixture",
+          "n_components": 1,
+          "means_log1p": [
+            3.9395379288564167
+          ],
+          "stds_log1p": [
+            0.38200829956362425
+          ],
+          "proportions": [
+            1.0
+          ],
+          "component_effective_mass": [
+            11.999999999996
+          ],
+          "weighted_log_likelihood": -52.75396221665267,
+          "parameter_count": 2,
+          "status": "fit_ok",
+          "iterations": 3,
+          "validation_nlpd": 4.7792221302252385,
+          "validation_scenes": [
+            "F1023_V70_D0117_P2",
+            "F1023_V70_D0117_P4",
+            "F1023_v90_D0117_P7"
+          ],
+          "skipped_validation_scenes": [],
+          "bic": 111.20702396005646
+        },
+        {
+          "family": "log1p_gaussian_mixture",
+          "n_components": 2,
+          "means_log1p": [
+            3.9604852586903094,
+            3.9259840884934043
+          ],
+          "stds_log1p": [
+            0.6033554226658523,
+            0.0658608803032885
+          ],
+          "proportions": [
+            0.3928516130222991,
+            0.607148386977701
+          ],
+          "component_effective_mass": [
+            4.714351856821284,
+            7.285648143174716
+          ],
+          "weighted_log_likelihood": -47.181597180140045,
+          "parameter_count": 5,
+          "status": "rejected",
+          "iterations": 18,
+          "rejection_reason": "component_effective_mass_below_5"
+        }
+      ],
+      "selected_doppler_model": {
+        "family": "log1p_gaussian_mixture",
+        "n_components": 1,
+        "means_log1p": [
+          3.9395379288564167
+        ],
+        "stds_log1p": [
+          0.38200829956362425
+        ],
+        "proportions": [
+          1.0
+        ],
+        "component_effective_mass": [
+          11.999999999996
+        ],
+        "weighted_log_likelihood": -52.75396221665267,
+        "parameter_count": 2,
+        "status": "fit_ok",
+        "iterations": 3,
+        "validation_nlpd": 4.7792221302252385,
+        "validation_scenes": [
+          "F1023_V70_D0117_P2",
+          "F1023_V70_D0117_P4",
+          "F1023_v90_D0117_P7"
+        ],
+        "skipped_validation_scenes": [],
+        "bic": 111.20702396005646
+      }
+    },
+    "Mountain/Valley/MID": {
+      "cell_id": "Mountain/Valley/MID",
+      "row_count": 117,
+      "track_count": 53,
+      "scene_count": 3,
+      "delay_model": {
+        "family": "lognormal",
+        "mean_log": 0.6760768502253716,
+        "std_log": 0.35162900991818336,
+        "weighted_log_likelihood": -55.64134908319045,
+        "parameter_count": 2,
+        "status": "fit_ok",
+        "validation_nlpd": 1.0341331188596439,
+        "validation_scenes": [
+          "F1023_V70_D0117_P2",
+          "F1023_V70_D0117_P4",
+          "F1023_v90_D0117_P7"
+        ],
+        "skipped_validation_scenes": [],
+        "bic": 120.21166844091798
+      },
+      "doppler_candidates": [
+        {
+          "family": "log1p_gaussian_mixture",
+          "n_components": 1,
+          "means_log1p": [
+            4.0573646433218284
+          ],
+          "stds_log1p": [
+            0.38158142894798325
+          ],
+          "proportions": [
+            1.0
+          ],
+          "component_effective_mass": [
+            52.999999999975
+          ],
+          "weighted_log_likelihood": -239.18222499162246,
+          "parameter_count": 2,
+          "status": "fit_ok",
+          "iterations": 3,
+          "validation_nlpd": 4.498799936384347,
+          "validation_scenes": [
+            "F1023_V70_D0117_P2",
+            "F1023_V70_D0117_P4",
+            "F1023_v90_D0117_P7"
+          ],
+          "skipped_validation_scenes": [],
+          "bic": 487.29342025778203
+        },
+        {
+          "family": "log1p_gaussian_mixture",
+          "n_components": 2,
+          "means_log1p": [
+            4.2656902429000745,
+            3.9284239299441897
+          ],
+          "stds_log1p": [
+            0.5536150182974825,
+            0.050388476977177764
+          ],
+          "proportions": [
+            0.3823112727967685,
+            0.6176887272032316
+          ],
+          "component_effective_mass": [
+            20.262642820190194,
+            32.737357179784816
+          ],
+          "weighted_log_likelihood": -205.10184749940242,
+          "parameter_count": 5,
+          "status": "fit_ok",
+          "iterations": 24,
+          "validation_nlpd": 3.8858525497673604,
+          "validation_scenes": [
+            "F1023_V70_D0117_P2",
+            "F1023_V70_D0117_P4",
+            "F1023_v90_D0117_P7"
+          ],
+          "skipped_validation_scenes": [],
+          "bic": 432.5261206851476
+        }
+      ],
+      "selected_doppler_model": {
+        "family": "log1p_gaussian_mixture",
+        "n_components": 2,
+        "means_log1p": [
+          4.2656902429000745,
+          3.9284239299441897
+        ],
+        "stds_log1p": [
+          0.5536150182974825,
+          0.050388476977177764
+        ],
+        "proportions": [
+          0.3823112727967685,
+          0.6176887272032316
+        ],
+        "component_effective_mass": [
+          20.262642820190194,
+          32.737357179784816
+        ],
+        "weighted_log_likelihood": -205.10184749940242,
+        "parameter_count": 5,
+        "status": "fit_ok",
+        "iterations": 24,
+        "validation_nlpd": 3.8858525497673604,
+        "validation_scenes": [
+          "F1023_V70_D0117_P2",
+          "F1023_V70_D0117_P4",
+          "F1023_v90_D0117_P7"
+        ],
+        "skipped_validation_scenes": [],
+        "bic": 432.5261206851476
+      }
+    },
+    "Mountain/Valley/HIGH": {
+      "cell_id": "Mountain/Valley/HIGH",
+      "row_count": 32,
+      "track_count": 15,
+      "scene_count": 2,
+      "delay_model": {
+        "family": "lognormal",
+        "mean_log": 0.7245152879471304,
+        "std_log": 0.3190025987793878,
+        "weighted_log_likelihood": -15.013466873474632,
+        "parameter_count": 2,
+        "status": "fit_ok",
+        "validation_nlpd": 1.5055889675109244,
+        "validation_scenes": [
+          "F1023_V70_D0117_P4"
+        ],
+        "skipped_validation_scenes": [
+          "F1023_v90_D0117_P7:insufficient_training_mass"
+        ],
+        "bic": 36.3045999813382
+      },
+      "doppler_candidates": [
+        {
+          "family": "log1p_gaussian_mixture",
+          "n_components": 1,
+          "means_log1p": [
+            3.9110648778216
+          ],
+          "stds_log1p": [
+            0.4772993152779911
+          ],
+          "proportions": [
+            1.0
+          ],
+          "component_effective_mass": [
+            14.999999999997
+          ],
+          "weighted_log_likelihood": -68.85587882220565,
+          "parameter_count": 2,
+          "status": "fit_ok",
+          "iterations": 3,
+          "validation_nlpd": 4.7919587034918,
+          "validation_scenes": [
+            "F1023_V70_D0117_P4"
+          ],
+          "skipped_validation_scenes": [
+            "F1023_v90_D0117_P7:insufficient_training_mass"
+          ],
+          "bic": 143.98942387880024
+        },
+        {
+          "family": "log1p_gaussian_mixture",
+          "n_components": 2,
+          "means_log1p": [
+            3.8672407027227447,
+            3.924383378148237
+          ],
+          "stds_log1p": [
+            0.9809778066990655,
+            0.061907871802498377
+          ],
+          "proportions": [
+            0.23307449690559542,
+            0.7669255030944045
+          ],
+          "component_effective_mass": [
+            3.4960883334944906,
+            11.503911666502512
+          ],
+          "weighted_log_likelihood": -54.13726901326346,
+          "parameter_count": 5,
+          "status": "rejected",
+          "iterations": 12,
+          "rejection_reason": "component_effective_mass_below_5"
+        }
+      ],
+      "selected_doppler_model": {
+        "family": "log1p_gaussian_mixture",
+        "n_components": 1,
+        "means_log1p": [
+          3.9110648778216
+        ],
+        "stds_log1p": [
+          0.4772993152779911
+        ],
+        "proportions": [
+          1.0
+        ],
+        "component_effective_mass": [
+          14.999999999997
+        ],
+        "weighted_log_likelihood": -68.85587882220565,
+        "parameter_count": 2,
+        "status": "fit_ok",
+        "iterations": 3,
+        "validation_nlpd": 4.7919587034918,
+        "validation_scenes": [
+          "F1023_V70_D0117_P4"
+        ],
+        "skipped_validation_scenes": [
+          "F1023_v90_D0117_P7:insufficient_training_mass"
+        ],
+        "bic": 143.98942387880024
+      }
+    }
+  }
+}

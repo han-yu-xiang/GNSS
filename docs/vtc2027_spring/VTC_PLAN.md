@@ -117,3 +117,11 @@ Dates are planning targets, not evidence that the corresponding work is complete
 - `manuscript/latex/main.tex`, `references.bib`, `submission/SUBMISSION_REQUIREMENTS.md`, and `submission/PAGE_BUDGET.md` are implemented.
 - The local machine has no TeX compiler and no `IEEEtran.cls`. Two read-only attempts to retrieve the official IEEE package returned zero-byte responses; the original template has not been fabricated or silently substituted.
 - Figure 1 has an editable TikZ source and an SVG draft. A rendered PDF remains pending an approved local LaTeX/graphics toolchain.
+
+## 12. Author-approved conditional-model revision route (2026-08-31)
+
+The author approved a revised VTC route limited to Urban and Mountain/Valley measurements and three elevation ranges. The revised model uses 518 persistent path observations, of which 487 have valid elevation assignments. These observations are not called Stage4-confirmed paths in the paper.
+
+The admitted paper-facing statistical result is a track-weighted three-dimensional GMM for excess delay, absolute relative Doppler and relative power, evaluated by leave-one-scene-out validation. The manuscript directly compares weighted measured histograms with fitted marginal PDFs and does not expose internal pooling hyperparameters or support-status labels. Those implementation and QA details remain unchanged in the model evidence. The model is conditional on an observation having passed temporal-consistency retention; it is not a multipath-occurrence model or a complete stochastic channel model.
+
+The current bilingual manuscript integration is isolated under `supplemental_data_outputs/urban_mountain_stage3_elevation_model_review_v3_conditional_gmm/manuscript/`. The historical canonical manuscript under `manuscript/latex/` remains unchanged until a separate author replacement decision.

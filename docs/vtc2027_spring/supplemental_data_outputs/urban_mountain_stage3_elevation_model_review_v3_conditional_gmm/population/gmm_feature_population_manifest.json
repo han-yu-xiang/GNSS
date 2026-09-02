@@ -1,0 +1,33 @@
+{
+  "population_id": "vtc_stage3_urban_mountain_gmm_feature_population_v1",
+  "created_utc": "2026-08-31T07:38:14.480011+00:00",
+  "source_path": "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\supplemental_data_outputs\\urban_mountain_stage3_elevation_model_review_v2_doppler_audit\\population\\population_primary_admitted.csv",
+  "source_sha256": "a6fb32831559b6be4a256f8a544a404f2bb12818c798a80226116145bae79a86",
+  "transform_decision_sha256": "61c2d805944dd6757f5fe6b7636ca3a7ecbe8ce15dd3759a385fde4ef21d0ab9",
+  "counts": {
+    "primary_rows": 518,
+    "cell_ready_rows": 487,
+    "missing_elevation_rows": 31,
+    "track_count": 236,
+    "cell_count": 6
+  },
+  "doppler_transform": "absolute_doppler_hz=abs(doppler_offset_hz); log1p_absolute_doppler=log1p(absolute_doppler_hz)",
+  "delay_transform": "log_excess_delay=log(excess_delay_samples)",
+  "missing_elevation_policy": "retain_for_environment_parent_only; exclude_from_LOW_MID_HIGH_cells; no_imputation",
+  "execution_boundary": {
+    "raw_iq_read": false,
+    "matlab_started": false,
+    "sage_started": false,
+    "batch_started": false,
+    "stage4_source_used": false,
+    "formal_manuscript_modified": false,
+    "v1_modified": false,
+    "v2_modified": false,
+    "evidence_matrix_modified": false,
+    "handoff_modified": false
+  },
+  "outputs": {
+    "gmm_feature_population.csv": "123fa5f3c86cf4f5008a3f636b00df917923c11bbdd3eac009a0e9e10a506291",
+    "gmm_cell_support.csv": "e329f7f5224440ca91a890b7cac59eb8c7668c6e789d9a192139fdf12a069ca5"
+  }
+}

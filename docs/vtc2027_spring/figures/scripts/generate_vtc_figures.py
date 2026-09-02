@@ -24,7 +24,7 @@ from matplotlib.lines import Line2D
 from matplotlib.patches import FancyBboxPatch, FancyArrowPatch
 
 
-SCRIPT_VERSION = "vtc-figure-assets-1.3-g15-scientific-label-cleanup"
+SCRIPT_VERSION = "vtc-figure-assets-1.4-paper-term-cleanup"
 PROJECT_ROOT = Path(__file__).resolve().parents[4]
 EVIDENCE_ROOT = PROJECT_ROOT / "docs" / "vtc2027_spring" / "evidence"
 FIGURE_ROOT = PROJECT_ROOT / "docs" / "vtc2027_spring" / "figures"
@@ -86,7 +86,7 @@ def generate_figure1() -> list[str]:
         ("SAGE", "delay--Doppler estimation"),
         ("Temporal", "consistency validation"),
         ("Multi-snapshot", "joint confirmation"),
-        ("Path parameters", "delay / Doppler / power"),
+        ("Path parameters", "excess delay / relative\nDoppler / relative power"),
     ]
     fig, ax = plt.subplots(figsize=(14.6, 2.05))
     ax.set_xlim(0, len(labels) * 1.78)
@@ -189,7 +189,7 @@ def generate_figure2(path_rows: list[dict[str, str]], representative_rows: list[
             fontsize=7.2,
         )
     ax.set_xlabel("Excess delay (samples)")
-    ax.set_ylabel("Mean relative power (dB)")
+    ax.set_ylabel("Relative power (dB)")
     ax.set_title("Path parameters", fontsize=9)
     ax.set_xlim(-0.12, max(x) + 0.45)
     ax.set_ylim(min(y) - 2.3, 1.1)
@@ -201,9 +201,9 @@ def generate_figure2(path_rows: list[dict[str, str]], representative_rows: list[
     lines = [
         f"PRN: {artifact.parent.name}",
         f"Selected L: {primary['selected_L']}",
-        f"Secondary delay: {primary['delay_samples']} samples",
-        f"Relative Doppler: {float(primary['doppler_hz']):.4f} Hz",
-        f"Relative power: {float(primary['relative_power_db']):.4f} dB",
+        f"Excess delay: {float(multipath[0]['excess_delay_samples']):.1f} samples",
+        f"Relative Doppler: {float(primary['doppler_hz']):.2f} Hz",
+        f"Relative power: {float(primary['relative_power_db']):.2f} dB",
         "Jointly confirmed path",
     ]
     info.text(0.0, 0.82, "\n".join(lines), fontsize=7.7, va="top", linespacing=1.40)
@@ -224,13 +224,13 @@ def generate_figure2(path_rows: list[dict[str, str]], representative_rows: list[
 
 def generate_figure3(hierarchy_rows: list[dict[str, str]]) -> list[str]:
     wanted = [
-        ("G05", "Special Reflective", "F1023_V70_D0120_P9__G05__ch10__nav_sage_v2"),
+        ("G05", "Reflective-Feature", "F1023_V70_D0120_P9__G05__ch10__nav_sage_v2"),
         ("G25", "Highway/Open", "F1023_V80_D0117_P8__G25__ch10__nav_sage_v2"),
         ("G11", "Mountain/Valley", "F1023_v90_D0117_P7__G11__ch6__nav_sage_v2"),
     ]
     by_id = {row["task_id"]: row for row in hierarchy_rows}
     fig, axes = plt.subplots(1, 3, figsize=(8.2, 2.65), sharey=True)
-    stage_names = ["Valid\nobs.", "Candidate\nwins.", "Temporal\nsupport", "Joint\nsupport", "Confirmed\npaths"]
+    stage_names = ["Valid 40-ms\nwindows", "Screened\ncandidates", "Temporally\nconsistent", "Jointly\nevaluated", "Confirmed\npaths"]
     keys = ["Stage0_count", "Stage1_selected", "Stage3_reliable", "Stage4_joint_rows", "confirmed_events"]
     all_values = [int(by_id[task_id][key]) for _, _, task_id in wanted for key in keys]
     common_ylim = max(all_values) * 1.23
@@ -248,11 +248,9 @@ def generate_figure3(hierarchy_rows: list[dict[str, str]]) -> list[str]:
         ax.set_xlim(-0.5, len(values) - 0.5)
         ax.grid(axis="y", color="0.88", linewidth=0.55)
         style_axes(ax)
-    axes[0].set_ylabel("Unique analysis objects (count)")
+    axes[0].set_ylabel("Count")
     fig.suptitle("Hierarchical candidate reduction and path confirmation", fontsize=9.5, y=1.04)
-    stage2_text = "Local model-order evaluations (L=1--4; side annotation, not unique candidates): 452  |  448  |  448"
-    fig.text(0.5, 0.84, stage2_text, ha="center", fontsize=7.0, color="0.20")
-    fig.text(0.5, -0.01, "Local L=1--4 model-order evaluations are evidence annotations, not an additional unique-object stage.", ha="center", fontsize=7.2)
+    fig.text(0.5, -0.01, "Local model-order evaluations use L=1--4 for each screened window.", ha="center", fontsize=7.2)
     fig.subplots_adjust(left=0.075, right=0.99, top=0.72, bottom=0.31, wspace=0.18)
     return save_figure(fig, "figure3_hierarchical_confirmation")
 
@@ -303,7 +301,7 @@ def generate_figure4(path_rows: list[dict[str, str]]) -> tuple[list[str], dict[s
 
 
 def generate_figure4_environment(path_rows: list[dict[str, str]]) -> tuple[list[str], dict[str, object]]:
-    """Render a bounded environment-wise description of selected confirmed paths."""
+    """Render a descriptive environment-wise view of selected confirmed paths."""
     groups = ["Urban", "Mountain/Valley", "Highway/Open", "Special Reflective"]
     group_x = {name: index for index, name in enumerate(groups)}
     panels = [
@@ -341,14 +339,14 @@ def generate_figure4_environment(path_rows: list[dict[str, str]]) -> tuple[list[
                 f"Urban\n(n={group_counts['Urban']})",
                 f"Mountain/\nValley\n(n={group_counts['Mountain/Valley']})",
                 f"Highway/\nOpen\n(n={group_counts['Highway/Open']})",
-                f"Special\nReflective\n(n={group_counts['Special Reflective']})",
+                f"Reflective\nFeature\n(n={group_counts['Special Reflective']})",
             ],
             fontsize=6.2,
         )
         ax.set_ylabel(ylabel, fontsize=7.8)
         style_axes(ax)
         ax.set_xlim(-0.5, len(groups) - 0.5)
-    fig.suptitle("Environment-wise confirmed path characteristics", fontsize=9.4, y=1.02)
+    fig.suptitle("Path characteristics across measurement environments", fontsize=9.4, y=1.02)
     fig.subplots_adjust(left=0.075, right=0.985, top=0.82, bottom=0.28, wspace=0.35)
     audit = {
         "n_points": len(rows),

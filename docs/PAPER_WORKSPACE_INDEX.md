@@ -99,6 +99,7 @@ raw GNSS IQ
 | `docs/vtc2027_spring/manuscript/latex_cn_review/` | 中文 XeLaTeX 审阅版及其 PDF；直接引用正式图形和参考文献，不是投稿源 | Implemented / review-only PDF generated |
 | `docs/vtc2027_spring/figures/` | 正式论文 Figure 1--4 的唯一 PDF/PNG 输出及其生成 manifest；Figure 4 为 Tier A+B 四环境路径特征描述图 | Implemented / assets and hashes validated |
 | `docs/vtc2027_spring/manuscript/latex/figures/` | 保留的 Figure 1 可编辑 SVG/TikZ 源和 README；不被正文引用 | Source archive / not manuscript output |
+| `docs/vtc2027_spring/supplemental_data_outputs/urban_mountain_stage3_elevation_model_review_v3_conditional_gmm/` | Urban/Mountain 两环境、三仰角区间的部分池化三维 GMM，含独立 QA、实测--拟合 PDF 图及双语隔离审阅稿 | Author admitted / QA PASS_WITH_LIMITATIONS / isolated manuscript integrated |
 | `docs/vtc2027_spring/manuscript/latex/template_reference/` | 官方 IEEE 模板原件保留位置 | Pending manual retrieval |
 | `docs/vtc2027_spring/tables/`、`evidence/`、`submission/` | 表格、证据抽取和最终提交包工作目录 | Planned / final package not started |
 

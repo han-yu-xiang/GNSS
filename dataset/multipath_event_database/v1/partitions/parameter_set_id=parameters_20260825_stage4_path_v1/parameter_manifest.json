@@ -1,0 +1,94 @@
+{
+  "parameter_set_id": "parameters_20260825_stage4_path_v1",
+  "parameter_version": "stage4-confirmed-path-parameters-v1",
+  "created_utc": "2026-08-25T13:54:18.396Z",
+  "source_alignment_partition": "dataset/multipath_event_database/v1/partitions/alignment_id=alignment_20260825_tow_geometry_scene_v1",
+  "source_hashes": {
+    "alignment_manifest_sha256": "24eb24d54b96227cfcaf4fdfa541a38f00bf95d4f516c646cb8b9254c6ca50e0",
+    "environment_input_sha256": "7291322cd8f03caa136bcd4ed869c1f1a80b13c9c6c2fdb18e033f8e4e99075b",
+    "elevation_input_sha256": "d4dda0eef89f6e2ae4d8e4da14d8583ce8f74ca679d93273b92b10c67d5dc998",
+    "modeling_event_eligibility_sha256": "ec1ce1c27e707f98c4feb3b0f4be93e83cb49474fff9f58d47d7766c17afe6fb",
+    "source_ingestion_manifest_sha256": "2663fcd366ae55bfea91cafd459e7aad730eee56b8e5aa7900b8a285f6653fe5",
+    "pipeline_sha256": "bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c",
+    "wrapper_sha256": "dd8afb1b3317bf920fe34474e3ceedf06ac4580b2a13c21ea25f8365071143f3",
+    "executor_sha256": "bab7a0422975cb05bcda9a80a75c3577eb7f408a83f2720af2f1e13372b08f1b",
+    "production_manifest_sha256": "77c20c0ed6c84fa0348db429948a8bd4900b2e8d86a6d8843b159b9a7a35cf00",
+    "inventory_sha256": "af368feba90797584d7690d4927ed32de604651a5a62662f4adce348a89e4bb4"
+  },
+  "derivation_rules": {
+    "sample_rate_hz": 10230000.0,
+    "chip_rate_hz": 1023000.0,
+    "speed_of_light_mps": 299792458.0,
+    "delay_seconds": "excess_delay_samples / sample_rate_hz",
+    "relative_doppler_field": "doppler_offset_hz",
+    "relative_power_source_field": "mean_relative_power_db",
+    "group_statistics": "descriptive_median_min_max_no_fit",
+    "elevation_bands": {
+      "LOW": "[0,30)",
+      "MID": "[30,60)",
+      "HIGH": "[60,90]"
+    }
+  },
+  "derived_parameters": [
+    "excess_delay_s",
+    "excess_path_length_m",
+    "relative_doppler_hz",
+    "relative_power_db",
+    "confirmed_path_count",
+    "descriptive_group_medians_and_ranges"
+  ],
+  "not_derived_parameters": [
+    "rms_delay_spread",
+    "doppler_spread",
+    "ricean_k_factor",
+    "path_lifetime",
+    "fitted_distribution_family"
+  ],
+  "table_counts": {
+    "facts/path_parameters.csv": 100,
+    "facts/event_parameters.csv": 94,
+    "summaries/parameter_summary.csv": 7,
+    "qa/derivation_issues.csv": 16
+  },
+  "table_sha256": {
+    "facts/event_parameters.csv": "a182c740961dde0fbe9e1df8525ae15bc42e0d4e4992060b77656f45bc2f7e91",
+    "facts/path_parameters.csv": "2a44913d1c06f78d2748428b1d72f1b4712a6b5d3f33fc598a14fe17a3e3414a",
+    "qa/derivation_issues.csv": "41588e360393049e4a3d111e6153c6b1d26053e8ef7f41fb7d618d036d29945f",
+    "summaries/parameter_summary.csv": "9e7b23ffd59b07578e649743219ea6f03b8b5ba695f4004acd147b8dc09d9d13"
+  },
+  "result_counts": {
+    "environment_ready_confirmed_path_count": 100,
+    "elevation_ready_confirmed_path_count": 84,
+    "confirmed_event_count": 94,
+    "environment_group_count": 4,
+    "elevation_group_count": 3,
+    "elevation_exclusion_count": 16
+  },
+  "gate_record": {
+    "raw_iq_read": false,
+    "matlab_started": false,
+    "sage_started": false,
+    "batch_started": false,
+    "existing_sage_artifacts_modified": false,
+    "statistical_modeling_started": false,
+    "channel_parameter_derivation_started": true
+  },
+  "status": "completed_with_exclusions",
+  "independent_qa_status": "PASS",
+  "independent_qa_summary": {
+    "path_count": 100,
+    "event_count": 94,
+    "environment_ready_path_count": 100,
+    "elevation_ready_path_count": 84,
+    "elevation_exclusion_count": 16,
+    "environment_group_count": 4,
+    "elevation_group_count": 3,
+    "stage4_only": true,
+    "unit_conversions": true,
+    "source_partition_unchanged": true,
+    "frozen_source_hashes": true,
+    "raw_iq_read": false,
+    "matlab_or_sage_started": false,
+    "statistical_modeling_started": false
+  }
+}

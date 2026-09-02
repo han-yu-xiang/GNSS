@@ -1,0 +1,66 @@
+{
+  "schema_version": "sage-event-path-db-v1",
+  "status": "frozen_for_read_only_dry_run",
+  "frozen_date": "2026-08-25",
+  "design_source": "docs/MULTIPATH_EVENT_DATABASE_DESIGN.md",
+  "grain": {
+    "scene": "one scene metadata row per scene and metadata version",
+    "run": "one scene x PRN x tracking channel x experiment namespace run",
+    "window": "one Stage0 40 ms window per run",
+    "candidate_event": "one Stage3 reliable center per run",
+    "event": "one Stage4 joint result per run and center window",
+    "event_path": "one Stage4 path per event",
+    "event_context": "one context row per event, only after verified time alignment"
+  },
+  "canonical_tables": [
+    "scenes",
+    "scene_context",
+    "time_alignment",
+    "geometry_observations",
+    "sage_runs",
+    "nav_symbols",
+    "window_evidence",
+    "model_evaluations",
+    "stage2_paths",
+    "stage3_persistence_paths",
+    "candidate_events",
+    "events",
+    "event_paths",
+    "event_context",
+    "labels",
+    "ingestion_issues"
+  ],
+  "key_rules": {
+    "logical_run_key": "scene_id + prn + tracking_channel + experiment_namespace",
+    "run_id": "immutable logical run key plus ingestion instance",
+    "window_uid": "run_id + window_id",
+    "candidate_id": "run_id + center_window_id",
+    "event_id": "run_id + center_window_id",
+    "event_path_id": "event_id + path_id",
+    "source_local_ids_are_not_global": true
+  },
+  "provenance_required": [
+    "source_result_relpath",
+    "source_file",
+    "source_row_number",
+    "source_file_sha256",
+    "request_id",
+    "request_sha256",
+    "receipt_or_execution_log",
+    "qa_report_path",
+    "pipeline_sha256",
+    "manifest_sha256",
+    "inventory_sha256",
+    "schema_version",
+    "derivation_version",
+    "label_rule_version"
+  ],
+  "write_boundary": {
+    "validator_reads_stage_csv_json_manifest_and_provenance": true,
+    "formal_database_facts_written": false,
+    "source_sage_artifacts_modified": false,
+    "raw_iq_read": false,
+    "matlab_or_sage_started": false,
+    "formal_ingest_requires_separate_authorization": true
+  }
+}

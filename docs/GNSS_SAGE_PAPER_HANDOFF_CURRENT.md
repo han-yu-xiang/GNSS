@@ -1360,6 +1360,34 @@ BATCH_EXECUTED = NO
 NEXT_ACTION = AUTHOR_REVIEW_OF_BOUNDED_GAIN_FADE_LAYER
 ```
 
+## 23. VTC conditional 3-D GMM manuscript integration (2026-08-31)
+
+状态：`Author admitted / bilingual isolated manuscript integrated / QA PASS_WITH_LIMITATIONS`。
+
+- 作者批准将“轨迹加权实测经验分布 + 拟合边际 PDF”图纳入当前 VTC 重构审阅稿。
+- 模型仅使用 Urban 和 Mountain/Valley 两类环境以及 LOW/MID/HIGH 三个仰角区间；输入为 518 条持续路径观测、236 条轨迹、36 次测量运行和 9 个场景，其中 487 条具有有效仰角，31 条只用于环境父层估计。
+- 条件模型联合使用 `log(excess delay)`、`log1p(absolute relative Doppler)` 和 relative power。模型证据与 QA 中仍保留按场景留一验证选择的 `K=3`、`kappa=16` 以及各单元支持状态；为使首次阅读者聚焦可解释结果，论文正文只表述经按场景留一验证确定的三分量三维 GMM，不再展示池化超参数或支持状态标签。
+- signed-Doppler sensitivity 未显示保留符号具有明确预测优势，因此论文主变量采用 absolute relative Doppler；不得据此宣称物理符号对称。
+- 英文和中文隔离稿已同步替换旧的边际分位数模型及旧 Figure 2 叙述，加入条件三维 GMM 公式、按场景留一验证、实测--拟合分布比较和结论。按作者审阅意见，摘要中的“部分池化”和超参数句、Section III-A 的跨 PRN 否定性说明、正文中的池化/稀疏支持措辞，以及 Table II 的支持状态列均已删除；科学数据、模型产物和内部 QA 记录未改动。英文 PDF 为 4 页；中文源文件已同步，因原 `main_cn_review.pdf` 被外部进程占用，新版以带日期的独立文件名完成编译验证。
+- 作者进一步要求减少正文中的防御性否定表述。中英文稿已删除多普勒符号敏感性解释、GMM 分量的反射体否定说明及重复的 occurrence/complete-model 限定；结果段改为正向描述六个环境--仰角单元中共同的多普勒主峰、功率双峰和组间权重变化。Evidence Matrix 与模型 QA 中的科学边界保持不变。
+- 论文不得把该群体称为 confirmed physical paths，不得把 GMM 分量解释为反射体类别，也不得宣称 occurrence model、仰角因果机制或完整随机信道模型。
+- 本轮未读取 raw IQ，未运行 MATLAB/SAGE/batch，未改变现有 SAGE/production artifacts；历史 canonical `docs/vtc2027_spring/manuscript/latex/` 仍保持不变。
+
+```text
+CURRENT_WORK = VTC conditional GMM manuscript integration
+MANUSCRIPT_ROUTE = ISOLATED_BILINGUAL_REVIEW
+MODEL_QA = PASS_WITH_LIMITATIONS
+AUTHOR_FIGURE_ADMISSION = YES
+SCIENTIFIC_CONTENT_CHANGED = YES
+SCIENTIFIC_DATA_CHANGED = NO
+RAW_IQ_READ = NO
+MATLAB_EXECUTED = NO
+SAGE_EXECUTED = NO
+BATCH_EXECUTED = NO
+FORMAL_CANONICAL_MANUSCRIPT_CHANGED = NO
+NEXT_ACTION = USER_AUTHOR_REVIEW
+```
+
 ## 22. Fixed three-NLOS-slot activation layer (Completed with limitations + independent QA PASS_WITH_LIMITATIONS, 2026-08-26)
 
 状态：`Completed with limitations / independent QA PASS_WITH_LIMITATIONS / generator-composition input`。本次完成的是受限的 NLOS 槽位激活与条件路径数层，不是完整暗室统计信道模型，也没有声称建立物理多径发生率。

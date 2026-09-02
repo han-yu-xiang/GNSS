@@ -1,0 +1,469 @@
+{
+  "schema_version": "path_level_delay_doppler_2d_v1",
+  "source_population": "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\supplemental_data_outputs\\urban_mountain_stage3_elevation_model_review_v3_conditional_gmm\\population\\gmm_feature_population.csv",
+  "source_rows": 487,
+  "primary_model_coordinates": "[excess_delay_samples, absolute_doppler_hz]",
+  "signed_doppler_is_sensitivity_only": true,
+  "cells": {
+    "Urban/LOW": {
+      "model_family": "weighted full-covariance Gaussian mixture",
+      "coordinates": {
+        "x": {
+          "field": "excess_delay_samples",
+          "unit": "samples relative to the direct-path reference"
+        },
+        "y": {
+          "field": "absolute_doppler_hz",
+          "unit": "Hz, absolute relative Doppler"
+        }
+      },
+      "weight_field": "track_weight_recomputed_primary",
+      "model": {
+        "n_components": 1,
+        "center": [
+          1.4812499999999909,
+          43.4917847402384
+        ],
+        "scale": [
+          0.2743600508455995,
+          6.827700477638379
+        ],
+        "means": [
+          [
+            1.4812499999999906,
+            43.491784740238394
+          ]
+        ],
+        "covariances": [
+          [
+            [
+              0.07527419023437494,
+              0.013852841977844681
+            ],
+            [
+              0.01385284197784468,
+              46.61795998728146
+            ]
+          ]
+        ],
+        "proportions": [
+          1.0
+        ],
+        "component_effective_mass": [
+          7.999999999996
+        ],
+        "weighted_log_likelihood": -22.702797776176073,
+        "iterations": 2,
+        "converged": true
+      },
+      "selection": {
+        "n_components": 1,
+        "mean_weighted_nlpd": 3.7145235723982006,
+        "bic": 58.86832562518145,
+        "validation_fold_count": 2,
+        "validation_scenes": [
+          "F1023_V70_D0120_P1",
+          "F1023_V70_D0120_P8"
+        ],
+        "selection_rule": "lowest scene-grouped held-out weighted negative log density; BIC tie-break"
+      }
+    },
+    "Urban/MID": {
+      "model_family": "weighted full-covariance Gaussian mixture",
+      "coordinates": {
+        "x": {
+          "field": "excess_delay_samples",
+          "unit": "samples relative to the direct-path reference"
+        },
+        "y": {
+          "field": "absolute_doppler_hz",
+          "unit": "Hz, absolute relative Doppler"
+        }
+      },
+      "weight_field": "track_weight_recomputed_primary",
+      "model": {
+        "n_components": 3,
+        "center": [
+          1.936036036036058,
+          54.55658482940666
+        ],
+        "scale": [
+          0.7631776613905544,
+          21.038086130601247
+        ],
+        "means": [
+          [
+            1.3299467514329857,
+            45.927569209896575
+          ],
+          [
+            1.8033503684722803,
+            44.79264820295492
+          ],
+          [
+            2.8975790557611534,
+            78.60254012886062
+          ]
+        ],
+        "covariances": [
+          [
+            [
+              0.05079100265114038,
+              -0.042160290167179634
+            ],
+            [
+              -0.04216029016717964,
+              19.889577909264897
+            ]
+          ],
+          [
+            [
+              0.26627223571498987,
+              -0.9575605186449109
+            ],
+            [
+              -0.9575605186449109,
+              328.0983488757579
+            ]
+          ],
+          [
+            [
+              0.2638980620937601,
+              -1.3479510628717786
+            ],
+            [
+              -1.3479510628717786,
+              341.8453172757364
+            ]
+          ]
+        ],
+        "proportions": [
+          0.3593482976378382,
+          0.3639248581842002,
+          0.27672684417796145
+        ],
+        "component_effective_mass": [
+          26.59204340313027,
+          26.93190523726486,
+          20.476051359582886
+        ],
+        "weighted_log_likelihood": -168.4577980816121,
+        "iterations": 108,
+        "converged": true
+      },
+      "selection": {
+        "n_components": 3,
+        "mean_weighted_nlpd": 5.014832113894611,
+        "bic": 419.0843374894539,
+        "validation_fold_count": 4,
+        "validation_scenes": [
+          "F1023_V70_D0120_P1",
+          "F1023_V70_D0120_P7",
+          "F1023_V70_D0120_P8",
+          "F1023_v50_D0127_P1"
+        ],
+        "selection_rule": "lowest scene-grouped held-out weighted negative log density; BIC tie-break"
+      }
+    },
+    "Urban/HIGH": {
+      "model_family": "weighted full-covariance Gaussian mixture",
+      "coordinates": {
+        "x": {
+          "field": "excess_delay_samples",
+          "unit": "samples relative to the direct-path reference"
+        },
+        "y": {
+          "field": "absolute_doppler_hz",
+          "unit": "Hz, absolute relative Doppler"
+        }
+      },
+      "weight_field": "track_weight_recomputed_primary",
+      "model": {
+        "n_components": 3,
+        "center": [
+          2.085156249999916,
+          53.40026992995805
+        ],
+        "scale": [
+          0.8097475664793451,
+          25.043015751247815
+        ],
+        "means": [
+          [
+            1.4131105486897426,
+            38.72523441627354
+          ],
+          [
+            1.9936659713730154,
+            49.50670721564112
+          ],
+          [
+            2.6497001126803026,
+            69.36155569860622
+          ]
+        ],
+        "covariances": [
+          [
+            [
+              0.16611436260118612,
+              13.107963296186053
+            ],
+            [
+              13.107963296186051,
+              1064.4548150233315
+            ]
+          ],
+          [
+            [
+              0.5677856169069986,
+              1.151488767988199
+            ],
+            [
+              1.151488767988199,
+              18.226623837246446
+            ]
+          ],
+          [
+            [
+              0.5114199827791976,
+              18.959778180621615
+            ],
+            [
+              18.95977818062162,
+              1132.5694589716295
+            ]
+          ]
+        ],
+        "proportions": [
+          0.16565184658031037,
+          0.5482954244220128,
+          0.2860527289976768
+        ],
+        "component_effective_mass": [
+          10.601485908353258,
+          35.09088156336315,
+          18.3076325282566
+        ],
+        "weighted_log_likelihood": -130.40029708890782,
+        "iterations": 47,
+        "converged": true
+      },
+      "selection": {
+        "n_components": 3,
+        "mean_weighted_nlpd": 4.791679803115163,
+        "bic": 339.2804854521253,
+        "validation_fold_count": 1,
+        "validation_scenes": [
+          "F1023_V70_D0120_P1"
+        ],
+        "selection_rule": "lowest scene-grouped held-out weighted negative log density; BIC tie-break"
+      }
+    },
+    "Mountain/Valley/LOW": {
+      "model_family": "weighted full-covariance Gaussian mixture",
+      "coordinates": {
+        "x": {
+          "field": "excess_delay_samples",
+          "unit": "samples relative to the direct-path reference"
+        },
+        "y": {
+          "field": "absolute_doppler_hz",
+          "unit": "Hz, absolute relative Doppler"
+        }
+      },
+      "weight_field": "track_weight_recomputed_primary",
+      "model": {
+        "n_components": 1,
+        "center": [
+          1.6861111111111458,
+          54.060507025128935
+        ],
+        "scale": [
+          0.5287053252877965,
+          20.32207559562344
+        ],
+        "means": [
+          [
+            1.6861111111111453,
+            54.06050702512892
+          ]
+        ],
+        "covariances": [
+          [
+            [
+              0.2795321162808845,
+              5.233925552311756
+            ],
+            [
+              5.233925552311756,
+              412.9908863817989
+            ]
+          ]
+        ],
+        "proportions": [
+          1.0
+        ],
+        "component_effective_mass": [
+          11.999999999996
+        ],
+        "weighted_log_likelihood": -32.42920817898693,
+        "iterations": 2,
+        "converged": true
+      },
+      "selection": {
+        "n_components": 1,
+        "mean_weighted_nlpd": 5.432524625120476,
+        "bic": 79.10616517485168,
+        "validation_fold_count": 3,
+        "validation_scenes": [
+          "F1023_V70_D0117_P2",
+          "F1023_V70_D0117_P4",
+          "F1023_v90_D0117_P7"
+        ],
+        "selection_rule": "lowest scene-grouped held-out weighted negative log density; BIC tie-break"
+      }
+    },
+    "Mountain/Valley/MID": {
+      "model_family": "weighted full-covariance Gaussian mixture",
+      "coordinates": {
+        "x": {
+          "field": "excess_delay_samples",
+          "unit": "samples relative to the direct-path reference"
+        },
+        "y": {
+          "field": "absolute_doppler_hz",
+          "unit": "Hz, absolute relative Doppler"
+        }
+      },
+      "weight_field": "track_weight_recomputed_primary",
+      "model": {
+        "n_components": 2,
+        "center": [
+          2.0896226415093344,
+          60.90925430472771
+        ],
+        "scale": [
+          0.7269211257139664,
+          22.64885313259362
+        ],
+        "means": [
+          [
+            1.5724302382866076,
+            55.653176144944766
+          ],
+          [
+            2.742536988536083,
+            67.54463567969029
+          ]
+        ],
+        "covariances": [
+          [
+            [
+              0.12455737083832355,
+              4.348018141637834
+            ],
+            [
+              4.3480181416378345,
+              381.9499479725412
+            ]
+          ],
+          [
+            [
+              0.27428413141668895,
+              9.69800689875669
+            ],
+            [
+              9.69800689875669,
+              599.4808902030582
+            ]
+          ]
+        ],
+        "proportions": [
+          0.5579955391997713,
+          0.4420044608002286
+        ],
+        "component_effective_mass": [
+          29.572735238535486,
+          23.4272647614395
+        ],
+        "weighted_log_likelihood": -131.37716224991388,
+        "iterations": 31,
+        "converged": true
+      },
+      "selection": {
+        "n_components": 2,
+        "mean_weighted_nlpd": 4.947935403509409,
+        "bic": 311.8636610097817,
+        "validation_fold_count": 3,
+        "validation_scenes": [
+          "F1023_V70_D0117_P2",
+          "F1023_V70_D0117_P4",
+          "F1023_v90_D0117_P7"
+        ],
+        "selection_rule": "lowest scene-grouped held-out weighted negative log density; BIC tie-break"
+      }
+    },
+    "Mountain/Valley/HIGH": {
+      "model_family": "weighted full-covariance Gaussian mixture",
+      "coordinates": {
+        "x": {
+          "field": "excess_delay_samples",
+          "unit": "samples relative to the direct-path reference"
+        },
+        "y": {
+          "field": "absolute_doppler_hz",
+          "unit": "Hz, absolute relative Doppler"
+        }
+      },
+      "weight_field": "track_weight_recomputed_primary",
+      "model": {
+        "n_components": 1,
+        "center": [
+          2.170000000000001,
+          53.654842973271265
+        ],
+        "scale": [
+          0.6866100300267165,
+          20.79320900582122
+        ],
+        "means": [
+          [
+            2.170000000000001,
+            53.65484297327127
+          ]
+        ],
+        "covariances": [
+          [
+            [
+              0.47143804766662184,
+              4.9615591717096645
+            ],
+            [
+              4.9615591717096645,
+              432.3618643351722
+            ]
+          ]
+        ],
+        "proportions": [
+          1.0
+        ],
+        "component_effective_mass": [
+          14.999999999997
+        ],
+        "weighted_log_likelihood": -41.602807224412615,
+        "iterations": 2,
+        "converged": true
+      },
+      "selection": {
+        "n_components": 1,
+        "mean_weighted_nlpd": 6.469043383906638,
+        "bic": 98.89978003479757,
+        "validation_fold_count": 1,
+        "validation_scenes": [
+          "F1023_V70_D0117_P4"
+        ],
+        "selection_rule": "lowest scene-grouped held-out weighted negative log density; BIC tie-break"
+      }
+    }
+  }
+}

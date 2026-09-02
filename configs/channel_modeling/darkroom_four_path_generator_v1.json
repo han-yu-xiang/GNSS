@@ -1,0 +1,174 @@
+{
+  "generator_id": "darkroom-four-path-generator-v1",
+  "generator_version": "1.0.0",
+  "sample_rate_hz": 10230000,
+  "time_step_ms": 1,
+  "path_parameter_block_ms": 40,
+  "environments": [
+    "Urban",
+    "Special Reflective",
+    "Mountain/Valley",
+    "Highway/Open"
+  ],
+  "elevation_bands": ["LOW", "MID", "HIGH"],
+  "satellite_id_by_band": {
+    "LOW": "Low",
+    "MID": "Mid",
+    "HIGH": "High"
+  },
+  "final_columns": [
+    "ms",
+    "SatelliteID",
+    "NLOSPathID",
+    "RelativeDelay",
+    "RelativeDoppler",
+    "RelativeAmplitude",
+    "RelativePhase_rad"
+  ],
+  "units": {
+    "RelativeDelay": "ns",
+    "RelativeDoppler": "Hz",
+    "RelativeAmplitude": "linear_amplitude_ratio",
+    "RelativePhase_rad": "rad"
+  },
+  "path_zero": {
+    "RelativeDelay": 0.0,
+    "RelativeDoppler": 0.0,
+    "RelativeAmplitude_base": 1.0,
+    "is_physical_los": false
+  },
+  "activation_mode_default": "EMPIRICAL_CONFIRMED_SUPPORT",
+  "allowed_activation_modes": [
+    "EMPIRICAL_CONFIRMED_SUPPORT",
+    "CONDITIONAL_ACTIVE_STRESS"
+  ],
+  "lock_mapping_mode_default": "EMPIRICAL_DIAGNOSTIC_PROXY",
+  "allowed_lock_mapping_modes": [
+    "EMPIRICAL_DIAGNOSTIC_PROXY",
+    "FORCED_LOCK_LOSS_STRESS"
+  ],
+  "null_semantics": {
+    "inactive_nlos_delay": null,
+    "inactive_nlos_doppler": null,
+    "inactive_nlos_phase": null,
+    "inactive_nlos_amplitude": 0.0,
+    "inactive_status": "INACTIVE_NO_PATH"
+  },
+  "phase_policy": {
+    "initial_distribution": "Uniform(-pi,pi)",
+    "recurrence": "phi_next=wrap_to_pi(phi+2*pi*relative_doppler_hz*0.001)",
+    "wrap_interval": "[-pi,pi)",
+    "phase_is_data_fitted": false,
+    "lock_bad_resets_phase": false,
+    "recovery_resets_phase": false,
+    "assumption_status": "ASSUMPTION_ONLY_UNIFORM_INITIAL_PLUS_DOPPLER_CONTINUOUS"
+  },
+  "block_policy": {
+    "base_delay_doppler_amplitude_fixed_per_block": true,
+    "block_ms": 40,
+    "activation_independent_between_blocks": true,
+    "inter_block_path_identity_modeled": false,
+    "assumption_status": "INDEPENDENT_40MS_BLOCK_ASSUMPTION"
+  },
+  "ordinary_fade_policy": {
+    "shape": "symmetric_raised_cosine",
+    "assumption_status": "ASSUMPTION_ONLY_ORDINARY_FADE_SHAPE",
+    "lock_conflict_policy": "LOCK_ENVELOPE_SUPERSEDES_ORDINARY_FADE_ENVELOPE"
+  },
+  "stream_names": [
+    "common_gain_latent",
+    "ordinary_fade_entry",
+    "ordinary_fade_depth",
+    "ordinary_fade_duration",
+    "lock_entry",
+    "lock_duration",
+    "lock_depth_proxy",
+    "lock_recovery_duration",
+    "path0_initial_phase",
+    "block_activation_occurrence",
+    "block_activation_multiplicity",
+    "block_nlos_joint_parameters",
+    "block_nlos_phase_slot_1",
+    "block_nlos_phase_slot_2",
+    "block_nlos_phase_slot_3"
+  ],
+  "output_root_relative_path": "dataset_generation_logs/channel_modeling/darkroom_four_path_generator_v1_runs",
+  "request_root_relative_path": "dataset_generation_logs/channel_modeling/darkroom_four_path_generator_v1_requests",
+  "execution_policy": {
+    "new_only": true,
+    "resume_allowed": false,
+    "raw_iq_read": false,
+    "matlab": false,
+    "sage": false,
+    "batch": false,
+    "process_20_46_mhz": false,
+    "gold_labels_used_for_generation": false
+  },
+  "parents": {
+    "path": {
+      "model_manifest_relative_path": "dataset_generation_logs/channel_modeling/environment_elevation_path_distribution_v1_20260826_r1/model_manifest.json",
+      "model_manifest_sha256": "4f24dd3a5532526ef9966288ea7de9d863fabd812abe07a811647095e5368f3c",
+      "sampling_contract_relative_path": "dataset_generation_logs/channel_modeling/environment_elevation_path_distribution_v1_20260826_r1/sampling_contract.json",
+      "sampling_contract_sha256": "48e48bcb4d64c9d0debea74824424573c1b998ac4da10b7804f242d6c3225d38",
+      "cell_index_relative_path": "dataset_generation_logs/channel_modeling/environment_elevation_path_distribution_v1_20260826_r1/cell_model_index.csv",
+      "cell_distribution_relative_path": "dataset_generation_logs/channel_modeling/environment_elevation_path_distribution_v1_20260826_r1/cell_distribution_parameters.csv",
+      "copula_relative_path": "dataset_generation_logs/channel_modeling/environment_elevation_path_distribution_v1_20260826_r1/environment_copula_parameters.csv",
+      "core_relative_path": "scripts/analysis/channel_modeling/path_distribution_core.py",
+      "core_sha256": "5000037f31a0cf9ca59c328bb2e19399827386e522d7fe974367d1f722664b76",
+      "qa_result_relative_path": "dataset_generation_logs/channel_modeling/environment_elevation_path_distribution_v1_20260826_r1/independent_qa_result.json",
+      "qa_result_sha256": "291853d576bf1e0fe4d09641fc0f6c194be7a26a39370546964b41d7d3e1f1aa"
+    },
+    "gain": {
+      "model_manifest_relative_path": "dataset_generation_logs/channel_modeling/main_path_common_gain_fade_v1_20260826_r4/model_manifest.json",
+      "model_manifest_sha256": "6f36dab892622c9b9dc61ecde91fda85ff12ca60eeea4f81fe37760f0acb1e45",
+      "model_relative_path": "dataset_generation_logs/channel_modeling/main_path_common_gain_fade_v1_20260826_r4/main_path_common_gain_fade_model.json",
+      "model_sha256": "a12fa745065ae74dcff5eb2b8746d075a87a1c2d91360273932abf2911a219d3",
+      "marginal_relative_path": "dataset_generation_logs/channel_modeling/main_path_common_gain_fade_v1_20260826_r4/common_gain_marginal_parameters.csv",
+      "marginal_sha256": "adc790b77e3be3524c27aaa9007270bbfa30c58b68178997c2b009194c1e8221",
+      "temporal_relative_path": "dataset_generation_logs/channel_modeling/main_path_common_gain_fade_v1_20260826_r4/common_gain_temporal_parameters.csv",
+      "temporal_sha256": "77c383ba4e8a011e5f63bafc24fea1a5b7009144f9ca7cf3453487c6543e24f6",
+      "fade_relative_path": "dataset_generation_logs/channel_modeling/main_path_common_gain_fade_v1_20260826_r4/fade_depth_duration_parameters.csv",
+      "fade_sha256": "a181b243e6b3807f9117a6f26fbbb2f7b717a2ca2b842a977b7aa4ae10ee3ef8",
+      "entry_rate_relative_path": "dataset_generation_logs/channel_modeling/main_path_common_gain_fade_v1_20260826_r4/fade_entry_rate_parameters.csv",
+      "entry_rate_sha256": "073ab2c9ec7345c1e7715e0ebc5aa9932baa0c12b170378ee1b9f6418ed0b2ab",
+      "core_relative_path": "scripts/analysis/channel_modeling/main_path_gain_core.py",
+      "core_sha256": "da831bf0591c3ff9e816a8b12a4d7cd08b0f23f124151ff7ad9298fcb7fbc484",
+      "qa_result_relative_path": "dataset_generation_logs/channel_modeling/main_path_common_gain_fade_v1_20260826_r4/independent_qa_result.json",
+      "qa_result_sha256": "cfee633b31287fb158af60c61c33ec0e5d69cd26e87bf229696673e66e41882c"
+    },
+    "activation": {
+      "model_manifest_relative_path": "dataset_generation_logs/channel_modeling/nlos_slot_activation_v1_20260826_r1/model_manifest.json",
+      "model_manifest_sha256": "b47b2a09f9acc5f1ccd65dcf923623dbeea27e3aec3e3e3f04c2e094a3e486d2",
+      "model_relative_path": "dataset_generation_logs/channel_modeling/nlos_slot_activation_v1_20260826_r1/nlos_slot_activation_model.json",
+      "model_sha256": "494f784d0231ab1fc6389d210470b059dd4b1f6e9a2f95c8e3a141da04cc55e2",
+      "contract_relative_path": "dataset_generation_logs/channel_modeling/nlos_slot_activation_v1_20260826_r1/slot_activation_contract.json",
+      "contract_sha256": "95c44f6c2b22c4023bb0875dddbf4cd267a18f3e54759dc7d3572ffebddd76e1",
+      "core_relative_path": "scripts/analysis/channel_modeling/nlos_slot_activation_core.py",
+      "core_sha256": "371e19362a86dcff3fcc936397cb872d1a5af543b819eea5ede7a281d71c089b",
+      "qa_result_relative_path": "dataset_generation_logs/channel_modeling/nlos_slot_activation_v1_20260826_r1/independent_qa_result.json",
+      "qa_result_sha256": "7dc097938961b0c1cc56a4ef7f583e0e53dd89e57fbc590a8eeeeb7cf86021d3"
+    },
+    "lock": {
+      "model_manifest_relative_path": "dataset_generation_logs/channel_modeling/lock_amplitude_phase_recovery_v1_20260826_r3/model_manifest.json",
+      "model_manifest_sha256": "9eb1847eac27618f80475ceafe62616285a346c5da847afdb0e8f2c5fc63a3ee",
+      "model_relative_path": "dataset_generation_logs/channel_modeling/lock_amplitude_phase_recovery_v1_20260826_r3/lock_amplitude_phase_recovery_model.json",
+      "model_sha256": "426d657045865ce9b7baa34a1ba361d37d45eb5ce99cc0b7eba7165eda939204",
+      "composition_contract_relative_path": "dataset_generation_logs/channel_modeling/lock_amplitude_phase_recovery_v1_20260826_r3/composition_contract.json",
+      "composition_contract_sha256": "c04e50398e7b1437a5d5eca5cd53ba9173ccdb90fdf25ad174292f3eec8ebab5",
+      "phase_contract_relative_path": "dataset_generation_logs/channel_modeling/lock_amplitude_phase_recovery_v1_20260826_r3/phase_policy_contract.json",
+      "phase_contract_sha256": "4ae11799f32cd1f561f930f7d03f6b91a2a01c29d2e69672ace5bff71ea0095f",
+      "lock_model_relative_path": "dataset_generation_logs/channel_modeling/environment_lock_model_v1_20260826_r2/lock_model_manifest.json",
+      "lock_model_sha256": "21c04938cba559b3e042806b093eba82e4e86a44977e95831c715aa03ffc97a5",
+      "lock_parameters_relative_path": "dataset_generation_logs/channel_modeling/environment_lock_model_v1_20260826_r2/environment_lock_model_parameters.csv",
+      "lock_parameters_sha256": "47f0a070053eb6c44daf42a3665c304d3252f9165d297b757084d80865f512bb",
+      "core_relative_path": "scripts/analysis/channel_modeling/lock_amplitude_phase_recovery_core.py",
+      "core_sha256": "29e85c4e40f4c30b2551f2a548b520b9f9004b1ac1d68218b576d6fd1563c4ac",
+      "qa_result_relative_path": "dataset_generation_logs/channel_modeling/lock_amplitude_phase_recovery_v1_20260826_r3/independent_qa_result.json",
+      "qa_result_sha256": "344022e47631dac874f546d5ec9817203a2b12bab9fb871a51716bae817a70ba"
+    }
+  },
+  "protected_pipeline": {
+    "relative_path": "scripts/sage_pipeline/run_nav_sage_pipeline.m",
+    "sha256": "bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c"
+  }
+}

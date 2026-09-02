@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="230" viewBox="0 0 1200 230">
   <title>Dynamic GNSS raw IQ to path-level characterization workflow</title>
-  <desc>RF capture, GNSS-SDR support, Stage0, hierarchical SAGE, confirmed paths, and path-level characterization.</desc>
+  <desc>RF capture, GNSS-SDR support, Stage0, hierarchical SAGE, confirmed paths, and excess delay, relative Doppler, and relative power.</desc>
   <defs>
     <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
       <path d="M0,0 L8,4 L0,8 z" fill="#303030"/>
@@ -23,7 +23,7 @@
   <rect class="box" x="820" y="78" width="170" height="74" rx="5"/>
   <text class="txt" x="905" y="106">Confirmed paths</text><text class="small" x="905" y="131">Stage4 components</text>
   <rect class="box" x="1020" y="78" width="160" height="74" rx="5"/>
-  <text class="txt" x="1100" y="106">Path-level</text><text class="small" x="1100" y="131">characterization</text>
+  <text class="txt" x="1100" y="106">Path parameters</text><text class="small" x="1100" y="126">excess delay / relative</text><text class="small" x="1100" y="145">Doppler / relative power</text>
   <line class="arrow" x1="190" y1="115" x2="218" y2="115"/>
   <line class="arrow" x1="390" y1="115" x2="418" y2="115"/>
   <line class="arrow" x1="590" y1="115" x2="618" y2="115"/>

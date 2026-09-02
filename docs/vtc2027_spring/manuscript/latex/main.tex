@@ -1,5 +1,4 @@
-% VTC2027-Spring Regular Paper submission-candidate manuscript.
-% Author metadata remains to be confirmed before submission.
+% VTC2027-Spring Regular Paper.
 \documentclass[conference]{IEEEtran}
 
 \usepackage{amsmath,amssymb}
@@ -7,50 +6,43 @@
 \usepackage{graphicx}
 \usepackage{xcolor}
 \usepackage{url}
+\usepackage{stfloats}
 
-\title{SAGE-Based High-Resolution Multipath Characterization of GPS L1 C/A Signals in Dynamic Vehicular Environments}
+\title{GPS L1 C/A Multipath Extraction and Conditional Modeling by Environment and Satellite Elevation Using SAGE}
 
-\author{\IEEEauthorblockN{AUTHOR INFORMATION TO BE CONFIRMED}
-\IEEEauthorblockA{Affiliation, correspondence address, and email to be confirmed}}
+\author{\IEEEauthorblockN{Liang Feng}
+\IEEEauthorblockA{Tongji University, Shanghai, China\\2432132@tongji.edu.cn}}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-Characterizing GNSS multipath from real vehicular raw-IQ measurements is difficult because reflected components evolve with motion while receiver-level indicators do not expose individual propagation paths. This paper evaluates a navigation-aided hierarchical SAGE framework for GPS L1 C/A raw-IQ measurements. Tracking and telemetry products, together with decoded navigation symbols, provide PRN/time alignment for NAV wiping and valid 40-ms observation-window construction, while PRN/channel association selects the intended stream. Candidate-window screening, fractional delay--Doppler SAGE estimation, temporal consistency validation, and multi-snapshot joint confirmation progressively refine the path set. The resulting confirmed observations expose excess delay, relative Doppler, and relative power at the path level. These measurements provide a basis for bounded descriptive comparison of multipath behavior across the evaluated dynamic vehicular environments.
+GNSS multipath in dynamic road environments consists of propagation components that change as the vehicle moves. This paper extracts persistent path observations from real GPS L1 C/A measurements using navigation-data alignment, per-satellite SAGE estimation, and temporal consistency. A three-dimensional Gaussian mixture model jointly describes excess delay, the magnitude of relative Doppler, and relative power for Urban and Mountain/Valley measurements in three satellite elevation ranges. The fitted distributions reproduce the main delay and Doppler peaks and the two main relative-power peaks in the measurements. The model provides a joint description of these path parameters for each combination of environment and elevation range.
 \end{abstract}
 
 \begin{IEEEkeywords}
-GNSS multipath, GPS L1 C/A, raw-IQ measurements, SAGE, delay--Doppler path extraction.
+GNSS multipath, GPS L1 C/A, SAGE, Gaussian mixture model, environment and elevation modeling.
 \end{IEEEkeywords}
 
 \section{Introduction}
-Global navigation satellite systems support vehicle navigation and intelligent transportation, but reflections in dynamic roadside environments make the received signal time-varying \cite{eissfeller1996gpsdynamic,mora1998multipath,beitler2015cmcd}. Buildings, terrain, vehicles, and other structures can introduce propagation components whose delay, Doppler, and power change as the antenna moves. Carrier-to-noise density or signal-to-noise ratio, pseudorange residuals, and positioning error are useful indicators of receiver-level degradation, but they do not directly expose the propagation components responsible for an observation \cite{bilich2007snr,xie2011vehicular,beitler2015cmcd}.
+Global Navigation Satellite Systems (GNSS) support vehicle navigation and intelligent transportation. Reflections from buildings, terrain, vehicles, and other roadside structures change as the antenna moves. They produce propagation components with changing delay, Doppler, and power \cite{eissfeller1996gpsdynamic,mora1998multipath,beitler2015cmcd}. Carrier-to-noise-density ratio ($C/N_0$), pseudorange residuals, and positioning error describe the signal response at the receiver. Path-level extraction links this response to individual propagation components \cite{bilich2007snr,xie2011vehicular,beitler2015cmcd}.
 
-Real dynamic raw-IQ measurements therefore create a need for path-level analysis that is both physically interpretable and conservative in its confirmation rule. The challenge is not only to fit a multi-component model at an individual window, but also to distinguish a correlation candidate from a temporally supported component and from a jointly confirmed path. Established high-resolution parameter extraction provides the link between measured GNSS signals and propagation observations \cite{fleury1999sage}. This paper applies that basis to a NAV-aided hierarchical workflow that combines candidate screening, temporal consistency, and multi-snapshot joint confirmation for traceable path observations.
+Path-level analysis of real in-phase/quadrature (I/Q) measurements separates local signal components from components that persist over time. High-resolution parameter extraction provides the link between measured GNSS signals and propagation observations \cite{fleury1999sage}. We combine navigation-data-aided window formation, per-satellite SAGE estimation, temporal consistency, and conditional statistical modeling.
 
-This paper makes three contributions. First, it establishes a real dynamic GPS L1 C/A raw-IQ measurement and processing basis using GNSS-SDR support products and navigation-aided observation construction. Second, it evaluates a NAV-aided hierarchical SAGE processing framework with progressive candidate screening, temporal consistency checking, and multi-snapshot joint confirmation. Third, it provides measurement-based environment-wise characterization of SAGE-extracted multipath path parameters across representative dynamic vehicular environments, focusing on excess delay, relative Doppler, and relative power.
+The paper has three main contributions. First, we present a multi-satellite GPS L1 C/A measurement and processing chain. Each tracked satellite is aligned and estimated separately. Second, we use temporal consistency to retain components that recur in adjacent windows. Third, we develop a three-dimensional Gaussian mixture model that preserves the joint behavior of excess delay, the magnitude of relative Doppler, and relative power across two environments and three elevation ranges.
 
 \section{Measurement and Experimental Setup}
 \subsection{Measurement Platform}
-The measurement platform used a TEST-TREE RF-Catcher V2 RF signal capture and playback device together with a GNSS dome antenna. The antenna was right-hand circularly polarized (RHCP), had a documented active gain of 40 dB, and was mounted on the vehicle roof. The vehicle served as the dynamic antenna platform; vehicle type and vehicle performance were not treated as research variables.
-
-Measurements from four representative dynamic environment classes were evaluated: Urban, Special Reflective, Highway/Open, and Mountain/Valley.
+The measurement platform consists of a TEST-TREE RF-Catcher V2 for RF capture and playback and a GNSS dome antenna mounted on the vehicle roof. The antenna uses right-hand circular polarization (RHCP) and has a 40-dB active gain.
 
 \subsection{Signal Acquisition Configuration}
-The measured signal was GPS L1 C/A at a documented center frequency of 1575.42 MHz \cite{gpsis200n2022}. Raw samples were stored as interleaved in-phase/quadrature (I/Q) data in little-endian signed 16-bit format. The measurements analyzed in this paper use a sampling rate of 10.23 MHz (10230000 Hz).
+The signal is GPS L1 C/A with a center frequency of 1575.42 MHz \cite{gpsis200n2022}. Samples are stored as interleaved in-phase and quadrature (I/Q) values in little-endian signed 16-bit format. The sampling rate is 10.23 MHz.
 
 \subsection{Experimental Scenarios}
-The evaluated cases are:
-\begin{enumerate}
-\item Urban;
-\item Special Reflective;
-\item Highway/Open;
-\item Mountain/Valley.
-\end{enumerate}
+Two road-environment classes are considered: Urban and Mountain/Valley. Urban denotes roads surrounded by dense buildings. Mountain/Valley denotes roads in mountainous or valley terrain. Satellite elevation is divided into three ranges: LOW $=[0,30^\circ)$, MID $=[30^\circ,60^\circ)$, and HIGH $=[60^\circ,90^\circ]$.
 
 \subsection{Processing Overview}
-The overall measurement and processing framework is illustrated in Fig.~\ref{fig:workflow}. Tracking and telemetry products provide synchronization and sample support. Decoded navigation symbols provide PRN/time alignment for NAV wiping and construction of complete 40-ms observation windows, while PRN/channel association selects the intended stream. This preparation gives subsequent correlation and fractional delay--Doppler estimation a common known-symbol observation unit. The GNSS-SDR support chain follows the configurable software-defined GNSS receiver architecture described in \cite{fernandez2011gnsssdr}. The detailed estimation and confirmation logic is described in Section III.
+Fig.~\ref{fig:workflow} shows the measurement and processing chain. GNSS-SDR first tracks the signals and decodes the navigation data. We then process each tracked satellite separately. Navigation data provide signal timing and define valid 40-ms windows. We screen the windows, estimate delay and Doppler with SAGE, and retain components that remain consistent over time. Finally, we group the retained observations by environment and satellite elevation. GNSS-SDR follows the software-defined GNSS receiver architecture described in \cite{fernandez2011gnsssdr}.
 
 \begin{table}[t]
 \centering
@@ -60,113 +52,151 @@ The overall measurement and processing framework is illustrated in Fig.~\ref{fig
 \setlength{\tabcolsep}{3pt}
 \begin{tabular}{p{0.28\columnwidth}p{0.62\columnwidth}}
 \toprule
-Item & Confirmed configuration\\
+Item & Configuration\\
 \midrule
-Receiver & TEST-TREE RF-Catcher V2\\
+Acquisition device & TEST-TREE RF-Catcher V2\\
 Antenna & GNSS dome antenna; RHCP; vehicle-roof mounting\\
 Signal & GPS L1 C/A; center frequency 1575.42 MHz\\
 Sampling & 10.23 MHz (10230000 Hz)\\
 IQ format & Interleaved I/Q; little-endian signed int16\\
-GNSS-SDR support & Tracking and navigation support for observation preparation\\
-SAGE chain & NAV-aligned observation formation, candidate screening, local SAGE estimation, temporal consistency, and joint path confirmation\\
+GNSS-SDR processing & Tracking and navigation decoding\\
+Satellite processing & Each tracked satellite processed separately before aggregation\\
+Path processing & Navigation alignment, candidate screening, SAGE estimation, temporal consistency, and modeling by environment and elevation\\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\textwidth]{../../figures/figure1_workflow.pdf}
-\caption{Measurement and processing workflow from dynamic RF capture through tracking and NAV decoding to NAV-aligned observation formation, candidate screening, delay--Doppler estimation, temporal validation, multi-snapshot confirmation, and path-level parameters.}
+\includegraphics[width=\textwidth]{../../figures/figure1_multisatellite.pdf}
+\caption{Multi-satellite measurement and processing workflow. Each tracked satellite passes through navigation alignment, local SAGE estimation, and a time-consistency check. The resulting path observations are then weighted and grouped by environment and satellite elevation.}
 \label{fig:workflow}
 \end{figure*}
 
-\section{NAV-aided Hierarchical SAGE Multipath Estimation}
-\subsection{Signal and Multipath Model}
-The estimator follows the space-alternating generalized expectation-maximization framework \cite{fessler1994sage} and its established use for high-resolution mobile-channel parameter estimation \cite{fleury1999sage}. The received complex baseband signal is represented by
+\section{Navigation-Aided SAGE and Conditional Path Model}
+\subsection{Per-Satellite Signal and Multipath Model}
+Let $M$ be the number of tracked satellites. For satellite $m$, the complex baseband signal is modeled as
 \begin{equation}
-r(t)=s_0(t)+\sum_{\ell=1}^{L}\alpha_\ell s(t-\tau_\ell)\exp\!\left(j2\pi\Delta f_\ell t\right)+n(t),
+r_m(t)=\sum_{\ell=0}^{L_m-1}\alpha_{m,\ell}s_m(t-\tau_{m,\ell})\exp\!\left(j2\pi\Delta f_{m,\ell}t\right)+n_m(t),
+\label{eq:multisat-model}
 \end{equation}
-where $s_0(t)$ is the direct contribution and each additional component has complex gain $\alpha_\ell$, delay $\tau_\ell$, and Doppler offset $\Delta f_\ell$ relative to the direct component. The complex gain contains amplitude and phase.
+Here, $s_m(t)$ is the navigation-aligned code waveform and $n_m(t)$ is noise. The satellite index is $m=1,\ldots,M$. The value $L_m$ gives the number of components in the local model. The index $\ell=0$ denotes the direct component. The direct-path delay $\tau_{m,0}$ is the reference delay for satellite $m$. Relative Doppler is measured with respect to this component, so $\Delta f_{m,0}=0$. Each component has complex gain $\alpha_{m,\ell}$, delay $\tau_{m,\ell}$, and relative Doppler offset $\Delta f_{m,\ell}$. The complex gain contains amplitude and phase.
 
-\subsection{SAGE-Based Delay--Doppler Parameter Estimation}
-For a current path $\ell$ at iteration $i$, the implementation forms a hidden signal by subtracting the synthesized contributions of the other paths,
+\subsection{Navigation-Data-Aided Observation Formation}
+Tracking results and decoded navigation data provide the timing needed to select samples. The decoded bits identify the satellite's pseudorandom-noise (PRN) code and provide a known sign sequence aligned in time. Removing this sequence enables coherent processing over complete 40-ms windows. The PRN-to-channel mapping selects the desired tracked signal. At 10.23 MHz, each C/A chip contains 10 samples.
+
+\subsection{Per-Satellite SAGE Delay--Doppler Estimation}
+We use the space-alternating generalized expectation-maximization (SAGE) algorithm for high-resolution delay--Doppler estimation \cite{fessler1994sage,fleury1999sage}. At iteration $i$, we isolate component $\ell$ for satellite $m$ by subtracting the synthesized contributions of the other components,
 \begin{equation}
-r_\ell^{(i)}(t)=r(t)-\sum_{k\ne\ell}\hat{\alpha}_k^{(i)}q(t;\hat{\tau}_k^{(i)},\hat{\Delta f}_k^{(i)}),
+r_{m,\ell}^{(i)}(t)=r_m(t)-\sum_{k\ne\ell}\hat{\alpha}_{m,k}^{(i)}q_m(t;\hat{\tau}_{m,k}^{(i)},\hat{\Delta f}_{m,k}^{(i)}),
+\label{eq:hidden-signal}
 \end{equation}
-where $q(\cdot)$ is the code replica with fractional delay and Doppler. The selected path is refined using a normalized delay--Doppler correlation objective,
+where $q_m(\cdot)$ is the navigation-aligned code replica with fractional delay and Doppler. The current delay and Doppler are refined by maximizing
 \begin{equation}
-(\hat{\tau}_\ell,\hat{\Delta f}_\ell)=\mathop{\arg\max}_{\tau,\Delta f}
-\frac{|q(\tau,\Delta f)^{H}r_\ell^{(i)}|^2}{q(\tau,\Delta f)^{H}q(\tau,\Delta f)}.
+(\hat{\tau}_{m,\ell},\hat{\Delta f}_{m,\ell})=\mathop{\arg\max}_{\tau,\Delta f}
+\frac{|q_m(\tau,\Delta f)^{H}r_{m,\ell}^{(i)}|^2}{q_m(\tau,\Delta f)^{H}q_m(\tau,\Delta f)}.
+\label{eq:sage-objective}
 \end{equation}
-The implementation realizes the coarse grid correlation with FFT/IFFT operations and uses explicit fractional-delay replicas for local refinement. After path-wise refinement, all complex gains are updated by a least-squares solve over the current replica matrix. The iterations stop after at most 10 updates or when the relative residual-RSS change is below $10^{-6}$. The local SAGE delay grid is 0.1 sample (0.01 chip) with a 0.8-sample neighborhood, and the local Doppler grid spans $\pm30$ Hz at 5 Hz spacing around the tracking-referenced estimate.
+First, we compute coarse delay--Doppler correlation with the fast Fourier transform (FFT) and its inverse (IFFT). We then refine the result with fractional-delay replicas. Complex gains are updated by least squares. Iterations stop after at most 10 updates or when the relative change in residual sum of squares (RSS) is below $10^{-6}$. The local delay grid uses 0.1-sample spacing (0.01 chip) over a 0.8-sample neighborhood. The local Doppler grid spans $\pm30$ Hz at 5-Hz spacing around the tracking estimate.
 
-\subsection{NAV-Aided Observation Formation}
-Channel-specific tracking and telemetry information provides synchronization and sample support. Decoded navigation symbols provide the PRN- and time-aligned symbol sequence used for NAV wiping and construction of complete 40-ms observation windows, while PRN/channel association selects the intended stream. The resulting valid observations are the mother set for subsequent estimation; this formation step does not assign a multipath label. At 10.23 MHz, the sampling/code relation is 10 samples per C/A chip.
+For each screened window, we evaluate models with $L_m=1,2,3,4$. A higher-order model is used when the fit is numerically valid, lowers the Bayesian information criterion (BIC) by at least 10, and reduces the residual sum of squares by at least 0.002\%. We then use temporal consistency to retain components that recur over time.
 
-\subsection{Candidate Screening and Local Model-Order Estimation}
-Candidate-window screening uses a main-Doppler search of $\pm125$ Hz at 25 Hz spacing, local correlation refinement, and a residual search constrained by the tracking-derived relative-Doppler bound. The screening reduces the windows entering the more expensive local SAGE fit. For each screened window, models with $L=1,2,3,4$ are evaluated using fractional delay--Doppler paths. Sequential order increases require a valid model, a BIC gain of at least 10, and an incremental RSS reduction of at least 0.002 percent. A higher-order model ($L\geq2$) indicates that additional signal components improve the local representation of the observation, while final path confirmation additionally requires temporal consistency and multi-snapshot joint validation.
+\subsection{Persistent Path Observations}
+After local estimation, we compare path parameters in neighboring windows. We retain a component when matching components occur in at least three consecutive windows within a two-window neighborhood. Matching uses tolerances of 1.5 samples, 40 Hz, and 10 dB for delay, relative Doppler, and relative power, respectively. The center window of each sequence defines one persistent path observation. Each observation includes its satellite, recording, measurement scene, observation time, and associated geometry.
 
-\subsection{Temporal Consistency and Multi-Snapshot Path Confirmation}
-Temporal validation compares path delay, Doppler, and relative power over neighboring windows. A reliable center requires a consecutive matching run of at least three windows within a radius of two, with tolerances of 1.5 samples, 40 Hz, and 10 dB, respectively. Five contiguous 20-ms snapshots centered on a reliable window are then jointly estimated over approximately 100 ms. Joint model selection uses the same sequential BIC gain rule and requires at least four snapshot wins for a higher-order model. Only a valid joint solution containing a secondary path that satisfies the joint-confirmation path-table criterion enters the confirmed set. Local high-order selections and temporally reliable centers remain intermediate evidence.
+Using the direct component as the reference, we define the three modeled parameters as
+\begin{equation}
+\begin{aligned}
+\Delta\tau_{m,\ell}&=\tau_{m,\ell}-\tau_{m,0},\\
+f^{\mathrm{rel}}_{m,\ell}&=\Delta f_{m,\ell},\\
+P_{m,\ell}&=10\log_{10}\!\frac{|\alpha_{m,\ell}|^2}{|\alpha_{m,0}|^2}.
+\end{aligned}
+\label{eq:path-parameters}
+\end{equation}
+Here, $\Delta\tau$ is excess delay in samples, $f^{\mathrm{rel}}$ is signed Doppler relative to the direct component in Hz, and $P$ is relative path power in dB.
 
-Taking the direct component ($\ell=0$) as the reference, the excess delay of path $\ell$ is defined as $\Delta\tau_\ell=\tau_\ell-\tau_0$ and is expressed primarily in samples; values in chips are obtained by unit conversion. The relative Doppler ($\Delta f_\ell$) denotes the Doppler offset with respect to the direct component rather than the absolute carrier Doppler, while relative power is referenced to the direct component. These quantities are subsequently used to characterize the confirmed propagation paths across the evaluated environments.
+Window-level geometry alignment provides a satellite elevation for each path observation. Observations with valid alignment enter the elevation groups, and the full observation set is used for the environment-level summaries.
+
+\subsection{Conditional Three-Dimensional Mixture Model}
+Let $e_i$ and $b_i$ denote the environment and elevation range of observation $i$. Each observation has weight $w_i=1/N_{\mathrm{track}(i)}$. Thus, every satellite track contributes the same total weight. For an environment and elevation group $(e,b)$, the weighted empirical distribution of parameter $p$ is
+\begin{equation}
+\widehat F_{e,b,p}(x)=
+\frac{\sum_{i\in\mathcal I_{e,b}}w_i\,\mathbf{1}(z_{i,p}\le x)}
+{\sum_{i\in\mathcal I_{e,b}}w_i}.
+\label{eq:weighted-cdf}
+\end{equation}
+where $z_{i,p}$ is the value of parameter $p$ for observation $i$.
+
+We transform the three parameters into
+\begin{equation}
+\mathbf{x}_i=\left[\log \Delta\tau_i,\ \log\!\left(1+|f_i^{\mathrm{rel}}|/1\,\mathrm{Hz}\right),\ P_i\right]^{\mathsf T}
+\label{eq:gmm-features}
+\end{equation}
+and standardize each feature using weighted means and standard deviations from the training fold. The Doppler feature uses the magnitude of relative Doppler to represent the separation between paths.
+
+For environment $e$ and elevation range $b$, the conditional density is
+\begin{equation}
+p(\mathbf{x}\mid e,b)=\sum_{k=1}^{3}\pi_{e,b,k}\,
+\mathcal N\!\left(\mathbf{x};\boldsymbol\mu_{e,k},\boldsymbol\Sigma_k\right).
+\label{eq:conditional-gmm}
+\end{equation}
+The component means depend on the environment. The mixture weights depend on both environment and elevation, while the covariance matrices are shared across groups. The model uses three Gaussian components. We selected this number by holding out one measurement scene at a time during validation.
 
 \section{Experimental Results}
-\subsection{Hierarchical Path Extraction Behavior}
-To characterize how candidate components converge through the processing chain, we summarize valid 40-ms observation windows, candidate windows, temporally consistent candidates, and final joint confirmations. Figure~\ref{fig:hierarchical-confirmation} presents the reduction for three representative cases. For each candidate window, local SAGE estimation evaluates model orders $L=1$--$4$; these evaluations therefore represent alternative model orders for the same window rather than an additional set of independent observations. In the reference-scene G28 track, a temporally consistent candidate is rejected by the subsequent multi-snapshot joint confirmation. In the G18 track from the F1023\_V70\_D0120\_P1 scene, none of the candidates was retained as a confirmed multipath event after the final joint confirmation. These representative cases illustrate the behavior of the hierarchical confirmation procedure; the environment-wise characterization is based on the aggregated confirmed paths summarized separately in Table~\ref{tab:experimental-evidence} and Fig.~\ref{fig:path-characteristics}. The reduction reflects progressively stronger evidence from local representation to temporal consistency and multi-snapshot joint confirmation.
-
-\begin{table}[t]
+\begin{figure*}[!t]
 \centering
-\caption{Measurement Coverage and Confirmed Multipath Paths Across Dynamic Vehicular Environments. Paths are counted only after the joint-confirmation criterion.}
-\label{tab:experimental-evidence}
+\includegraphics[width=\textwidth]{../../figures/conditional_empirical_vs_model_pdf_environment_elevation.pdf}
+\caption{Track-weighted measured distributions (step dashed lines) and fitted marginal probability densities (solid lines) for the six combinations of environment and elevation range.}
+\label{fig:empirical-model-pdf}
+\end{figure*}
+
+\subsection{Modeling Data by Environment and Satellite Elevation}
+The model uses 518 persistent path observations from 236 satellite tracks, 36 measurement recordings, and 9 measurement scenes. Window-level geometry alignment provides valid elevation values for 487 observations. These 487 observations provide the six combinations of environment and elevation range. All 518 observations contribute to the environment-level summaries. Table~\ref{tab:environment-elevation-cells} lists the six modeled groups. Here, $N_{\mathrm{eff}}$ is the effective observation count after track balancing.
+
+\begin{table*}[t]
+\centering
+\caption{Path observations by environment and elevation range.}
+\label{tab:environment-elevation-cells}
 \scriptsize
-\setlength{\tabcolsep}{1pt}
-\begin{tabular}{p{0.27\columnwidth}p{0.17\columnwidth}p{0.17\columnwidth}p{0.17\columnwidth}p{0.17\columnwidth}}
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{llrrrrr}
 \toprule
-Environment & \shortstack{Independent\\scenes} & \shortstack{Analyzed PRN\\tracks} & \shortstack{Confirmed\\events} & \shortstack{Confirmed\\paths}\\
+Environment & Elevation range & Observations & Tracks & Recordings & Scenes & $N_{\mathrm{eff}}$\\
 \midrule
-Urban & 4 & 4 & 7 & 7\\
-Mountain/Valley & 3 & 9 & 13 & 14\\
-Highway/Open & 2 & 2 & 2 & 2\\
-Special Reflective & 2 & 2 & 7 & 7\\
+Urban & LOW $[0,30^\circ)$ & 18 & 8 & 3 & 3 & 14.8\\
+Urban & MID $[30^\circ,60^\circ)$ & 169 & 74 & 10 & 5 & 125.6\\
+Urban & HIGH $[60^\circ,90^\circ]$ & 129 & 64 & 8 & 5 & 101.1\\
+Mountain/Valley & LOW $[0,30^\circ)$ & 22 & 12 & 3 & 3 & 17.3\\
+Mountain/Valley & MID $[30^\circ,60^\circ)$ & 117 & 53 & 8 & 3 & 86.9\\
+Mountain/Valley & HIGH $[60^\circ,90^\circ]$ & 32 & 15 & 3 & 2 & 23.1\\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
-\subsection{Representative SAGE-Extracted Multipath Case}
-Figure~\ref{fig:representative-path} shows a representative G25 measurement from the Highway/Open scenario. The retained jointly confirmed path has an excess delay of 1.1 samples (secondary delay 1.2 samples), relative Doppler of $-4.7159$ Hz, and relative power of $-7.8526$ dB; its observation time is approximately 60.5369 s and the selected model order is $L=2$. This example illustrates the separability of the direct and secondary propagation components after joint confirmation in delay, relative Doppler, and relative power.
+\subsection{Measured and Fitted Parameter Distributions}
+Figure~\ref{fig:empirical-model-pdf} compares the track-weighted measured histograms with the marginal densities from the joint model. All six groups have a main peak near 1.3--1.6 samples and a tail toward larger delays. The fitted curves reproduce the main peak and the overall tail while smoothing local fluctuations.
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{../../figures/figure2_representative_path.pdf}
-\caption{Representative confirmed G25 path from the Highway/Open scenario. The plot shows the direct and secondary components and their extracted excess delay, relative Doppler, and relative power.}
-\label{fig:representative-path}
-\end{figure}
+Figure~\ref{fig:joint-delay-power} shows a two-dimensional delay--power view of the joint model. Blue points are measured observations. Orange solid and dashed contours enclose the central 50\% and 90\% density regions, respectively. The two environments show two main combinations: shorter delays with stronger power and longer delays with weaker power.
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=\columnwidth]{../../figures/figure3_hierarchical_confirmation.pdf}
-\caption{Hierarchical candidate reduction from valid 40-ms observation windows through candidate screening, temporal consistency, multi-snapshot joint confirmation, and confirmed paths for three representative measurements. The figure illustrates confirmation behavior across the processing hierarchy.}
-\label{fig:hierarchical-confirmation}
+\includegraphics[width=0.96\columnwidth]{../../figures/conditional_joint_delay_power.pdf}
+\caption{Measured and fitted joint delay--power density.}
+\label{fig:joint-delay-power}
 \end{figure}
 
-\subsection{Environment-Wise Path Characteristics}
-The confirmed path set contains 30 path observations from 12 path-bearing PRN tracks across 8 independent scenes; Table~\ref{tab:experimental-evidence} summarizes the analyzed measurement coverage, including tracks with zero or non-confirmed outcomes. Across the confirmed path observations, excess delay ranges from 1.0 to 4.5 samples, signed relative Doppler from $-78.552$ to $49.664$ Hz, and relative power from $-19.773$ to $-0.894$ dB. The observed median excess delays for Urban, Mountain/Valley, Highway/Open, and Special Reflective are 1.20, 1.10, 1.15, and 1.20 samples, respectively; the corresponding signed relative-Doppler medians are $-3.820$, $-0.468$, $-7.715$, and $31.540$ Hz. Figure~\ref{fig:path-characteristics} displays these three common path parameters and their within-environment medians.
+\clearpage
 
-The observation spans derived from the first and last valid windows, summed across the analyzed tracks, are 177.38 s (Urban), 203.16 s (Mountain/Valley), 383.98 s (Highway/Open), and 150.50 s (Special Reflective). These durations provide the observation context for each environment. Because valid observation windows overlap, event counts are used to summarize the observed confirmed cases rather than as normalized occurrence-rate estimates.
+The magnitude of relative Doppler has a clear peak near 45--50 Hz in all six combinations of environment and elevation range. The fitted curves reproduce this peak and show the secondary structure and the tail at higher Doppler values in smooth form. Similar peak locations across the elevation ranges show a common dominant Doppler characteristic.
 
-\begin{figure*}[!t]
-\centering
-\includegraphics[width=0.92\textwidth]{../../figures/figure4_environment_path_characteristics.pdf}
-\caption{Environment-wise characteristics of jointly confirmed paths. The panels show excess delay, relative power, and signed relative Doppler for individual paths; labels give the sample count $n$ for each environment and horizontal bars give within-environment medians.}
-\label{fig:path-characteristics}
-\end{figure*}
+Relative power has two recurring concentration regions near $-14$ and $-4$ dB. The three-component model represents this bimodal structure. In Urban measurements, the relative weight of the two regions changes from LOW to HIGH elevation. Mountain/Valley shows both regions in all three elevation ranges, with a different balance between them. The model captures the common two-region structure and the group-dependent balance.
 
-\subsection{Cross-Environment Multipath Characteristics}
-Distinct multipath characteristics are observed across the evaluated vehicular environments. Urban measurements exhibit the widest observed excess-delay range, including a maximum excess delay of 4.5 samples, indicating reflected components with larger relative path-length differences in the current measurements. Mountain/Valley contributes the largest confirmed-path sample and a broad range of relative Doppler, consistent with richer time-varying propagation geometries under vehicle motion. Special Reflective contains confirmed paths in two independent scenes, with appreciable variation in excess delay, relative power, and relative Doppler consistent with localized strong-reflector conditions. The currently available Highway/Open paths are fewer and show a more compact observed delay and Doppler range. Overall, these measured differences are qualitatively consistent with the distinct reflection and scattering conditions associated with urban structures, mountainous terrain, open roads, and localized reflectors. The framework therefore resolves and characterizes environment-associated multipath behavior from dynamic vehicular measurements.
+Together, these plots show the main marginal and joint structure of the three path parameters.
 
 \section{Conclusion}
-This paper evaluated a real dynamic GPS L1 C/A raw-IQ measurement chain and a NAV-aided hierarchical SAGE framework for path-level multipath extraction. The estimator combines path-wise delay--Doppler refinement with navigation-aligned observations, temporal consistency, and multi-snapshot joint confirmation. The resulting evidence supports bounded comparison of measured excess delay, relative Doppler, and relative power across the evaluated vehicular environments. Future work will expand independent scene coverage and develop the path and channel-parameter databases required for broader statistical analysis.
+We present a navigation-aided processing chain for extracting persistent GPS L1 C/A path observations from dynamic road measurements. Each tracked satellite is aligned and processed separately with fractional delay--Doppler SAGE. Temporal consistency is then applied before track-weighted aggregation.
+
+A three-dimensional GMM jointly models excess delay, the magnitude of relative Doppler, and relative power for two environments and three elevation ranges. The measured and fitted marginal distributions, together with the joint delay--power plot, show the main delay and Doppler peaks, the two-region power structure, and the principal delay--power combinations. Together, these results give a common statistical description of the three path parameters for all six combinations of environment and elevation range.
 
 \bibliographystyle{IEEEtran}
 \bibliography{references}

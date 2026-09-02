@@ -1,0 +1,12 @@
+{
+  "source_population": "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\supplemental_data_outputs\\urban_mountain_stage3_elevation_model_review_v3_conditional_gmm\\population\\gmm_feature_population.csv",
+  "source_rows": 487,
+  "run_window_path_sets": 279,
+  "sample_rate_hz": 10230000.0,
+  "sample_period_ns": 97.75171065493646,
+  "power_delay_model": "P_rel_dB = intercept_db + slope_db_per_sample * excess_delay_samples",
+  "fit_population": "retained secondary path observations; direct reference excluded from decay fit",
+  "rms_formula": "sqrt(sum_l p_l*(tau_l-tau_bar)^2/sum_l p_l)",
+  "rms_population": "one normalized direct reference plus retained secondary paths in each unique run/window group",
+  "interpretation": "retained-path RMS delay dispersion, not complete-CIR RMS delay spread"
+}

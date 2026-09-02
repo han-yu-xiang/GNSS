@@ -1,0 +1,7 @@
+cell_id,row_count,track_count,scene_count,selected_n_components,selected_mean_weighted_nlpd,selected_bic,selected_status
+Urban/LOW,18,8,3,1,3.7145235723982006,58.86832562518145,fit_ok
+Urban/MID,169,74,5,3,5.014832113894611,419.0843374894539,fit_ok
+Urban/HIGH,129,64,5,3,4.791679803115163,339.2804854521253,fit_ok
+Mountain/Valley/LOW,22,12,3,1,5.432524625120476,79.10616517485168,fit_ok
+Mountain/Valley/MID,117,53,3,2,4.947935403509409,311.8636610097817,fit_ok
+Mountain/Valley/HIGH,32,15,2,1,6.469043383906638,98.89978003479757,fit_ok
