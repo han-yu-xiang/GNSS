@@ -1471,3 +1471,27 @@ SAGE_EXECUTED = NO
 BATCH_EXECUTED = NO
 NEXT_DECISION_REQUIRED = AUTHORIZE PHASE-2 DESIGN/TRAINING OR HOLD; no automatic execution
 ```
+
+## VTC Signed-Doppler Empirical-CDF Revision in Isolated Review Copy (2026-09-15)
+
+状态：Implemented / Validated in isolated review copy; canonical manuscript pending author approval。
+
+- 本轮只调整 VTC 审阅副本中的有符号相对多普勒表示：由双分量 Gaussian mixture model 改为轨迹平衡经验 CDF，并报告 P10、P50 和 P90。时延、相对功率和功率--时延关系保持原模型与原数值。
+- 多普勒证据来自 docs/vtc2027_spring/supplemental_data_outputs/channel_model_scientific_risk_experiments_review_20260913/review/，独立 QA 状态为 PASS_WITH_LIMITATIONS。Urban 为 346 条观测/155 条轨迹，分位数为 -55.6/19.5/80.6 Hz；Mountain/Valley 为 172 条观测/81 条轨迹，分位数为 -94.4/-45.1/55.3 Hz。
+- 隔离英文稿位于 docs/vtc2027_spring/supplemental_data_outputs/channel_model_scientific_risk_text_revision_review_20260913/manuscript/latex/。Figure 2 已同步为时延拟合、经验多普勒 CDF 和相对功率拟合的组合图；英文 PDF 编译为 5 页，未发现 LaTeX Error、未定义引用或 overfull hbox。
+- 本轮未读取 raw IQ，未运行 MATLAB/SAGE/batch/production，未修改科学数据或底层 SAGE 结果。正式 docs/vtc2027_spring/manuscript/latex/ 尚未覆盖，待作者审阅后再决定是否 canonicalize。
+
+```text
+VTC_DOPPLER_REPRESENTATION = TRACK_BALANCED_EMPIRICAL_CDF
+VTC_DOPPLER_QA = PASS_WITH_LIMITATIONS
+VTC_DELAY_MODEL_CHANGED = NO
+VTC_POWER_MODEL_CHANGED = NO
+VTC_POWER_DELAY_MODEL_CHANGED = NO
+VTC_SCIENTIFIC_DATA_CHANGED = NO
+VTC_ISOLATED_MANUSCRIPT_CHANGED = YES
+VTC_FORMAL_CANONICAL_MANUSCRIPT_CHANGED = NO
+RAW_IQ_READ = NO
+MATLAB_EXECUTED = NO
+SAGE_EXECUTED = NO
+NEXT_ACTION = AUTHOR_REVIEW_OF_ISOLATED_DOPPLER_REVISION
+```

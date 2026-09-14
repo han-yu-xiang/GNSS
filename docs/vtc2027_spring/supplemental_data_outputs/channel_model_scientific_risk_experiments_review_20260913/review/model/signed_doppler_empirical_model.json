@@ -1,0 +1,54 @@
+{
+  "model": "Track-balanced empirical distribution for signed relative Doppler",
+  "source_population": "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\supplemental_data_outputs\\urban_mountain_stage3_elevation_model_review_v3_conditional_gmm\\population\\gmm_feature_population.csv",
+  "source_sha256": "123fa5f3c86cf4f5008a3f636b00df917923c11bbdd3eac009a0e9e10a506291",
+  "cdf_definition": "F_w(x) = sum_i w_i 1(value_i <= x) / sum_i w_i",
+  "quantile_definition": "Pq is the smallest observed value with F_w(value) >= q",
+  "quantiles": [
+    {
+      "environment": "Urban",
+      "model": "Track-balanced empirical CDF",
+      "observation_count": 346,
+      "track_count": 155,
+      "scene_count": 6,
+      "P10_hz": -55.5530942747,
+      "P50_hz": 19.4775428039,
+      "P90_hz": 80.5735056392,
+      "weighted_mean_hz": 5.2384599086,
+      "weighted_std_hz": 58.604094074,
+      "negative_weight_fraction": 0.476344086,
+      "nonnegative_weight_fraction": 0.523655914,
+      "minimum_hz": -120.3356979047,
+      "maximum_hz": 104.6643020953,
+      "unique_value_count": 225,
+      "weight_sum": 155.0,
+      "weight_rule": "1 / retained observation count within each satellite track"
+    },
+    {
+      "environment": "Mountain/Valley",
+      "model": "Track-balanced empirical CDF",
+      "observation_count": 172,
+      "track_count": 81,
+      "scene_count": 3,
+      "P10_hz": -94.4431141652,
+      "P50_hz": -45.1428714865,
+      "P90_hz": 55.3038453667,
+      "weighted_mean_hz": -12.7208640032,
+      "weighted_std_hz": 61.0959382135,
+      "negative_weight_fraction": 0.6049382716,
+      "nonnegative_weight_fraction": 0.3950617284,
+      "minimum_hz": -107.3539487672,
+      "maximum_hz": 104.6643020953,
+      "unique_value_count": 126,
+      "weight_sum": 81.0,
+      "weight_rule": "1 / retained observation count within each satellite track"
+    }
+  ],
+  "execution_boundary": {
+    "raw_iq_read": false,
+    "matlab_executed": false,
+    "sage_executed": false,
+    "production_pipeline_executed": false,
+    "manuscript_modified": false
+  }
+}

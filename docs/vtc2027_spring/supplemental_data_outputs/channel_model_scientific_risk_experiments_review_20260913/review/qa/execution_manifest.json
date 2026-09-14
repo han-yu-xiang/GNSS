@@ -1,0 +1,18 @@
+{
+  "status": "COMPLETED_REVIEW_ONLY",
+  "source_sha256": "123fa5f3c86cf4f5008a3f636b00df917923c11bbdd3eac009a0e9e10a506291",
+  "artifact_sha256": {
+    "tables\\gmm_complexity_summary.csv": "770e1b5f677c2d043fe483ba08685bc1fe337284e5a976db610152a8c3e9c036",
+    "tables\\gmm_loso_folds.csv": "9ad28b326fd5dbb267533c0bdebe5c17f4f747bdcbfee2fc19ab24da64331d8e",
+    "model\\gmm_complexity_results.json": "8372e571012aea661fc5b6b1199ab7ad2d342b8f8b62fdfb1a67fe9fb1974d4d",
+    "figures\\gmm_complexity_scene_loso_nlpd.png": "14d535fbadd2ca2c5309e6c5cfbdf0bcf1ff4484fd6cee9815d46712ad32a896",
+    "figures\\gmm_complexity_scene_loso_nlpd.pdf": "7a9dc4fd9b8608f7a9c7e81313ca52f94d1bb6db4241741ddb8531e18b797c9f"
+  },
+  "artifact_paths": [
+    "tables\\gmm_complexity_summary.csv",
+    "tables\\gmm_loso_folds.csv",
+    "model\\gmm_complexity_results.json",
+    "figures\\gmm_complexity_scene_loso_nlpd.png",
+    "figures\\gmm_complexity_scene_loso_nlpd.pdf"
+  ]
+}

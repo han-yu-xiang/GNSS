@@ -1,0 +1,66 @@
+{
+  "scope": "Author-frozen delay-model preview; formal manuscript integration pending",
+  "freeze_status": "FROZEN",
+  "freeze_date": "2026-09-03",
+  "freeze_decision": "Urban uses shifted-lognormal; Mountain/Valley retains lognormal",
+  "source_population": "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\supplemental_data_outputs\\urban_mountain_stage3_elevation_model_review_v3_conditional_gmm\\population\\gmm_feature_population.csv",
+  "weight_field": "track_weight_recomputed_primary",
+  "models": {
+    "Urban": {
+      "family": "shifted_lognormal",
+      "params": {
+        "mean_log": 0.050118641036256045,
+        "std_log": 0.6746729500928551,
+        "loc": 0.703114946887473
+      },
+      "support": "x>loc",
+      "parameter_count": 3,
+      "status": "fit_ok",
+      "weighted_log_likelihood": -166.70714177880507,
+      "weighted_mean_log_likelihood": -1.075529946960442,
+      "weighted_nlpd": 1.075529946960442,
+      "bic": 350.13676625954287,
+      "aic": 339.41428355761013,
+      "weighted_cdf_distance": 0.08154438243886612,
+      "effective_sample_size": 263.5283363801689,
+      "weight_sum": 154.999999999941,
+      "validation_nlpd": 1.0128211164280372,
+      "validation_nlpd_std": 0.2552819516369836,
+      "validation_fold_count": 6,
+      "validation_scenes": "F1023_V70_D0120_P1;F1023_V70_D0120_P5;F1023_V70_D0120_P7;F1023_V70_D0120_P8;F1023_V70_D0122_P1;F1023_v50_D0127_P1"
+    },
+    "Mountain/Valley": {
+      "family": "lognormal",
+      "params": {
+        "mean_log": 0.653049873043258,
+        "std_log": 0.3481730529203193,
+        "loc": 0.0
+      },
+      "support": "x>0",
+      "parameter_count": 2,
+      "status": "fit_ok",
+      "weighted_log_likelihood": -82.37155371750846,
+      "weighted_mean_log_likelihood": -1.0169327619449506,
+      "weighted_nlpd": 1.0169327619449506,
+      "bic": 174.44097930547116,
+      "aic": 168.74310743501692,
+      "weighted_cdf_distance": 0.05540158542198648,
+      "effective_sample_size": 127.60453808747236,
+      "weight_sum": 80.999999999968,
+      "validation_nlpd": 1.0251381114107019,
+      "validation_nlpd_std": 0.08450048526161397,
+      "validation_fold_count": 3,
+      "validation_scenes": "F1023_V70_D0117_P2;F1023_V70_D0117_P4;F1023_v90_D0117_P7",
+      "selection_score": 1.0,
+      "selection_reason": "best validated simple candidate; no complex candidate passed validation",
+      "group": "Mountain/Valley",
+      "variable": "excess_delay",
+      "source_field": "excess_delay_samples",
+      "units": "samples",
+      "sample_count": 172,
+      "track_count": 81,
+      "scene_count": 3,
+      "weight_field": "track_weight_recomputed_primary"
+    }
+  }
+}

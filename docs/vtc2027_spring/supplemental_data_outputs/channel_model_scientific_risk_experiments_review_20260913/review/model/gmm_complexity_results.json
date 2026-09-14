@@ -1,0 +1,69 @@
+{
+  "experiment": "K=1/2/3 weighted one-dimensional Gaussian-mixture scene-LOSO comparison",
+  "source_population": "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\supplemental_data_outputs\\urban_mountain_stage3_elevation_model_review_v3_conditional_gmm\\population\\gmm_feature_population.csv",
+  "source_sha256": "123fa5f3c86cf4f5008a3f636b00df917923c11bbdd3eac009a0e9e10a506291",
+  "population": {
+    "primary_rows": 518,
+    "environment_counts": {
+      "Urban": 346,
+      "Mountain/Valley": 172
+    },
+    "track_count": 236,
+    "scene_count": 9,
+    "outlier_rows_removed": 0
+  },
+  "weight_rule": "Within each fit or scene fold, each track has total analysis weight one.",
+  "complexity_rule": "Select the smallest K whose mean scene-held-out NLPD is within one standard error of the best mean.",
+  "components_tested": [
+    1,
+    2,
+    3
+  ],
+  "seeds": [
+    2026091301,
+    2026091302,
+    2026091303
+  ],
+  "selections": {
+    "Urban": {
+      "doppler_offset_hz": {
+        "selected_components": 2,
+        "best_mean_components": 3,
+        "one_se_threshold": 5.346246539241135,
+        "selected_scene_loso_nlpd_mean": 5.268878712794046,
+        "selected_maximum_weighted_cdf_deviation": 0.11978573374842372
+      },
+      "relative_power_db": {
+        "selected_components": 2,
+        "best_mean_components": 3,
+        "one_se_threshold": 2.9444578333171196,
+        "selected_scene_loso_nlpd_mean": 2.8976736869935222,
+        "selected_maximum_weighted_cdf_deviation": 0.04511012483649557
+      }
+    },
+    "Mountain/Valley": {
+      "doppler_offset_hz": {
+        "selected_components": 3,
+        "best_mean_components": 3,
+        "one_se_threshold": 4.84126679169287,
+        "selected_scene_loso_nlpd_mean": 4.732138291431451,
+        "selected_maximum_weighted_cdf_deviation": 0.11964716955095056
+      },
+      "relative_power_db": {
+        "selected_components": 2,
+        "best_mean_components": 2,
+        "one_se_threshold": 2.92282436653358,
+        "selected_scene_loso_nlpd_mean": 2.7952325703629506,
+        "selected_maximum_weighted_cdf_deviation": 0.03710944347490808
+      }
+    }
+  },
+  "execution_boundary": {
+    "raw_iq_read": false,
+    "matlab_executed": false,
+    "sage_executed": false,
+    "production_pipeline_executed": false,
+    "source_population_modified": false,
+    "manuscript_modified": false
+  }
+}

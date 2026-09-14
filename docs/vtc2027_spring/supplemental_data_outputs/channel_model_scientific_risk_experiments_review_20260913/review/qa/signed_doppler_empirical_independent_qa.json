@@ -1,0 +1,24 @@
+{
+  "status": "PASS_WITH_LIMITATIONS",
+  "checks": {
+    "source_rows": true,
+    "source_sha256_matches_model": true,
+    "environment_rows": true,
+    "table_has_both_environments": true,
+    "source_track_weights_unit_mass": true,
+    "quantiles_recomputed_from_source": true,
+    "quantiles_ordered": true,
+    "artifacts_nonempty": true,
+    "no_formal_manuscript_target": true
+  },
+  "quantile_checks": {
+    "Urban": true,
+    "Mountain/Valley": true
+  },
+  "source_sha256": "123fa5f3c86cf4f5008a3f636b00df917923c11bbdd3eac009a0e9e10a506291",
+  "review_only": true,
+  "limitations": [
+    "The empirical CDF is descriptive and resamples the measured support; it does not establish a universal Doppler law.",
+    "No formal KS p-value is reported because the observations are weighted and scene/track clustered."
+  ]
+}

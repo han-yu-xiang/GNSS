@@ -1,0 +1,619 @@
+{
+  "scope": "Isolated environment-level signed Doppler and relative-power analysis",
+  "source_population": "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\supplemental_data_outputs\\urban_mountain_stage3_elevation_model_review_v3_conditional_gmm\\population\\gmm_feature_population.csv",
+  "weight_field": "track_weight_recomputed_primary",
+  "variables": {
+    "signed_relative_doppler": {
+      "Urban": {
+        "selected": {
+          "family": "gaussian_mixture",
+          "params": {
+            "means": [
+              -51.247519484648926,
+              56.69876071916829
+            ],
+            "stds": [
+              23.4541568916095,
+              22.52127970401269
+            ],
+            "proportions": [
+              0.47672139061563157,
+              0.5232786093843684
+            ],
+            "component_effective_mass": [
+              73.89181554539476,
+              81.10818445454623
+            ],
+            "iterations": 25
+          },
+          "support": "R",
+          "parameter_count": 5,
+          "status": "fit_ok",
+          "weighted_log_likelihood": -809.674247352425,
+          "weighted_mean_log_likelihood": -5.223704821630537,
+          "weighted_nlpd": 5.223704821630537,
+          "bic": 1647.2192992080713,
+          "aic": 1629.34849470485,
+          "weighted_cdf_distance": 0.1197857337498126,
+          "effective_sample_size": 263.5283363801689,
+          "weight_sum": 154.999999999941,
+          "validation_nlpd": 5.268878712795094,
+          "validation_nlpd_std": 0.23954803407992267,
+          "validation_fold_count": 6,
+          "validation_scenes": "F1023_V70_D0120_P1;F1023_V70_D0120_P5;F1023_V70_D0120_P7;F1023_V70_D0120_P8;F1023_V70_D0122_P1;F1023_v50_D0127_P1",
+          "selection_score": 1.0,
+          "selection_reason": "complex candidate retained: BIC improves by at least 6 and validation/ECDF scores are not worse"
+        },
+        "candidates": {
+          "normal": {
+            "family": "normal",
+            "params": {
+              "mean": 5.238459908619926,
+              "std": 58.604094073965776
+            },
+            "support": "R",
+            "parameter_count": 2,
+            "status": "fit_ok",
+            "weighted_log_likelihood": -850.9101792737277,
+            "weighted_mean_log_likelihood": -5.489743092090656,
+            "weighted_nlpd": 5.489743092090656,
+            "bic": 1712.9686803487439,
+            "aic": 1705.8203585474555,
+            "weighted_cdf_distance": 0.18440825776940928,
+            "effective_sample_size": 263.5283363801689,
+            "weight_sum": 154.999999999941,
+            "validation_nlpd": 5.473099615709935,
+            "validation_nlpd_std": 0.14094798838182176,
+            "validation_fold_count": 6,
+            "validation_scenes": "F1023_V70_D0120_P1;F1023_V70_D0120_P5;F1023_V70_D0120_P7;F1023_V70_D0120_P8;F1023_V70_D0122_P1;F1023_v50_D0127_P1",
+            "selection_score": 2.3
+          },
+          "laplace": {
+            "family": "laplace",
+            "params": {
+              "loc": 19.4775428038538,
+              "scale": 53.627920755534156
+            },
+            "support": "R",
+            "parameter_count": 2,
+            "status": "fit_ok",
+            "weighted_log_likelihood": -879.6586385070918,
+            "weighted_mean_log_likelihood": -5.675217022628559,
+            "weighted_nlpd": 5.675217022628559,
+            "bic": 1770.465598815472,
+            "aic": 1763.3172770141837,
+            "weighted_cdf_distance": 0.22815856833106643,
+            "effective_sample_size": 263.5283363801689,
+            "weight_sum": 154.999999999941,
+            "validation_nlpd": 5.7155841837958805,
+            "validation_nlpd_std": 0.15131772355969877,
+            "validation_fold_count": 6,
+            "validation_scenes": "F1023_V70_D0120_P1;F1023_V70_D0120_P5;F1023_V70_D0120_P7;F1023_V70_D0120_P8;F1023_V70_D0122_P1;F1023_v50_D0127_P1",
+            "selection_score": 4.0
+          },
+          "student_t": {
+            "family": "student_t",
+            "params": {
+              "df": 404.4287934927351,
+              "loc": 5.25267572893936,
+              "scale": 58.551898645583215
+            },
+            "support": "R",
+            "parameter_count": 3,
+            "status": "fit_ok",
+            "weighted_log_likelihood": -851.0326583667274,
+            "weighted_mean_log_likelihood": -5.490533279787428,
+            "weighted_nlpd": 5.490533279787428,
+            "bic": 1718.7877994353876,
+            "aic": 1708.065316733455,
+            "weighted_cdf_distance": 0.18433955983856198,
+            "effective_sample_size": 263.5283363801689,
+            "weight_sum": 154.999999999941,
+            "validation_nlpd": 5.47389521234862,
+            "validation_nlpd_std": 0.14098308711789434,
+            "validation_fold_count": 6,
+            "validation_scenes": "F1023_V70_D0120_P1;F1023_V70_D0120_P5;F1023_V70_D0120_P7;F1023_V70_D0120_P8;F1023_V70_D0122_P1;F1023_v50_D0127_P1",
+            "selection_score": 2.7
+          },
+          "gaussian_mixture": {
+            "family": "gaussian_mixture",
+            "params": {
+              "means": [
+                -51.247519484648926,
+                56.69876071916829
+              ],
+              "stds": [
+                23.4541568916095,
+                22.52127970401269
+              ],
+              "proportions": [
+                0.47672139061563157,
+                0.5232786093843684
+              ],
+              "component_effective_mass": [
+                73.89181554539476,
+                81.10818445454623
+              ],
+              "iterations": 25
+            },
+            "support": "R",
+            "parameter_count": 5,
+            "status": "fit_ok",
+            "weighted_log_likelihood": -809.674247352425,
+            "weighted_mean_log_likelihood": -5.223704821630537,
+            "weighted_nlpd": 5.223704821630537,
+            "bic": 1647.2192992080713,
+            "aic": 1629.34849470485,
+            "weighted_cdf_distance": 0.1197857337498126,
+            "effective_sample_size": 263.5283363801689,
+            "weight_sum": 154.999999999941,
+            "validation_nlpd": 5.268878712795094,
+            "validation_nlpd_std": 0.23954803407992267,
+            "validation_fold_count": 6,
+            "validation_scenes": "F1023_V70_D0120_P1;F1023_V70_D0120_P5;F1023_V70_D0120_P7;F1023_V70_D0120_P8;F1023_V70_D0122_P1;F1023_v50_D0127_P1",
+            "selection_score": 1.0,
+            "selection_reason": "complex candidate retained: BIC improves by at least 6 and validation/ECDF scores are not worse"
+          }
+        }
+      },
+      "Mountain/Valley": {
+        "selected": {
+          "family": "gaussian_mixture",
+          "params": {
+            "means": [
+              -58.54153232108187,
+              57.902889679709645
+            ],
+            "stds": [
+              22.196167355007326,
+              22.42490394628891
+            ],
+            "proportions": [
+              0.6065018183735164,
+              0.3934981816264838
+            ],
+            "component_effective_mass": [
+              49.12664728823542,
+              31.873352711732597
+            ],
+            "iterations": 19
+          },
+          "support": "R",
+          "parameter_count": 5,
+          "status": "fit_ok",
+          "weighted_log_likelihood": -419.97883126514364,
+          "weighted_mean_log_likelihood": -5.1849238427816,
+          "weighted_nlpd": 5.1849238427816,
+          "bic": 864.2023422064228,
+          "aic": 849.9576625302873,
+          "weighted_cdf_distance": 0.1775826746300507,
+          "effective_sample_size": 127.60453808747236,
+          "weight_sum": 80.999999999968,
+          "validation_nlpd": 5.268832850312634,
+          "validation_nlpd_std": 0.12537721520201933,
+          "validation_fold_count": 3,
+          "validation_scenes": "F1023_V70_D0117_P2;F1023_V70_D0117_P4;F1023_v90_D0117_P7",
+          "selection_score": 1.0,
+          "selection_reason": "complex candidate retained: BIC improves by at least 6 and validation/ECDF scores are not worse"
+        },
+        "candidates": {
+          "normal": {
+            "family": "normal",
+            "params": {
+              "mean": -12.720864003223452,
+              "std": 61.095938213544706
+            },
+            "support": "R",
+            "parameter_count": 2,
+            "status": "fit_ok",
+            "weighted_log_likelihood": -448.0420974784393,
+            "weighted_mean_log_likelihood": -5.53138391948909,
+            "weighted_nlpd": 5.53138391948909,
+            "bic": 905.7820668273329,
+            "aic": 900.0841949568786,
+            "weighted_cdf_distance": 0.2540953745967654,
+            "effective_sample_size": 127.60453808747236,
+            "weight_sum": 80.999999999968,
+            "validation_nlpd": 5.559805625117204,
+            "validation_nlpd_std": 0.06498729827204565,
+            "validation_fold_count": 3,
+            "validation_scenes": "F1023_V70_D0117_P2;F1023_V70_D0117_P4;F1023_v90_D0117_P7",
+            "selection_score": 2.3
+          },
+          "laplace": {
+            "family": "laplace",
+            "params": {
+              "loc": -45.1428714864874,
+              "scale": 50.53504632802842
+            },
+            "support": "R",
+            "parameter_count": 2,
+            "status": "fit_ok",
+            "weighted_log_likelihood": -454.8809552896562,
+            "weighted_mean_log_likelihood": -5.61581426283748,
+            "weighted_nlpd": 5.61581426283748,
+            "bic": 919.4597824497666,
+            "aic": 913.7619105793124,
+            "weighted_cdf_distance": 0.2825253241971303,
+            "effective_sample_size": 127.60453808747236,
+            "weight_sum": 80.999999999968,
+            "validation_nlpd": 5.630018824944628,
+            "validation_nlpd_std": 0.07917825219802348,
+            "validation_fold_count": 3,
+            "validation_scenes": "F1023_V70_D0117_P2;F1023_V70_D0117_P4;F1023_v90_D0117_P7",
+            "selection_score": 4.0
+          },
+          "student_t": {
+            "family": "student_t",
+            "params": {
+              "df": 404.4287934927351,
+              "loc": -12.773982195683327,
+              "scale": 61.0379306146816
+            },
+            "support": "R",
+            "parameter_count": 3,
+            "status": "fit_ok",
+            "weighted_log_likelihood": -448.1036796368716,
+            "weighted_mean_log_likelihood": -5.532144193049984,
+            "weighted_nlpd": 5.532144193049984,
+            "bic": 910.7541670794246,
+            "aic": 902.2073592737432,
+            "weighted_cdf_distance": 0.25381787056823113,
+            "effective_sample_size": 127.60453808747236,
+            "weight_sum": 80.999999999968,
+            "validation_nlpd": 5.560617418149886,
+            "validation_nlpd_std": 0.06487589711806965,
+            "validation_fold_count": 3,
+            "validation_scenes": "F1023_V70_D0117_P2;F1023_V70_D0117_P4;F1023_v90_D0117_P7",
+            "selection_score": 2.7
+          },
+          "gaussian_mixture": {
+            "family": "gaussian_mixture",
+            "params": {
+              "means": [
+                -58.54153232108187,
+                57.902889679709645
+              ],
+              "stds": [
+                22.196167355007326,
+                22.42490394628891
+              ],
+              "proportions": [
+                0.6065018183735164,
+                0.3934981816264838
+              ],
+              "component_effective_mass": [
+                49.12664728823542,
+                31.873352711732597
+              ],
+              "iterations": 19
+            },
+            "support": "R",
+            "parameter_count": 5,
+            "status": "fit_ok",
+            "weighted_log_likelihood": -419.97883126514364,
+            "weighted_mean_log_likelihood": -5.1849238427816,
+            "weighted_nlpd": 5.1849238427816,
+            "bic": 864.2023422064228,
+            "aic": 849.9576625302873,
+            "weighted_cdf_distance": 0.1775826746300507,
+            "effective_sample_size": 127.60453808747236,
+            "weight_sum": 80.999999999968,
+            "validation_nlpd": 5.268832850312634,
+            "validation_nlpd_std": 0.12537721520201933,
+            "validation_fold_count": 3,
+            "validation_scenes": "F1023_V70_D0117_P2;F1023_V70_D0117_P4;F1023_v90_D0117_P7",
+            "selection_score": 1.0,
+            "selection_reason": "complex candidate retained: BIC improves by at least 6 and validation/ECDF scores are not worse"
+          }
+        }
+      }
+    },
+    "relative_power": {
+      "Urban": {
+        "selected": {
+          "family": "gaussian_mixture",
+          "params": {
+            "means": [
+              -13.350448790300092,
+              -3.2726435940266505
+            ],
+            "stds": [
+              2.5309773065624537,
+              1.744702527938358
+            ],
+            "proportions": [
+              0.5410822810124369,
+              0.4589177189875627
+            ],
+            "component_effective_mass": [
+              83.8677535568958,
+              71.13224644304513
+            ],
+            "iterations": 42
+          },
+          "support": "R",
+          "parameter_count": 5,
+          "status": "fit_ok",
+          "weighted_log_likelihood": -439.6326066322696,
+          "weighted_mean_log_likelihood": -2.8363393976286253,
+          "weighted_nlpd": 2.8363393976286253,
+          "bic": 907.1360177677603,
+          "aic": 889.2652132645392,
+          "weighted_cdf_distance": 0.045110124843758204,
+          "effective_sample_size": 263.5283363801689,
+          "weight_sum": 154.999999999941,
+          "validation_nlpd": 2.8976736879318747,
+          "validation_nlpd_std": 0.09664565033362793,
+          "validation_fold_count": 6,
+          "validation_scenes": "F1023_V70_D0120_P1;F1023_V70_D0120_P5;F1023_V70_D0120_P7;F1023_V70_D0120_P8;F1023_V70_D0122_P1;F1023_v50_D0127_P1",
+          "selection_score": 1.0,
+          "selection_reason": "complex candidate retained: BIC improves by at least 6 and validation/ECDF scores are not worse"
+        },
+        "candidates": {
+          "normal": {
+            "family": "normal",
+            "params": {
+              "mean": -8.725565417225264,
+              "std": 5.484720306311087
+            },
+            "support": "R",
+            "parameter_count": 2,
+            "status": "fit_ok",
+            "weighted_log_likelihood": -483.74021814013565,
+            "weighted_mean_log_likelihood": -3.1209046331633536,
+            "weighted_nlpd": 3.1209046331633536,
+            "bic": 978.6287580815598,
+            "aic": 971.4804362802713,
+            "weighted_cdf_distance": 0.13345846693393815,
+            "effective_sample_size": 263.5283363801689,
+            "weight_sum": 154.999999999941,
+            "validation_nlpd": 3.167969153433966,
+            "validation_nlpd_std": 0.09254667059905013,
+            "validation_fold_count": 6,
+            "validation_scenes": "F1023_V70_D0120_P1;F1023_V70_D0120_P5;F1023_V70_D0120_P7;F1023_V70_D0120_P8;F1023_V70_D0122_P1;F1023_v50_D0127_P1",
+            "selection_score": 2.0
+          },
+          "laplace": {
+            "family": "laplace",
+            "params": {
+              "loc": -9.74996476416508,
+              "scale": 5.024930804254222
+            },
+            "support": "R",
+            "parameter_count": 2,
+            "status": "fit_ok",
+            "weighted_log_likelihood": -512.6716239372588,
+            "weighted_mean_log_likelihood": -3.307558864112606,
+            "weighted_nlpd": 3.307558864112606,
+            "bic": 1036.491569675806,
+            "aic": 1029.3432478745176,
+            "weighted_cdf_distance": 0.1923524315450198,
+            "effective_sample_size": 263.5283363801689,
+            "weight_sum": 154.999999999941,
+            "validation_nlpd": 3.4668652003832494,
+            "validation_nlpd_std": 0.1922204951698536,
+            "validation_fold_count": 6,
+            "validation_scenes": "F1023_V70_D0120_P1;F1023_V70_D0120_P5;F1023_V70_D0120_P7;F1023_V70_D0120_P8;F1023_V70_D0122_P1;F1023_v50_D0127_P1",
+            "selection_score": 4.0
+          },
+          "student_t": {
+            "family": "student_t",
+            "params": {
+              "df": 404.4287934927351,
+              "loc": -8.725079813292927,
+              "scale": 5.4808223120247614
+            },
+            "support": "R",
+            "parameter_count": 3,
+            "status": "fit_ok",
+            "weighted_log_likelihood": -483.8766571783658,
+            "weighted_mean_log_likelihood": -3.1217848850229033,
+            "weighted_nlpd": 3.1217848850229033,
+            "bic": 984.4757970586643,
+            "aic": 973.7533143567316,
+            "weighted_cdf_distance": 0.13347211112832263,
+            "effective_sample_size": 263.5283363801689,
+            "weight_sum": 154.999999999941,
+            "validation_nlpd": 3.1689850752140694,
+            "validation_nlpd_std": 0.09261020046518413,
+            "validation_fold_count": 6,
+            "validation_scenes": "F1023_V70_D0120_P1;F1023_V70_D0120_P5;F1023_V70_D0120_P7;F1023_V70_D0120_P8;F1023_V70_D0122_P1;F1023_v50_D0127_P1",
+            "selection_score": 3.0
+          },
+          "gaussian_mixture": {
+            "family": "gaussian_mixture",
+            "params": {
+              "means": [
+                -13.350448790300092,
+                -3.2726435940266505
+              ],
+              "stds": [
+                2.5309773065624537,
+                1.744702527938358
+              ],
+              "proportions": [
+                0.5410822810124369,
+                0.4589177189875627
+              ],
+              "component_effective_mass": [
+                83.8677535568958,
+                71.13224644304513
+              ],
+              "iterations": 42
+            },
+            "support": "R",
+            "parameter_count": 5,
+            "status": "fit_ok",
+            "weighted_log_likelihood": -439.6326066322696,
+            "weighted_mean_log_likelihood": -2.8363393976286253,
+            "weighted_nlpd": 2.8363393976286253,
+            "bic": 907.1360177677603,
+            "aic": 889.2652132645392,
+            "weighted_cdf_distance": 0.045110124843758204,
+            "effective_sample_size": 263.5283363801689,
+            "weight_sum": 154.999999999941,
+            "validation_nlpd": 2.8976736879318747,
+            "validation_nlpd_std": 0.09664565033362793,
+            "validation_fold_count": 6,
+            "validation_scenes": "F1023_V70_D0120_P1;F1023_V70_D0120_P5;F1023_V70_D0120_P7;F1023_V70_D0120_P8;F1023_V70_D0122_P1;F1023_v50_D0127_P1",
+            "selection_score": 1.0,
+            "selection_reason": "complex candidate retained: BIC improves by at least 6 and validation/ECDF scores are not worse"
+          }
+        }
+      },
+      "Mountain/Valley": {
+        "selected": {
+          "family": "gaussian_mixture",
+          "params": {
+            "means": [
+              -13.24152060720992,
+              -4.034355166853919
+            ],
+            "stds": [
+              1.9474917447142464,
+              1.821043413994779
+            ],
+            "proportions": [
+              0.5620971835047524,
+              0.4379028164952478
+            ],
+            "component_effective_mass": [
+              45.52987186386695,
+              35.47012813610106
+            ],
+            "iterations": 16
+          },
+          "support": "R",
+          "parameter_count": 5,
+          "status": "fit_ok",
+          "weighted_log_likelihood": -221.30115184849143,
+          "weighted_mean_log_likelihood": -2.7321129857849242,
+          "weighted_nlpd": 2.7321129857849242,
+          "bic": 466.8469833731184,
+          "aic": 452.60230369698286,
+          "weighted_cdf_distance": 0.03710944347492018,
+          "effective_sample_size": 127.60453808747236,
+          "weight_sum": 80.999999999968,
+          "validation_nlpd": 2.795232570369406,
+          "validation_nlpd_std": 0.18044204858893753,
+          "validation_fold_count": 3,
+          "validation_scenes": "F1023_V70_D0117_P2;F1023_V70_D0117_P4;F1023_v90_D0117_P7",
+          "selection_score": 1.0,
+          "selection_reason": "complex candidate retained: BIC improves by at least 6 and validation/ECDF scores are not worse"
+        },
+        "candidates": {
+          "normal": {
+            "family": "normal",
+            "params": {
+              "mean": -9.20967692894032,
+              "std": 4.944708362917219
+            },
+            "support": "R",
+            "parameter_count": 2,
+            "status": "fit_ok",
+            "weighted_log_likelihood": -244.39777815116406,
+            "weighted_mean_log_likelihood": -3.0172565203859336,
+            "weighted_nlpd": 3.0172565203859336,
+            "bic": 498.49342817278233,
+            "aic": 492.7955563023281,
+            "weighted_cdf_distance": 0.13657366937823057,
+            "effective_sample_size": 127.60453808747236,
+            "weight_sum": 80.999999999968,
+            "validation_nlpd": 3.026393471657818,
+            "validation_nlpd_std": 0.02997953333533795,
+            "validation_fold_count": 3,
+            "validation_scenes": "F1023_V70_D0117_P2;F1023_V70_D0117_P4;F1023_v90_D0117_P7",
+            "selection_score": 2.3
+          },
+          "laplace": {
+            "family": "laplace",
+            "params": {
+              "loc": -10.6120394389896,
+              "scale": 4.412783457161907
+            },
+            "support": "R",
+            "parameter_count": 2,
+            "status": "fit_ok",
+            "weighted_log_likelihood": -257.38988006739953,
+            "weighted_mean_log_likelihood": -3.1776528403395212,
+            "weighted_nlpd": 3.1776528403395212,
+            "bic": 524.4776320052533,
+            "aic": 518.7797601347991,
+            "weighted_cdf_distance": 0.21836283696857584,
+            "effective_sample_size": 127.60453808747236,
+            "weight_sum": 80.999999999968,
+            "validation_nlpd": 3.190086032709107,
+            "validation_nlpd_std": 0.022096578714663976,
+            "validation_fold_count": 3,
+            "validation_scenes": "F1023_V70_D0117_P2;F1023_V70_D0117_P4;F1023_v90_D0117_P7",
+            "selection_score": 4.0
+          },
+          "student_t": {
+            "family": "student_t",
+            "params": {
+              "df": 404.4287934927351,
+              "loc": -9.211674524049112,
+              "scale": 4.940809956295047
+            },
+            "support": "R",
+            "parameter_count": 3,
+            "status": "fit_ok",
+            "weighted_log_likelihood": -244.46593723897772,
+            "weighted_mean_log_likelihood": -3.0180979906058556,
+            "weighted_nlpd": 3.0180979906058556,
+            "bic": 503.4786822836368,
+            "aic": 494.93187447795543,
+            "weighted_cdf_distance": 0.13643059075937414,
+            "effective_sample_size": 127.60453808747236,
+            "weight_sum": 80.999999999968,
+            "validation_nlpd": 3.027225463303042,
+            "validation_nlpd_std": 0.029807650475315868,
+            "validation_fold_count": 3,
+            "validation_scenes": "F1023_V70_D0117_P2;F1023_V70_D0117_P4;F1023_v90_D0117_P7",
+            "selection_score": 2.7
+          },
+          "gaussian_mixture": {
+            "family": "gaussian_mixture",
+            "params": {
+              "means": [
+                -13.24152060720992,
+                -4.034355166853919
+              ],
+              "stds": [
+                1.9474917447142464,
+                1.821043413994779
+              ],
+              "proportions": [
+                0.5620971835047524,
+                0.4379028164952478
+              ],
+              "component_effective_mass": [
+                45.52987186386695,
+                35.47012813610106
+              ],
+              "iterations": 16
+            },
+            "support": "R",
+            "parameter_count": 5,
+            "status": "fit_ok",
+            "weighted_log_likelihood": -221.30115184849143,
+            "weighted_mean_log_likelihood": -2.7321129857849242,
+            "weighted_nlpd": 2.7321129857849242,
+            "bic": 466.8469833731184,
+            "aic": 452.60230369698286,
+            "weighted_cdf_distance": 0.03710944347492018,
+            "effective_sample_size": 127.60453808747236,
+            "weight_sum": 80.999999999968,
+            "validation_nlpd": 2.795232570369406,
+            "validation_nlpd_std": 0.18044204858893753,
+            "validation_fold_count": 3,
+            "validation_scenes": "F1023_V70_D0117_P2;F1023_V70_D0117_P4;F1023_v90_D0117_P7",
+            "selection_score": 1.0,
+            "selection_reason": "complex candidate retained: BIC improves by at least 6 and validation/ECDF scores are not worse"
+          }
+        }
+      }
+    }
+  }
+}

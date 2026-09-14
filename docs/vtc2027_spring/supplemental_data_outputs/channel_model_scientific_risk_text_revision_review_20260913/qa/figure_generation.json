@@ -1,0 +1,26 @@
+{
+  "source_population": "E:\\GNSS_Multipath_Project\\docs\\vtc2027_spring\\supplemental_data_outputs\\urban_mountain_stage3_elevation_model_review_v3_conditional_gmm\\population\\gmm_feature_population.csv",
+  "selection": "primary_population_included == true",
+  "weight": "1 / retained observations in the same satellite track",
+  "observations": 518,
+  "tracks": 236,
+  "scenes": 9,
+  "environment_counts": {
+    "Urban": 346,
+    "Mountain/Valley": 172
+  },
+  "outputs": [
+    "figure2_parameter_distributions.pdf",
+    "figure3_power_delay.pdf"
+  ],
+  "legacy_individual_figures_retained": [
+    "figure2_excess_delay.pdf",
+    "figure3_signed_doppler.pdf",
+    "figure4_relative_power.pdf",
+    "figure5_power_delay.pdf"
+  ],
+  "combined_figure_layout": "3 rows x 2 columns; delay and power use measured/fitted density and CDF panels, while Doppler uses one empirical CDF panel per environment with P10/P50/P90 markers",
+  "doppler_model": "track-balanced empirical CDF",
+  "models_refit": false,
+  "source_data_modified": false
+}

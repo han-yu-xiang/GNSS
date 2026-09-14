@@ -613,6 +613,30 @@ CHINESE_LATEX_IS_REVIEW_ONLY=YES
 CHINESE_CANONICAL_PDF_ONLY=YES
 STAGE_NUMBER_USAGE_IN_MAIN_TEXT=0
 CURRENT_NEXT_ACTION=USER_AUTHOR_REVIEW
+```
+
+## VTC Signed-Doppler Empirical-CDF Revision (2026-09-15)
+
+状态：Implemented / Validated in isolated review copy; formal manuscript pending author approval。
+
+- VTC 审阅副本仅将 signed relative Doppler 从双分量 GMM 改为轨迹平衡经验 CDF，并在 Figure 2 与 Table I 中报告 Urban/Mountain/Valley 的 P10、P50、P90。
+- 时延移位对数正态模型、relative power 双分量 GMM、连接的两段 power--delay 模型及其数值均保持不变。
+- 英文审阅副本为 docs/vtc2027_spring/supplemental_data_outputs/channel_model_scientific_risk_text_revision_review_20260913/manuscript/latex/，PDF 编译为 5 页；经验多普勒结果和独立 QA 位于 channel_model_scientific_risk_experiments_review_20260913/review/。
+- 本轮没有新实验、raw IQ、MATLAB、SAGE 或 production 执行；正式 manuscript/latex/ 未覆盖。下一步是作者审阅该隔离版本，再决定是否同步到正式稿。
+
+```text
+CURRENT_PHASE=USER_AUTHOR_REVIEW
+CURRENT_WORK=VTC isolated manuscript Doppler empirical-CDF revision
+SCIENTIFIC_CONTENT_FROZEN=AUTHOR_REVIEW_GATE
+SCIENTIFIC_DATA_CHANGED=NO
+FIGURE_DATA_CHANGED=NO
+TABLE_DATA_CHANGED=NO
+NEW_EXPERIMENT_EXECUTED=NO
+RAW_IQ_READ=NO
+MATLAB_EXECUTED=NO
+SAGE_EXECUTED=NO
+FORMAL_CANONICAL_MANUSCRIPT_CHANGED=NO
+NEXT_ACTION=USER_AUTHOR_REVIEW
 NEXT_VTC_DECISION_REQUIRED=YES
 ```
 

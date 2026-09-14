@@ -1,0 +1,23 @@
+{
+  "status": "PASS_WITH_LIMITATIONS",
+  "checks": {
+    "source_sha256_matches_model": true,
+    "summary_has_12_rows": true,
+    "folds_have_54_rows": true,
+    "components_are_1_2_3": true,
+    "summary_values_finite": true,
+    "fold_values_finite": true,
+    "source_population_unchanged": true,
+    "all_environment_variable_groups_valid": true,
+    "mountain_doppler_k3_selected": true
+  },
+  "group_checks": {
+    "Urban|doppler_offset_hz": true,
+    "Urban|relative_power_db": true,
+    "Mountain/Valley|doppler_offset_hz": true,
+    "Mountain/Valley|relative_power_db": true
+  },
+  "source_sha256": "123fa5f3c86cf4f5008a3f636b00df917923c11bbdd3eac009a0e9e10a506291",
+  "review_only": true,
+  "interpretation": "K=3 is selected for Mountain/Valley signed Doppler by the predeclared one-standard-error rule, but its additional narrow negative component and remaining maximum weighted CDF deviation support the empirical-CDF decision for the manuscript route."
+}

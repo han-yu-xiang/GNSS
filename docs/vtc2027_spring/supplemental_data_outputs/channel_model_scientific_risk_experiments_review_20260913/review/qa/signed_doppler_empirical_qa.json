@@ -1,0 +1,18 @@
+{
+  "status": "PASS_WITH_LIMITATIONS",
+  "source_sha256": "123fa5f3c86cf4f5008a3f636b00df917923c11bbdd3eac009a0e9e10a506291",
+  "primary_rows": 518,
+  "environment_counts": {
+    "Urban": 346,
+    "Mountain/Valley": 172
+  },
+  "track_weight_unit_mass": true,
+  "finite_quantiles": true,
+  "quantiles_ordered": true,
+  "artifact_sha256": {
+    "tables\\signed_doppler_empirical_quantiles.csv": "2bcc44933a8f1bfc9d2c2b944d052846b8991522ecaaab740e9a642ed5ae982e",
+    "model\\signed_doppler_empirical_model.json": "a0c59c8715e1a72a771ec671225dccaf618397439b3651710662af51df7170b4",
+    "figures\\signed_doppler_empirical_cdf.png": "4c9cec5eb6cb73b352d6cf54349ab26b54fce100ebd5cd1a01bfe83e8ee8ab3f",
+    "figures\\signed_doppler_empirical_cdf.pdf": "252a99a34e7e3d320d98edce4cc52d3711d4a3291680bb4cb91a5d0becba7c2e"
+  }
+}
