@@ -1,0 +1,29 @@
+name: MATLAB Smoke Test
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  matlab-smoke:
+    runs-on: ubuntu-latest
+    env:
+      MLM_LICENSE_TOKEN: ${{ secrets.MLM_LICENSE_TOKEN }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up MATLAB
+        uses: matlab-actions/setup-matlab@v3
+
+      - name: Confirm MATLAB executable
+        shell: bash
+        run: |
+          command -v matlab
+          matlab -help >/dev/null 2>&1 || true
+
+      - name: Run MATLAB smoke test
+        uses: matlab-actions/run-command@v3
+        with:
+          command: "disp(version); A=[1 2;3 4]; assert(abs(det(A)+2)<1e-12); disp('MATLAB_SMOKE_PASS')"
