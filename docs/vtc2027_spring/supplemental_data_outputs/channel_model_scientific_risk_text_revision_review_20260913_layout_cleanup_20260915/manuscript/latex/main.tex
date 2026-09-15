@@ -23,7 +23,7 @@
 \maketitle
 
 \begin{abstract}
-Multipath propagation in a time-varying satellite-to-ground channel produces delayed and Doppler-shifted replicas of the direct GPS signal. This paper presents a measurement-based method to extract individual multipath components (MPCs) and characterize their parameters in Urban and Mountain/Valley environments. Navigation data form coherent 40-ms observations for each tracked satellite. The space-alternating generalized expectation-maximization (SAGE) algorithm estimates the delay, Doppler, and complex gain of candidate MPCs. Temporal consistency selects persistent MPC observations for characterization. The analysis uses 518 persistent MPC observations from 236 satellite tracks. Excess delay is described by environment-specific lognormal distributions, signed relative Doppler by a track-balanced empirical cumulative distribution, and relative power by a two-component Gaussian mixture model. A connected two-line model describes the mean decrease in relative power with excess delay. These descriptions provide measurement-based inputs for simplified GNSS channel simulations and receiver evaluation.
+Multipath propagation in a time-varying satellite-to-ground channel produces delayed and Doppler-shifted replicas of the direct GPS signal. This paper presents a measurement-based method to extract individual multipath components (MPCs) and characterize their parameters in Urban and Mountain/Valley environments. Navigation-data alignment is used to form coherent 40-ms observations for each tracked satellite. The space-alternating generalized expectation-maximization (SAGE) algorithm estimates the delay, Doppler, and complex gain of candidate MPCs. A temporal-consistency criterion is then used to retain persistent MPC observations for statistical characterization. The analysis uses 518 persistent MPC observations from 236 satellite tracks. Excess delay is described by environment-specific lognormal distributions, signed relative Doppler by a track-balanced empirical cumulative distribution, and relative power by a two-component Gaussian mixture model. A connected two-line model describes the mean decrease in relative power with excess delay. These descriptions provide measurement-based inputs for simplified GNSS channel simulations and receiver evaluation.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -37,7 +37,7 @@ Earlier GPS multipath studies have characterized receiver-level effects through 
 
 GNSS multipath models address different levels of the problem. Jost et al. modeled indoor pseudorange errors with a two-component Gaussian mixture, and Khider et al. applied this error model to multisensor positioning \cite{jost2010pseudorange,khider2013pseudorange}. These receiver-oriented models describe ranging errors rather than individual propagation paths. Lehner and Steingass used measured reflection delay, power, duration, and Doppler to construct a time-varying land-mobile satellite channel \cite{lehner2005lms}. At the path-parameter level, SAGE estimates individual MPC parameters from complex baseband measurements by updating subsets of channel parameters in sequence \cite{fessler1994sage,fleury1999sage}. Gaussian mixtures can compactly describe a measured power distribution with more than one mode \cite{selim2016mog}.
 
-This work extracts paths for each satellite and describes their parameters for each environment. Navigation-data alignment forms coherent GPS L1 C/A observations for each tracked satellite. SAGE estimates MPC delay, Doppler, and complex gain, while temporal consistency selects persistent MPC observations. The measured excess delay, signed relative Doppler, relative power, and power--delay relation are described for Urban and Mountain/Valley. These descriptions provide measurement-based MPC parameters for simplified GNSS simulations. Sections II--IV then present the measurements and per-satellite processing, MPC estimation and statistical descriptions, and the experimental results, respectively.
+This work combines per-satellite MPC extraction with environment-specific statistical characterization. Navigation-data alignment forms coherent GPS L1 C/A observations for each tracked satellite. SAGE estimates MPC delay, Doppler, and complex gain, while temporal consistency selects persistent MPC observations. The measured excess delay, signed relative Doppler, relative power, and power--delay relation are described for Urban and Mountain/Valley. These descriptions provide measurement-based MPC parameters for simplified GNSS simulations. Sections II--IV then present the measurements and per-satellite processing, MPC estimation and statistical descriptions, and the experimental results, respectively.
 
 \section{Measurements and Signal Processing}
 \subsection{Measurement Setup}
@@ -63,9 +63,9 @@ r_m(t)=\sum_{\ell=0}^{L_m-1}\alpha_{m,\ell}s_m(t-\tau_{m,\ell})
 e^{j2\pi\nu_{m,\ell}t}+n_m(t),
 \label{eq:signal}
 \end{equation}
-where $s_m(t)$ is the aligned C/A-code waveform and $n_m(t)$ is noise. MPC $\ell$ has complex gain $\alpha_{m,\ell}$, delay $\tau_{m,\ell}$, and Doppler frequency shift $\nu_{m,\ell}$. The earliest estimated component ($\ell=0$) is the relative reference; it is not assumed to be a physically verified line-of-sight path.
+where $s_m(t)$ is the aligned C/A-code waveform and $n_m(t)$ is noise. MPC $\ell$ has complex gain $\alpha_{m,\ell}$, delay $\tau_{m,\ell}$, and Doppler frequency shift $\nu_{m,\ell}$. The earliest estimated component ($\ell=0$) is used only as a relative reference and is not interpreted as a verified line-of-sight component.
 
-The SAGE algorithm updates one MPC at a time \cite{fessler1994sage,fleury1999sage}. In intuitive terms, the current reconstructions of the other MPCs are subtracted before the target MPC is re-estimated. For target MPC $\ell$, the E-step forms a conditional hidden-data estimate by subtracting the current contributions of the other MPCs from the received observation:
+The SAGE algorithm updates one MPC at a time \cite{fessler1994sage,fleury1999sage}. Operationally, the current reconstructions of the other MPCs are subtracted before the target MPC is re-estimated. For target MPC $\ell$, the E-step forms a conditional hidden-data estimate by subtracting the current contributions of the other MPCs from the received observation:
 \begin{equation}
 \mathbf r_{m,\ell}=\mathbf r_m-\sum_{k\ne\ell}\hat\alpha_{m,k}
 \mathbf q_m(\hat\tau_{m,k},\hat\nu_{m,k}).
@@ -83,10 +83,10 @@ where $\mathbf q_m(\tau,\nu)$ is a sampled code replica with fractional delay an
 
 Equation~\eqref{eq:sage} selects the delay--Doppler pair with the highest normalized correlation to the conditional hidden-data estimate. A coarse correlation search provides the initial parameter values. The delay is then refined with fractional-sample code replicas spaced by 0.1 sample within a $\pm0.8$-sample neighborhood. The Doppler frequency shift is searched within $\pm30$ Hz of the tracking estimate in 5-Hz steps. The iterations terminate after 10 sweeps or when the relative change in the residual sum of squares (RSS) falls below $10^{-6}$.
 
-For each 40-ms observation, four candidate models are evaluated, with one, two, three, or four MPCs. The selected path count is chosen by comparing the Bayesian information criterion and residual sum of squares (RSS) across these candidates. This comparison balances signal representation against model complexity.
+For each 40-ms observation, four candidate models are evaluated, with one, two, three, or four MPCs. The path count is selected by comparing the Bayesian information criterion and residual sum of squares (RSS) across these candidates. This comparison balances signal representation against model complexity.
 
 \subsection{Persistent MPC Observations}
-After local estimation, MPC estimates from adjacent observations are compared. A match is declared only when the excess-delay, signed relative Doppler, and relative-power differences are simultaneously no greater than 1.5 samples, 40 Hz, and 10 dB, respectively. An MPC is labeled persistent when matching estimates occur in at least three consecutive observations. A 40-ms observation is used for modeling only when every nonreference MPC satisfies this condition. The center-time parameters then form the persistent MPC observations.
+After local estimation, MPC estimates from adjacent observations are compared. A match is declared only when the excess-delay, signed relative Doppler, and relative-power differences are simultaneously no greater than 1.5 samples, 40 Hz, and 10 dB, respectively. An MPC is labeled persistent when matching estimates occur in at least three consecutive observations. A 40-ms observation is used for modeling only when every nonreference MPC satisfies this condition. The parameters at the center time are then retained as the persistent MPC observation.
 
 For each persistent MPC observation, the three parameters are expressed relative to the reference component:
 \begin{equation}
@@ -126,13 +126,13 @@ To represent the observed positive and right-skewed excess-delay distribution, a
 \end{equation}
 where $\tau_s$ is a shift, $\exp(\mu_\tau)$ is the scale, and $\sigma_\tau$ controls the spread in the logarithmic domain. The Urban model uses an estimated shift, while the Mountain/Valley model uses $\tau_s=0$.
 
-The measured relative-power density contains two main modes. A two-component Gaussian mixture model (GMM) is used to represent these modal regions:
+A two-component Gaussian mixture model (GMM) is used to represent the bimodal structure of the measured relative-power distribution:
 \begin{equation}
 p(x)=\pi\mathcal N(x;\mu_1,\sigma_1^2)
 +(1-\pi)\mathcal N(x;\mu_2,\sigma_2^2).
 \label{eq:gmm2}
 \end{equation}
-The mixing weight $\pi$ gives the relative contribution of the first Gaussian component. The two Gaussian terms represent the two modal regions in the relative-power measurements.
+The mixing weight $\pi$ gives the relative contribution of the first Gaussian component.
 
 Relative power is also modeled as a function of excess delay. Two line segments with different slopes meet at a common breakpoint $\tau_b$:
 \begin{equation}
@@ -145,9 +145,7 @@ P_b+b_2(\tau-\tau_b), & \tau\ge\tau_b.
 \end{equation}
 This connected model allows the mean rate of power decrease to differ between low-delay and high-delay MPCs while keeping the mean trend continuous. The fitted delay and power distributions and the track-balanced empirical CDF of signed relative Doppler provide complementary parameter descriptions for each environment.
 
-Receiver-level GPS multipath models describe quantities such as pseudorange error or carrier-to-noise-density ratio. Traditional land-mobile satellite channel models organize reflections in a time-varying channel impulse response or power-delay profile \cite{lehner2005lms}. The present descriptions operate at the path-parameter level: they provide MPC delay, signed relative Doppler, and power together with a mean power--delay relation. These measurement-based parameters can support simplified GNSS channel simulation and receiver evaluation.
-
-The selected forms are also consistent with the main structures observed in the measured parameters: a lognormal density for positive delay with a long right tail, a two-component GMM for the two relative-power modes, and an empirical CDF for signed relative Doppler. The connected two-line model describes the mean power change with delay; its common breakpoint keeps the trend continuous while allowing different rates for shorter- and longer-delay MPCs.
+Together, these representations characterize the retained MPC parameters at the path level for each environment. The selected forms are also consistent with the main structures observed in the measured data.
 
 \section{Statistical Modeling Results}
 \begin{figure*}[!t]
@@ -158,17 +156,15 @@ The selected forms are also consistent with the main structures observed in the 
 \end{figure*}
 
 \subsection{Modeling Data and Excess Delay}
-The analysis uses 518 persistent MPC observations from 236 satellite tracks, 36 recordings, and 9 measurement scenes. Of these observations, 346 are from Urban and 172 are from Mountain/Valley.
+The analysis uses 518 persistent MPC observations from 236 satellite tracks, 36 recordings, and 9 measurement scenes. Of these observations, 346 were collected in the Urban environment and 172 in the Mountain/Valley environment.
 
-Fig.~\ref{fig:path-distributions}(a) and (b) show that both excess-delay distributions are right-skewed. The Urban fit has a shift of 68.7 ns, a scale of 102.8 ns, and a log-domain standard deviation of 0.675. The Mountain/Valley fit has a scale of 187.8 ns and a log-domain standard deviation of 0.348. The larger Urban spread is associated with a broader right tail. Table~\ref{tab:model-parameters} lists the model summaries and fit measures.
+Fig.~\ref{fig:path-distributions}(a) and (b) show that both excess-delay distributions are right-skewed. The Urban fit has a shift of 68.7 ns, a scale of 102.8 ns, and a log-domain standard deviation of 0.675. The Mountain/Valley fit has a scale of 187.8 ns and a log-domain standard deviation of 0.348. The larger log-domain standard deviation in Urban is consistent with its broader right tail. Table~\ref{tab:model-parameters} lists the model summaries and fit measures.
 
 \subsection{Signed Relative Doppler}
-Fig.~\ref{fig:path-distributions}(c) and (d) show the track-balanced empirical CDFs of signed relative Doppler. For Urban, the weighted $P_{10}$, $P_{50}$, and $P_{90}$ values are $-55.6$, $19.5$, and $80.6$ Hz, respectively. The corresponding values for Mountain/Valley are $-94.4$, $-45.1$, and $55.3$ Hz. The Mountain/Valley distribution is shifted toward more negative signed relative Doppler values, as indicated by its more negative $P_{10}$ and median, whereas the Urban median remains positive. The empirical CDF preserves the measured concentration without imposing a parametric family.
+Fig.~\ref{fig:path-distributions}(c) and (d) show the track-balanced empirical CDFs of signed relative Doppler. For Urban, the weighted $P_{10}$, $P_{50}$, and $P_{90}$ values are $-55.6$, $19.5$, and $80.6$ Hz, respectively. The corresponding values for Mountain/Valley are $-94.4$, $-45.1$, and $55.3$ Hz. The Mountain/Valley distribution is shifted toward more negative signed relative Doppler values, as indicated by its more negative $P_{10}$ and median, whereas the Urban median remains positive. The empirical CDF represents the observed distribution without imposing a parametric family.
 
 \subsection{Relative Power}
 Fig.~\ref{fig:path-distributions}(e) and (f) show two relative-power modes in both environments. These values are relative to the earliest component and are not absolute received powers. The means are near $-13$ dB for the weaker mode and $-3$ to $-4$ dB for the stronger mode. Compared with a single-Gaussian fit, the two-component GMM reduces $D_w$ from 0.133 to 0.045 in Urban and from 0.137 to 0.037 in Mountain/Valley.
-
-For simplified GNSS channel simulation, excess delay and relative power can be sampled from their fitted marginals, signed relative Doppler can be resampled from its track-balanced empirical CDF, and the connected power--delay model can supply the mean delay-dependent power. Together, these descriptions provide MPC parameters for each simulated satellite channel; they do not specify occurrence rates, temporal evolution, or a complete joint stochastic channel model.
 
 \begin{table*}[!b]
 \centering
@@ -205,10 +201,12 @@ Power--delay & Urban & Breakpoint $190.6$ ns; slopes $-3.53$ and $-5.57$ dB/100 
 }]
 
 \subsection{Power--Delay Relation}
-Fig.~\ref{fig:power-delay} shows the decrease in relative power with increasing excess delay. The connected model has a common breakpoint of 190.6 ns, with one fitted mean power-decline rate below and another above it. In Urban, the slopes are $-3.53$ and $-5.57$ dB per 100 ns before and after the breakpoint; in Mountain/Valley, they are $-6.31$ and $-4.46$ dB per 100 ns. The fitted mean trend is steeper after the breakpoint in Urban and less steep after it in Mountain/Valley. The root-mean-square errors are 4.01 and 3.44 dB, respectively.
+Fig.~\ref{fig:power-delay} shows the decrease in relative power with increasing excess delay. The connected model has a common breakpoint of 190.6 ns, with separate fitted mean power-decay slopes below and above the breakpoint. In Urban, the slopes are $-3.53$ and $-5.57$ dB per 100 ns before and after the breakpoint; in Mountain/Valley, they are $-6.31$ and $-4.46$ dB per 100 ns. The fitted mean trend is steeper after the breakpoint in Urban and less steep after it in Mountain/Valley. The root-mean-square errors are 4.01 and 3.44 dB, respectively.
+
+For simplified GNSS channel simulation, excess delay and relative power can be sampled from their fitted marginals, signed relative Doppler can be resampled from its track-balanced empirical CDF, and the connected power--delay model can supply the mean delay-dependent power. Together, these descriptions provide MPC parameters for each simulated satellite channel; they do not specify occurrence rates, temporal evolution, or a complete joint stochastic channel model.
 
 \section{Conclusion}
-This paper presents measurement-based extraction and statistical description of GPS L1 C/A MPCs from moving-vehicle measurements. Navigation-data alignment, per-satellite SAGE estimation, and temporal consistency provide persistent observations of excess delay, signed relative Doppler, and relative power. The resulting descriptions capture the right-skewed delay distribution, the measured signed relative Doppler distributions, the two main modes of relative power, and the change in mean power-decline rate between low-delay and high-delay MPCs. Unlike receiver-level multipath indicators, these descriptions operate directly on individual MPC parameters. The fitted delay and power distributions and the empirical CDF of signed relative Doppler provide measurement-based parameter inputs for simplified GNSS channel simulations and receiver evaluation in Urban and Mountain/Valley propagation scenarios.
+This paper presents a measurement-based framework for extracting and statistically characterizing GPS L1 C/A MPCs from moving-vehicle measurements. Navigation-data alignment, per-satellite SAGE estimation, and temporal-consistency screening yield persistent MPC observations characterized by excess delay, signed relative Doppler, and relative power. The resulting descriptions capture the right-skewed delay distribution, the measured signed relative Doppler distributions, the two main modes of relative power, and the change in mean power-decline rate between low-delay and high-delay MPCs. Unlike receiver-level multipath indicators, these descriptions operate directly on individual MPC parameters. The fitted delay and power distributions and the empirical CDF of signed relative Doppler provide measurement-based parameter inputs for simplified GNSS channel simulations and receiver evaluation in Urban and Mountain/Valley propagation scenarios.
 
 % \balance
 \bibliographystyle{IEEEtran}
