@@ -2146,3 +2146,118 @@ RAIN_EFFECT_LAYER_MATLAB_EXECUTED=NO
 RAIN_EFFECT_LAYER_SAGE_EXECUTED=NO
 NEXT_DECISION_REQUIRED=INDEPENDENT_REVIEW_OR_DARKROOM_INTEGRATION_APPROVAL
 ```
+
+## 92. 0913DarkroomRx GNSS-SDR positioning and loss-of-lock diagnostic preparation (Implemented + validation-only PASS; execution not started at preparation time, 2026-09-14)
+
+- 用户确认 `E:\0913DarkroomRx` 中八个输入均为 `10.23 MHz`、interleaved signed int16 little-endian I/Q（GNSS-SDR `ishort`），且源文件名中的 `pool` 表示 `poor`。八个文件共 43,747,315,712 bytes（约 40.74 GiB），按冻结格式约 17.82 min；本轮 preparation 对全部 raw 做了 SHA-256 provenance 读取，但未进行 GNSS 解算。
+- 新增独立诊断工具：`scripts/analysis/darkroom_rx/darkroom_rx_common.py`、`prepare_darkroom_rx_gnss_sdr_batch.py`、`run_darkroom_rx_gnss_sdr_batch.py`、`audit_darkroom_rx_signal_quality.py`，以及聚焦测试 `scripts/analysis/darkroom_rx/tests/test_darkroom_rx_pipeline.py`。该分支不调用 MATLAB/SAGE/raw-coarse，不写入 `scenes/**/sage_results`；执行器固定 sequential、`new_only=true`、`resume_allowed=false`、显式确认门禁和失败即停。
+- Immutable request 为 `dataset_generation_logs/darkroom_rx_gnss_sdr/darkroom_rx_0913_gnss_sdr_v1_20260914/batch_manifest.json`，SHA-256=`4c589f7f6df5be6284b9f4c8975c595af963c065b45151707aa3c617d12ba704`。其冻结八个 raw/config/source hash、WSL `Ubuntu-22.04`、`/usr/bin/gnss-sdr` version `0.0.16`、GPS L1 C/A receiver 配置和独立 task output namespace。
+- 真实 validation-only 为 8/8 PASS：所有 raw 路径、大小、mtime、配置/source hash 和 output-absent 门禁通过，`GNSS_SDR_INVOKED=false`。WSL 只读可见性检查确认 GOOD smoke 输入和配置可读，GNSS-SDR executable/version 匹配。聚焦测试 `19 passed`，新增 Python 文件通过 `py_compile`，相关 diff 通过 `git diff --check`。
+- QA 语义固定为：`carrier_lock_test < -0.5` 连续至少 20 ms 才记为 tracking lock loss，连续 100 ms good 才确认恢复，连续性 gap 不桥接；PVT/NMEA 至少连续 5 s 有效解记为工程报告用 `SUSTAINED_FIX`。tracking loss 与 PVT outage 分开报告；`NO_FIX_OBSERVED` 不解释为物理无信号。
+- 操作手册为 `docs/DARKROOM_RX_0913_GNSS_SDR_POSITIONING_DIAGNOSTIC.md`。在本节记录时，下一步是由正常 Windows 用户先人工执行 `highway_open_good_1023` GOOD smoke，然后运行独立只读 QA；该准备快照已由 Section 93 的实际执行与 v2 QA 结果更新。其余七项仍未执行。
+
+```text
+DARKROOM_RX_INPUT_CONTRACT=CONFIRMED
+DARKROOM_RX_IMMUTABLE_REQUEST=PREPARED
+DARKROOM_RX_MANIFEST_SHA256=4c589f7f6df5be6284b9f4c8975c595af963c065b45151707aa3c617d12ba704
+DARKROOM_RX_VALIDATION_ONLY=PASS_8_OF_8
+DARKROOM_RX_WSL_VISIBILITY=PASS
+DARKROOM_RX_GNSS_SDR_EXECUTION=NOT_STARTED
+DARKROOM_RX_POSITION_RESULTS=NOT_AVAILABLE
+MATLAB_EXECUTED=NO
+SAGE_EXECUTED=NO
+NEXT_DECISION_REQUIRED=HUMAN_EXECUTE_HIGHWAY_OPEN_GOOD_SMOKE_THEN_READ_ONLY_QA
+```
+
+## 93. 0913DarkroomRx GOOD smoke execution and corrected v2 audit (Completed; QA PASS, 2026-09-14)
+
+- The normal-user execution of the immutable `highway_open_good_1023` GOOD smoke task completed with `status=completed`, exit code `0`, `matlab_invoked=false`, `sage_invoked=false`, and `raw_hash_verified=true`. The frozen batch manifest is unchanged: `dataset_generation_logs/darkroom_rx_gnss_sdr/darkroom_rx_0913_gnss_sdr_v1_20260914/batch_manifest.json`, SHA-256 `4c589f7f6df5be6284b9f4c8975c595af963c065b45151707aa3c617d12ba704`.
+- Receipt: `dataset_generation_logs/darkroom_rx_gnss_sdr/darkroom_rx_0913_gnss_sdr_v1_20260914/receipts/highway_open_good_1023/20260914T143108888833Z_execution_receipt.json`; receipt SHA-256 is `1a9a22373eca7467539faf6e81e8b0bc3ff22b90ea5c6c7a47bca1c192d1adb7`. The unique output is `dataset_generation_logs/darkroom_rx_gnss_sdr/darkroom_rx_0913_gnss_sdr_v1_20260914/runs/highway_open_good_1023`, with 65 files and 52,783,740 bytes. No existing output or old QA namespace was modified.
+- The first v1 read-only audit remains preserved as diagnostic artifact `dataset_generation_logs/darkroom_rx_gnss_sdr_qa/darkroom_rx_0913_highway_good_smoke_20260914_r1`. It correctly established sustained positioning but did not understand GNSS-SDR's numeric tracking suffix (`<task>_<channel>.mat`) and did not distinguish an absent NMEA epoch from an explicit no-fix epoch.
+- A new versioned audit-layer compatibility tool, `scripts/analysis/darkroom_rx/audit_darkroom_rx_signal_quality_v2.py`, was added without changing the frozen v1 runner or manifest. Its source SHA-256 is `02e72cfea6388090cbb60e8f5c0e2203e53fac2d70b8db3789eb2684cf3ce0ba`. The 22 focused regression tests and `py_compile` pass. The v2 audit is written only to the new namespace `dataset_generation_logs/darkroom_rx_gnss_sdr_qa/darkroom_rx_0913_highway_good_smoke_20260914_r2`; its audit manifest SHA-256 is `9e7da2599e0603fbebe6cec3f61179763c3881dceff1ab91c2b176570f3287ea`.
+- Corrected GOOD-smoke QA facts are: `SUSTAINED_FIX`; 110 emitted valid NMEA epochs out of 111 expected epochs; position-output coverage `110/111 = 0.990990990990991`; one 1.0-s `POSITION_OUTPUT_GAP` with no explicit no-fix epoch; maximum continuous fix run 74.0 s; median valid satellites 7; median HDOP 1; and 24 debounced tracking lock-loss events across the parsed tracking outputs. The first-position-fix log is bounded by receiver-time markers at 27–28 s; this is not reported as an exact TTFF.
+- The v2 result is a diagnostic positioning-output QA PASS, not a vehicle-receiver conclusion. Tracking lock events and PVT/NMEA output gaps remain separate observations. The seven remaining manifest tasks are still not started; no batch continuation was automatically launched.
+
+```text
+DARKROOM_RX_GOOD_SMOKE_EXECUTION=COMPLETED
+DARKROOM_RX_GOOD_SMOKE_QA_V2=PASS
+DARKROOM_RX_GOOD_SMOKE_POSITIONABILITY=SUSTAINED_FIX
+DARKROOM_RX_GOOD_SMOKE_EMITTED_EXPECTED_EPOCHS=110/111
+DARKROOM_RX_GOOD_SMOKE_POSITION_OUTPUT_GAPS=1
+DARKROOM_RX_GOOD_SMOKE_EXPLICIT_NO_FIX_EPOCHS=0
+DARKROOM_RX_GOOD_SMOKE_TTFF_BOUND_S=27-28
+DARKROOM_RX_GOOD_SMOKE_TRACKING_LOCK_LOSS_EVENTS=24
+DARKROOM_RX_GOOD_SMOKE_RAW_IQ_READ_BY_AUDITOR=NO
+DARKROOM_RX_GOOD_SMOKE_MATLAB_EXECUTED_BY_AUDITOR=NO
+DARKROOM_RX_GOOD_SMOKE_SAGE_EXECUTED_BY_AUDITOR=NO
+DARKROOM_RX_REMAINING_TASKS=7_NOT_STARTED
+NEXT_DECISION_REQUIRED=USER_DECIDE_WHETHER_TO_RUN_REMAINING_SEVEN_GNSS_SDR_TASKS
+```
+
+## 94. 0913DarkroomRx 八任务 GNSS-SDR 执行与全量定位审计（Completed; 6/8 positioning QA PASS, 2/8 inconclusive, 2026-09-15）
+
+- 在 Section 93 记录的 GOOD smoke 之后，用户在正常 Windows PowerShell 中按 immutable manifest 顺序完成其余七个 GNSS-SDR 任务。八个任务的 execution receipt 均记录 `status=completed`、`exit_code=0`、`new_only=true`、`resume_allowed=false`，且执行前 output namespace 不存在；manifest 保持不变：`dataset_generation_logs/darkroom_rx_gnss_sdr/darkroom_rx_0913_gnss_sdr_v1_20260914/batch_manifest.json`，SHA-256=`4c589f7f6df5be6284b9f4c8975c595af963c065b45151707aa3c617d12ba704`。
+- 全量 v2 只读定位审计写入新 namespace `dataset_generation_logs/darkroom_rx_gnss_sdr_qa/darkroom_rx_0913_all8_20260915_r1`，audit manifest SHA-256=`6a1c678a49221b1b2a4dbaeba17765d01316fcc7029a513d6122128c369d08f3`；审计工具 SHA-256=`02e72cfea6388090cbb60e8f5c0e2203e53fac2d70b8db3789eb2684cf3ce0ba`。审计没有读取 raw IQ，没有调用 GNSS-SDR、MATLAB 或 SAGE。
+- 八个任务中 6 个为 `SUSTAINED_FIX`：Highway/Open GOOD、POOR、RAIN，Mountain/Valley RAIN，Urban GOOD、POOR；2 个为 `INCONCLUSIVE_NO_POSITION_OUTPUT`：Mountain/Valley GOOD、POOR。后两项有 tracking/telemetry/observables 输出但无 NMEA/PVT，不能表述为“无法定位”。
+- 当前 POOR 结论：Highway/Open POOR 为 `103/105` 个有效/期望位置历元、覆盖率 `0.980952`、最长连续定位 46 s；Urban POOR 为 `12/12`、覆盖率 `1.0`、最长连续定位 12 s；Mountain/Valley POOR 无定位输出，QA 为 `INCOMPLETE`。tracking 失锁与 PVT/NMEA 输出分开记录。
+- 全量执行输出共 504 个文件、442,941,294 bytes；共记录 207 个经去抖确认的 tracking 失锁事件，最长单次约 5.639 s。这些事件不能直接换算成车辆定位丢失比例。
+- 综合中文报告为 `docs/DARKROOM_RX_0913_ALL8_SIGNAL_QUALITY_REPORT_CN.md`；操作说明 `docs/DARKROOM_RX_0913_GNSS_SDR_POSITIONING_DIAGNOSTIC.md` 已更新为全量审计快照。下一工程动作不是 resume 或重跑，而是先诊断 Mountain/Valley GOOD/POOR 的 PVT/NMEA 输出链。
+
+```text
+DARKROOM_RX_ALL8_EXECUTION=COMPLETED_8_OF_8
+DARKROOM_RX_ALL8_RECEIPT_EXIT0=8_OF_8
+DARKROOM_RX_ALL8_POSITION_QA_PASS=6_OF_8
+DARKROOM_RX_ALL8_POSITION_QA_INCOMPLETE=2_OF_8
+DARKROOM_RX_HIGHWAY_POOR_POSITIONABILITY=SUSTAINED_FIX
+DARKROOM_RX_URBAN_POOR_POSITIONABILITY=SUSTAINED_FIX
+DARKROOM_RX_MOUNTAIN_POOR_POSITIONABILITY=INCONCLUSIVE_NO_POSITION_OUTPUT
+DARKROOM_RX_TOTAL_TRACKING_LOSS_EVENTS=207
+DARKROOM_RX_RAW_IQ_READ_BY_AUDITOR=NO
+DARKROOM_RX_GNSS_SDR_INVOKED_BY_AUDITOR=NO
+DARKROOM_RX_MATLAB_INVOKED_BY_AUDITOR=NO
+DARKROOM_RX_SAGE_INVOKED_BY_AUDITOR=NO
+NEXT_DECISION_REQUIRED=DIAGNOSE_MOUNTAIN_GOOD_POOR_POSITION_OUTPUT_CHAIN
+```
+
+## 95. Darkroom vehicle/GNSS-SDR comparative test and standard-signal benchmark plan (Planned / Not started, 2026-09-15)
+
+- A controlled reporting and test plan was added at `docs/DARKROOM_VEHICLE_GNSS_COMPARATIVE_TEST_AND_REPORT_PLAN_CN.md`. It addresses the observed case in which the current vehicle head unit loses user-visible positioning under a POOR input and may not recover after GOOD or clean GPS is restored, while independent GNSS-SDR analysis can position on some POOR recordings.
+- The plan preserves the Section 94 evidence boundary: Highway/Open POOR and Urban POOR produced GNSS-SDR `SUSTAINED_FIX`; Mountain/Valley POOR remains `INCONCLUSIVE_NO_POSITION_OUTPUT`. Tracking lock loss, PVT/NMEA output loss, and vehicle HMI/fusion behavior are separate observables and must not be conflated.
+- The proposed attribution experiment uses one frozen signal with a calibrated RF path across the current vehicle, at least one additional vehicle, and an RF capture/GNSS-SDR reference. A second vehicle passing would show that the signal is not universally unlocatable and would increase suspicion of a vehicle-specific receiver/recovery/HMI issue, but it would not alone establish that the POOR channel lies within an accepted automotive performance envelope.
+- The standard-signal baseline is planned around GPS L1 C/A as defined by IS-GPS-200N, known truth position/trajectory and geometry, calibrated antenna-port power, deterministic scenario/path-table hashes, and Clean-direct, channel-bypass, GOOD, POOR, block/reacquisition, and reboot-recovery sequences. ETSI TS 103 246-3/-5, EN 16803-2 record-and-replay methodology, EU eCall 2017/79 numerical performance references, and ETSI EN 303 413 RF-blocking methodology are retained as distinct references; none is misrepresented as a direct certification criterion for the proprietary map HMI.
+- The current POOR models remain experimental stress profiles. Their relative path tables do not establish absolute receiver-input power, so automotive-standard severity has not been determined. No vehicle experiment, GNSS-SDR run, MATLAB, SAGE, raw-IQ read, or production-artifact mutation occurred in creating this plan.
+
+```text
+DARKROOM_VEHICLE_GNSS_REPORT_PLAN=IMPLEMENTED
+DARKROOM_CROSS_VEHICLE_TEST=PLANNED_NOT_STARTED
+DARKROOM_STANDARD_SIGNAL_BASELINE=PLANNED_NOT_STARTED
+DARKROOM_CURRENT_POOR_PROFILE_CLASS=EXPERIMENTAL_STRESS_PROFILE
+DARKROOM_AUTOMOTIVE_STANDARD_SEVERITY_ASSESSMENT=NOT_ESTABLISHED
+DARKROOM_RAW_IQ_READ_IN_PLAN=NO
+DARKROOM_GNSS_SDR_EXECUTED_IN_PLAN=NO
+DARKROOM_MATLAB_EXECUTED_IN_PLAN=NO
+DARKROOM_SAGE_EXECUTED_IN_PLAN=NO
+NEXT_DECISION_REQUIRED=APPROVE_CALIBRATED_BASELINE_AND_CROSS_VEHICLE_TEST_MATRIX
+```
+
+## 96. Darkroom vehicle GNSS comparative-test briefing deck (Completed; presentation artifact, no experiment, 2026-09-15)
+
+- Created the concise Chinese 16:9 briefing deck `docs/DARKROOM_VEHICLE_GNSS_COMPARATIVE_TEST_REPORT_CN.pptx` for reporting the 0913DarkroomRx self-receive/GNSS-SDR positioning evidence, the current vehicle head-unit POOR observation, and the proposed cross-vehicle/Clean-BYPASS follow-up.
+- The deck contains seven slides covering: test-chain boundaries; GNSS-SDR POOR results; vehicle black-box observations; GOOD/POOR semantics; the Vehicle-B controlled matrix; and the decision logic for the next test. It uses the existing read-only audit facts and does not alter any signal, SAGE, production, or QA artifact.
+- The three field screenshots supplied in the earlier conversation were not present at their temporary filesystem paths when the deck was authored. Slide 4 therefore contains explicit replaceable image frames and does not fabricate substitute images. The original screenshots can be inserted later without changing the scientific text or measured values.
+- Presentation package integrity and layout validation passed: seven slides, 16:9 (`12192000,6858000` EMU), native tables on slides 3/6/7, no unapproved fonts, and no package findings. Delivered PPTX SHA-256=`22a51a2029859bb5081c8ae3a9296e7320b165d56e1fa1b75d8c65ef1cf98c06`.
+- This artifact records a reporting/planning state only. It does not establish that the vehicle receiver failed internally, does not classify the POOR profile against an automotive standard, and does not replace the required Clean/BYPASS and cross-vehicle tests.
+
+```text
+DARKROOM_VEHICLE_GNSS_BRIEFING_DECK=CREATED_AND_VALIDATED
+DARKROOM_VEHICLE_GNSS_BRIEFING_DECK_PATH=docs/DARKROOM_VEHICLE_GNSS_COMPARATIVE_TEST_REPORT_CN.pptx
+DARKROOM_VEHICLE_GNSS_BRIEFING_DECK_SHA256=22a51a2029859bb5081c8ae3a9296e7320b165d56e1fa1b75d8c65ef1cf98c06
+DARKROOM_VEHICLE_GNSS_BRIEFING_DECK_SLIDES=7
+DARKROOM_VEHICLE_GNSS_BRIEFING_DECK_SCREENSHOTS=REPLACEABLE_PLACEHOLDERS_ONLY
+DARKROOM_VEHICLE_GNSS_BRIEFING_DECK_EXPERIMENT_EXECUTED=NO
+DARKROOM_VEHICLE_GNSS_BRIEFING_DECK_RAW_IQ_READ=NO
+DARKROOM_VEHICLE_GNSS_BRIEFING_DECK_MATLAB=NO
+DARKROOM_VEHICLE_GNSS_BRIEFING_DECK_SAGE=NO
+DARKROOM_VEHICLE_GNSS_BRIEFING_DECK_PRODUCTION=NO
+NEXT_DECISION_REQUIRED=APPROVE_CLEAN_BYPASS_AND_CROSS_VEHICLE_TEST_MATRIX
+```

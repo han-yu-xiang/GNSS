@@ -61,3 +61,13 @@ _read_attachment_tmp.py
 # Permanent local artifact quarantine; contents remain recoverable but are not
 # part of the versioned project source or evidence index.
 _trash/
+
+# Locally generated darkroom parameter tables are large data products, not source
+Tx_Darkroom/
+
+# Local temporary decks, editor lock files, and scratch directories
+/.tmp_*/
+docs/~$*
+
+# Private presentation build scratch; deliverable PPTX remains explicitly tracked
+/.codex/ppt_build_20260915/
