@@ -1,0 +1,30 @@
+\begin{tikzpicture}[
+  >=Latex,
+  node distance=5mm and 6mm,
+  every node/.style={font=\sffamily\scriptsize, align=center},
+  box/.style={draw, rounded corners=1pt, minimum height=9mm, text width=25mm, fill=gray!8},
+  branch/.style={draw, rounded corners=1pt, minimum height=18mm, text width=34mm, fill=blue!5},
+  merge/.style={draw, rounded corners=1pt, minimum height=10mm, text width=31mm, fill=green!7},
+  arrow/.style={->, line width=0.5pt}
+]
+\node[box, text width=27mm] (raw) {Dynamic GPS L1 C/A\\raw IQ};
+\node[box, right=of raw, text width=31mm] (sdr) {GNSS-SDR\\tracking and NAV decoding};
+\node[box, right=of sdr, text width=31mm] (align) {NAV-aligned\\per-PRN observation streams};
+
+\node[branch, below=9mm of align, xshift=-39mm] (prn1) {PRN 1\\40-ms windows $\rightarrow$\\screening $\rightarrow$ SAGE\\$\rightarrow$ temporal persistence};
+\node[branch, right=of prn1] (prnm) {PRN $m$\\40-ms windows $\rightarrow$\\screening $\rightarrow$ SAGE\\$\rightarrow$ temporal persistence};
+\node[branch, right=of prnm] (prnM) {PRN $M$\\40-ms windows $\rightarrow$\\screening $\rightarrow$ SAGE\\$\rightarrow$ temporal persistence};
+
+\node[merge, below=8mm of prnm, text width=43mm] (aggregate) {Weighted set of\\persistent path observations};
+\node[merge, right=of aggregate, text width=39mm] (model) {Separate path-parameter\\models for each environment};
+
+\draw[arrow] (raw) -- (sdr);
+\draw[arrow] (sdr) -- (align);
+\draw[arrow] (align.south) -- (prn1.north);
+\draw[arrow] (align.south) -- (prnm.north);
+\draw[arrow] (align.south) -- (prnM.north);
+\draw[arrow] (prn1.south) |- (aggregate.west);
+\draw[arrow] (prnm.south) -- (aggregate.north);
+\draw[arrow] (prnM.south) |- (aggregate.north east);
+\draw[arrow] (aggregate) -- (model);
+\end{tikzpicture}
