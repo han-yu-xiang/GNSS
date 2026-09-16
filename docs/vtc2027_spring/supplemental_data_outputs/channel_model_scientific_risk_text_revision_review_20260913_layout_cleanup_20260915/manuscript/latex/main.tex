@@ -14,7 +14,7 @@
 \renewcommand{\textfraction}{0.05}
 \setlength{\emergencystretch}{1em}
 
-\title{Measurement-Based Extraction and Statistical Modeling of GPS L1 C/A Multipath Components in Urban and Mountain/Valley Environments}
+\title{Measurement-Based Multipath Characterization of GPS L1 C/A Signals for Vehicular Satellite-to-Ground Links in Challenging Environments}
 
 \author{\IEEEauthorblockN{Liang Feng}
 \IEEEauthorblockA{Tongji University, Shanghai, China\\2432132@tongji.edu.cn}}
@@ -23,27 +23,27 @@
 \maketitle
 
 \begin{abstract}
-Multipath propagation in a time-varying satellite-to-ground channel produces delayed and Doppler-shifted replicas of the direct GPS signal. This paper presents a measurement-based method to extract individual multipath components (MPCs) and characterize their parameters in Urban and Mountain/Valley environments. Navigation-data alignment is used to form coherent 40-ms observations for each tracked satellite. The space-alternating generalized expectation-maximization (SAGE) algorithm estimates the delay, Doppler, and complex gain of candidate MPCs. A temporal-consistency criterion is then used to retain persistent MPC observations for statistical characterization. The analysis uses 518 persistent MPC observations from 236 satellite tracks. Excess delay is described by environment-specific lognormal distributions, signed relative Doppler by a track-balanced empirical cumulative distribution, and relative power by a two-component Gaussian mixture model. A connected two-line model describes the mean decrease in relative power with excess delay. These descriptions provide measurement-based inputs for simplified GNSS channel simulations and receiver evaluation.
+Reliable satellite-based positioning for connected and automated vehicles is challenged by reflection-rich propagation and rapidly changing satellite-to-ground geometry in dense urban and mountain/valley roads. As terrestrial and non-terrestrial systems become increasingly integrated for 6G localization, measurement-based characterization of mobile satellite-to-ground propagation remains relevant to positioning evaluation. This paper presents a measurement-based framework for extracting and statistically characterizing GPS L1 C/A multipath components (MPCs) from moving-vehicle measurements in two challenging environments. Navigation-data alignment is used to form coherent 40-ms observations for each tracked satellite. The space-alternating generalized expectation-maximization (SAGE) algorithm estimates the delay, Doppler, and complex gain of candidate MPCs, and a temporal-consistency criterion retains persistent MPC observations. The analysis uses 518 persistent MPC observations from 236 satellite tracks. Excess delay is represented by environment-specific lognormal models, signed relative Doppler by a track-balanced empirical cumulative distribution, and relative power by a two-component Gaussian mixture model selected after scene-held-out mixture-complexity checks. A connected two-line model describes the mean power--delay trend. The resulting path-level descriptions provide measurement-based inputs for simplified vehicular satellite-to-ground simulation and are relevant to the evaluation of GNSS and NTN-assisted localization in challenging propagation conditions.
 \end{abstract}
 
 \begin{IEEEkeywords}
-GNSS multipath, GPS L1 C/A, SAGE, channel modeling, delay, Doppler.
+GNSS multipath, vehicular satellite-to-ground propagation, GPS L1 C/A, SAGE, NTN-assisted localization, channel modeling.
 \end{IEEEkeywords}
 
 \section{Introduction}
-Global Navigation Satellite Systems (GNSS) support vehicle navigation and intelligent transportation. A moving receiver observes a time-varying satellite-to-ground channel. Reflections from buildings, terrain, and vehicles produce signal replicas with different delays, Doppler shifts, and powers. These parameters vary as the receiver moves \cite{eissfeller1996gpsdynamic,mora1998multipath,beitler2015cmcd}.
+Integrated terrestrial and non-terrestrial networks (NTNs) are becoming an important part of the evolution from 5G-Advanced toward 6G, with satellite systems considered not only for ubiquitous connectivity but also for positioning and sensing \cite{ntnRel1718_2024,ntn6gSurvey2024,ntnLocalization2023,tnNtnLocalization2025}. For connected and automated vehicles, this evolution is relevant because positioning must remain available under mobility and heterogeneous coverage, while future V2X architectures increasingly combine terrestrial and non-terrestrial resources \cite{v2x6g2025,leoMobilityPositioning2026}.
 
-Earlier GPS multipath studies have characterized receiver-level effects through carrier-to-noise-density ratio, pseudorange error, and carrier-phase error \cite{mora1998multipath,bilich2007snr,xie2011vehicular}. These quantities indicate changes caused by multipath, but they do not provide the delay, Doppler, and gain of individual MPCs. Path-level parameters are useful for statistical channel modeling and controlled receiver evaluation.
+GNSS remains the primary satellite-based positioning technology for road vehicles, but dense urban streets and mountain/valley roads create challenging satellite-to-ground propagation conditions. Reflections from buildings and terrain produce delayed and Doppler-shifted replicas whose relative strength changes as the vehicle moves. These propagation effects can complicate signal tracking and positioning in dynamic road environments. Earlier GPS multipath studies characterized receiver-level effects through carrier-to-noise-density ratio, pseudorange error, carrier-phase error, and multipath indicators \cite{eissfeller1996gpsdynamic,mora1998multipath,bilich2007snr,xie2011vehicular,beitler2015cmcd}. Such quantities describe receiver-level consequences of multipath, but they do not directly provide the delay, Doppler, and complex gain of individual multipath components.
 
-GNSS multipath models address different levels of the problem. Jost et al. modeled indoor pseudorange errors with a two-component Gaussian mixture, and Khider et al. applied this error model to multisensor positioning \cite{jost2010pseudorange,khider2013pseudorange}. These receiver-oriented models describe ranging errors rather than individual propagation paths. Lehner and Steingass used measured reflection delay, power, duration, and Doppler to construct a time-varying land-mobile satellite channel \cite{lehner2005lms}. At the path-parameter level, SAGE estimates individual MPC parameters from complex baseband measurements by updating subsets of channel parameters in sequence \cite{fessler1994sage,fleury1999sage}. Gaussian mixtures can compactly describe a measured power distribution with more than one mode \cite{selim2016mog}.
+Traditional land-mobile satellite channel models organize reflections in a time-varying channel impulse response or power-delay profile \cite{lehner2005lms}. At the path-parameter level, the space-alternating generalized expectation-maximization algorithm can estimate individual MPC parameters from complex baseband measurements by updating subsets of channel parameters in sequence \cite{fessler1994sage,fleury1999sage}. Gaussian mixtures provide one way to describe multimodal measured parameter distributions \cite{selim2016mog}. A complementary measurement perspective is therefore to resolve individual MPCs from real moving-vehicle observations and characterize their delay, signed relative Doppler, and relative power across distinct challenging propagation environments. Such path-resolved measurements can complement system-level studies of vehicular satellite positioning and integrated TN/NTN localization by providing empirical propagation inputs for controlled simulation and receiver evaluation.
 
-This work combines per-satellite MPC extraction with environment-specific statistical characterization. Navigation-data alignment forms coherent GPS L1 C/A observations for each tracked satellite. SAGE estimates MPC delay, Doppler, and complex gain, while temporal consistency selects persistent MPC observations. The measured excess delay, signed relative Doppler, relative power, and power--delay relation are described for Urban and Mountain/Valley. These descriptions provide measurement-based MPC parameters for simplified GNSS simulations. Sections II--IV then present the measurements and per-satellite processing, MPC estimation and statistical descriptions, and the experimental results, respectively.
+This work combines per-satellite MPC extraction with environment-specific statistical characterization using real GPS L1 C/A measurements collected from a moving vehicle. Navigation-data alignment forms coherent observations for each tracked satellite, SAGE estimates MPC delay, Doppler, and complex gain, and temporal-consistency screening retains persistent MPC observations. The statistical analysis compares Urban and Mountain/Valley environments and evaluates model complexity using complete-scene held-out validation before selecting the paper-facing parameter descriptions. Although the measurements use GPS L1 C/A rather than an NR-NTN air interface, the resulting path-level evidence is relevant to challenging vehicular satellite-to-ground propagation and NTN-assisted localization evaluation. Sections II--IV present the measurements and per-satellite processing, MPC estimation and statistical descriptions, and experimental results, respectively.
 
 \section{Measurements and Signal Processing}
 \subsection{Measurement Setup}
 The measurement system uses a TEST-TREE RF-Catcher V2 and a roof-mounted GNSS dome antenna. The antenna is right-hand circularly polarized and has a 40-dB active gain. The receiver records GPS L1 C/A at 1575.42 MHz \cite{gpsis200n2022}. The sampling rate is 10.23 MHz. Samples are stored as interleaved, little-endian, signed 16-bit I/Q values.
 
-The measurements were collected while the vehicle traveled along two types of roads. Urban routes are surrounded by dense buildings, whereas Mountain/Valley routes pass through mountainous or valley terrain.
+The measurements were collected while the vehicle traveled along two types of roads. Urban routes are surrounded by dense buildings, whereas Mountain/Valley routes pass through mountainous or valley terrain. These route classes are treated as two challenging vehicular satellite-to-ground propagation settings with distinct surrounding structures; the analysis compares their path-level statistics without ranking one environment as universally more severe.
 
 \subsection{Per-Satellite Multipath Processing}
 GNSS-SDR first tracks each visible satellite and decodes its navigation data \cite{fernandez2011gnsssdr}. Because different satellites use different pseudorandom-noise codes, each tracked satellite is processed in a separate signal stream. Fig.~\ref{fig:workflow} summarizes this processing flow. Each GPS L1 C/A navigation bit lasts 20 ms; thus, a 40-ms observation may contain a bit transition that reverses the signal sign. The decoded bit signs are removed before coherent observations are formed. Correlation screening identifies observations that may contain an additional signal component. SAGE then estimates MPC parameters for each selected observation. A temporal-consistency check compares adjacent observations and retains persistent MPC observations for the statistical analysis.
@@ -97,7 +97,7 @@ P_{\rm rel}=10\log_{10}\frac{|\alpha_{\ell}|^2}{|\alpha_{0}|^2}.
 \end{equation}
 Here, $\Delta\tau$ is the delay relative to the reference component, $\nu_{\rm rel}$ is signed relative Doppler, and $P_{\rm rel}$ is the power relative to the reference component in decibels.
 
-\subsection{Environment-Specific Statistical Descriptions}
+\subsection{Candidate Models and Environment-Specific Statistical Descriptions}
 Satellite tracks contain different numbers of persistent MPC observations. Each track is therefore assigned the same total weight, preventing a longer track from dominating the environment-level statistics simply because it contains more observations. If track $j$ contains $n_j$ observations, each observation in that track receives weight $w_i=1/n_j$.
 
 Several parametric distributions were considered for excess delay and relative power in each environment. Candidate distributions were compared using leave-one-scene-out (LOSO) validation: one complete measurement scene was held out, the candidates were fitted to the remaining scenes, and their performance was evaluated on the held-out scene. This was repeated until every scene had been held out once. Model selection used both the predictive likelihood and the maximum weighted CDF deviation,
@@ -106,6 +106,24 @@ D_w=\max_i\left|\widehat F_w(x_i)-F_\theta(x_i)\right|,
 \label{eq:cdf-distance}
 \end{equation}
 where $\widehat F_w$ is the weighted empirical CDF and $F_\theta$ is the model CDF. Here, $D_w$ is used as a descriptive goodness-of-fit measure: a smaller value indicates closer agreement between the measured and modeled cumulative distributions.
+
+To make model complexity explicit, one-, two-, and three-component one-dimensional Gaussian mixture models were also evaluated for signed relative Doppler and relative power in each environment using the same track weighting and complete-scene leave-one-scene-out protocol. Under the one-standard-error rule applied to scene-held-out negative log predictive density, the diagnostic mixture complexities were $K=2$ for Urban signed relative Doppler, $K=3$ for Mountain/Valley signed relative Doppler, and $K=2$ for relative power in both environments. The Doppler mixtures are used only as complexity diagnostics; the paper retains the track-balanced empirical CDF as its reported Doppler representation so that no parametric mixture law is imposed on the measured signed Doppler distribution. For relative power, the two-component GMM is retained as the paper-facing model.
+
+\begin{table}[t]
+\centering
+\caption{Diagnostic GMM complexity from complete-scene LOSO validation.}
+\label{tab:gmm-complexity}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lccc}
+\toprule
+Quantity & Urban & Mountain/Valley & Reported description\\
+\midrule
+Signed relative Doppler & $K=2$ & $K=3$ & Empirical CDF\\
+Relative power & $K=2$ & $K=2$ & Two-component GMM\\
+\bottomrule
+\end{tabular}
+\end{table}
 
 Signed relative Doppler is represented directly by its track-balanced empirical CDF. For environment $e$, the CDF and its weighted quantiles are defined as
 \begin{equation}
@@ -163,8 +181,10 @@ Fig.~\ref{fig:path-distributions}(a) and (b) show that both excess-delay distrib
 \subsection{Signed Relative Doppler}
 Fig.~\ref{fig:path-distributions}(c) and (d) show the track-balanced empirical CDFs of signed relative Doppler. For Urban, the weighted $P_{10}$, $P_{50}$, and $P_{90}$ values are $-55.6$, $19.5$, and $80.6$ Hz, respectively. The corresponding values for Mountain/Valley are $-94.4$, $-45.1$, and $55.3$ Hz. The Mountain/Valley distribution is shifted toward more negative signed relative Doppler values, as indicated by its more negative $P_{10}$ and median, whereas the Urban median remains positive. The empirical CDF represents the observed distribution without imposing a parametric family.
 
+The complete-scene complexity check selected two Gaussian components for Urban signed relative Doppler and three for Mountain/Valley, as summarized in Table~\ref{tab:gmm-complexity}. These mixture counts are treated only as diagnostics of distributional complexity. The empirical CDF remains the paper-facing Doppler representation because it preserves the measured signed distribution without requiring a parametric mixture interpretation.
+
 \subsection{Relative Power}
-Fig.~\ref{fig:path-distributions}(e) and (f) show two relative-power modes in both environments. These values are relative to the earliest component and are not absolute received powers. The means are near $-13$ dB for the weaker mode and $-3$ to $-4$ dB for the stronger mode. Compared with a single-Gaussian fit, the two-component GMM reduces $D_w$ from 0.133 to 0.045 in Urban and from 0.137 to 0.037 in Mountain/Valley.
+Fig.~\ref{fig:path-distributions}(e) and (f) show two relative-power modes in both environments. These values are relative to the earliest component and are not absolute received powers. The means are near $-13$ dB for the weaker mode and $-3$ to $-4$ dB for the stronger mode. Compared with a single-Gaussian fit, the two-component GMM reduces $D_w$ from 0.133 to 0.045 in Urban and from 0.137 to 0.037 in Mountain/Valley. The same complexity check selected two Gaussian components for relative power in both environments, consistent with the two-component paper-facing GMM.
 
 \begin{table*}[!b]
 \centering
@@ -205,8 +225,11 @@ Fig.~\ref{fig:power-delay} shows the decrease in relative power with increasing 
 
 For simplified GNSS channel simulation, excess delay and relative power can be sampled from their fitted marginals, signed relative Doppler can be resampled from its track-balanced empirical CDF, and the connected power--delay model can supply the mean delay-dependent power. Together, these descriptions provide MPC parameters for each simulated satellite channel; they do not specify occurrence rates, temporal evolution, or a complete joint stochastic channel model.
 
+\subsection{Relevance to Vehicular Satellite and NTN-Assisted Localization}
+These measurements use GPS L1 C/A and therefore do not constitute an NR-NTN air-interface measurement or a 3GPP-compliant NTN channel model. Their relevance to NTN is at the satellite-to-ground propagation and positioning level: the extracted delay, signed relative Doppler, and relative-power statistics describe a moving ground vehicle under challenging real-world propagation conditions. Such measurements can complement system-level studies of vehicular satellite positioning and integrated terrestrial/non-terrestrial localization by providing path-level conditions for simplified simulation and receiver evaluation \cite{tnNtnLocalization2025,v2x6g2025,leoMobilityPositioning2026}.
+
 \section{Conclusion}
-This paper presents a measurement-based framework for extracting and statistically characterizing GPS L1 C/A MPCs from moving-vehicle measurements. Navigation-data alignment, per-satellite SAGE estimation, and temporal-consistency screening yield persistent MPC observations characterized by excess delay, signed relative Doppler, and relative power. The resulting descriptions capture the right-skewed delay distribution, the measured signed relative Doppler distributions, the two main modes of relative power, and the change in mean power-decline rate between low-delay and high-delay MPCs. Unlike receiver-level multipath indicators, these descriptions operate directly on individual MPC parameters. The fitted delay and power distributions and the empirical CDF of signed relative Doppler provide measurement-based parameter inputs for simplified GNSS channel simulations and receiver evaluation in Urban and Mountain/Valley propagation scenarios.
+This paper presents measurement-based path-level characterization of GPS L1 C/A multipath from moving-vehicle measurements in challenging Urban and Mountain/Valley satellite-to-ground environments. Navigation-data alignment, per-satellite SAGE estimation, and temporal-consistency screening provide persistent MPC observations characterized by excess delay, signed relative Doppler, and relative power. Complete-scene model-complexity checks show that the measured Doppler and relative-power distributions contain structure beyond a single Gaussian representation, while conservative paper-facing descriptions retain an empirical CDF for signed relative Doppler and a two-component GMM for relative power. The resulting models also capture the environment-specific right-skewed excess-delay distributions and the change in mean relative-power decay with excess delay. These path-level descriptions provide measurement-based inputs for simplified satellite-to-ground propagation simulation and receiver evaluation. Although the measurements are based on GPS L1 C/A rather than an NR-NTN air interface, the results provide empirical propagation evidence relevant to vehicular satellite positioning and NTN-assisted localization under challenging propagation conditions.
 
 % \balance
 \bibliographystyle{IEEEtran}
