@@ -7,6 +7,8 @@
 \usepackage{tabularx}
 \usepackage{stfloats}
 \usepackage{capt-of}
+\usepackage{cuted}
+\setlength{\stripsep}{0pt}
 \usepackage{url}
 \usepackage{balance}
 \setcounter{dbltopnumber}{2}
@@ -83,20 +85,16 @@ The measurement system uses a TEST-TREE RF-Catcher V2 and a roof-mounted GNSS do
 The measurements were collected while the vehicle traveled along two types of roads. Urban routes are surrounded by dense buildings, whereas Mountain/Valley routes pass through mountainous or valley terrain. These route classes are treated as two challenging vehicular satellite-to-ground propagation settings with distinct surrounding structures; the analysis compares their path-level statistics without ranking one environment as universally more severe.
 
 \subsection{Per-Satellite Multipath Processing}
-GNSS-SDR first tracks each visible satellite and decodes its navigation data \cite{fernandez2011gnsssdr}. Because different satellites use different pseudorandom-noise codes, each tracked satellite is processed in a separate signal stream. Fig.~\ref{fig:workflow} summarizes this processing flow. Each GPS L1 C/A navigation bit lasts 20 ms; thus, a 40-ms observation may contain a bit transition that reverses the signal sign. The decoded bit signs are removed before coherent observations are formed. Correlation screening identifies observations that may contain an additional signal component. SAGE then estimates MPC parameters for each selected observation. A temporal-consistency check compares adjacent observations and retains persistent MPC observations for the statistical analysis.
+GNSS-SDR first tracks each visible satellite and decodes its navigation data \cite{fernandez2011gnsssdr}. Because different satellites use different pseudorandom-noise codes, each tracked satellite is processed in a separate signal stream.
 
-\begin{figure*}[t]
+\newpage
+Fig.~\ref{fig:workflow} summarizes this processing flow. Each GPS L1 C/A navigation bit lasts 20 ms; thus, a 40-ms observation may contain a bit transition that reverses the signal sign. The decoded bit signs are removed before coherent observations are formed. Correlation screening identifies observations that may contain an additional signal component. SAGE then estimates MPC parameters for each selected observation. A temporal-consistency check compares adjacent observations and retains persistent MPC observations for the statistical analysis.
+
+\begin{figure*}[!b]
 \centering
 \includegraphics[width=0.92\textwidth]{figures/figure1_multisatellite.pdf}
 \caption{Measurement and per-satellite MPC processing flow.}
 \label{fig:workflow}
-\end{figure*}
-
-\begin{figure*}[!t]
-\centering
-\includegraphics[width=0.78\textwidth]{../../figures/figure2_parameter_distributions.pdf}
-\caption{Measured path-parameter distributions: excess delay (a,b), signed relative-Doppler ECDFs (c,d), and relative power (e,f) for Urban and Mountain/Valley.}
-\label{fig:path-distributions}
 \end{figure*}
 
 \section{Multipath Component Estimation and Statistical Modeling}
@@ -192,7 +190,14 @@ This connected model allows the mean rate of power decrease to differ between lo
 \subsection{Modeling Data and Excess Delay}
 The analysis uses 518 persistent MPC observations from 236 satellite tracks, 36 recordings, and 9 measurement scenes. Of these observations, 346 were collected in the Urban environment and 172 in the Mountain/Valley environment.
 
-Fig.~\ref{fig:path-distributions}(a) and (b) show that both excess-delay distributions are right-skewed. The Urban fit has a shift of 68.7 ns, a scale of 102.8 ns, and a log-domain standard deviation of 0.675. The Mountain/Valley fit has a scale of 187.8 ns and a log-domain standard deviation of 0.348. The larger log-domain standard deviation in Urban is consistent with its broader right tail. Table~\ref{tab:model-parameters} lists the model summaries and fit measures.
+Fig.~\ref{fig:path-distributions}(a) and (b) show that both excess-delay distributions are right-skewed. The Urban fit has a shift of 68.7 ns, a scale of 102.8 ns, and a log-domain standard deviation of 0.675. The Mountain/Valley fit has a scale of 187.8 ns and a log-domain standard deviation of 0.348. The larger log-domain standard deviation in Urban is consistent with its broader right tail.
+
+\begin{strip}
+\centering
+\includegraphics[width=0.60\textwidth]{../../figures/figure2_parameter_distributions.pdf}
+\captionof{figure}{Measured path-parameter distributions: excess delay (a,b), signed relative-Doppler ECDFs (c,d), and relative power (e,f) for Urban and Mountain/Valley.}
+\label{fig:path-distributions}
+\end{strip}
 
 \subsection{Signed Relative Doppler}
 Fig.~\ref{fig:path-distributions}(c) and (d) show the track-balanced signed relative-Doppler ECDFs. Urban has weighted $P_{10}$, $P_{50}$, and $P_{90}$ values of $-55.6$, $19.5$, and $80.6$ Hz, compared with $-94.4$, $-45.1$, and $55.3$ Hz for Mountain/Valley. The more negative Mountain/Valley $P_{10}$ and median contrast with the positive Urban median. Complete-scene complexity checks selected diagnostic GMM orders $K=2$ and $K=3$, respectively, but the empirical CDF remains the reported representation to avoid imposing a parametric mixture law.
@@ -200,9 +205,11 @@ Fig.~\ref{fig:path-distributions}(c) and (d) show the track-balanced signed rela
 \subsection{Relative Power}
 Fig.~\ref{fig:path-distributions}(e) and (f) show two relative-power modes in both environments. The mode means are near $-13$ dB and $-3$ to $-4$ dB, relative to the earliest component. Compared with a single Gaussian, the two-component GMM reduces $D_w$ from 0.133 to 0.045 in Urban and from 0.137 to 0.037 in Mountain/Valley; complete-scene complexity checks also select $K=2$ in both environments.
 
-\begin{table*}[!t]
+\begin{strip}
+\noindent The fitted model summaries are collected in Table~\ref{tab:model-parameters}.
+\par\vspace{1mm}
 \centering
-\caption{Environment-specific path-parameter descriptions.}
+\captionof{table}{Environment-specific path-parameter descriptions.}
 \label{tab:model-parameters}
 \scriptsize
 \setlength{\tabcolsep}{3pt}
@@ -226,12 +233,12 @@ Breakpoint $190.6$ ns; slopes $-6.31/-4.46$ dB/100 ns; RMSE $3.44$ dB\\
 \end{tabularx}
 \vspace{-1mm}
 \parbox{0.96\textwidth}{\scriptsize GMM tuples denote (mean, standard deviation, weight). $D_w$ is the maximum weighted CDF deviation. Doppler $K$ values are diagnostic only; the reported Doppler model is the empirical CDF.}
-\end{table*}
+\end{strip}
 
 \subsection{Power--Delay Relation}
 Fig.~\ref{fig:power-delay} shows the decrease in relative power with increasing excess delay. The connected model has a common breakpoint of 190.6 ns, with separate fitted mean power-decay slopes below and above the breakpoint. In Urban, the slopes are $-3.53$ and $-5.57$ dB per 100 ns before and after the breakpoint; in Mountain/Valley, they are $-6.31$ and $-4.46$ dB per 100 ns. The fitted mean trend is steeper after the breakpoint in Urban and less steep after it in Mountain/Valley. The root-mean-square errors are 4.01 and 3.44 dB, respectively.
 
-\begin{figure}[!t]
+\begin{figure}[!b]
 \centering
 \includegraphics[width=\columnwidth]{../../figures/figure3_power_delay.pdf}
 \caption{Measured relative power and connected two-slope fits versus excess delay.}
