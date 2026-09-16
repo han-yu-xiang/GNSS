@@ -18,14 +18,28 @@
 
 \author{
 \IEEEauthorblockN{
-Liang Feng, Author Two Placeholder,\\
-Author Three Placeholder, Author Four Placeholder,\\
-Corresponding Author Placeholder*
+Liang Feng\IEEEauthorrefmark{1},
+Author Two Placeholder\IEEEauthorrefmark{2},\\
+Author Three Placeholder\IEEEauthorrefmark{3},
+Author Four Placeholder\IEEEauthorrefmark{4},\\
+and Corresponding Author Placeholder\IEEEauthorrefmark{5}
 }
 \IEEEauthorblockA{
-Liang Feng: Tongji University, Shanghai, China, [2432132@tongji.edu.cn](mailto:2432132@tongji.edu.cn)\\
-Author Two: [AFFILIATION 2]; Author Three: [AFFILIATION 3]; Author Four: [AFFILIATION 4]\\
-Corresponding Author: [AFFILIATION 5], [CORRESPONDING EMAIL] \quad (*Corresponding author)
+\IEEEauthorrefmark{1}Tongji University, Shanghai, China\\
+Email: 2432132@tongji.edu.cn
+}
+\IEEEauthorblockA{
+\IEEEauthorrefmark{2}[AFFILIATION 2]
+}
+\IEEEauthorblockA{
+\IEEEauthorrefmark{3}[AFFILIATION 3]
+}
+\IEEEauthorblockA{
+\IEEEauthorrefmark{4}[AFFILIATION 4]
+}
+\IEEEauthorblockA{
+\IEEEauthorrefmark{5}[AFFILIATION 5]\\
+Corresponding author: [CORRESPONDING EMAIL]
 }
 }
 
@@ -171,13 +185,13 @@ Fig.~\ref{fig:path-distributions}(c) and (d) show the track-balanced signed rela
 \subsection{Relative Power}
 Fig.~\ref{fig:path-distributions}(e) and (f) show two relative-power modes in both environments. The mode means are near $-13$ dB and $-3$ to $-4$ dB, relative to the earliest component. Compared with a single Gaussian, the two-component GMM reduces $D_w$ from 0.133 to 0.045 in Urban and from 0.137 to 0.037 in Mountain/Valley; complete-scene complexity checks also select $K=2$ in both environments.
 
-\begin{table*}[!b]
+\begin{table*}[!t]
 \centering
 \caption{Environment-specific path-parameter descriptions.}
 \label{tab:model-parameters}
 \scriptsize
 \setlength{\tabcolsep}{3pt}
-\begin{tabularx}{0.96\textwidth}{lXX}
+\begin{tabularx}{0.94\textwidth}{lXX}
 \toprule
 Quantity & Urban & Mountain/Valley\\
 \midrule
@@ -196,18 +210,18 @@ Breakpoint $190.6$ ns; slopes $-6.31/-4.46$ dB/100 ns; RMSE $3.44$ dB\\
 \bottomrule
 \end{tabularx}
 \vspace{-1mm}
-\parbox{0.96\textwidth}{\scriptsize GMM tuples denote (mean, standard deviation, weight). $D_w$ is the maximum weighted CDF deviation. Doppler $K$ values are diagnostic only; the reported Doppler model is the empirical CDF.}
+\parbox{0.94\textwidth}{\scriptsize GMM tuples denote (mean, standard deviation, weight). $D_w$ is the maximum weighted CDF deviation. Doppler $K$ values are diagnostic only; the reported Doppler model is the empirical CDF.}
 \end{table*}
-
-\begin{figure*}[!t]
-\centering
-\includegraphics[width=0.92\textwidth]{../../figures/figure3_power_delay.pdf}
-\caption{Measured relative power and connected two-slope fits versus excess delay.}
-\label{fig:power-delay}
-\end{figure*}
 
 \subsection{Power--Delay Relation}
 Fig.~\ref{fig:power-delay} shows the decrease in relative power with increasing excess delay. The connected model has a common breakpoint of 190.6 ns, with separate fitted mean power-decay slopes below and above the breakpoint. In Urban, the slopes are $-3.53$ and $-5.57$ dB per 100 ns before and after the breakpoint; in Mountain/Valley, they are $-6.31$ and $-4.46$ dB per 100 ns. The fitted mean trend is steeper after the breakpoint in Urban and less steep after it in Mountain/Valley. The root-mean-square errors are 4.01 and 3.44 dB, respectively.
+
+\begin{figure*}[!b]
+\centering
+\includegraphics[width=0.90\textwidth]{../../figures/figure3_power_delay.pdf}
+\caption{Measured relative power and connected two-slope fits versus excess delay.}
+\label{fig:power-delay}
+\end{figure*}
 
 For simplified GNSS channel simulation, excess delay and relative power can be sampled from their fitted marginals, signed relative Doppler can be resampled from its track-balanced empirical CDF, and the connected power--delay model can supply the mean delay-dependent power. Together, these descriptions provide MPC parameters for each simulated satellite channel; they do not specify occurrence rates, temporal evolution, or a complete joint stochastic channel model.
 
