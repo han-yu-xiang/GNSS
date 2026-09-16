@@ -92,6 +92,13 @@ GNSS-SDR first tracks each visible satellite and decodes its navigation data \ci
 \label{fig:workflow}
 \end{figure*}
 
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=0.78\textwidth]{../../figures/figure2_parameter_distributions.pdf}
+\caption{Measured path-parameter distributions: excess delay (a,b), signed relative-Doppler ECDFs (c,d), and relative power (e,f) for Urban and Mountain/Valley.}
+\label{fig:path-distributions}
+\end{figure*}
+
 \section{Multipath Component Estimation and Statistical Modeling}
 \subsection{SAGE-Based MPC Estimation}
 Let $m$ denote one tracked satellite-to-receiver channel. Its complex baseband signal is
@@ -182,13 +189,6 @@ This connected model allows the mean rate of power decrease to differ between lo
 
 
 \section{Statistical Modeling Results}
-\begin{figure*}[!t]
-\centering
-\includegraphics[width=0.94\textwidth]{../../figures/figure2_parameter_distributions.pdf}
-\caption{Measured path-parameter distributions: excess delay (a,b), signed relative-Doppler ECDFs (c,d), and relative power (e,f) for Urban and Mountain/Valley.}
-\label{fig:path-distributions}
-\end{figure*}
-
 \subsection{Modeling Data and Excess Delay}
 The analysis uses 518 persistent MPC observations from 236 satellite tracks, 36 recordings, and 9 measurement scenes. Of these observations, 346 were collected in the Urban environment and 172 in the Mountain/Valley environment.
 
@@ -231,21 +231,19 @@ Breakpoint $190.6$ ns; slopes $-6.31/-4.46$ dB/100 ns; RMSE $3.44$ dB\\
 \subsection{Power--Delay Relation}
 Fig.~\ref{fig:power-delay} shows the decrease in relative power with increasing excess delay. The connected model has a common breakpoint of 190.6 ns, with separate fitted mean power-decay slopes below and above the breakpoint. In Urban, the slopes are $-3.53$ and $-5.57$ dB per 100 ns before and after the breakpoint; in Mountain/Valley, they are $-6.31$ and $-4.46$ dB per 100 ns. The fitted mean trend is steeper after the breakpoint in Urban and less steep after it in Mountain/Valley. The root-mean-square errors are 4.01 and 3.44 dB, respectively.
 
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\columnwidth]{../../figures/figure3_power_delay.pdf}
+\caption{Measured relative power and connected two-slope fits versus excess delay.}
+\label{fig:power-delay}
+\end{figure}
+
 For simplified GNSS channel simulation, excess delay and relative power can be sampled from their fitted marginals, signed relative Doppler can be resampled from its track-balanced empirical CDF, and the connected power--delay model can supply the mean delay-dependent power. Together, these descriptions provide MPC parameters for each simulated satellite channel; they do not specify occurrence rates, temporal evolution, or a complete joint stochastic channel model.
 
 These measurements use GPS L1 C/A rather than an NR-NTN air interface, so their NTN relevance is limited to satellite-to-ground propagation and positioning. The path-level statistics can support simplified evaluation of vehicular satellite and integrated TN/NTN localization \cite{tnNtnLocalization2025,v2x6g2025,leoMobilityPositioning2026}.
 
 \section{Conclusion}
 This paper characterizes GPS L1 C/A multipath at path level using moving-vehicle measurements in challenging Urban and Mountain/Valley environments. Navigation-data alignment, per-satellite SAGE estimation, and temporal-consistency screening yield persistent MPC observations whose excess delay, signed relative Doppler, relative power, and power--delay behavior are described by environment-specific models. Complete-scene complexity checks support the conservative empirical-CDF Doppler representation and two-component power GMM. The resulting measurements provide inputs for simplified vehicular satellite-to-ground simulation and empirical propagation evidence relevant to NTN-assisted localization without constituting an NR-NTN channel model.
-
-\twocolumn[{%
-\begin{minipage}{\textwidth}
-\centering
-\includegraphics[width=0.90\textwidth]{../../figures/figure3_power_delay.pdf}
-\captionof{figure}{Measured relative power and connected two-slope fits versus excess delay.}
-\label{fig:power-delay}
-\end{minipage}
-}]
 
 % \balance
 \bibliographystyle{IEEEtran}
