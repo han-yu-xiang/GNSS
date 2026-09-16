@@ -49,12 +49,12 @@ Shanghai, China\\
 lumin02@\allowbreak saicmotor.com}
 }
 \and
-\IEEEauthorblockN{\parbox[t]{0.18\textwidth}{\centering Author Five$^{*}$}}
+\IEEEauthorblockN{\parbox[t]{0.18\textwidth}{\centering Yin Xuefeng$^{*}$}}
 \IEEEauthorblockA{
 \parbox[t]{0.18\textwidth}{\centering
 Tongji University\\
 Shanghai, China\\
-$^{*}$Corresponding Email Placeholder}
+yinxuefeng@\allowbreak tongji.edu.cn}
 }
 }
 
@@ -228,15 +228,6 @@ Breakpoint $190.6$ ns; slopes $-6.31/-4.46$ dB/100 ns; RMSE $3.44$ dB\\
 \parbox{0.96\textwidth}{\scriptsize GMM tuples denote (mean, standard deviation, weight). $D_w$ is the maximum weighted CDF deviation. Doppler $K$ values are diagnostic only; the reported Doppler model is the empirical CDF.}
 \end{table*}
 
-\twocolumn[{
-\begin{minipage}{\textwidth}
-\centering
-\includegraphics[width=0.90\textwidth]{../../figures/figure3_power_delay.pdf}
-\captionof{figure}{Measured relative power and connected two-slope fits versus excess delay.}
-\label{fig:power-delay}
-\end{minipage}
-}]
-
 \subsection{Power--Delay Relation}
 Fig.~\ref{fig:power-delay} shows the decrease in relative power with increasing excess delay. The connected model has a common breakpoint of 190.6 ns, with separate fitted mean power-decay slopes below and above the breakpoint. In Urban, the slopes are $-3.53$ and $-5.57$ dB per 100 ns before and after the breakpoint; in Mountain/Valley, they are $-6.31$ and $-4.46$ dB per 100 ns. The fitted mean trend is steeper after the breakpoint in Urban and less steep after it in Mountain/Valley. The root-mean-square errors are 4.01 and 3.44 dB, respectively.
 
@@ -246,6 +237,15 @@ These measurements use GPS L1 C/A rather than an NR-NTN air interface, so their 
 
 \section{Conclusion}
 This paper characterizes GPS L1 C/A multipath at path level using moving-vehicle measurements in challenging Urban and Mountain/Valley environments. Navigation-data alignment, per-satellite SAGE estimation, and temporal-consistency screening yield persistent MPC observations whose excess delay, signed relative Doppler, relative power, and power--delay behavior are described by environment-specific models. Complete-scene complexity checks support the conservative empirical-CDF Doppler representation and two-component power GMM. The resulting measurements provide inputs for simplified vehicular satellite-to-ground simulation and empirical propagation evidence relevant to NTN-assisted localization without constituting an NR-NTN channel model.
+
+\twocolumn[{%
+\begin{minipage}{\textwidth}
+\centering
+\includegraphics[width=0.90\textwidth]{../../figures/figure3_power_delay.pdf}
+\captionof{figure}{Measured relative power and connected two-slope fits versus excess delay.}
+\label{fig:power-delay}
+\end{minipage}
+}]
 
 % \balance
 \bibliographystyle{IEEEtran}
