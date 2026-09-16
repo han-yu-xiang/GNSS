@@ -8,7 +8,7 @@
 \usepackage{stfloats}
 \usepackage{capt-of}
 \usepackage{cuted}
-\setlength{\stripsep}{0pt}
+\setlength{\stripsep}{6pt plus 2pt minus 2pt}
 \usepackage{url}
 \usepackage{balance}
 \setcounter{dbltopnumber}{2}
@@ -56,7 +56,8 @@ lumin02@\allowbreak saicmotor.com}
 \parbox[t]{0.18\textwidth}{\centering
 Tongji University\\
 Shanghai, China\\
-yinxuefeng@\allowbreak tongji.edu.cn}
+yinxuefeng@\allowbreak tongji.edu.cn\\
+{\footnotesize $^{*}$Corresponding author}}
 }
 }
 
@@ -64,7 +65,7 @@ yinxuefeng@\allowbreak tongji.edu.cn}
 \maketitle
 
 \begin{abstract}
-Vehicular satellite positioning is challenged by multipath and rapidly changing geometry in dense urban and mountain/valley roads. As terrestrial and non-terrestrial systems become increasingly integrated for 6G localization, measurement-based characterization of mobile satellite-to-ground propagation remains important. This paper extracts and statistically characterizes GPS L1 C/A multipath components (MPCs) from moving-vehicle measurements. Navigation-data alignment forms coherent 40-ms observations, SAGE estimates delay, Doppler, and complex gain, and temporal-consistency screening retains persistent MPCs. The analysis uses 518 observations from 236 satellite tracks. Environment-specific models describe excess delay, signed relative Doppler, relative power, and the power--delay relation, with complete-scene complexity checks supporting the reported Doppler and power representations. These path-level descriptions support simplified vehicular satellite-to-ground simulation and are relevant to GNSS and NTN-assisted localization under challenging propagation conditions.
+Vehicular satellite positioning is challenged by multipath and rapidly changing satellite-to-receiver geometry along dense urban and mountain/valley roads. As terrestrial and non-terrestrial systems become increasingly integrated for 6G localization, measurement-based characterization of mobile satellite-to-ground propagation remains important. This paper extracts and statistically characterizes GPS L1 C/A multipath components (MPCs) from moving-vehicle measurements. Navigation-data alignment forms coherent 40-ms observations, SAGE estimates delay, Doppler, and complex gain, and temporal-consistency screening retains persistent MPCs. The analysis uses 518 observations from 236 satellite tracks. Environment-specific models describe excess delay, signed relative Doppler, relative power, and the power--delay relation, with complete-scene complexity checks supporting the reported Doppler and power representations. These path-level descriptions provide inputs for simplified vehicular satellite-to-ground simulation and are relevant to GNSS and NTN-assisted localization under challenging propagation conditions.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -72,11 +73,11 @@ GNSS multipath, vehicular satellite-to-ground propagation, GPS L1 C/A, SAGE, NTN
 \end{IEEEkeywords}
 
 \section{Introduction}
-Integrated terrestrial and non-terrestrial networks (NTNs) are increasingly important to 6G connectivity and localization, while future V2X systems are expected to combine terrestrial and satellite resources \cite{ntnRel1718_2024,ntn6gSurvey2024,tnNtnLocalization2025,v2x6g2025,leoMobilityPositioning2026}. For road vehicles, dense urban streets and mountain/valley terrain create challenging satellite-to-ground propagation: reflections and changing geometry produce delayed and Doppler-shifted replicas that can complicate signal tracking and positioning.
+Integrated terrestrial networks (TNs) and non-terrestrial networks (NTNs) are increasingly important to 6G connectivity and localization, while future V2X systems are expected to combine terrestrial and satellite resources \cite{ntnRel1718_2024,ntn6gSurvey2024,tnNtnLocalization2025,v2x6g2025,leoMobilityPositioning2026}. For road vehicles, dense urban streets and mountain/valley terrain create challenging satellite-to-ground propagation: reflections produce delayed replicas, while vehicle and satellite motion introduce Doppler variations that can complicate signal tracking and positioning.
 
 Earlier GNSS studies described multipath through receiver-level quantities such as pseudorange errors and detection indicators \cite{xie2011vehicular,beitler2015cmcd}, while land-mobile satellite models represent time-varying propagation through channel impulse responses or power-delay profiles \cite{lehner2005lms}. At the path level, SAGE estimates individual MPC parameters from complex baseband measurements \cite{fessler1994sage,fleury1999sage}, and Gaussian mixtures can represent multimodal measured distributions \cite{selim2016mog}. Path-resolved measurements from moving vehicles therefore complement system-level vehicular and TN/NTN positioning studies by providing empirical delay, Doppler, and power characteristics.
 
-This work applies navigation-data alignment, per-satellite SAGE estimation, and temporal-consistency screening to real moving-vehicle GPS L1 C/A measurements, followed by environment-specific statistical characterization and complete-scene model-complexity checks. Urban and Mountain/Valley measurements are compared without ranking one environment as universally more severe. Although GPS L1 C/A rather than an NR-NTN air interface is measured, the resulting path-level evidence is relevant to challenging vehicular satellite-to-ground propagation and NTN-assisted localization evaluation.
+This work applies navigation-data alignment, per-satellite SAGE estimation, and temporal-consistency screening to real moving-vehicle GPS L1 C/A measurements, followed by environment-specific statistical characterization and complete-scene model-complexity checks. Urban and Mountain/Valley measurements are compared without ranking one environment as universally more severe. Although the measurements use GPS L1 C/A rather than an NR-NTN air interface, the resulting path-level evidence is relevant to challenging vehicular satellite-to-ground propagation and NTN-assisted localization evaluation.
 
 \section{Measurements and Signal Processing}
 \subsection{Measurement Setup}
@@ -87,10 +88,9 @@ The measurements were collected while the vehicle traveled along two types of ro
 \subsection{Per-Satellite Multipath Processing}
 GNSS-SDR first tracks each visible satellite and decodes its navigation data \cite{fernandez2011gnsssdr}. Because different satellites use different pseudorandom-noise codes, each tracked satellite is processed in a separate signal stream.
 
-\newpage
 Fig.~\ref{fig:workflow} summarizes this processing flow. Each GPS L1 C/A navigation bit lasts 20 ms; thus, a 40-ms observation may contain a bit transition that reverses the signal sign. The decoded bit signs are removed before coherent observations are formed. Correlation screening identifies observations that may contain an additional signal component. SAGE then estimates MPC parameters for each selected observation. A temporal-consistency check compares adjacent observations and retains persistent MPC observations for the statistical analysis.
 
-\begin{figure*}[!b]
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=0.92\textwidth]{figures/figure1_multisatellite.pdf}
 \caption{Measurement and per-satellite MPC processing flow.}
@@ -126,7 +126,7 @@ where $\mathbf q_m(\tau,\nu)$ is the sampled delayed and Doppler-shifted code re
 A coarse correlation search initializes the parameters. Delay is refined with replicas spaced by 0.1 sample within $\pm0.8$ sample, and Doppler is searched within $\pm30$ Hz of the tracking estimate in 5-Hz steps. Iterations stop after 10 sweeps or when the relative RSS change falls below $10^{-6}$. For each 40-ms observation, candidate path counts $L=1$--$4$ are compared using BIC and RSS.
 
 \subsection{Persistent MPC Observations}
-Adjacent observations are matched when their excess-delay, signed relative-Doppler, and relative-power differences are no greater than 1.5 samples, 40 Hz, and 10 dB, respectively. An MPC is persistent when matches occur in at least three consecutive observations; a 40-ms observation enters the modeling set only when every nonreference MPC satisfies this criterion. The center-time parameters are retained as the persistent MPC observation.
+Adjacent observations are matched when their excess-delay, signed relative Doppler, and relative-power differences are no greater than 1.5 samples, 40 Hz, and 10 dB, respectively. An MPC is persistent when matches occur in at least three consecutive observations; a 40-ms observation enters the modeling set only when every nonreference MPC satisfies this criterion. The center-time parameters are retained as the persistent MPC observation.
 
 For each persistent MPC observation, the three parameters are expressed relative to the reference component:
 \begin{equation}
@@ -194,13 +194,13 @@ Fig.~\ref{fig:path-distributions}(a) and (b) show that both excess-delay distrib
 
 \begin{strip}
 \centering
-\includegraphics[width=0.60\textwidth]{../../figures/figure2_parameter_distributions.pdf}
-\captionof{figure}{Measured path-parameter distributions: excess delay (a,b), signed relative-Doppler ECDFs (c,d), and relative power (e,f) for Urban and Mountain/Valley.}
+\includegraphics[width=0.72\textwidth]{../../figures/figure2_parameter_distributions.pdf}
+\captionof{figure}{Measured path-parameter distributions: excess delay (a,b), signed relative Doppler ECDFs (c,d), and relative power (e,f) for Urban and Mountain/Valley.}
 \label{fig:path-distributions}
 \end{strip}
 
 \subsection{Signed Relative Doppler}
-Fig.~\ref{fig:path-distributions}(c) and (d) show the track-balanced signed relative-Doppler ECDFs. Urban has weighted $P_{10}$, $P_{50}$, and $P_{90}$ values of $-55.6$, $19.5$, and $80.6$ Hz, compared with $-94.4$, $-45.1$, and $55.3$ Hz for Mountain/Valley. The more negative Mountain/Valley $P_{10}$ and median contrast with the positive Urban median. Complete-scene complexity checks selected diagnostic GMM orders $K=2$ and $K=3$, respectively, but the empirical CDF remains the reported representation to avoid imposing a parametric mixture law.
+Fig.~\ref{fig:path-distributions}(c) and (d) show the track-balanced signed relative Doppler ECDFs. Urban has weighted $P_{10}$, $P_{50}$, and $P_{90}$ values of $-55.6$, $19.5$, and $80.6$ Hz, compared with $-94.4$, $-45.1$, and $55.3$ Hz for Mountain/Valley. Mountain/Valley has a more negative $P_{10}$ and median, whereas the Urban median remains positive. Complete-scene complexity checks selected diagnostic GMM orders $K=2$ and $K=3$, respectively, but the empirical CDF remains the reported representation to avoid imposing a parametric mixture law.
 
 \subsection{Relative Power}
 Fig.~\ref{fig:path-distributions}(e) and (f) show two relative-power modes in both environments. The mode means are near $-13$ dB and $-3$ to $-4$ dB, relative to the earliest component. Compared with a single Gaussian, the two-component GMM reduces $D_w$ from 0.133 to 0.045 in Urban and from 0.137 to 0.037 in Mountain/Valley; complete-scene complexity checks also select $K=2$ in both environments.
@@ -247,10 +247,10 @@ Fig.~\ref{fig:power-delay} shows the decrease in relative power with increasing 
 
 For simplified GNSS channel simulation, excess delay and relative power can be sampled from their fitted marginals, signed relative Doppler can be resampled from its track-balanced empirical CDF, and the connected power--delay model can supply the mean delay-dependent power. Together, these descriptions provide MPC parameters for each simulated satellite channel; they do not specify occurrence rates, temporal evolution, or a complete joint stochastic channel model.
 
-These measurements use GPS L1 C/A rather than an NR-NTN air interface, so their NTN relevance is limited to satellite-to-ground propagation and positioning. The path-level statistics can support simplified evaluation of vehicular satellite and integrated TN/NTN localization \cite{tnNtnLocalization2025,v2x6g2025,leoMobilityPositioning2026}.
+These measurements use GPS L1 C/A rather than an NR-NTN air interface, so their NTN relevance is limited to satellite-to-ground propagation and positioning. The path-level statistics can support simplified evaluation of vehicular satellite positioning and integrated TN/NTN localization \cite{tnNtnLocalization2025,v2x6g2025,leoMobilityPositioning2026}.
 
 \section{Conclusion}
-This paper characterizes GPS L1 C/A multipath at path level using moving-vehicle measurements in challenging Urban and Mountain/Valley environments. Navigation-data alignment, per-satellite SAGE estimation, and temporal-consistency screening yield persistent MPC observations whose excess delay, signed relative Doppler, relative power, and power--delay behavior are described by environment-specific models. Complete-scene complexity checks support the conservative empirical-CDF Doppler representation and two-component power GMM. The resulting measurements provide inputs for simplified vehicular satellite-to-ground simulation and empirical propagation evidence relevant to NTN-assisted localization without constituting an NR-NTN channel model.
+This paper characterizes GPS L1 C/A multipath at the path level using moving-vehicle measurements in challenging Urban and Mountain/Valley environments. Navigation-data alignment, per-satellite SAGE estimation, and temporal-consistency screening yield persistent MPC observations whose excess delay, signed relative Doppler, relative power, and power--delay behavior are described by environment-specific models. Complete-scene complexity checks support retaining the empirical-CDF Doppler representation and the two-component relative-power GMM. The resulting measurements provide inputs for simplified vehicular satellite-to-ground simulation and empirical propagation evidence relevant to NTN-assisted localization without constituting an NR-NTN channel model.
 
 % \balance
 \bibliographystyle{IEEEtran}
