@@ -17,15 +17,44 @@
 \title{Measurement-Based Multipath Characterization of GPS L1 C/A Signals for Vehicular Satellite-to-Ground Links in Challenging Environments}
 
 \author{
-\IEEEauthorblockN{
-Liang Feng, Author Two Placeholder,\\
-Author Three Placeholder, Author Four Placeholder,\\
-Corresponding Author Placeholder*
-}
+\IEEEauthorblockN{\parbox[t]{0.19\textwidth}{\centering Liang Feng}}
 \IEEEauthorblockA{
-Liang Feng: Tongji University, Shanghai, China, [2432132@tongji.edu.cn](mailto:2432132@tongji.edu.cn)\\
-Author Two: [AFFILIATION 2]; Author Three: [AFFILIATION 3]; Author Four: [AFFILIATION 4]\\
-Corresponding Author: [AFFILIATION 5], [CORRESPONDING EMAIL] \quad (*Corresponding author)
+\parbox[t]{0.19\textwidth}{\centering
+Tongji University\\
+Shanghai, China\\
+2432132@tongji.edu.cn}
+}
+\and
+\IEEEauthorblockN{\parbox[t]{0.18\textwidth}{\centering Li Mei}}
+\IEEEauthorblockA{
+\parbox[t]{0.18\textwidth}{\centering
+Affiliation Placeholder\\
+City/Country Placeholder\\
+Email Placeholder}
+}
+\and
+\IEEEauthorblockN{\parbox[t]{0.18\textwidth}{\centering Ren Xudong}}
+\IEEEauthorblockA{
+\parbox[t]{0.18\textwidth}{\centering
+SAIC Motor Passenger Vehicle\\
+Shanghai, China\\
+renxudong@\allowbreak saicmotor.com}
+}
+\and
+\IEEEauthorblockN{\parbox[t]{0.18\textwidth}{\centering Lu Min}}
+\IEEEauthorblockA{
+\parbox[t]{0.18\textwidth}{\centering
+SAIC Overseas Mobility Technology Co., Ltd.\\
+Shanghai, China\\
+lumin02@\allowbreak saicmotor.com}
+}
+\and
+\IEEEauthorblockN{\parbox[t]{0.18\textwidth}{\centering Author Five$^{*}$}}
+\IEEEauthorblockA{
+\parbox[t]{0.18\textwidth}{\centering
+Tongji University\\
+Shanghai, China\\
+$^{*}$Corresponding Email Placeholder}
 }
 }
 
@@ -171,7 +200,7 @@ Fig.~\ref{fig:path-distributions}(c) and (d) show the track-balanced signed rela
 \subsection{Relative Power}
 Fig.~\ref{fig:path-distributions}(e) and (f) show two relative-power modes in both environments. The mode means are near $-13$ dB and $-3$ to $-4$ dB, relative to the earliest component. Compared with a single Gaussian, the two-component GMM reduces $D_w$ from 0.133 to 0.045 in Urban and from 0.137 to 0.037 in Mountain/Valley; complete-scene complexity checks also select $K=2$ in both environments.
 
-\begin{table*}[!b]
+\begin{table*}[!t]
 \centering
 \caption{Environment-specific path-parameter descriptions.}
 \label{tab:model-parameters}
@@ -199,12 +228,14 @@ Breakpoint $190.6$ ns; slopes $-6.31/-4.46$ dB/100 ns; RMSE $3.44$ dB\\
 \parbox{0.96\textwidth}{\scriptsize GMM tuples denote (mean, standard deviation, weight). $D_w$ is the maximum weighted CDF deviation. Doppler $K$ values are diagnostic only; the reported Doppler model is the empirical CDF.}
 \end{table*}
 
-\begin{figure*}[!t]
+\twocolumn[{
+\begin{minipage}{\textwidth}
 \centering
-\includegraphics[width=0.92\textwidth]{../../figures/figure3_power_delay.pdf}
-\caption{Measured relative power and connected two-slope fits versus excess delay.}
+\includegraphics[width=0.90\textwidth]{../../figures/figure3_power_delay.pdf}
+\captionof{figure}{Measured relative power and connected two-slope fits versus excess delay.}
 \label{fig:power-delay}
-\end{figure*}
+\end{minipage}
+}]
 
 \subsection{Power--Delay Relation}
 Fig.~\ref{fig:power-delay} shows the decrease in relative power with increasing excess delay. The connected model has a common breakpoint of 190.6 ns, with separate fitted mean power-decay slopes below and above the breakpoint. In Urban, the slopes are $-3.53$ and $-5.57$ dB per 100 ns before and after the breakpoint; in Mountain/Valley, they are $-6.31$ and $-4.46$ dB per 100 ns. The fitted mean trend is steeper after the breakpoint in Urban and less steep after it in Mountain/Valley. The root-mean-square errors are 4.01 and 3.44 dB, respectively.
