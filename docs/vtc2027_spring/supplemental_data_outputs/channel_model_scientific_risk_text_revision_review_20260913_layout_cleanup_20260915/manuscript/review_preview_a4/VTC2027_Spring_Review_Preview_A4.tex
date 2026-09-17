@@ -1,0 +1,122 @@
+\documentclass[10pt]{article}
+
+% Leave a small safety margin beyond the A4 checker thresholds.
+\usepackage[a4paper,left=1.45cm,right=1.45cm,top=1.90cm,bottom=3.20cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{newtxtext,newtxmath}
+\usepackage{microtype}
+\usepackage{multicol}
+\usepackage{amsmath}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{2pt}
+\setlength{\columnsep}{0.85cm}
+\setlength{\emergencystretch}{1em}
+
+\newcommand{\previewsection}[1]{%
+  \vspace{4pt}\noindent\textbf{\large #1}\par\vspace{1pt}\hrule\vspace{3pt}}
+\newcommand{\previewsubsection}[1]{%
+  \vspace{2pt}\noindent\textbf{#1}\par\vspace{1pt}}
+
+\begin{document}
+
+\begin{center}
+{\LARGE\bfseries Measurement-Based Multipath Characterization of GPS L1 C/A Signals for Vehicular Satellite-to-Ground Links in Challenging Environments\par}
+\vspace{6pt}
+\begin{minipage}[t]{0.185\textwidth}\centering\footnotesize
+\textbf{Liang Feng}\\
+Tongji University\\
+Shanghai, China\\
+2432132@tongji.edu.cn
+\end{minipage}\hfill
+\begin{minipage}[t]{0.185\textwidth}\centering\footnotesize
+\textbf{Yin Xuefeng}\\
+Tongji University\\
+Shanghai, China\\
+yinxuefeng@tongji.edu.cn\\
+{\scriptsize Corresponding author}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.185\textwidth}\centering\footnotesize
+\textbf{Li Mei}\\
+China State Shipbuilding Corporation\\
+China\\
+fishplum@163.com
+\end{minipage}\hfill
+\begin{minipage}[t]{0.185\textwidth}\centering\footnotesize
+\textbf{Ren Xudong}\\
+SAIC Motor Passenger Vehicle\\
+Shanghai, China\\
+renxudong@saicmotor.com
+\end{minipage}\hfill
+\begin{minipage}[t]{0.185\textwidth}\centering\footnotesize
+\textbf{Lu Min}\\
+SAIC Overseas Mobility Technology Co., Ltd.\\
+Shanghai, China\\
+lumin02@saicmotor.com
+\end{minipage}
+\end{center}
+
+\vspace{3pt}
+\textbf{Abstract---} Vehicular satellite positioning is challenged by multipath and rapidly changing satellite-to-receiver geometry along dense urban and mountain/valley roads. As terrestrial and non-terrestrial systems become increasingly integrated for 6G localization, measurement-based characterization of mobile satellite-to-ground propagation remains important. This paper extracts and statistically characterizes GPS L1 C/A multipath components (MPCs) from moving-vehicle measurements. Navigation-data alignment forms coherent 40-ms observations, SAGE estimates delay, Doppler, and complex gain, and temporal-consistency screening retains persistent MPCs. The analysis uses 518 observations from 236 satellite tracks. Environment-specific models describe excess delay, signed relative Doppler, relative power, and the power--delay relation, with complete-scene complexity checks supporting the reported Doppler and power representations. These path-level descriptions provide inputs for simplified vehicular satellite-to-ground simulation and are relevant to GNSS and NTN-assisted localization under challenging propagation conditions.
+
+\begin{multicols}{2}
+\raggedcolumns
+\small
+
+\previewsection{1. Core method}
+
+\previewsubsection{Measurement and signal processing}
+The study uses real moving-vehicle GPS L1 C/A measurements recorded at 1575.42 MHz with a 10.23 MHz sampling rate. GNSS-SDR tracks visible satellites and decodes their navigation data. Each satellite is processed in a separate signal stream. The decoded navigation-bit signs are removed before complete 40-ms coherent observations are formed. Correlation screening identifies observations that may contain an additional signal component.
+
+\previewsubsection{Per-satellite SAGE estimation}
+For satellite stream $m$, the received complex baseband signal is modeled as
+\begin{equation*}
+r_m(t)=\sum_{\ell=0}^{L_m-1}\alpha_{m,\ell}s_m(t-\tau_{m,\ell})e^{j2\pi\nu_{m,\ell}t}+n_m(t).
+\end{equation*}
+SAGE estimates the delay, Doppler, and complex gain of local signal components. For each 40-ms observation, candidate path counts $L=1$--$4$ are compared using BIC and residual power. Delay is refined at 0.1-sample spacing within a $\pm0.8$-sample neighborhood, and Doppler is searched within $\pm30$ Hz of the tracking estimate in 5-Hz steps.
+
+\previewsubsection{Persistent path observations}
+Adjacent observations are matched using thresholds of 1.5 samples for excess delay, 40 Hz for signed relative Doppler, and 10 dB for relative power. A component is retained as persistent when matches occur in at least three consecutive observations. The reported path parameters are relative to the earliest estimated component:
+\begin{equation*}
+\Delta\tau=\tau_\ell-\tau_0,\qquad \nu_{\rm rel}=\nu_\ell-\nu_0,\qquad
+P_{\rm rel}=10\log_{10}\frac{|\alpha_\ell|^2}{|\alpha_0|^2}.
+\end{equation*}
+
+\previewsubsection{Statistical descriptions}
+Each satellite track receives the same total weight so that long tracks do not dominate the environment-level summaries. Excess delay is represented by a shifted lognormal model in Urban and a lognormal model in Mountain/Valley. Signed relative Doppler is represented by a track-balanced empirical CDF. Relative power is represented by a two-component Gaussian mixture. The power--delay trend is represented by two connected line segments with a common breakpoint.
+
+\previewsection{2. Core results}
+
+\previewsubsection{Analyzed observations}
+The analysis contains 518 persistent MPC observations from 236 satellite tracks, 36 recordings, and 9 measurement scenes. Urban contributes 346 observations and Mountain/Valley contributes 172 observations.
+
+\previewsubsection{Excess delay}
+Both environments show right-skewed excess-delay distributions. The Urban shifted-lognormal fit has a shift of 68.7 ns, a scale of 102.8 ns, a log-domain standard deviation of 0.675, and a maximum weighted CDF deviation $D_w=0.082$. The Mountain/Valley lognormal fit has a scale of 187.8 ns, a log-domain standard deviation of 0.348, and $D_w=0.055$.
+
+\previewsubsection{Signed relative Doppler}
+The track-balanced empirical-CDF quantiles are:
+\begin{center}
+\footnotesize
+\begin{tabular}{lrrr}
+\textbf{Environment} & $P_{10}$ & $P_{50}$ & $P_{90}$\\
+\hline
+Urban & $-55.6$ Hz & $19.5$ Hz & $80.6$ Hz\\
+Mountain/Valley & $-94.4$ Hz & $-45.1$ Hz & $55.3$ Hz
+\end{tabular}
+\end{center}
+Mountain/Valley has a more negative $P_{10}$ and median, whereas the Urban median remains positive.
+
+\previewsubsection{Relative power}
+Both environments show two relative-power modes near $-13$ dB and $-3$ to $-4$ dB relative to the earliest component. The two-component GMM gives $D_w=0.045$ in Urban and $D_w=0.037$ in Mountain/Valley, compared with 0.133 and 0.137 for a single Gaussian.
+
+\previewsubsection{Power--delay relation}
+The connected two-slope model has a common breakpoint at 190.6 ns. The Urban slopes are $-3.53$ and $-5.57$ dB per 100 ns before and after the breakpoint, with RMSE 4.01 dB. The Mountain/Valley slopes are $-6.31$ and $-4.46$ dB per 100 ns, with RMSE 3.44 dB.
+
+\previewsubsection{Use of the results}
+The fitted delay and relative-power marginals, the empirical Doppler CDF, and the connected power--delay trend provide path-level inputs for simplified vehicular satellite-to-ground simulation. They also provide empirical propagation evidence relevant to GNSS and NTN-assisted localization.
+
+\end{multicols}
+
+\end{document}
