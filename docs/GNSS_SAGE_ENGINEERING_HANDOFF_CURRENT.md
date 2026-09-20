@@ -2261,3 +2261,95 @@ DARKROOM_VEHICLE_GNSS_BRIEFING_DECK_SAGE=NO
 DARKROOM_VEHICLE_GNSS_BRIEFING_DECK_PRODUCTION=NO
 NEXT_DECISION_REQUIRED=APPROVE_CLEAN_BYPASS_AND_CROSS_VEHICLE_TEST_MATRIX
 ```
+
+## 100. Darkroom 5-minute multi-seed 48-table collection (Completed; generation and QA PASS, 2026-09-15)
+
+- Implemented the new collection wrapper `scripts/analysis/channel_modeling/generate_darkroom_5min_multiseed_collection.py` and focused regression test `scripts/analysis/channel_modeling/tests/test_generate_darkroom_5min_multiseed_collection.py`. The wrapper reuses the frozen v2.2 numerical generator/core and the frozen RainPooled effect layer; it does not alter the v2.2 generator, the Rain model, SAGE, MATLAB, GNSS-SDR, or any raw input.
+- The formal new-only collection is `dataset_generation_logs/channel_modeling/darkroom_5min_multiseed_48_20260915`. Its immutable collection manifest is `provenance/collection_manifest.json`, SHA-256=`bfe45c8d7691d48a99dbd3f9c8ff6231f86814264135be1060d6527d6256a749`. It contains 48 tables: 4 environments × 3 modes (GOOD, POOR, RAIN) × 4 independent paired seeds. GOOD and POOR share each pairing's base seed; RAIN uses the documented derived seed and the frozen RainPooled layer.
+- Generation completed with 48/48 task completions, 172,800,000 total rows, 3,600,000 rows per table, and elapsed time approximately 2,676.067 s. The generation manifest is `generation_manifest.csv`, SHA-256=`9089085522308b3dbeb202eced7ae553f7673178df7aa8f42e60babe34b9c23c`.
+- Independent collection QA passed 48/48 tables: schema, identity/order, finite values, positive amplitudes, base-source binding, and Rain main-path preservation. The QA report is `collection_qa_report.json`, SHA-256=`0976d62784faa2a00ed333db7878db58e90d5262f1cb290e8063448b4320ef1f`; `qa_summary.csv` SHA-256=`a27f5396b354a2c8edeed95801bb03b41c4012c9873b74934e1239bd4764b1ae`. Total table bytes are 14,151,548,683.
+- The 20-ms smoke namespace remains a preserved failed diagnostic artifact (`QUALITY_EPISODE_DOES_NOT_FIT`) and was not reused. The actual smoke validation used a separate 3-task, 300,000-ms Urban #01 namespace and passed before formal generation. No files were deleted, moved, overwritten, or resumed.
+
+```text
+DARKROOM_5MIN_MULTISeed_COLLECTION=COMPLETED
+DARKROOM_5MIN_MULTISeed_COLLECTION_PATH=dataset_generation_logs/channel_modeling/darkroom_5min_multiseed_48_20260915
+DARKROOM_5MIN_MULTISeed_COLLECTION_MANIFEST_SHA256=bfe45c8d7691d48a99dbd3f9c8ff6231f86814264135be1060d6527d6256a749
+DARKROOM_5MIN_MULTISeed_TABLES=48
+DARKROOM_5MIN_MULTISeed_MODE_COUNTS=GOOD_16,POOR_16,RAIN_16
+DARKROOM_5MIN_MULTISeed_ROWS_PER_TABLE=3600000
+DARKROOM_5MIN_MULTISeed_TOTAL_ROWS=172800000
+DARKROOM_5MIN_MULTISeed_GENERATION_QA=PASS_48_OF_48
+DARKROOM_5MIN_MULTISeed_RAW_IQ_READ=NO
+DARKROOM_5MIN_MULTISeed_GNSS_SDR=NO
+DARKROOM_5MIN_MULTISeed_MATLAB=NO
+DARKROOM_5MIN_MULTISeed_SAGE=NO
+DARKROOM_5MIN_MULTISeed_20_46_MHZ=NO
+DARKROOM_5MIN_MULTISeed_OLD_ARTIFACTS_MODIFIED=NO
+NEXT_DECISION_REQUIRED=USE_FORMAL_48_TABLE_COLLECTION_FOR_DARKROOM_INTEGRATION_QA
+```
+
+## 98. Darkroom completion materials and Urban/Poor usability screening decision (Implemented; planning decision, no new experiment, 2026-09-15)
+
+- A dedicated completion-materials folder was created at `docs/darkroom_completion_report_materials/`. It contains the GB/T 45086.1-2024 project-relationship note, the Chinese-priority automotive GNSS standards/literature review, the Urban/Poor usability-screening decision, and an existing darkroom asset index. The folder is a reporting-material collection, not a parallel engineering status source; this handoff remains the engineering authority.
+- The existing 0913 GNSS-SDR evidence remains unchanged. Highway/Open POOR has 103/105 valid/expected position epochs, coverage `0.980952`, and approximately 46 s maximum continuous positioning after acquisition. Urban POOR has 12/12 valid/expected epochs and approximately 12 s visible continuous positioning near the end of the approximately 133.7 s recording. The prior audit classification `SUSTAINED_FIX` is retained as historical audit terminology, but it is not sufficient for the current dynamic-trajectory channel usability gate.
+- Decision: `Urban/Poor` is excluded from the **vehicle dynamic-positioning usable-candidate set** because its GNSS-SDR positioning interval is too short to establish relatively long-duration trajectory usability. This is an operational screening exclusion only: no Urban/Poor parameter table, raw input, GNSS-SDR output, receipt, log, or QA artifact was deleted, moved, overwritten, or corrected, and no physical claim of “no multipath” or “never locatable” is made.
+- Decision: `Highway/Open POOR` remains a cross-vehicle re-test candidate. Before re-test, the exact GNSS-SDR sustained-PVT coverage and maximum-outage gate must be frozen in the test record. The same canonical table, playback start, replay duration, clean baseline, and reboot/restart sequence must be used for both vehicles. A second-vehicle success with GNSS-SDR sustained positioning increases suspicion of vehicle-specific integration or recovery behavior but is not by itself a full automotive-standard compliance result; two-vehicle failure plus GNSS-SDR failure and a valid clean control supports excluding the channel from the current dynamic-positioning candidate set.
+- The GB/T relationship is bounded as `STANDARD_RELATED_SIGNAL_CHANNEL_SUBSYSTEM`, not full GB/T 45086.1-2024 compliance. Absolute RF power calibration, clause-by-clause standard execution, and multi-antenna OTA angle-of-arrival validation remain outside the current completion claim.
+
+```text
+DARKROOM_COMPLETION_MATERIALS_FOLDER=CREATED
+DARKROOM_COMPLETION_MATERIALS_PATH=docs/darkroom_completion_report_materials/
+DARKROOM_URBAN_POOR_DYNAMIC_POSITIONING_CANDIDATE=EXCLUDED_FROM_CURRENT_DYNAMIC_POSITIONING_SET
+DARKROOM_HIGHWAY_POOR_CROSS_VEHICLE_RETEST=CANDIDATE
+DARKROOM_STANDARD_RELATION=STANDARD_RELATED_SIGNAL_CHANNEL_SUBSYSTEM
+DARKROOM_EXISTING_ARTIFACTS_MODIFIED=NO
+DARKROOM_RAW_IQ_READ_FOR_THIS_UPDATE=NO
+DARKROOM_GNSS_SDR_EXECUTED_FOR_THIS_UPDATE=NO
+DARKROOM_MATLAB_EXECUTED_FOR_THIS_UPDATE=NO
+DARKROOM_SAGE_EXECUTED_FOR_THIS_UPDATE=NO
+DARKROOM_BATCH_EXECUTED_FOR_THIS_UPDATE=NO
+NEXT_DECISION_REQUIRED=FREEZE_CROSS_VEHICLE_SUSTAINED_PVT_GATE_AND_APPROVE_RETEST
+```
+
+## 99. 0913DarkroomRx 信道可用性报告与 16 场景接收报告方法（Completed; read-only report, no new experiment, 2026-09-15）
+
+- 新增只读报告 `docs/DARKROOM_RX_0913_CHANNEL_REPORT_CN.md`，并将其登记到暗室结题材料资产索引。报告冻结了统一字段：信号总时长、GNSS-SDR runtime、跨 PRN tracking 失锁、审计器确认重捕获、NMEA/PVT 首次定位、有效/期望历元、覆盖率、最长连续定位和位置输出缺口。
+- 该报告基于现有 `darkroom_rx_0913_all8_20260915_r1` QA 产物，未重新运行 GNSS-SDR、MATLAB、SAGE，未读取 raw IQ 内容。8 个任务仍为 6/8 `SUSTAINED_FIX`、2/8 `INCONCLUSIVE_NO_POSITION_OUTPUT`；汇总信号时长 `1069.094 s`、tracking 失锁事件 `207`、确认重捕获 `120`、跨 PRN 流失锁累计时长 `107.937 s`。
+- 报告明确区分 tracking 失锁、PVT/NMEA 定位输出和车辆 HMI；Highway/Open POOR 可形成 GNSS-SDR 定位，Urban POOR 仅有短时可见连续定位，Mountain/Valley POOR 仍因无 NMEA/PVT 而不可判定。
+- 当前 16 个暗室对象是 4 环境 × 2 质量 × Dry/Base 或 RainPooled 的参数表组合，不能直接当作 16 份 GNSS-SDR 输入。完整 16 场景信道报告仍需后续由模拟器产生 16 份实际回放/接收信号，再按同一审计字段处理；该步骤尚未开始。
+- 当前新增报告 SHA-256=`b1e566f5f207206e1abaf582d8b582b6f92850da8bd5398c117b2f6a36d5240b`。本次没有修改任何参数表、Rain effect layer、GNSS-SDR 输出、receipt、manifest 或既有 QA artifact。
+
+```text
+DARKROOM_RX_0913_CHANNEL_REPORT=COMPLETED_READ_ONLY
+DARKROOM_RX_0913_CHANNEL_REPORT_SHA256=b1e566f5f207206e1abaf582d8b582b6f92850da8bd5398c117b2f6a36d5240b
+DARKROOM_RX_0913_ANALYZED_TASKS=8
+DARKROOM_RX_0913_POSITION_QA_PASS=6_OF_8
+DARKROOM_RX_0913_POSITION_QA_INCONCLUSIVE=2_OF_8
+DARKROOM_SELF_RECEIVE_16_TASK_REPORT=NOT_YET_COMPLETE
+DARKROOM_RX_0913_REPORT_RAW_IQ_READ=NO
+DARKROOM_RX_0913_REPORT_GNSS_SDR_EXECUTED=NO
+DARKROOM_RX_0913_REPORT_MATLAB_EXECUTED=NO
+DARKROOM_RX_0913_REPORT_SAGE_EXECUTED=NO
+NEXT_DECISION_REQUIRED=FREEZE_16_TASK_SIGNAL_CAPTURE_AND_DYNAMIC_TRAJECTORY_GATE
+```
+
+## 97. Darkroom vehicle GNSS availability-screening briefing deck revision (Completed; presentation-only update, no experiment, 2026-09-15)
+
+- Produced the revised Chinese 16:9 deck `docs/DARKROOM_VEHICLE_GNSS_COMPARATIVE_TEST_REPORT_CN_v2.pptx`. The presentation now makes channel usability screening the primary objective: a channel is retained, cross-vehicle tested, provisionally rejected, or held inconclusive according to the joint vehicle/GNSS-SDR observations.
+- Added the independent four-minute test sequence with full restart boundaries, the POOR-to-Clean recovery check, and the explicit decision matrix. The deck does not infer a vehicle fault from a vehicle-only failure and does not equate GNSS-SDR failure with a physical absence of multipath.
+- This is a presentation revision only. No raw IQ, MATLAB, SAGE, sampling, production task, signal data, or existing artifact was modified. The original deck in Section 96 remains unchanged.
+- Final package validation passed: seven slides, 16:9 (`12192000,6858000` EMU), native tables on slides 3/6/7, Microsoft YaHei reference-font policy, and no structural or layout findings. Final PPTX SHA-256=`54fc6948e4baab93c1e76c4382e76b64ff74ea150f695e85b9c4bed78233563a`.
+
+```text
+DARKROOM_VEHICLE_GNSS_AVAILABILITY_DECK_REVISION=CREATED_AND_VALIDATED
+DARKROOM_VEHICLE_GNSS_AVAILABILITY_DECK_PATH=docs/DARKROOM_VEHICLE_GNSS_COMPARATIVE_TEST_REPORT_CN_v2.pptx
+DARKROOM_VEHICLE_GNSS_AVAILABILITY_DECK_SHA256=54fc6948e4baab93c1e76c4382e76b64ff74ea150f695e85b9c4bed78233563a
+DARKROOM_VEHICLE_GNSS_AVAILABILITY_DECK_SLIDES=7
+DARKROOM_VEHICLE_GNSS_AVAILABILITY_DECK_ORIGINAL_PRESERVED=YES
+DARKROOM_VEHICLE_GNSS_AVAILABILITY_DECK_EXPERIMENT_EXECUTED=NO
+DARKROOM_VEHICLE_GNSS_AVAILABILITY_DECK_RAW_IQ_READ=NO
+DARKROOM_VEHICLE_GNSS_AVAILABILITY_DECK_MATLAB=NO
+DARKROOM_VEHICLE_GNSS_AVAILABILITY_DECK_SAGE=NO
+DARKROOM_VEHICLE_GNSS_AVAILABILITY_DECK_PRODUCTION=NO
+NEXT_DECISION_REQUIRED=APPROVE_CLEAN_BYPASS_AND_CROSS_VEHICLE_TEST_MATRIX
+```
