@@ -1,0 +1,37 @@
+FROZEN SAGE BASELINE QUOTING FAILURE — CAPTURED TERMINAL EVIDENCE
+Date: 2026-10-04
+
+Capture provenance:
+- The visible PowerShell 7 session output was captured in the Codex tool transcript during the one-task attempt.
+- No standalone stdout/stderr file, raw Win32 process command line, or separate exit-code log was persisted by the wrapper. A targeted inspection of dataset_generation_logs/batch_sage_execution found only the runner lock modified at the attempt time.
+- The terminal output below reproduces the captured text. Terminal viewport wrapping has been joined where it split a logical line; ANSI cursor/color controls are omitted. The MATLAB caret glyph is preserved, but its horizontal padding is normalized.
+- The wrapper combines MATLAB output streams with 2>&1. Therefore this is the combined console stream, not a separately preserved stdout or stderr file.
+
+PowerShell command entered in the visible session:
+& '.\scripts\sage_pipeline\Invoke-FrozenSageRerunSingle.ps1' -Execute
+
+Exact MATLAB batch-expression value constructed by the wrapper from its source code (not a separately captured raw OS argv):
+cd('E:/GNSS_Multipath_Project/scripts/sage_pipeline'); run_nav_sage_pipeline("F1023_V70_D0117_P2",28,"TrackingChannel",1,"ProjectRoot","E:/GNSS_Multipath_Project","Resume",false)
+
+Captured MATLAB startup and execution output:
+MATLAB_STARTUP_OK
+MATLAB_STARTUP_SMOKE_PASS marker=MATLAB_STARTUP_OK exit_code=0
+SAGE_EXECUTION_BEGIN only_authorized_scene=F1023_V70_D0117_P2 prn=28 channel=1 resume=false
+cd('E:/GNSS_Multipath_Project/scripts/sage_pipeline'); run_nav_sage_pipeline(F1023_V70_D0117_P2,28,TrackingChannel,1,ProjectRoot,E:/GNSS_Multipath_Project,Resume,false)
+                                                                                ↑
+运算符的使用无效。
+ERROR: MATLAB error Exit Status: 0x00000001
+
+Captured PowerShell error summary:
+Exception: E:\GNSS_Multipath_Project\scripts\sage_pipeline\Invoke-FrozenSageRerunSingle.ps1:387
+Line |
+ 387 |              throw "SAGE_MATLAB_EXIT_NONZERO exit_code=$($sageRun.Exit
+     |              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | SAGE_MATLAB_EXIT_NONZERO exit_code=1; staging output, if any, is
+     | preserved.
+
+Evidence boundary:
+- The MATLAB console diagnostic shows the batch expression with the MATLAB string delimiters absent, including the scene, option names, project path, and Resume value.
+- The exact value assembled into the wrapper's PowerShell $batchExpression variable is shown above from the checked-in wrapper source. The raw Windows process command-line/argv representation was not captured; no reconstruction of those bytes is claimed.
+- MATLAB startup smoke succeeded. The actual SAGE function call failed while MATLAB parsed the command; run_nav_sage_pipeline did not execute and no Stage0–Stage4 outputs were produced.
+- No MATLAB/SAGE retry was performed.
