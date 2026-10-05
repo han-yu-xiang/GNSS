@@ -22,8 +22,9 @@
 - The only destinations are scenes/F1023_V70_D0117_P2/sage_results/gpu_candidate_fulltask_20261005/G28_ch1 and scenes/F1023_V120_D0121_P2/sage_results/gpu_candidate_fulltask_20261005/G03_ch2. Every task uses Resume=false; an existing destination blocks execution. Never overwrite, reuse, or resume.
 - Candidate-only provenance is an independent candidate_provenance.json; do not add provenance fields to Frozen cfg.
 - Comparisons use strict structural/classification gates and raw numeric deltas. Do not add scientific numeric tolerances. Stage4 confirmation uses only joint_valid == 1, joint_multipath_count > 0, and a corresponding stage4_joint_paths.is_multipath == 1 row.
-- Task A is one invocation. Even if it passes locally, publish code, source-diff audit, validator, and lightweight evidence, then stop for GPT review. Task B requires new explicit GPT/user authorization after that review and is a separate invocation; Task A PASS never dispatches Task B.
+- After Tasks 1–4, publish the lightweight implementation-review bundle and stop for GPT review before Task A. Task A requires a later implementation-review PASS and new explicit execution authorization. A Task A terminal result is published for GPT review; Task B can start only after a new explicit authorization and only if Task A passed every gate. Neither a local Task A PASS nor publishing its bundle dispatches Task B.
 - Later MATLAB smoke, MATLAB tests, and full-task execution must use the validated non-admin TJ-CHANNEL account Jing_ in PowerShell 7, not a Codex-launched MATLAB process. Resolve MATLAB with Get-Command -Name 'matlab' -CommandType Application; use ProcessStartInfo.ArgumentList with separate -batch and expression arguments and single-quoted MATLAB char literals. Do not hardcode a MATLAB installation path.
+- Never call genpath(ProjectRoot). Add only the candidate directory and experiments/sage_gpu directory needed for the candidate entry and qualified helper; add another Frozen dependency directory only if source inspection proves it is required and the plan is reviewed again.
 - The current phase creates only this plan. No candidate output namespace, raw-IQ read, MATLAB/GPU run, Engineering/Paper Handoff edit, batch resume, or business-branch commit/push.
 
 ## Review Focus
@@ -32,7 +33,7 @@
 2. **Nested gpuArray reaches checkpoint/downstream.** Task 2 tests recursive fit validation and verifies it runs before fitAllOrders returns.
 3. **Per-window GPU initialization returns.** Task 3 statically verifies exactly one task-entry gpuDevice initialization and none in fit/model/path functions.
 4. **Candidate provenance contaminates cfg.** Task 3 and Task 4 verify provenance is written separately and absent from semantic cfg.
-5. **Task A PASS starts Task B before GPT review.** Task 5's driver test proves a single-task invocation stops after Task A; Task 6 is gated on a new authorization and separate call.
+5. **Task A starts before the implementation is reviewed, or a terminal Task A result dispatches Task B.** Task 4's release gate stops after the pushed implementation bundle; Task 5 requires GPT implementation-review PASS plus explicit Task A authorization; Task 6 requires a separate authorization after GPT review of Task A's terminal result.
 
 ---
 
@@ -112,15 +113,31 @@ Before candidate construction, recompute the two qualified GPU source hashes fro
 
 - [ ] **Step 2: Copy the exact authority into the candidate path.**
 
-The copy operation is the deliverable; do not invent a failing test for a byte-copy operation.
+The copy operation is the deliverable; do not invent a failing test for a byte-copy operation. Copy only from the local authoritative project path below, never from the review worktree's relative Frozen path.
 
 ```powershell
-if (Test-Path -LiteralPath ./experiments/sage_gpu/full_task_candidate/run_nav_sage_pipeline_gpu_candidate.m) { throw 'CANDIDATE_SOURCE_ALREADY_EXISTS' }
-New-Item -ItemType Directory -Path ./experiments/sage_gpu/full_task_candidate
-Copy-Item -LiteralPath ./scripts/sage_pipeline/run_nav_sage_pipeline.m -Destination ./experiments/sage_gpu/full_task_candidate/run_nav_sage_pipeline_gpu_candidate.m
+$authority = 'E:/GNSS_Multipath_Project/scripts/sage_pipeline/run_nav_sage_pipeline.m'
+$candidate = './experiments/sage_gpu/full_task_candidate/run_nav_sage_pipeline_gpu_candidate.m'
+
+$authorityHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $authority).Hash.ToLowerInvariant()
+if ($authorityHash -cne 'bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c') {
+    throw "AUTHORITATIVE_FROZEN_SHA_MISMATCH actual=$authorityHash"
+}
+
+if (Test-Path -LiteralPath $candidate) {
+    throw 'CANDIDATE_SOURCE_ALREADY_EXISTS'
+}
+
+New-Item -ItemType Directory -Path (Split-Path -Parent $candidate) -Force | Out-Null
+Copy-Item -LiteralPath $authority -Destination $candidate
+
+$copiedHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $candidate).Hash.ToLowerInvariant()
+if ($copiedHash -cne $authorityHash) {
+    throw 'CANDIDATE_INITIAL_COPY_HASH_MISMATCH'
+}
 ```
 
-Confirm the copied file initially has the same SHA-256 as the authoritative source before candidate edits. Change only the top-level candidate function name required to make the copied file callable as run_nav_sage_pipeline_gpu_candidate; do not change the production file.
+Require `CANDIDATE_INITIAL_SHA_BEFORE_ANY_EDIT=bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c`. Only after that exact check may the candidate's top-level function name be changed to run_nav_sage_pipeline_gpu_candidate and candidate plumbing/GPU integration edits begin. Never copy from `./scripts/sage_pipeline/run_nav_sage_pipeline.m` in the review worktree; that file is the known old 9a263f... source. Do not change the production file.
 
 - [ ] **Step 3: Write Pester tests for the source guard and run them before completing the guard.**
 
@@ -215,7 +232,9 @@ Run the MATLAB unit tests through the validated PowerShell/.NET argument-list la
 
 - [ ] **Step 1: Write Pester tests for lifecycle, identity, routing, and fail-closed behavior.**
 
-Cover the five Review Focus cases. Specifically assert a single gpuDevice(...) initialization in the candidate entry after every preflight and before Stage0; no initialization/reset in fitAllOrders, per-window, per-order, or per-path code; no CPU fallback; exact task-to-namespace mapping; Resume=false; output-collision rejection; four-way task identity consistency (candidate request, formal reference context, candidate cfg/input identity, and helper requested identity); candidate provenance fields absent from cfg; and no Task B dispatch after Task A PASS.
+Cover the five Review Focus cases. Specifically assert a single gpuDevice(...) initialization in the candidate entry after every preflight and before Stage0; no initialization/reset in fitAllOrders, per-window, per-order, or per-path code; no CPU fallback; exact task-to-namespace mapping; Resume=false; output-collision rejection; four-way task identity consistency (candidate request, formal reference context, candidate cfg/input identity, and helper requested identity); candidate provenance fields absent from cfg; no Task B dispatch after Task A's terminal result; and MATLAB `which` checks that resolve the candidate entry and qualified helper to their exact approved files.
+
+Test the driver's MATLAB char-literal encoder with a path containing an apostrophe and assert MATLAB single-quote doubling (for example, `E:/reviewer's project` becomes `'E:/reviewer''s project'`). Assert the emitted launch expression adds only the candidate and `experiments/sage_gpu` directories and contains no `genpath(ProjectRoot)`.
 
 Use small pure-function/process-start fixtures; do not build a general mocking framework or launch a full task in Pester.
 
@@ -240,19 +259,34 @@ Write candidate_provenance.json inside the selected candidate output namespace w
 
 - [ ] **Step 4: Implement the single-task PowerShell 7 driver.**
 
-Resolve MATLAB using Get-Command -Name 'matlab' -CommandType Application. Build System.Diagnostics.ProcessStartInfo with UseShellExecute=$false, redirected stdout/stderr, and separate ArgumentList entries for -batch and the full MATLAB expression. Preserve single-quoted char literals and capture process exit code/stdout/stderr.
+Resolve MATLAB using Get-Command -Name 'matlab' -CommandType Application. Build System.Diagnostics.ProcessStartInfo with UseShellExecute=$false, redirected stdout/stderr, and separate ArgumentList entries for -batch and the full MATLAB expression. Preserve single-quoted char literals and capture process exit code/stdout/stderr. Add one driver helper `ConvertTo-MatlabCharLiteral([string]$Value)` that doubles embedded MATLAB single quotes before wrapping the value in a char literal; use it for every PowerShell-supplied path/scene literal. Add a focused Pester assertion for the apostrophe example in Step 1; do not build a general command-quoting framework.
 
-RunUnitTests runs the MATLAB test folder only. Preflight verifies source/input/reference/GPU/destination gates but does not create the namespace or read raw-IQ content. RunAndCompare performs exactly one named candidate task and invokes the independent comparison; it exits after recording that task's terminal result. It must not loop over, infer, or enqueue another task.
+Implement the literal helper with this exact escaping behavior:
+
+```powershell
+function ConvertTo-MatlabCharLiteral {
+    param([Parameter(Mandatory)][string]$Value)
+    return "'" + $Value.Replace("'", "''") + "'"
+}
+```
+
+RunUnitTests runs the MATLAB test folder only and begins with the same exact function-resolution smoke described below. Preflight verifies source/input/reference/GPU/destination gates but does not create the namespace or read raw-IQ content. In RunUnitTests and Preflight, add only `experiments/sage_gpu/full_task_candidate` and `experiments/sage_gpu` to MATLAB's path, then require `which('run_nav_sage_pipeline_gpu_candidate')` and `which('selectSeparatedResidualCandidate')` to match their exact expected files after path normalization. On either mismatch, fail with `MATLAB_FUNCTION_RESOLUTION_MISMATCH`; require `MATLAB_FUNCTION_RESOLUTION_OK` only after both assertions pass. This smoke creates no output namespace and does not inspect raw-IQ content. RunAndCompare performs exactly one named candidate task and invokes the independent comparison; it exits after recording that task's terminal result. It must not loop over, infer, or enqueue another task.
 
 Before a candidate task is eligible, run the existing startup and argument-transport smoke expressions; require exit code 0 and markers MATLAB_STARTUP_OK and MATLAB_ARGUMENT_TRANSPORT_OK.
 
-For `Action RunUnitTests`, send this complete expression as the single value following `-batch` in `ProcessStartInfo.ArgumentList`:
+For `Action RunUnitTests`, construct the expression using the escaped ProjectRoot/candidate/helper path literals, change MATLAB's current directory to ProjectRoot, add only the candidate/helper directories, assert both exact `which(...)` results and emit `MATLAB_FUNCTION_RESOLUTION_OK`, then call `runtests`. Send the complete expression as the single value following `-batch` in `ProcessStartInfo.ArgumentList`; do not pass it through a shell:
 
 ```matlab
-results = runtests('experiments/sage_gpu/full_task_validation/tests'); assert(~isempty(results) && all([results.Passed]), 'FULL_TASK_GPU_TESTS_FAILED')
+cd('<escaped-ProjectRoot>'); candidateDir='<escaped-candidate-dir>'; sageGpuDir='<escaped-sage-gpu-dir>'; addpath(candidateDir); addpath(sageGpuDir); candidateFile=which('run_nav_sage_pipeline_gpu_candidate'); helperFile=which('selectSeparatedResidualCandidate'); assert(strcmpi(candidateFile,fullfile(candidateDir,'run_nav_sage_pipeline_gpu_candidate.m')) && strcmpi(helperFile,fullfile(sageGpuDir,'selectSeparatedResidualCandidate.m')),'MATLAB_FUNCTION_RESOLUTION_MISMATCH'); disp('MATLAB_FUNCTION_RESOLUTION_OK'); results = runtests('experiments/sage_gpu/full_task_validation/tests'); assert(~isempty(results) && all([results.Passed]), 'FULL_TASK_GPU_TESTS_FAILED')
 ```
 
-The startup smoke remains `disp('MATLAB_STARTUP_OK')`. The argument-transport smoke must reuse the currently validated expression/marker check from `Invoke-FrozenSageRerunSingle.ps1`; do not invent a new shell-quoting path. In both cases, `-batch` and the expression are separate `ArgumentList` entries.
+The `<escaped-...>` tokens above denote complete MATLAB char literals returned by `ConvertTo-MatlabCharLiteral`, not raw string concatenation. The startup smoke remains `disp('MATLAB_STARTUP_OK')`. The argument-transport smoke must reuse the currently validated expression/marker check from `Invoke-FrozenSageRerunSingle.ps1`; do not invent a new shell-quoting path. In both cases, `-batch` and the expression are separate `ArgumentList` entries.
+
+The preflight resolution smoke follows the same escaped-literal/path setup and asserts:
+
+```matlab
+candidateFile = which('run_nav_sage_pipeline_gpu_candidate'); helperFile = which('selectSeparatedResidualCandidate'); assert(strcmpi(candidateFile, fullfile(candidateDir,'run_nav_sage_pipeline_gpu_candidate.m')) && strcmpi(helperFile, fullfile(sageGpuDir,'selectSeparatedResidualCandidate.m')), 'MATLAB_FUNCTION_RESOLUTION_MISMATCH'); disp('MATLAB_FUNCTION_RESOLUTION_OK')
+```
 
 - [ ] **Step 5: Run driver boundary tests and review the emitted source diff.**
 
@@ -260,11 +294,13 @@ Run:
 
 ```powershell
 pwsh -NoProfile -Command "Invoke-Pester -Path ./experiments/sage_gpu/full_task_validation/tests/Invoke-FullTaskGpuCandidateValidation.Tests.ps1 -Output Detailed"
-pwsh -NoProfile -File ./experiments/sage_gpu/full_task_validation/Invoke-FullTaskGpuCandidateValidation.ps1 -Action Preflight -Task TaskA
+pwsh -NoProfile -File ./experiments/sage_gpu/full_task_validation/Invoke-FullTaskGpuCandidateValidation.ps1 -Action RunUnitTests
 git diff --check
 ```
 
-Expected: lifecycle and destination gates pass without creating a candidate namespace; any source, identity, GPU, or collision mismatch blocks.
+Expected: lifecycle/destination static tests and MATLAB tests pass without creating a candidate namespace; any source, identity, path-resolution, GPU, or collision mismatch blocks. Do not run `Preflight -Task TaskA` or any candidate invocation until the mandatory pre-Task-A GPT implementation review passes and the user separately authorizes Task A.
+
+The Task A preflight in Task 5 must repeat both exact `which(...)` resolutions and emit `MATLAB_FUNCTION_RESOLUTION_OK`; it must not call `genpath`, create a candidate namespace, or read raw-IQ content.
 
 **Commit:** commit only entry/driver/provenance tests as feat: add guarded single-task GPU candidate entry.
 
@@ -306,9 +342,9 @@ Stage4 compares center identity, joint-result/snapshot count, selected L, joint_
 
 Write:
 - FULL_TASK_GPU_SOURCE_DIFF_AUDIT.csv: source/function, authority/candidate hashes, allowed diff category, status.
-- FULL_TASK_GPU_VALIDATION_RESULTS.csv: one row per task, per-stage status/counts, maxima, margin summaries, and notes.
-- FULL_TASK_GPU_STAGE2_WINDOW_COMPARISON.csv: one row per evaluated window, structural matches, per-order validity, deltas, and CPU/GPU model-order margins.
-- FULL_TASK_GPU_VALIDATION_SUMMARY.md: provenance, source-diff disposition, stage verdicts, numeric differences, candidate wall time, GPU initialization, Stage2 GPU time, transfer-in/gather time, and gate outcomes. Compare full-task speedup only if a trustworthy same-scope CPU runtime exists; otherwise report FULL_TASK_SPEEDUP=NOT_COMPARABLE. Never extrapolate the 14-window Stage2 timings.
+- FULL_TASK_GPU_VALIDATION_RESULTS.csv: one row per task only after that task reaches a terminal result; per-stage status/counts, maxima, margin summaries, and notes. Before a task executes, do not create placeholder rows.
+- FULL_TASK_GPU_STAGE2_WINDOW_COMPARISON.csv: one row per evaluated window only after a real task comparison; structural matches, per-order validity, deltas, and CPU/GPU model-order margins. Before a task executes, do not create placeholder rows.
+- FULL_TASK_GPU_VALIDATION_SUMMARY.md: provenance, source-diff disposition, actual test receipts, and (after task execution only) stage verdicts, numeric differences, candidate wall time, GPU initialization, Stage2 GPU time, transfer-in/gather time, and gate outcomes. In the pre-Task-A review bundle, record only source/test facts and `TASK_A=NOT_RUN`, `TASK_B=NOT_RUN`. Compare full-task speedup only if a trustworthy same-scope CPU runtime exists; otherwise report FULL_TASK_SPEEDUP=NOT_COMPARABLE. Never extrapolate the 14-window Stage2 timings.
 
 Run:
 
@@ -322,7 +358,32 @@ Expected: all MATLAB and PowerShell tests pass; comparison fixtures prove strict
 
 **Commit:** commit only validator and its tests as feat: add independent full-task GPU comparison validator.
 
-## Task 5: Task A — G28/ch1 full-task candidate and mandatory GPT review gate
+### MANDATORY_PRE_TASK_A_GPT_REVIEW_GATE
+
+- [ ] **Step 6: Publish the implementation bundle and stop before Task A.**
+
+After Tasks 1–4 and all local tests/static checks pass, publish only:
+
+- experiments/sage_gpu/full_task_candidate/run_nav_sage_pipeline_gpu_candidate.m
+- experiments/sage_gpu/full_task_candidate/assertCpuResidentFrozenFit.m
+- experiments/sage_gpu/full_task_validation/Invoke-FullTaskGpuCandidateValidation.ps1
+- experiments/sage_gpu/full_task_validation/Compare-FullTaskGpuCandidateOutputs.m
+- experiments/sage_gpu/full_task_validation/tests/ (the listed Pester and MATLAB tests only)
+- experiments/sage_gpu/full_task_validation/FULL_TASK_GPU_SOURCE_DIFF_AUDIT.csv
+- experiments/sage_gpu/full_task_validation/FULL_TASK_GPU_VALIDATION_SUMMARY.md, containing source hashes/diff disposition and compact test receipts, with `TASK_A=NOT_RUN` and `TASK_B=NOT_RUN`
+
+The pre-Task-A summary must not claim task results or include placeholder comparison rows. Do not publish raw IQ, MAT/HDF5, candidate Stage output trees, archives, or large profiler artifacts. Commit/push this lightweight bundle to reports/gpu-qualification-stage-review-20261005, query the remote ref, and verify REMOTE_HEAD equals the commit. Then stop for GPT review of the actual implementation bundle. Do not run Task A preflight or candidate execution until GPT returns `GPT_IMPLEMENTATION_REVIEW=PASS` and the user separately authorizes Task A as specified in Task 5.
+
+Record the gate result as:
+
+```text
+IMPLEMENTATION_REVIEW_BUNDLE_PUSHED=YES
+TASK_A_EXECUTED=NO
+RAW_IQ_READ=NO
+NEXT_STEP=GPT_REVIEW_IMPLEMENTATION_BUNDLE
+```
+
+## Task 5: Task A — G28/ch1 full-task candidate (requires prior implementation review)
 
 **Files:**
 - Read: formal Task A reference output and its run context.
@@ -333,9 +394,18 @@ Expected: all MATLAB and PowerShell tests pass; comparison fixtures prove strict
 - Consumes: candidate, source guard, launcher, and independent validator from Tasks 1–4; formal reference scenes/F1023_V70_D0117_P2/sage_results/rerun_20261003_frozen_v3/G28_ch1.
 - Produces: one terminal Task A candidate result and a review bundle; no Task B invocation.
 
-- [ ] **Step 1: Require separate authorization for Task A execution.**
+- [ ] **Step 1: Require all four Task A gates.**
 
-Before this step, the implementation plan must be reviewed/approved and the user must explicitly authorize the Task A MATLAB/GPU run and its required raw-IQ access. This plan itself does not grant that execution authority.
+Before any Task A preflight or execution, require all of:
+
+```text
+IMPLEMENTATION_PLAN_APPROVED=YES
+PRE_TASK_A_IMPLEMENTATION_BUNDLE_PUSHED=YES
+GPT_IMPLEMENTATION_REVIEW=PASS
+TASK_A_EXECUTION_AUTHORIZED=YES
+```
+
+If any value is absent or not YES/PASS, set `TASK_A=NOT_RUN` and stop. Authorization for plan editing or implementation alone is not raw-IQ/MATLAB/GPU execution authorization.
 
 - [ ] **Step 2: Run preflight and static validation for Task A only.**
 
@@ -355,13 +425,13 @@ Only after Step 1 authorization and Step 2 pass, run:
 pwsh -NoProfile -File ./experiments/sage_gpu/full_task_validation/Invoke-FullTaskGpuCandidateValidation.ps1 -Action RunAndCompare -Task TaskA
 ```
 
-The driver's single MATLAB `-batch` expression is:
+The driver's single MATLAB `-batch` expression adds only the two approved directories before the candidate call. PowerShell constructs the path char literals with `ConvertTo-MatlabCharLiteral`; it passes `-batch` and the complete expression as separate `ProcessStartInfo.ArgumentList` entries:
 
 ```matlab
-run_nav_sage_pipeline_gpu_candidate('F1023_V70_D0117_P2',28,'TrackingChannel',1,'ProjectRoot','E:/GNSS_Multipath_Project','Resume',false)
+addpath('E:/GNSS_Multipath_Project/experiments/sage_gpu/full_task_candidate'); addpath('E:/GNSS_Multipath_Project/experiments/sage_gpu'); run_nav_sage_pipeline_gpu_candidate('F1023_V70_D0117_P2',28,'TrackingChannel',1,'ProjectRoot','E:/GNSS_Multipath_Project','Resume',false)
 ```
 
-Pass it as one `ArgumentList` entry after a separate `-batch` entry. The driver launches only F1023_V70_D0117_P2 / PRN 28 / channel 1, with Resume=false; it reads no other dataset, runs no batch, and does not enqueue Task B.
+The static paths above are the expected values for this project root; in the driver, produce all path/scene char literals through the tested escaping helper rather than raw PowerShell interpolation. Pass the full expression as one `ArgumentList` entry after a separate `-batch` entry. The driver launches only F1023_V70_D0117_P2 / PRN 28 / channel 1, with Resume=false; it reads no other dataset, runs no batch, and does not enqueue Task B.
 
 - [ ] **Step 4: Apply the full fail-closed gate.**
 
@@ -371,7 +441,7 @@ Require Stage0 exact CSV/semantic MAT; Stage1 exact CSV/semantic MAT; Stage2 str
 
 Commit/push only the candidate source, fit-contract helper/tests, validation driver, independent validator/tests, source-diff CSV, task/window result CSVs, and summary Markdown to reports/gpu-qualification-stage-review-20261005. Exclude raw IQ, MAT/HDF5, archives, full candidate output directories, and unrelated worktree changes. After push, query the remote ref and verify REMOTE_HEAD equals the published commit.
 
-Whether Task A passes or fails, stop here for GPT review of the actual candidate source, source-diff audit, validator, and Task A evidence. If Task A is a classified blocker, update Engineering Handoff as specified in Task 7 before publishing. A Task A PASS does not authorize Task B.
+Whether Task A passes or fails, publish its terminal result and stop here for GPT review of the actual candidate source, source-diff audit, validator, and Task A evidence. If Task A is a classified blocker, update Engineering Handoff as specified in Task 7 before publishing. Task B remains NOT_RUN until GPT reviews this terminal bundle and the user provides new explicit Task B authorization; a Task A PASS never automatically dispatches Task B.
 
 **Commit:** feat: validate full-task GPU candidate Task A (after a passing or classified terminal Task A outcome).
 
@@ -388,7 +458,15 @@ Whether Task A passes or fails, stop here for GPT review of the actual candidate
 
 - [ ] **Step 1: Verify the new authorization gate.**
 
-Do not start from local Task A PASS alone. Require a new explicit GPT/user authorization after review of the pushed Task A bundle. If absent, leave Task B NOT_RUN.
+Require all of:
+
+```text
+TASK_A_FULL_VALIDATION=PASS
+GPT_TASK_A_REVIEW=PASS
+TASK_B_EXECUTION_AUTHORIZED=YES
+```
+
+The review must cover the pushed Task A terminal bundle, and Task B authorization must be new and explicit after that review. If any value is absent or not PASS/YES, leave Task B NOT_RUN.
 
 - [ ] **Step 2: Re-run hashes, preflight, and tests for Task B.**
 
@@ -406,19 +484,19 @@ After Step 1 authorization and Step 2 pass:
 pwsh -NoProfile -File ./experiments/sage_gpu/full_task_validation/Invoke-FullTaskGpuCandidateValidation.ps1 -Action RunAndCompare -Task TaskB
 ```
 
-The driver's single MATLAB `-batch` expression is:
+The driver's single MATLAB `-batch` expression adds only the two approved directories before the candidate call. PowerShell constructs the path char literals with `ConvertTo-MatlabCharLiteral`; it passes `-batch` and the complete expression as separate `ProcessStartInfo.ArgumentList` entries:
 
 ```matlab
-run_nav_sage_pipeline_gpu_candidate('F1023_V120_D0121_P2',3,'TrackingChannel',2,'ProjectRoot','E:/GNSS_Multipath_Project','Resume',false)
+addpath('E:/GNSS_Multipath_Project/experiments/sage_gpu/full_task_candidate'); addpath('E:/GNSS_Multipath_Project/experiments/sage_gpu'); run_nav_sage_pipeline_gpu_candidate('F1023_V120_D0121_P2',3,'TrackingChannel',2,'ProjectRoot','E:/GNSS_Multipath_Project','Resume',false)
 ```
 
-Pass it as one `ArgumentList` entry after a separate `-batch` entry. The process reads only Task B's required raw-IQ input and runs no other task. Apply the same strict Stage0–Stage4, artifact, source-diff, and numeric-reporting rules as Task A.
+The static paths above are the expected values for this project root; in the driver, produce all path/scene char literals through the tested escaping helper rather than raw PowerShell interpolation. Pass the full expression as one `ArgumentList` entry after a separate `-batch` entry. The process reads only Task B's required raw-IQ input and runs no other task. Apply the same strict Stage0–Stage4, artifact, source-diff, and numeric-reporting rules as Task A.
 
 - [ ] **Step 4: Commit/push Task B evidence and stop for GPT review.**
 
 Publish only the updated lightweight validation files and approved source/test changes; verify the remote branch head equals the new commit. Stop for GPT review. Do not start any pilot, batch, 20.46 MHz task, CIR, alpha export, ledger, or model fitting.
 
-**Commit:** feat: validate full-task GPU candidate Task B (only after the separate authorization and terminal Task B outcome).
+**Commit:** feat: validate full-task GPU candidate Task B (only after Task A PASS, GPT review, separate Task B authorization, and terminal Task B outcome).
 
 ## Task 7: Conditional Engineering Handoff closure
 
@@ -444,8 +522,8 @@ Run git diff --check; stage only the Engineering Handoff and allowed lightweight
 
 ## Plan Self-Review
 
-- **Spec coverage:** candidate boundary, one-time GPU lifecycle, fit gather/CPU contract, Frozen downstream dependencies, output isolation, provenance, comparison rules, two task gates, evidence publication, and conditional handoff each map to Tasks 1–7.
+- **Spec coverage:** candidate boundary, authority-byte copy, one-time GPU lifecycle, deterministic MATLAB path resolution, fit gather/CPU contract, Frozen downstream dependencies, output isolation, provenance, comparison rules, pre-Task-A implementation-review gate, two separate execution gates, evidence publication, and conditional handoff each map to Tasks 1–7.
 - **Step scan:** tasks use checkable tests/commands; the only no-TDD exception is the exact source copy, verified by SHA and protected-function comparison.
 - **Type consistency:** the Frozen fitAllOrders signature and fit/model/path field names match the approved spec; candidate provenance is separate from cfg.
-- **Review Focus:** all five risks map to explicit source-guard, recursive-fit, lifecycle/provenance, and one-task-only checks before full-task execution.
+- **Review Focus:** all five risks map to explicit source-guard, recursive-fit, lifecycle/provenance, implementation-review, function-resolution, and one-task-only checks before full-task execution.
 - **Proportion:** seven dependent tasks use one candidate file, one contract helper, one single-task driver, one independent validator, and the minimum PowerShell/MATLAB tests and lightweight evidence files.
