@@ -1,4 +1,11 @@
-function result = stage2_window_173_probe(outputDir, rawFile, scratchFile, expectedPrn)
+function result = stage2_window_173_probe(outputDir, rawFile, scratchFile, expectedPrn, varargin)
+if ~isempty(varargin)
+    assert(numel(varargin) == 1 && isstruct(varargin{1}), ...
+        "Qualification mode requires one identity struct.");
+    result = runQualificationCpuProbe( ...
+        outputDir, rawFile, scratchFile, expectedPrn, varargin{1});
+    return;
+end
 windowId = 173;
 progressState = load(fullfile(outputDir, "stage2_nav_progress.mat"), "cfg");
 cfg = progressState.cfg;
@@ -153,6 +160,297 @@ save(scratchFile, "observed", "context", "cpuFit", "cfg", ...
     "dopplerSign", "row", "scanRow", "cpuPrepSeconds", ...
     "cpuComputeSeconds", "profileInfo", "result");
 disp("STAGE2_WINDOW173_PROFILE_JSON=" + string(jsonencode(result)));
+end
+
+function result = runQualificationCpuProbe(outputDir, rawFile, scratchFile, expectedPrn, q)
+requiredFields = ["qualificationId", "manifestPrn", "formalTaskPrn", ...
+    "helperRequestedPrn", "sceneId", "trackingChannel", ...
+    "formalOutputPath", "windowId", "recordingTimeS", ...
+    "productionSelectedL", "productionPathCount"];
+assert(all(isfield(q, cellstr(requiredFields))), ...
+    "Qualification identity record is incomplete.");
+
+progressState = load(fullfile(outputDir, "stage2_nav_progress.mat"), "cfg");
+cfg = progressState.cfg;
+manifestPrn = normalizePrn(q.manifestPrn);
+formalTaskPrn = normalizePrn(q.formalTaskPrn);
+helperPrn = double(expectedPrn);
+cfgPrn = double(cfg.targetPrn);
+prnValues = [manifestPrn, formalTaskPrn, helperPrn, cfgPrn];
+assert(all(isfinite(prnValues)) && all(prnValues == fix(prnValues)) ...
+    && all(prnValues >= 1 & prnValues <= 32) ...
+    && all(prnValues == prnValues(1)), ...
+    "INPUT_IDENTITY_VALIDATION=FAIL: four-way PRN identity mismatch.");
+assert(string(cfg.sceneId) == string(q.sceneId) ...
+    && double(cfg.trackingChannel) == double(q.trackingChannel), ...
+    "INPUT_IDENTITY_VALIDATION=FAIL: production cfg scene/channel mismatch.");
+assert(cfg.fsHz == 10230000 && cfg.samplesPer40Ms == 409200 ...
+    && ~cfg.resumeExistingStages, ...
+    "INPUT_IDENTITY_VALIDATION=FAIL: unexpected production Stage2 config.");
+
+normalPath = @(value) lower(strrep(char(value), '/', '\'));
+assert(strcmp(normalPath(outputDir), normalPath(q.formalOutputPath)), ...
+    "INPUT_IDENTITY_VALIDATION=FAIL: formal output path mismatch.");
+runContext = jsondecode(fileread(fullfile(outputDir, "run_context.json")));
+assert(string(runContext.sceneId) == string(q.sceneId) ...
+    && double(runContext.prn) == manifestPrn ...
+    && double(runContext.trackingChannel) == double(q.trackingChannel), ...
+    "INPUT_IDENTITY_VALIDATION=FAIL: formal run-context identity mismatch.");
+
+windowId = double(q.windowId);
+expectedTime = double(q.recordingTimeS);
+windows = readtable(fullfile(outputDir, "stage0_valid_40ms_windows.csv"));
+scans = readtable(fullfile(outputDir, "stage1_nav_fast_scan.csv"));
+modelRows = readtable(fullfile(outputDir, "stage2_model_orders.csv"));
+pathRows = readtable(fullfile(outputDir, "stage2_selected_paths.csv"));
+selectedRows = readtable(fullfile(outputDir, "stage2_selected_windows.csv"));
+windowRows = windows(windows.window_id == windowId, :);
+scanRows = scans(scans.window_id == windowId, :);
+modelRows = sortrows(modelRows(modelRows.window_id == windowId, :), "model_order");
+pathRows = sortrows(pathRows(pathRows.window_id == windowId, :), "path_id");
+selectedRows = selectedRows(selectedRows.window_id == windowId, :);
+assert(height(windowRows) == 1 && height(scanRows) == 1 ...
+    && height(modelRows) == cfg.maximumModelOrder ...
+    && height(selectedRows) == 1, ...
+    "INPUT_IDENTITY_VALIDATION=FAIL: formal window rows are not unique/complete.");
+row = windowRows(1, :);
+scanRow = scanRows(1, :);
+selectedModelRows = modelRows(modelRows.selected == 1, :);
+assert(height(selectedModelRows) == 1 ...
+    && double(selectedModelRows.model_order(1)) == double(q.productionSelectedL) ...
+    && double(selectedRows.selected_L(1)) == double(q.productionSelectedL) ...
+    && height(pathRows) == double(q.productionPathCount), ...
+    "INPUT_IDENTITY_VALIDATION=FAIL: formal selected L/path count mismatch.");
+allFormalTimes = [double(row.recording_time_s), ...
+    double(scanRow.recording_time_s), ...
+    double(modelRows.recording_time_s(:).'), ...
+    double(pathRows.recording_time_s(:).'), ...
+    double(selectedRows.recording_time_s)];
+assert(all(allFormalTimes == expectedTime), ...
+    "INPUT_IDENTITY_VALIDATION=FAIL: recording_time_s differs from formal output.");
+assert(all(double(modelRows.model_order(:).') == 1:cfg.maximumModelOrder), ...
+    "INPUT_IDENTITY_VALIDATION=FAIL: formal model-order rows are incomplete.");
+
+formalState = load(fullfile(outputDir, "stage2_nav_sage_L1_L4.mat"), "stage2Fits");
+fitMatches = find(cellfun(@(fit) isstruct(fit) ...
+    && isfield(fit, "windowId") && double(fit.windowId) == windowId, ...
+    formalState.stage2Fits));
+assert(numel(fitMatches) == 1, ...
+    "INPUT_IDENTITY_VALIDATION=FAIL: formal MAT fit is not unique for the window.");
+formalFit = formalState.stage2Fits{fitMatches(1)};
+assert(double(formalFit.selectedOrder) == double(q.productionSelectedL), ...
+    "INPUT_IDENTITY_VALIDATION=FAIL: formal MAT selected L mismatch.");
+
+disp("INPUT_IDENTITY_VALIDATION=PASS");
+signState = load(fullfile(outputDir, "doppler_sign.mat"), "dopplerSignUsed");
+dopplerSign = signState.dopplerSignUsed;
+prepTimer = tic;
+observed = loadNavWipedFortyMs(row, rawFile, cfg);
+context = makeSignalContext( ...
+    row.code_frequency_hz, cfg.samplesPer40Ms, cfg);
+cpuPrepSeconds = toc(prepTimer);
+assert(numel(observed) == 409200 && isa(observed, "double") ...
+    && ~isa(observed, "gpuArray"), ...
+    "CPU qualification signal has unexpected type/size.");
+
+cpuTimer = tic;
+cpuFit = fitAllOrdersPrepared( ...
+    row, scanRow, observed, context, dopplerSign, cfg);
+cpuComputeSeconds = toc(cpuTimer);
+comparison = compareQualificationFits(formalFit, cpuFit);
+result = comparison;
+result.qualification_id = string(q.qualificationId);
+result.scene_id = string(q.sceneId);
+result.prn = string(q.manifestPrn);
+result.tracking_channel = double(q.trackingChannel);
+result.window_id = windowId;
+result.recording_time_s = expectedTime;
+result.cpu_prep_seconds = cpuPrepSeconds;
+result.cpu_compute_seconds = cpuComputeSeconds;
+result.raw_samples_requested = cfg.samplesPer40Ms;
+result.cpu_production_reference = "FAIL";
+if result.cpu_production_selected_L_match ...
+        && result.cpu_production_path_count_match ...
+        && result.cpu_production_path_identity_match ...
+        && result.cpu_production_path_label_match ...
+        && result.cpu_production_model_validity_match
+    result.cpu_production_reference = "PASS";
+end
+
+save(scratchFile, "observed", "context", "cpuFit", "cfg", ...
+    "dopplerSign", "row", "scanRow", "cpuPrepSeconds", ...
+    "cpuComputeSeconds", "formalFit", "result");
+disp("STAGE2_QUALIFICATION_CPU_JSON=" + string(jsonencode(result)));
+end
+
+function result = compareQualificationFits(referenceFit, candidateFit)
+selectedOrderMatch = referenceFit.selectedOrder == candidateFit.selectedOrder;
+modelValidityMatch = numel(referenceFit.models) == numel(candidateFit.models);
+pathCountMatchAll = modelValidityMatch;
+pathIdentityMatchAll = modelValidityMatch;
+pathLabelMatchAll = modelValidityMatch;
+referenceValidity = false(1, numel(referenceFit.models));
+candidateValidity = false(1, numel(candidateFit.models));
+rssReference = nan(1, numel(referenceFit.models));
+rssCandidate = nan(1, numel(candidateFit.models));
+bicReference = nan(1, numel(referenceFit.models));
+bicCandidate = nan(1, numel(candidateFit.models));
+for order = 1:min(numel(referenceFit.models), numel(candidateFit.models))
+    referenceModel = referenceFit.models{order};
+    candidateModel = candidateFit.models{order};
+    referenceValidity(order) = logical(referenceModel.valid);
+    candidateValidity(order) = logical(candidateModel.valid);
+    modelValidityMatch = modelValidityMatch ...
+        && referenceValidity(order) == candidateValidity(order);
+    rssReference(order) = double(referenceModel.rss);
+    rssCandidate(order) = double(candidateModel.rss);
+    bicReference(order) = double(referenceModel.bic);
+    bicCandidate(order) = double(candidateModel.bic);
+    referencePaths = referenceModel.paths;
+    candidatePaths = candidateModel.paths;
+    pathCountMatchAll = pathCountMatchAll ...
+        && numel(referencePaths) == numel(candidatePaths);
+    if numel(referencePaths) == numel(candidatePaths)
+        referenceLabels = false(1, numel(referencePaths));
+        candidateLabels = false(1, numel(candidatePaths));
+        if numel(referencePaths) > 1
+            referenceLabels(2:end) = true;
+            candidateLabels(2:end) = true;
+        end
+        pathLabelMatchAll = pathLabelMatchAll ...
+            && isequal(referenceLabels, candidateLabels);
+        if numel(referencePaths) > 1
+            referenceDelays = [referencePaths.delaySamples];
+            candidateDelays = [candidatePaths.delaySamples];
+            referenceDelayOrder = sign(referenceDelays(:) - referenceDelays(:).');
+            candidateDelayOrder = sign(candidateDelays(:) - candidateDelays(:).');
+            pathIdentityMatchAll = pathIdentityMatchAll ...
+                && isequal(referenceDelayOrder, candidateDelayOrder);
+        end
+    else
+        pathIdentityMatchAll = false;
+        pathLabelMatchAll = false;
+    end
+end
+
+referenceSelected = referenceFit.models{referenceFit.selectedOrder};
+candidateSelected = candidateFit.models{candidateFit.selectedOrder};
+selectedPathCountMatch = numel(referenceSelected.paths) ...
+    == numel(candidateSelected.paths);
+selectedPathLabelsMatch = selectedPathCountMatch;
+selectedPathIdentityMatch = selectedPathCountMatch;
+if selectedPathCountMatch && ~isempty(referenceSelected.paths)
+    referenceLabels = false(1, numel(referenceSelected.paths));
+    candidateLabels = false(1, numel(candidateSelected.paths));
+    if numel(referenceLabels) > 1
+        referenceLabels(2:end) = true;
+        candidateLabels(2:end) = true;
+    end
+    selectedPathLabelsMatch = isequal(referenceLabels, candidateLabels);
+    referenceDelays = [referenceSelected.paths.delaySamples];
+    candidateDelays = [candidateSelected.paths.delaySamples];
+    referenceDelayOrder = sign(referenceDelays(:) - referenceDelays(:).');
+    candidateDelayOrder = sign(candidateDelays(:) - candidateDelays(:).');
+    selectedPathIdentityMatch = isequal(referenceDelayOrder, candidateDelayOrder);
+end
+
+[delayAbs, ~] = qualificationDifference( ...
+    [referenceSelected.paths.delaySamples], [candidateSelected.paths.delaySamples]);
+[dopplerAbs, ~] = qualificationDifference( ...
+    [referenceSelected.paths.dopplerHz], [candidateSelected.paths.dopplerHz]);
+[powerAbs, ~] = qualificationDifference( ...
+    referenceSelected.relativePowerDb, candidateSelected.relativePowerDb);
+[alphaAbs, ~] = qualificationDifference( ...
+    [referenceSelected.paths.alpha], [candidateSelected.paths.alpha]);
+[scoreAbs, ~] = qualificationDifference( ...
+    [referenceSelected.paths.score], [candidateSelected.paths.score]);
+[rssAbs, rssRel] = qualificationDifference(rssReference, rssCandidate);
+[bicAbs, bicRel] = qualificationDifference(bicReference, bicCandidate);
+[bestL, secondBestL, bicMargin] = qualificationBicMargin(candidateFit);
+
+result = struct();
+result.cpu_selected_L = double(candidateFit.selectedOrder);
+result.production_selected_L = double(referenceFit.selectedOrder);
+result.cpu_path_count = numel(candidateSelected.paths);
+result.production_path_count = numel(referenceSelected.paths);
+result.cpu_production_selected_L_match = logical(selectedOrderMatch);
+result.cpu_production_path_count_match = logical(selectedPathCountMatch);
+result.cpu_production_path_identity_match = logical( ...
+    selectedPathIdentityMatch && pathIdentityMatchAll && pathCountMatchAll);
+result.cpu_production_path_label_match = logical( ...
+    selectedPathLabelsMatch && pathLabelMatchAll);
+result.cpu_production_model_validity_match = logical(modelValidityMatch);
+result.cpu_model_validity_by_order = candidateValidity;
+result.production_model_validity_by_order = referenceValidity;
+result.max_delay_abs_diff = delayAbs;
+result.max_doppler_abs_diff = dopplerAbs;
+result.max_relative_power_abs_diff = powerAbs;
+result.max_alpha_abs_diff = alphaAbs;
+result.max_path_score_abs_diff = scoreAbs;
+result.max_rss_abs_diff = rssAbs;
+result.max_rss_rel_diff = rssRel;
+result.max_bic_abs_diff = bicAbs;
+result.max_bic_rel_diff = bicRel;
+result.cpu_best_l = bestL;
+result.cpu_second_best_l = secondBestL;
+result.cpu_bic_margin = bicMargin;
+end
+
+function [maxAbsolute, maxRelative] = qualificationDifference(reference, candidate)
+reference = double(reference(:));
+candidate = double(candidate(:));
+if numel(reference) ~= numel(candidate)
+    maxAbsolute = inf;
+    maxRelative = inf;
+    return;
+end
+if isempty(reference)
+    maxAbsolute = 0;
+    maxRelative = 0;
+    return;
+end
+delta = abs(candidate - reference);
+samePositiveInfinity = isinf(reference) & reference > 0 ...
+    & isinf(candidate) & candidate > 0;
+sameNegativeInfinity = isinf(reference) & reference < 0 ...
+    & isinf(candidate) & candidate < 0;
+sameNaN = isnan(reference) & isnan(candidate);
+delta(samePositiveInfinity | sameNegativeInfinity | sameNaN) = 0;
+delta(isnan(delta)) = inf;
+maxAbsolute = max(delta);
+denominator = abs(reference);
+relative = zeros(size(delta));
+nonzero = denominator > 0;
+relative(nonzero) = delta(nonzero) ./ denominator(nonzero);
+relative(~nonzero & delta ~= 0) = inf;
+maxRelative = max(relative);
+end
+
+function [bestL, secondBestL, margin] = qualificationBicMargin(fit)
+valid = false(1, numel(fit.models));
+bic = inf(1, numel(fit.models));
+for order = 1:numel(fit.models)
+    valid(order) = logical(fit.models{order}.valid) ...
+        && isfinite(fit.models{order}.bic);
+    bic(order) = double(fit.models{order}.bic);
+end
+orders = find(valid);
+if isempty(orders)
+    bestL = nan;
+    secondBestL = nan;
+    margin = nan;
+    return;
+end
+[~, sortIndex] = sortrows([bic(orders).', orders.'], [1 2]);
+orders = orders(sortIndex);
+bestL = orders(1);
+if numel(orders) < 2
+    secondBestL = nan;
+    margin = nan;
+else
+    secondBestL = orders(2);
+    margin = bic(secondBestL) - bic(bestL);
+end
 end
 
 function assertProbePrnIdentity(requestedPrn, productionCfgPrn)
