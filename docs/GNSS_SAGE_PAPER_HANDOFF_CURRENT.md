@@ -1495,3 +1495,7 @@ MATLAB_EXECUTED = NO
 SAGE_EXECUTED = NO
 NEXT_ACTION = AUTHOR_REVIEW_OF_ISOLATED_DOPPLER_REVISION
 ```
+
+## Scope note — 2026-10-04
+
+Existing historical Phase-1 Stage3-based modeling results belong to their original study scope and remain unchanged. The current Mainline 10.23 MHz rerun adopts all Stage2-selected multipath as the downstream channel-modeling population, with Stage3/Stage4 retained as attributes rather than admission gates.

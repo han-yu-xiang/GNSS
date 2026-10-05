@@ -2146,3 +2146,436 @@ RAIN_EFFECT_LAYER_MATLAB_EXECUTED=NO
 RAIN_EFFECT_LAYER_SAGE_EXECUTED=NO
 NEXT_DECISION_REQUIRED=INDEPENDENT_REVIEW_OR_DARKROOM_INTEGRATION_APPROVAL
 ```
+
+## 92. 0913DarkroomRx GNSS-SDR positioning and loss-of-lock diagnostic preparation (Implemented + validation-only PASS; execution not started at preparation time, 2026-09-14)
+
+- 用户确认 `E:\0913DarkroomRx` 中八个输入均为 `10.23 MHz`、interleaved signed int16 little-endian I/Q（GNSS-SDR `ishort`），且源文件名中的 `pool` 表示 `poor`。八个文件共 43,747,315,712 bytes（约 40.74 GiB），按冻结格式约 17.82 min；本轮 preparation 对全部 raw 做了 SHA-256 provenance 读取，但未进行 GNSS 解算。
+- 新增独立诊断工具：`scripts/analysis/darkroom_rx/darkroom_rx_common.py`、`prepare_darkroom_rx_gnss_sdr_batch.py`、`run_darkroom_rx_gnss_sdr_batch.py`、`audit_darkroom_rx_signal_quality.py`，以及聚焦测试 `scripts/analysis/darkroom_rx/tests/test_darkroom_rx_pipeline.py`。该分支不调用 MATLAB/SAGE/raw-coarse，不写入 `scenes/**/sage_results`；执行器固定 sequential、`new_only=true`、`resume_allowed=false`、显式确认门禁和失败即停。
+- Immutable request 为 `dataset_generation_logs/darkroom_rx_gnss_sdr/darkroom_rx_0913_gnss_sdr_v1_20260914/batch_manifest.json`，SHA-256=`4c589f7f6df5be6284b9f4c8975c595af963c065b45151707aa3c617d12ba704`。其冻结八个 raw/config/source hash、WSL `Ubuntu-22.04`、`/usr/bin/gnss-sdr` version `0.0.16`、GPS L1 C/A receiver 配置和独立 task output namespace。
+- 真实 validation-only 为 8/8 PASS：所有 raw 路径、大小、mtime、配置/source hash 和 output-absent 门禁通过，`GNSS_SDR_INVOKED=false`。WSL 只读可见性检查确认 GOOD smoke 输入和配置可读，GNSS-SDR executable/version 匹配。聚焦测试 `19 passed`，新增 Python 文件通过 `py_compile`，相关 diff 通过 `git diff --check`。
+- QA 语义固定为：`carrier_lock_test < -0.5` 连续至少 20 ms 才记为 tracking lock loss，连续 100 ms good 才确认恢复，连续性 gap 不桥接；PVT/NMEA 至少连续 5 s 有效解记为工程报告用 `SUSTAINED_FIX`。tracking loss 与 PVT outage 分开报告；`NO_FIX_OBSERVED` 不解释为物理无信号。
+- 操作手册为 `docs/DARKROOM_RX_0913_GNSS_SDR_POSITIONING_DIAGNOSTIC.md`。在本节记录时，下一步是由正常 Windows 用户先人工执行 `highway_open_good_1023` GOOD smoke，然后运行独立只读 QA；该准备快照已由 Section 93 的实际执行与 v2 QA 结果更新。其余七项仍未执行。
+
+```text
+DARKROOM_RX_INPUT_CONTRACT=CONFIRMED
+DARKROOM_RX_IMMUTABLE_REQUEST=PREPARED
+DARKROOM_RX_MANIFEST_SHA256=4c589f7f6df5be6284b9f4c8975c595af963c065b45151707aa3c617d12ba704
+DARKROOM_RX_VALIDATION_ONLY=PASS_8_OF_8
+DARKROOM_RX_WSL_VISIBILITY=PASS
+DARKROOM_RX_GNSS_SDR_EXECUTION=NOT_STARTED
+DARKROOM_RX_POSITION_RESULTS=NOT_AVAILABLE
+MATLAB_EXECUTED=NO
+SAGE_EXECUTED=NO
+NEXT_DECISION_REQUIRED=HUMAN_EXECUTE_HIGHWAY_OPEN_GOOD_SMOKE_THEN_READ_ONLY_QA
+```
+
+## 93. 0913DarkroomRx GOOD smoke execution and corrected v2 audit (Completed; QA PASS, 2026-09-14)
+
+- The normal-user execution of the immutable `highway_open_good_1023` GOOD smoke task completed with `status=completed`, exit code `0`, `matlab_invoked=false`, `sage_invoked=false`, and `raw_hash_verified=true`. The frozen batch manifest is unchanged: `dataset_generation_logs/darkroom_rx_gnss_sdr/darkroom_rx_0913_gnss_sdr_v1_20260914/batch_manifest.json`, SHA-256 `4c589f7f6df5be6284b9f4c8975c595af963c065b45151707aa3c617d12ba704`.
+- Receipt: `dataset_generation_logs/darkroom_rx_gnss_sdr/darkroom_rx_0913_gnss_sdr_v1_20260914/receipts/highway_open_good_1023/20260914T143108888833Z_execution_receipt.json`; receipt SHA-256 is `1a9a22373eca7467539faf6e81e8b0bc3ff22b90ea5c6c7a47bca1c192d1adb7`. The unique output is `dataset_generation_logs/darkroom_rx_gnss_sdr/darkroom_rx_0913_gnss_sdr_v1_20260914/runs/highway_open_good_1023`, with 65 files and 52,783,740 bytes. No existing output or old QA namespace was modified.
+- The first v1 read-only audit remains preserved as diagnostic artifact `dataset_generation_logs/darkroom_rx_gnss_sdr_qa/darkroom_rx_0913_highway_good_smoke_20260914_r1`. It correctly established sustained positioning but did not understand GNSS-SDR's numeric tracking suffix (`<task>_<channel>.mat`) and did not distinguish an absent NMEA epoch from an explicit no-fix epoch.
+- A new versioned audit-layer compatibility tool, `scripts/analysis/darkroom_rx/audit_darkroom_rx_signal_quality_v2.py`, was added without changing the frozen v1 runner or manifest. Its source SHA-256 is `02e72cfea6388090cbb60e8f5c0e2203e53fac2d70b8db3789eb2684cf3ce0ba`. The 22 focused regression tests and `py_compile` pass. The v2 audit is written only to the new namespace `dataset_generation_logs/darkroom_rx_gnss_sdr_qa/darkroom_rx_0913_highway_good_smoke_20260914_r2`; its audit manifest SHA-256 is `9e7da2599e0603fbebe6cec3f61179763c3881dceff1ab91c2b176570f3287ea`.
+- Corrected GOOD-smoke QA facts are: `SUSTAINED_FIX`; 110 emitted valid NMEA epochs out of 111 expected epochs; position-output coverage `110/111 = 0.990990990990991`; one 1.0-s `POSITION_OUTPUT_GAP` with no explicit no-fix epoch; maximum continuous fix run 74.0 s; median valid satellites 7; median HDOP 1; and 24 debounced tracking lock-loss events across the parsed tracking outputs. The first-position-fix log is bounded by receiver-time markers at 27–28 s; this is not reported as an exact TTFF.
+- The v2 result is a diagnostic positioning-output QA PASS, not a vehicle-receiver conclusion. Tracking lock events and PVT/NMEA output gaps remain separate observations. The seven remaining manifest tasks are still not started; no batch continuation was automatically launched.
+
+```text
+DARKROOM_RX_GOOD_SMOKE_EXECUTION=COMPLETED
+DARKROOM_RX_GOOD_SMOKE_QA_V2=PASS
+DARKROOM_RX_GOOD_SMOKE_POSITIONABILITY=SUSTAINED_FIX
+DARKROOM_RX_GOOD_SMOKE_EMITTED_EXPECTED_EPOCHS=110/111
+DARKROOM_RX_GOOD_SMOKE_POSITION_OUTPUT_GAPS=1
+DARKROOM_RX_GOOD_SMOKE_EXPLICIT_NO_FIX_EPOCHS=0
+DARKROOM_RX_GOOD_SMOKE_TTFF_BOUND_S=27-28
+DARKROOM_RX_GOOD_SMOKE_TRACKING_LOCK_LOSS_EVENTS=24
+DARKROOM_RX_GOOD_SMOKE_RAW_IQ_READ_BY_AUDITOR=NO
+DARKROOM_RX_GOOD_SMOKE_MATLAB_EXECUTED_BY_AUDITOR=NO
+DARKROOM_RX_GOOD_SMOKE_SAGE_EXECUTED_BY_AUDITOR=NO
+DARKROOM_RX_REMAINING_TASKS=7_NOT_STARTED
+NEXT_DECISION_REQUIRED=USER_DECIDE_WHETHER_TO_RUN_REMAINING_SEVEN_GNSS_SDR_TASKS
+```
+
+## 94. 0913DarkroomRx 八任务 GNSS-SDR 执行与全量定位审计（Completed; 6/8 positioning QA PASS, 2/8 inconclusive, 2026-09-15）
+
+- 在 Section 93 记录的 GOOD smoke 之后，用户在正常 Windows PowerShell 中按 immutable manifest 顺序完成其余七个 GNSS-SDR 任务。八个任务的 execution receipt 均记录 `status=completed`、`exit_code=0`、`new_only=true`、`resume_allowed=false`，且执行前 output namespace 不存在；manifest 保持不变：`dataset_generation_logs/darkroom_rx_gnss_sdr/darkroom_rx_0913_gnss_sdr_v1_20260914/batch_manifest.json`，SHA-256=`4c589f7f6df5be6284b9f4c8975c595af963c065b45151707aa3c617d12ba704`。
+- 全量 v2 只读定位审计写入新 namespace `dataset_generation_logs/darkroom_rx_gnss_sdr_qa/darkroom_rx_0913_all8_20260915_r1`，audit manifest SHA-256=`6a1c678a49221b1b2a4dbaeba17765d01316fcc7029a513d6122128c369d08f3`；审计工具 SHA-256=`02e72cfea6388090cbb60e8f5c0e2203e53fac2d70b8db3789eb2684cf3ce0ba`。审计没有读取 raw IQ，没有调用 GNSS-SDR、MATLAB 或 SAGE。
+- 八个任务中 6 个为 `SUSTAINED_FIX`：Highway/Open GOOD、POOR、RAIN，Mountain/Valley RAIN，Urban GOOD、POOR；2 个为 `INCONCLUSIVE_NO_POSITION_OUTPUT`：Mountain/Valley GOOD、POOR。后两项有 tracking/telemetry/observables 输出但无 NMEA/PVT，不能表述为“无法定位”。
+- 当前 POOR 结论：Highway/Open POOR 为 `103/105` 个有效/期望位置历元、覆盖率 `0.980952`、最长连续定位 46 s；Urban POOR 为 `12/12`、覆盖率 `1.0`、最长连续定位 12 s；Mountain/Valley POOR 无定位输出，QA 为 `INCOMPLETE`。tracking 失锁与 PVT/NMEA 输出分开记录。
+- 全量执行输出共 504 个文件、442,941,294 bytes；共记录 207 个经去抖确认的 tracking 失锁事件，最长单次约 5.639 s。这些事件不能直接换算成车辆定位丢失比例。
+- 综合中文报告为 `docs/DARKROOM_RX_0913_ALL8_SIGNAL_QUALITY_REPORT_CN.md`；操作说明 `docs/DARKROOM_RX_0913_GNSS_SDR_POSITIONING_DIAGNOSTIC.md` 已更新为全量审计快照。下一工程动作不是 resume 或重跑，而是先诊断 Mountain/Valley GOOD/POOR 的 PVT/NMEA 输出链。
+
+```text
+DARKROOM_RX_ALL8_EXECUTION=COMPLETED_8_OF_8
+DARKROOM_RX_ALL8_RECEIPT_EXIT0=8_OF_8
+DARKROOM_RX_ALL8_POSITION_QA_PASS=6_OF_8
+DARKROOM_RX_ALL8_POSITION_QA_INCOMPLETE=2_OF_8
+DARKROOM_RX_HIGHWAY_POOR_POSITIONABILITY=SUSTAINED_FIX
+DARKROOM_RX_URBAN_POOR_POSITIONABILITY=SUSTAINED_FIX
+DARKROOM_RX_MOUNTAIN_POOR_POSITIONABILITY=INCONCLUSIVE_NO_POSITION_OUTPUT
+DARKROOM_RX_TOTAL_TRACKING_LOSS_EVENTS=207
+DARKROOM_RX_RAW_IQ_READ_BY_AUDITOR=NO
+DARKROOM_RX_GNSS_SDR_INVOKED_BY_AUDITOR=NO
+DARKROOM_RX_MATLAB_INVOKED_BY_AUDITOR=NO
+DARKROOM_RX_SAGE_INVOKED_BY_AUDITOR=NO
+NEXT_DECISION_REQUIRED=DIAGNOSE_MOUNTAIN_GOOD_POOR_POSITION_OUTPUT_CHAIN
+```
+
+## 95. Darkroom vehicle/GNSS-SDR comparative test and standard-signal benchmark plan (Planned / Not started, 2026-09-15)
+
+- A controlled reporting and test plan was added at `docs/DARKROOM_VEHICLE_GNSS_COMPARATIVE_TEST_AND_REPORT_PLAN_CN.md`. It addresses the observed case in which the current vehicle head unit loses user-visible positioning under a POOR input and may not recover after GOOD or clean GPS is restored, while independent GNSS-SDR analysis can position on some POOR recordings.
+- The plan preserves the Section 94 evidence boundary: Highway/Open POOR and Urban POOR produced GNSS-SDR `SUSTAINED_FIX`; Mountain/Valley POOR remains `INCONCLUSIVE_NO_POSITION_OUTPUT`. Tracking lock loss, PVT/NMEA output loss, and vehicle HMI/fusion behavior are separate observables and must not be conflated.
+- The proposed attribution experiment uses one frozen signal with a calibrated RF path across the current vehicle, at least one additional vehicle, and an RF capture/GNSS-SDR reference. A second vehicle passing would show that the signal is not universally unlocatable and would increase suspicion of a vehicle-specific receiver/recovery/HMI issue, but it would not alone establish that the POOR channel lies within an accepted automotive performance envelope.
+- The standard-signal baseline is planned around GPS L1 C/A as defined by IS-GPS-200N, known truth position/trajectory and geometry, calibrated antenna-port power, deterministic scenario/path-table hashes, and Clean-direct, channel-bypass, GOOD, POOR, block/reacquisition, and reboot-recovery sequences. ETSI TS 103 246-3/-5, EN 16803-2 record-and-replay methodology, EU eCall 2017/79 numerical performance references, and ETSI EN 303 413 RF-blocking methodology are retained as distinct references; none is misrepresented as a direct certification criterion for the proprietary map HMI.
+- The current POOR models remain experimental stress profiles. Their relative path tables do not establish absolute receiver-input power, so automotive-standard severity has not been determined. No vehicle experiment, GNSS-SDR run, MATLAB, SAGE, raw-IQ read, or production-artifact mutation occurred in creating this plan.
+
+```text
+DARKROOM_VEHICLE_GNSS_REPORT_PLAN=IMPLEMENTED
+DARKROOM_CROSS_VEHICLE_TEST=PLANNED_NOT_STARTED
+DARKROOM_STANDARD_SIGNAL_BASELINE=PLANNED_NOT_STARTED
+DARKROOM_CURRENT_POOR_PROFILE_CLASS=EXPERIMENTAL_STRESS_PROFILE
+DARKROOM_AUTOMOTIVE_STANDARD_SEVERITY_ASSESSMENT=NOT_ESTABLISHED
+DARKROOM_RAW_IQ_READ_IN_PLAN=NO
+DARKROOM_GNSS_SDR_EXECUTED_IN_PLAN=NO
+DARKROOM_MATLAB_EXECUTED_IN_PLAN=NO
+DARKROOM_SAGE_EXECUTED_IN_PLAN=NO
+NEXT_DECISION_REQUIRED=APPROVE_CALIBRATED_BASELINE_AND_CROSS_VEHICLE_TEST_MATRIX
+```
+
+## 96. Darkroom vehicle GNSS comparative-test briefing deck (Completed; presentation artifact, no experiment, 2026-09-15)
+
+- Created the concise Chinese 16:9 briefing deck `docs/DARKROOM_VEHICLE_GNSS_COMPARATIVE_TEST_REPORT_CN.pptx` for reporting the 0913DarkroomRx self-receive/GNSS-SDR positioning evidence, the current vehicle head-unit POOR observation, and the proposed cross-vehicle/Clean-BYPASS follow-up.
+- The deck contains seven slides covering: test-chain boundaries; GNSS-SDR POOR results; vehicle black-box observations; GOOD/POOR semantics; the Vehicle-B controlled matrix; and the decision logic for the next test. It uses the existing read-only audit facts and does not alter any signal, SAGE, production, or QA artifact.
+- The three field screenshots supplied in the earlier conversation were not present at their temporary filesystem paths when the deck was authored. Slide 4 therefore contains explicit replaceable image frames and does not fabricate substitute images. The original screenshots can be inserted later without changing the scientific text or measured values.
+- Presentation package integrity and layout validation passed: seven slides, 16:9 (`12192000,6858000` EMU), native tables on slides 3/6/7, no unapproved fonts, and no package findings. Delivered PPTX SHA-256=`22a51a2029859bb5081c8ae3a9296e7320b165d56e1fa1b75d8c65ef1cf98c06`.
+- This artifact records a reporting/planning state only. It does not establish that the vehicle receiver failed internally, does not classify the POOR profile against an automotive standard, and does not replace the required Clean/BYPASS and cross-vehicle tests.
+
+```text
+DARKROOM_VEHICLE_GNSS_BRIEFING_DECK=CREATED_AND_VALIDATED
+DARKROOM_VEHICLE_GNSS_BRIEFING_DECK_PATH=docs/DARKROOM_VEHICLE_GNSS_COMPARATIVE_TEST_REPORT_CN.pptx
+DARKROOM_VEHICLE_GNSS_BRIEFING_DECK_SHA256=22a51a2029859bb5081c8ae3a9296e7320b165d56e1fa1b75d8c65ef1cf98c06
+DARKROOM_VEHICLE_GNSS_BRIEFING_DECK_SLIDES=7
+DARKROOM_VEHICLE_GNSS_BRIEFING_DECK_SCREENSHOTS=REPLACEABLE_PLACEHOLDERS_ONLY
+DARKROOM_VEHICLE_GNSS_BRIEFING_DECK_EXPERIMENT_EXECUTED=NO
+DARKROOM_VEHICLE_GNSS_BRIEFING_DECK_RAW_IQ_READ=NO
+DARKROOM_VEHICLE_GNSS_BRIEFING_DECK_MATLAB=NO
+DARKROOM_VEHICLE_GNSS_BRIEFING_DECK_SAGE=NO
+DARKROOM_VEHICLE_GNSS_BRIEFING_DECK_PRODUCTION=NO
+NEXT_DECISION_REQUIRED=APPROVE_CLEAN_BYPASS_AND_CROSS_VEHICLE_TEST_MATRIX
+```
+
+## 104. Mainline frozen SAGE retry stopped at native argument transport smoke (2026-10-04)
+
+- The old stale lock for PID 26564 was rechecked after the user confirmed its PowerShell session had closed, then moved (not deleted) to `dataset_generation_logs/batch_sage_execution/windows_runner_receipts/run_20261003_F1023_V70_D0117_P2_G28_ch1_quoting_failure_20261004T084051Z/`. Its pre/post-move SHA-256 matched.
+- Updated only `scripts/sage_pipeline/Invoke-FrozenSageRerunSingle.ps1` and its focused Pester tests. MATLAB invocation now uses `System.Diagnostics.ProcessStartInfo.ArgumentList` with separate `-batch` and expression arguments; `Get-FrozenSageMatlabExpression` and frozen `run_nav_sage_pipeline.m` were not changed. Pester passed 14/14.
+- In the approved non-admin `TJ-CHANNEL\Jing_` PowerShell 7.6.5 session, preflight validated the single `F1023_V70_D0117_P2 / G28 / ch1` row, 10.23 MHz, required inputs, and `Resume=false`. Raw IQ was checked only for existence and audited size; no raw SHA was recomputed and no IQ samples were read.
+- MATLAB startup smoke passed (`MATLAB_STARTUP_OK`, exit code 0). The new double-quoted native argument smoke failed: MATLAB returned exit code 1. Its echoed expression showed the string delimiters absent; the marker text was present but does not make the nonzero exit a pass. Therefore native argument transport is still unverified/failed at the MATLAB command boundary, and no SAGE call was made.
+- The run-owned lock (PID 34796) was moved to `dataset_generation_logs/batch_sage_execution/windows_runner_receipts/run_20261003_F1023_V70_D0117_P2_G28_ch1_controlled_failure_20261004T085825564Z/`; `failure_receipt.json` records `MATLAB_ARGUMENT_TRANSPORT_FAILURE`. The active lock is absent. The exact staging and final namespaces remain absent.
+- Frozen source SHA-256 before and after the smoke is `bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c`. No Stage0–Stage4 outputs, relocation, baseline comparison, CIR, alpha export, or modeling ledger were produced. Archive contents were not modified; no commit or push occurred.
+
+```text
+LOCK_PID_26564_ABSENT=YES
+OLD_LOCK_ARCHIVED=YES_MOVE_ITEM
+WRAPPER_NATIVE_INVOCATION_CHANGED=YES_PROCESSSTARTINFO_ARGUMENTLIST
+PESTER=PASS_14_OF_14
+MATLAB_STARTUP_SMOKE=PASS_EXIT_0
+MATLAB_ARGUMENT_TRANSPORT_SMOKE=FAIL_STOP_EXIT_1
+RAW_SHA_RECOMPUTED=NO
+FROZEN_SAGE_SHA_BEFORE=bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c
+FROZEN_SAGE_SHA_AFTER=bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c
+SAGE_EXECUTED=NO
+STAGE0_STAGE4=NOT_RUN
+RELOCATION_STATUS=NOT_RUN
+BASELINE_REGRESSION=NOT_RUN
+CIR_ALPHA_LEDGER=NOT_CREATED
+OTHER_88_TASKS_EXECUTED=NO
+20_46_MHZ_EXECUTED=NO
+NEXT_ACTION=STOP_PENDING_NEW_AUTHORIZATION_TO_INVESTIGATE_MATLAB_ARGUMENT_BOUNDARY
+```
+
+## 103. Mainline frozen SAGE baseline pilot blocked before pipeline entry (2026-10-04)
+
+- Validated the single authorized manifest row `F1023_V70_D0117_P2 / G28 / ch1`: sample rate 10.23 MHz from target metadata, all declared inputs present, `mapping_warning=NONE`, `Resume=false`, and both staging and final namespaces absent. No other task was selected.
+- Frozen source `scripts/sage_pipeline/run_nav_sage_pipeline.m` remained unchanged at SHA-256 `bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c`.
+- The non-admin PowerShell 7 wrapper passed its MATLAB startup smoke (`MATLAB_STARTUP_OK`, exit code 0), then the actual single-task MATLAB batch command failed at parse time: native argument transport stripped the double-quote delimiters around MATLAB string arguments, producing `运算符的使用无效` and exit code 1. `run_nav_sage_pipeline` did not enter; no Stage0–Stage4 computation occurred. Do not infer a SAGE regression result from this attempt.
+- The authorized target raw IQ was streamed only for preflight SHA-256; IQ samples were not decoded or processed. No other dataset raw IQ was read. No GNSS-SDR, other SAGE task, or 20.46 MHz task ran.
+- Both the transient and final SAGE output namespaces remain absent; archive is untouched. The global `.windows_runner_active.lock` remains fail-closed after the failed invocation and must not be cleared or retried without explicit follow-up authorization.
+- Wrapper safety tests currently pass 10/10 but did not exercise Windows PowerShell-to-MATLAB native argument preservation; add that regression test before any rerun. Baseline comparison, CIR/alpha sidecars, modeling ledger, and requested pilot reports were not produced.
+- No frozen algorithm/source edit, commit, or push occurred. The current attempt is blocked pending a tested argument-quoting correction and authorized continuation.
+
+```text
+MAINLINE_BASELINE_PILOT=BLOCKED_BEFORE_SAGE_ENTRY
+MAINLINE_BASELINE_REGRESSION=NOT_RUN
+FROZEN_SAGE_SHA256=bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c
+RAW_IQ_BYTES_READ_FOR_SHA256=YES_TARGET_ONLY
+RAW_IQ_SAMPLE_DECODE=NO
+OTHER_RAW_IQ_READ=NO
+STAGE0_STAGE4=NOT_RUN
+CIR_ALPHA_LEDGER=NOT_CREATED
+GNSS_SDR_EXECUTED=NO
+OTHER_88_SAGE_TASKS=NOT_RUN
+SAGE_2046_MHZ=NOT_RUN
+COMMIT_PUSH=NO
+NEXT_ACTION=FIX_AND_TEST_MATLAB_ARGUMENT_TRANSPORT_THEN_REQUEST_AUTHORIZED_CONTINUATION
+```
+
+## 101. 0919caiji 48-file GNSS-SDR input inventory freeze (Prepared; execution not started, 2026-09-26)
+
+- Created the input inventory manifest `dataset_generation_logs/darkroom_rx_gnss_sdr/darkroom_rx_0919caiji_input_freeze_v1_20260926/input_inventory_manifest.json` and SHA-256 sidecar. Manifest SHA-256=`2c5d55065a5a44b2e830b669a9d9bd213e2d04c01bf007fbb7cceb0697d08833`.
+- The inventory contains 48 unique `.bin` inputs and 48 same-basename `.rfcatcher` companions, arranged as 12 filename-derived environment/condition groups with four replicates each. Total `.bin` size is 251,072,110,592 bytes. The user-confirmed input contract is 10.23 MHz interleaved signed int16 little-endian I/Q (`ishort`); each file size is divisible by four. Filename labels are inventory labels only, not GNSS-SDR positioning or receiver-quality results.
+- All 48 `.bin` files were bytewise SHA-256 hashed for provenance; IQ samples were not decoded or signal-processed. The `.rfcatcher` companions were checked for presence and size only and were not hashed or used as GNSS-SDR input. One manifest hash transcription and Windows path separator encoding were corrected and then revalidated.
+- At freeze time, the 48 proposed GNSS-SDR output namespaces were absent. Manifest status is `INPUTS_FROZEN_EXECUTION_ADAPTER_NOT_READY`, `execution_ready=false`, `new_only=true`, and `resume_allowed=false`. The existing 0913 processing profile is a reference only; the 0919 executor/configuration, runtime environment, and output normalization still require a separate preflight/dry-run gate before any GNSS-SDR invocation.
+- No GNSS-SDR, MATLAB, or SAGE execution occurred; no production or existing scientific artifact was modified. This is input/provenance preparation only, not a completed 0919 signal analysis.
+
+```text
+DARKROOM_RX_0919_INPUT_INVENTORY=FROZEN_48_TASKS
+DARKROOM_RX_0919_MANIFEST_SHA256=2c5d55065a5a44b2e830b669a9d9bd213e2d04c01bf007fbb7cceb0697d08833
+DARKROOM_RX_0919_EXECUTION_READY=NO
+DARKROOM_RX_0919_GNSS_SDR=NOT_RUN
+DARKROOM_RX_0919_MATLAB=NOT_RUN
+DARKROOM_RX_0919_SAGE=NOT_RUN
+NEXT_GATE=ADAPT_AND_VALIDATE_48_TASK_GNSS_SDR_EXECUTOR_BEFORE_PILOT
+```
+
+## 100. Darkroom 5-minute multi-seed 48-table collection (Completed; generation and QA PASS, 2026-09-15)
+
+- Implemented the new collection wrapper `scripts/analysis/channel_modeling/generate_darkroom_5min_multiseed_collection.py` and focused regression test `scripts/analysis/channel_modeling/tests/test_generate_darkroom_5min_multiseed_collection.py`. The wrapper reuses the frozen v2.2 numerical generator/core and the frozen RainPooled effect layer; it does not alter the v2.2 generator, the Rain model, SAGE, MATLAB, GNSS-SDR, or any raw input.
+- The formal new-only collection is `dataset_generation_logs/channel_modeling/darkroom_5min_multiseed_48_20260915`. Its immutable collection manifest is `provenance/collection_manifest.json`, SHA-256=`bfe45c8d7691d48a99dbd3f9c8ff6231f86814264135be1060d6527d6256a749`. It contains 48 tables: 4 environments × 3 modes (GOOD, POOR, RAIN) × 4 independent paired seeds. GOOD and POOR share each pairing's base seed; RAIN uses the documented derived seed and the frozen RainPooled layer.
+- Generation completed with 48/48 task completions, 172,800,000 total rows, 3,600,000 rows per table, and elapsed time approximately 2,676.067 s. The generation manifest is `generation_manifest.csv`, SHA-256=`9089085522308b3dbeb202eced7ae553f7673178df7aa8f42e60babe34b9c23c`.
+- Independent collection QA passed 48/48 tables: schema, identity/order, finite values, positive amplitudes, base-source binding, and Rain main-path preservation. The QA report is `collection_qa_report.json`, SHA-256=`0976d62784faa2a00ed333db7878db58e90d5262f1cb290e8063448b4320ef1f`; `qa_summary.csv` SHA-256=`a27f5396b354a2c8edeed95801bb03b41c4012c9873b74934e1239bd4764b1ae`. Total table bytes are 14,151,548,683.
+- The 20-ms smoke namespace remains a preserved failed diagnostic artifact (`QUALITY_EPISODE_DOES_NOT_FIT`) and was not reused. The actual smoke validation used a separate 3-task, 300,000-ms Urban #01 namespace and passed before formal generation. No files were deleted, moved, overwritten, or resumed.
+
+```text
+DARKROOM_5MIN_MULTISeed_COLLECTION=COMPLETED
+DARKROOM_5MIN_MULTISeed_COLLECTION_PATH=dataset_generation_logs/channel_modeling/darkroom_5min_multiseed_48_20260915
+DARKROOM_5MIN_MULTISeed_COLLECTION_MANIFEST_SHA256=bfe45c8d7691d48a99dbd3f9c8ff6231f86814264135be1060d6527d6256a749
+DARKROOM_5MIN_MULTISeed_TABLES=48
+DARKROOM_5MIN_MULTISeed_MODE_COUNTS=GOOD_16,POOR_16,RAIN_16
+DARKROOM_5MIN_MULTISeed_ROWS_PER_TABLE=3600000
+DARKROOM_5MIN_MULTISeed_TOTAL_ROWS=172800000
+DARKROOM_5MIN_MULTISeed_GENERATION_QA=PASS_48_OF_48
+DARKROOM_5MIN_MULTISeed_RAW_IQ_READ=NO
+DARKROOM_5MIN_MULTISeed_GNSS_SDR=NO
+DARKROOM_5MIN_MULTISeed_MATLAB=NO
+DARKROOM_5MIN_MULTISeed_SAGE=NO
+DARKROOM_5MIN_MULTISeed_20_46_MHZ=NO
+DARKROOM_5MIN_MULTISeed_OLD_ARTIFACTS_MODIFIED=NO
+NEXT_DECISION_REQUIRED=USE_FORMAL_48_TABLE_COLLECTION_FOR_DARKROOM_INTEGRATION_QA
+```
+
+## 98. Darkroom completion materials and Urban/Poor usability screening decision (Implemented; planning decision, no new experiment, 2026-09-15)
+
+- A dedicated completion-materials folder was created at `docs/darkroom_completion_report_materials/`. It contains the GB/T 45086.1-2024 project-relationship note, the Chinese-priority automotive GNSS standards/literature review, the Urban/Poor usability-screening decision, and an existing darkroom asset index. The folder is a reporting-material collection, not a parallel engineering status source; this handoff remains the engineering authority.
+- The existing 0913 GNSS-SDR evidence remains unchanged. Highway/Open POOR has 103/105 valid/expected position epochs, coverage `0.980952`, and approximately 46 s maximum continuous positioning after acquisition. Urban POOR has 12/12 valid/expected epochs and approximately 12 s visible continuous positioning near the end of the approximately 133.7 s recording. The prior audit classification `SUSTAINED_FIX` is retained as historical audit terminology, but it is not sufficient for the current dynamic-trajectory channel usability gate.
+- Decision: `Urban/Poor` is excluded from the **vehicle dynamic-positioning usable-candidate set** because its GNSS-SDR positioning interval is too short to establish relatively long-duration trajectory usability. This is an operational screening exclusion only: no Urban/Poor parameter table, raw input, GNSS-SDR output, receipt, log, or QA artifact was deleted, moved, overwritten, or corrected, and no physical claim of “no multipath” or “never locatable” is made.
+- Decision: `Highway/Open POOR` remains a cross-vehicle re-test candidate. Before re-test, the exact GNSS-SDR sustained-PVT coverage and maximum-outage gate must be frozen in the test record. The same canonical table, playback start, replay duration, clean baseline, and reboot/restart sequence must be used for both vehicles. A second-vehicle success with GNSS-SDR sustained positioning increases suspicion of vehicle-specific integration or recovery behavior but is not by itself a full automotive-standard compliance result; two-vehicle failure plus GNSS-SDR failure and a valid clean control supports excluding the channel from the current dynamic-positioning candidate set.
+- The GB/T relationship is bounded as `STANDARD_RELATED_SIGNAL_CHANNEL_SUBSYSTEM`, not full GB/T 45086.1-2024 compliance. Absolute RF power calibration, clause-by-clause standard execution, and multi-antenna OTA angle-of-arrival validation remain outside the current completion claim.
+
+```text
+DARKROOM_COMPLETION_MATERIALS_FOLDER=CREATED
+DARKROOM_COMPLETION_MATERIALS_PATH=docs/darkroom_completion_report_materials/
+DARKROOM_URBAN_POOR_DYNAMIC_POSITIONING_CANDIDATE=EXCLUDED_FROM_CURRENT_DYNAMIC_POSITIONING_SET
+DARKROOM_HIGHWAY_POOR_CROSS_VEHICLE_RETEST=CANDIDATE
+DARKROOM_STANDARD_RELATION=STANDARD_RELATED_SIGNAL_CHANNEL_SUBSYSTEM
+DARKROOM_EXISTING_ARTIFACTS_MODIFIED=NO
+DARKROOM_RAW_IQ_READ_FOR_THIS_UPDATE=NO
+DARKROOM_GNSS_SDR_EXECUTED_FOR_THIS_UPDATE=NO
+DARKROOM_MATLAB_EXECUTED_FOR_THIS_UPDATE=NO
+DARKROOM_SAGE_EXECUTED_FOR_THIS_UPDATE=NO
+DARKROOM_BATCH_EXECUTED_FOR_THIS_UPDATE=NO
+NEXT_DECISION_REQUIRED=FREEZE_CROSS_VEHICLE_SUSTAINED_PVT_GATE_AND_APPROVE_RETEST
+```
+
+## 99. 0913DarkroomRx 信道可用性报告与 16 场景接收报告方法（Completed; read-only report, no new experiment, 2026-09-15）
+
+- 新增只读报告 `docs/DARKROOM_RX_0913_CHANNEL_REPORT_CN.md`，并将其登记到暗室结题材料资产索引。报告冻结了统一字段：信号总时长、GNSS-SDR runtime、跨 PRN tracking 失锁、审计器确认重捕获、NMEA/PVT 首次定位、有效/期望历元、覆盖率、最长连续定位和位置输出缺口。
+- 该报告基于现有 `darkroom_rx_0913_all8_20260915_r1` QA 产物，未重新运行 GNSS-SDR、MATLAB、SAGE，未读取 raw IQ 内容。8 个任务仍为 6/8 `SUSTAINED_FIX`、2/8 `INCONCLUSIVE_NO_POSITION_OUTPUT`；汇总信号时长 `1069.094 s`、tracking 失锁事件 `207`、确认重捕获 `120`、跨 PRN 流失锁累计时长 `107.937 s`。
+- 报告明确区分 tracking 失锁、PVT/NMEA 定位输出和车辆 HMI；Highway/Open POOR 可形成 GNSS-SDR 定位，Urban POOR 仅有短时可见连续定位，Mountain/Valley POOR 仍因无 NMEA/PVT 而不可判定。
+- 当前 16 个暗室对象是 4 环境 × 2 质量 × Dry/Base 或 RainPooled 的参数表组合，不能直接当作 16 份 GNSS-SDR 输入。完整 16 场景信道报告仍需后续由模拟器产生 16 份实际回放/接收信号，再按同一审计字段处理；该步骤尚未开始。
+- 当前新增报告 SHA-256=`b1e566f5f207206e1abaf582d8b582b6f92850da8bd5398c117b2f6a36d5240b`。本次没有修改任何参数表、Rain effect layer、GNSS-SDR 输出、receipt、manifest 或既有 QA artifact。
+
+```text
+DARKROOM_RX_0913_CHANNEL_REPORT=COMPLETED_READ_ONLY
+DARKROOM_RX_0913_CHANNEL_REPORT_SHA256=b1e566f5f207206e1abaf582d8b582b6f92850da8bd5398c117b2f6a36d5240b
+DARKROOM_RX_0913_ANALYZED_TASKS=8
+DARKROOM_RX_0913_POSITION_QA_PASS=6_OF_8
+DARKROOM_RX_0913_POSITION_QA_INCONCLUSIVE=2_OF_8
+DARKROOM_SELF_RECEIVE_16_TASK_REPORT=NOT_YET_COMPLETE
+DARKROOM_RX_0913_REPORT_RAW_IQ_READ=NO
+DARKROOM_RX_0913_REPORT_GNSS_SDR_EXECUTED=NO
+DARKROOM_RX_0913_REPORT_MATLAB_EXECUTED=NO
+DARKROOM_RX_0913_REPORT_SAGE_EXECUTED=NO
+NEXT_DECISION_REQUIRED=FREEZE_16_TASK_SIGNAL_CAPTURE_AND_DYNAMIC_TRAJECTORY_GATE
+```
+
+## 97. Darkroom vehicle GNSS availability-screening briefing deck revision (Completed; presentation-only update, no experiment, 2026-09-15)
+
+- Produced the revised Chinese 16:9 deck `docs/DARKROOM_VEHICLE_GNSS_COMPARATIVE_TEST_REPORT_CN_v2.pptx`. The presentation now makes channel usability screening the primary objective: a channel is retained, cross-vehicle tested, provisionally rejected, or held inconclusive according to the joint vehicle/GNSS-SDR observations.
+- Added the independent four-minute test sequence with full restart boundaries, the POOR-to-Clean recovery check, and the explicit decision matrix. The deck does not infer a vehicle fault from a vehicle-only failure and does not equate GNSS-SDR failure with a physical absence of multipath.
+- This is a presentation revision only. No raw IQ, MATLAB, SAGE, sampling, production task, signal data, or existing artifact was modified. The original deck in Section 96 remains unchanged.
+- Final package validation passed: seven slides, 16:9 (`12192000,6858000` EMU), native tables on slides 3/6/7, Microsoft YaHei reference-font policy, and no structural or layout findings. Final PPTX SHA-256=`54fc6948e4baab93c1e76c4382e76b64ff74ea150f695e85b9c4bed78233563a`.
+
+```text
+DARKROOM_VEHICLE_GNSS_AVAILABILITY_DECK_REVISION=CREATED_AND_VALIDATED
+DARKROOM_VEHICLE_GNSS_AVAILABILITY_DECK_PATH=docs/DARKROOM_VEHICLE_GNSS_COMPARATIVE_TEST_REPORT_CN_v2.pptx
+DARKROOM_VEHICLE_GNSS_AVAILABILITY_DECK_SHA256=54fc6948e4baab93c1e76c4382e76b64ff74ea150f695e85b9c4bed78233563a
+DARKROOM_VEHICLE_GNSS_AVAILABILITY_DECK_SLIDES=7
+DARKROOM_VEHICLE_GNSS_AVAILABILITY_DECK_ORIGINAL_PRESERVED=YES
+DARKROOM_VEHICLE_GNSS_AVAILABILITY_DECK_EXPERIMENT_EXECUTED=NO
+DARKROOM_VEHICLE_GNSS_AVAILABILITY_DECK_RAW_IQ_READ=NO
+DARKROOM_VEHICLE_GNSS_AVAILABILITY_DECK_MATLAB=NO
+DARKROOM_VEHICLE_GNSS_AVAILABILITY_DECK_SAGE=NO
+DARKROOM_VEHICLE_GNSS_AVAILABILITY_DECK_PRODUCTION=NO
+NEXT_DECISION_REQUIRED=APPROVE_CLEAN_BYPASS_AND_CROSS_VEHICLE_TEST_MATRIX
+```
+
+## 102. 0919caiji 48-task GNSS-SDR audit, scene-library disposition, and GB/T 45086.1 mapping (Read-only audit; 2026-09-28)
+
+- Audited the frozen 0919caiji input/execution manifests, per-task GNSS-SDR QA receipts and compact task summary without opening raw IQ contents. All 48 tasks use the declared 10.23 MHz interleaved signed-int16 little-endian I/Q input contract; existing GNSS-SDR execution/artifact QA is PASS for all 48.
+- Applied the user-confirmed scene-library rule: a task with an explicit GNSS-SDR position output is admitted to the current position-observed signal-instance library; one without position output is marked abandoned from the current usable library. Result: 31 admitted, 17 abandoned. The 17 are “no position output observed,” not proof of absent RF signal or physical impossibility of positioning. Source artifacts remain unchanged.
+- The GNSS-SDR summary has 31 `FIX_OBSERVED` and 17 `INCONCLUSIVE_NO_POSITION_OUTPUT`; it records zero explicit no-fix epochs. There are 1,675 valid position epochs across the 31 tasks. Tracking diagnostics include 1,169 debounced per-link lock-loss intervals and 768 reacquisitions; summed link outage time is overlapping across satellite links and must not be called receiver-wide outage duration. The 48 tasks are not SAGE-complete scenes: the existing readiness audit marks all 48 blocked from standardized SAGE-scene use because required metadata/tracking/telemetry/navigation/trajectory/geometry provenance is incomplete.
+- Cross-checked the supplied schedule workbook: the user confirms all 16 GNSS schedule scenarios were tested, but workbook status cells are blank. Therefore the report labels completion as user-attested, not workbook-recorded. No one-to-one mapping from schedule `GPS-Sxx` entries to 0919caiji task IDs is documented; only broad environment-cohort context is reported.
+- Reviewed relevant parts of the user-provided GB/T 45086.1—2024 PDF (source hash `62FE0488FD28956F03FEB7761B87008576A9C92973E1EC93D63911E08C88718D`) and prepared a bounded project capability mapping. The report relates the project to Annex D and relevant simulator/performance clauses without claiming full standards compliance or that project environment labels exactly reproduce Annex D geometry.
+- Main report: `docs/GB_T_45086_1_GNSS_DARKROOM_CAPABILITY_MAPPING_CN.md`. Supporting ledgers: `dataset_generation_logs/darkroom_rx_gnss_sdr/darkroom_rx_0919caiji_gnss_sdr_v2_20260927/monitoring_scene_library_20260928/rx0919_v2_scene_library_admission.csv` and `schedule_gnss_scene_crosswalk.csv`. The report and ledgers record source manifest/summary hashes and task-level provenance.
+- Darkroom material navigation was updated in `docs/darkroom_completion_report_materials/README.md` and `04_EXISTING_DARKROOM_ASSET_INDEX_CN.md`. Paper handoff was not changed; no manuscript asset or paper scientific result was updated.
+- This was a documentation and metadata audit only. No MATLAB, SAGE, GNSS-SDR, generator or batch execution occurred; raw IQ content was not read; no existing experimental artifact was modified.
+
+```text
+DARKROOM_RX_0919CAIJI_TASKS_AUDITED=48
+DARKROOM_RX_0919CAIJI_POSITION_OBSERVED_ADMITTED=31
+DARKROOM_RX_0919CAIJI_NO_POSITION_OUTPUT_ABANDONED=17
+DARKROOM_RX_0919CAIJI_SAGE_READY_TASKS=0_OF_48
+SCHEDULE_GNSS_SCENARIOS_USER_CONFIRMED_TESTED=16
+SCHEDULE_WORKBOOK_STATUS_CELLS=BLANK
+SCHEDULE_TO_0919_TASK_EXACT_MAPPING=NOT_DOCUMENTED
+GBT_45086_1_CAPABILITY_MAPPING=CREATED_WITH_BOUNDED_CLAIMS
+RAW_IQ_CONTENT_READ=NO
+GNSS_SDR_EXECUTED=NO
+MATLAB_EXECUTED=NO
+SAGE_EXECUTED=NO
+PRODUCTION_EXECUTED=NO
+PAPER_HANDOFF_UPDATED=NO
+```
+
+## 105. Frozen SAGE single-task baseline and CIR pilot completed (2026-10-04)
+
+- Continued the previously stopped baseline attempt using single-quoted MATLAB char literals while retaining `System.Diagnostics.ProcessStartInfo.ArgumentList`. Pester passed 14/14; MATLAB startup and single-quote argument-transport smokes both returned exit code 0 with their expected markers. The earlier double-quote transport failure remains historical evidence only.
+- Executed exactly one frozen task: `F1023_V70_D0117_P2 / G28 / ch1`, 10.23 MHz, `Resume=false`. MATLAB exited 0. Frozen `scripts/sage_pipeline/run_nav_sage_pipeline.m` SHA-256 before and after was `bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c`. No raw-IQ SHA-256 was recomputed; only this authorized scene's raw IQ was read.
+- Stage0: 900 valid NAV symbols, 898 valid 40 ms windows. Stage1: 898 scanned and 54 selected windows. Stage2: 54 evaluated windows, 216 L=1..4 model-order rows, and 77 selected paths. Stage3: 23 persistence rows and 2 reliable centers. Stage4: 2 valid joint summaries; each selected L=1 and had zero joint multipath paths.
+- Relocated the completed output by same-volume move to `scenes/F1023_V70_D0117_P2/sage_results/rerun_20261003_frozen_v3/G28_ch1`; receipt records 21 files / 1,201,377 bytes and `VERIFIED_SAME_VOLUME_MOVE`. Strict comparison against the archived G28/ch1 baseline is `PASS_EXACT` for all eight Stage1–Stage4 CSVs, with matching schemas/order and row counts and zero differing cells.
+- After exact regression, generated the target-scene CIR/PDP, complex-alpha export, and Stage2-complete modeling ledger. CIR validation confirmed 35,920 × 451 snapshots/delay bins, 898 Stage0-aligned PDP rows with 40 snapshots each, finite values, positive raw-IQ RMS, nondecreasing time, and exact PDP recomputation. Receiver gain/AGC calibration is unknown. The SAGE-primary versus PDP peak comparison has 54 rows, signed range −4.0 to +32.5 samples, median +0.1, and max absolute difference 32.5; this is descriptive only and no threshold was applied.
+- Alpha export and ledger each contain 77 Stage2 paths. Ledger classification: 54 `DIRECT_PATH` (retained, excluded from MPC/pool counts), 16 `TRANSIENT_MPC`, 7 `PERSISTENT_MPC`, and 0 `HIGH_CONFIDENCE_MPC`; primary pool=7. Stage4 mapping remains `UNMAPPED` where exact identity could not be established.
+- Reports: `reports/data_consolidation_20261003/MAINLINE_SAGE_BASELINE_RERUN_20261003.md`, `BASELINE_CIR_EXPORT_AUDIT.md`, and the existing strict comparison, CIR comparison, alpha, and ledger CSVs. No other 88 tasks, 20.46 MHz data, GNSS-SDR, commit, or push occurred. The active runner lock is absent. `run_context` was not manually edited.
+
+```text
+SINGLE_TASK_BASELINE=COMPLETED
+SAGE_EXECUTED=YES_F1023_V70_D0117_P2_G28_CH1_ONLY
+FROZEN_SAGE_SHA_MATCH=YES
+BASELINE_REGRESSION=PASS_EXACT
+CIR_EXECUTED=YES_SINGLE_AUTHORIZED_SCENE
+ALPHA_EXPORTED=YES_77_ROWS
+MODELING_LEDGER=YES_77_ROWS
+RAW_IQ_SHA_RECOMPUTED=NO
+OTHER_88_TASKS_EXECUTED=NO
+20_46_MHZ_EXECUTED=NO
+GNSS_SDR_EXECUTED=NO
+COMMIT_PUSH=NO
+NEXT_ACTION=USER_REVIEW_OF_SINGLE_SCENE_CIR_AND_MODELING_SIDECARS
+```
+
+## 106. Mainline 10.23 MHz Stage2 modeling-population policy and frozen rerun batch (2026-10-04)
+
+- Approved downstream population: `ALL_STAGE2_MULTIPATH=MODELING_POPULATION`. Every Stage2-selected row with `is_multipath=1` belongs to the Mainline 10.23 MHz modeling population; `is_multipath=0` remains a direct-path reference and is not counted as MPC.
+- Stage3 persistence and strict Stage4 confirmation are retained as attributes, not admission gates: `STAGE3_MODELING_GATE=NO`, `STAGE4_MODELING_GATE=NO`. The prior Stage3-primary-pool interpretation is retired for this current Mainline rerun scope. Historical Phase-1 Stage3-based modeling results and conclusions remain unchanged and in their original study scope.
+- Approved execution scope is the existing 89-row 10.23 MHz rerun manifest: the G28/ch1 baseline is `ALREADY_COMPLETE` from its exact regression, relocation receipt, and complete Stage0–Stage4 outputs; only the remaining 88 tasks may be newly attempted. Mapping-warning values remain unchanged, including the four `NAV_MAPPING_VALID_TRACKING_START_LOG_MISSING` rows.
+- Execution gates: exact frozen SAGE source hash `bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c`; `Resume=false`; `ProcessStartInfo.ArgumentList`; one task at a time; verify Stage0–Stage4 and relocate before dispatching the next task. No estimator, Stage2/3/4 algorithm, or threshold changes.
+- Independent input/Stage0 scientific failures are recorded as `FAILED` and may continue only after classification and confirmed process termination. Failed staging can move only by `Move-Item` after both processes ended, classification is established, and final/diagnostic destinations are absent; never delete, overwrite, resume, or reuse failed output. Any systemic failure stops the entire batch.
+- Bulk sidecars and modeling remain out of scope: `BULK_CIR=NO`, `BULK_ALPHA=NO`, `LOCAL_LEDGER=NO`, `GLOBAL_LEDGER=NO`, `CHANNEL_MODEL_FITTING=NO`; 20.46 MHz is not authorized. The CIR review package is published separately on `reports/cir-delay-reference-audit-20261004`, based on clean `origin/main`, containing only its approved five-file allowlist.
+
+```ini
+MODELING_POPULATION=ALL_STAGE2_MULTIPATH
+STAGE3_MODELING_GATE=NO
+STAGE4_MODELING_GATE=NO
+HISTORICAL_PHASE1_RESULTS=UNCHANGED
+MAINLINE_1023_BATCH_PLANNED=89
+BASELINE_G28_CH1=ALREADY_COMPLETE
+MAINLINE_1023_NEW_TASKS=88
+MAINLINE_MAPPING_WARNING_TASKS=4
+SAGE_BATCH_STATUS=AUTHORIZED_NOT_STARTED_AT_HANDOFF_UPDATE
+BULK_CIR=NO
+BULK_ALPHA=NO
+LOCAL_LEDGER=NO
+GLOBAL_LEDGER=NO
+CHANNEL_MODEL_FITTING=NO
+20_46_MHZ_EXECUTED=NO
+BUSINESS_BRANCH_COMMIT_PUSH=NO
+CIR_REVIEW_BRANCH=reports/cir-delay-reference-audit-20261004
+CIR_REVIEW_COMMIT=bbc7ce76daf6752f6b458b2c7064fb5025d7d6bc
+```
+
+## 107. Mainline SAGE batch stopped by post-run validator argument-binding error (2026-10-04)
+
+- The authorized task `F1023_V120_D0121_P2 / G03 / ch2` ran with `Resume=false`; MATLAB exited 0 and the frozen SAGE source hash remained `bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c`. This was the one authorized raw-IQ dataset read; no other raw IQ was opened.
+- All 15 required Stage0–Stage4 artifacts are present and nonempty. The verified same-volume relocation receipt records 21 files / 753,870 bytes at `scenes/F1023_V120_D0121_P2/sage_results/rerun_20261003_frozen_v3/G03_ch2`. Read-only counts from those outputs are Stage0 232 valid symbols / 230 valid windows; Stage1 230 scanned windows; Stage2 96 evaluated windows and 142 selected paths (96 direct, 46 MPC); Stage3 46 persistence rows / 9 persistent MPC; Stage4 8 joint results / 0 confirmed MPC.
+- The batch coordinator then stopped at post-run validation. `Assert-FrozenSageSuccessfulTask` passed an unparenthesized `[string]$ManifestRow.frozen_sage_sha256` as a command argument; PowerShell bound the stringified manifest row as `ExpectedHash`, so the check reported a false `FROZEN_SAGE_SOURCE_HASH_MISMATCH` even though the actual source hash exactly equals the manifest's expected SHA. This is a post-run validator defect, not evidence of a frozen-source change or scientific task failure.
+- Per the systemic-failure stop rule, the task remains `FAILED` in `MAINLINE_SAGE_1023_BATCH_RERUN_SUMMARY.csv`; it is not manually reclassified. The coordinator did not dispatch another task. Its active batch lock was moved by `Move-Item` into `dataset_generation_logs/batch_sage_execution/frozen_sage_batch_receipts/frozen_sage_batch_stopped_20261004T130609973Z/`; there is no active MATLAB worker, coordinator, or batch lock.
+- The newly approved task-level parallelization design (initial two-worker pilot, staging-key exclusion, coordinator-only summary writes, and conditional scaling up to four) has not been implemented or piloted. No later task, mapping-warning task, 20.46 MHz task, CIR/alpha bulk export, ledger, channel-model fit, or GNSS-SDR run occurred; no business-branch commit or push occurred.
+
+```ini
+MAINLINE_BATCH_STATUS=STOPPED_SYSTEMIC_POST_RUN_VALIDATION_FAILURE
+G03_CH2_MATLAB_EXIT=0
+G03_CH2_FROZEN_SAGE_SHA_MATCH=YES
+G03_CH2_STAGE0_STAGE4_OUTPUTS=COMPLETE_FILES_PRESENT
+G03_CH2_RELOCATION=VERIFIED_SAME_VOLUME_MOVE
+G03_CH2_SUMMARY_STATUS=FAILED_POST_RUN_VALIDATOR_DEFECT
+MAINLINE_1023_NEW_ATTEMPTED=1
+MAINLINE_1023_NEW_COMPLETE=0
+MAINLINE_1023_FAILED=1
+MAINLINE_1023_PENDING=87
+PARALLEL_DRIVER_IMPLEMENTED=NO
+PARALLEL_SCHEDULER_PILOT=NOT_STARTED
+NEXT_DECISION_REQUIRED=USER_APPROVAL_TO_REPAIR_VALIDATOR_AND_DECIDE_HOW_TO_RESUME_WITHOUT_RERUNNING_G03_CH2
+RAW_IQ_READ=YES_SINGLE_AUTHORIZED_DATASET
+OTHER_RAW_IQ_READ=NO
+20_46_MHZ_EXECUTED=NO
+BUSINESS_BRANCH_COMMIT_PUSH=NO
+```
+
+## 108. Mainline post-run recovery and two-worker Frozen SAGE pilot passed (2026-10-05)
+
+- Section 107 remains as historical failure provenance. The post-run validator's PowerShell argument-binding defect was minimally corrected in the batch driver, not in frozen `run_nav_sage_pipeline.m`. The already-completed G03/ch2 task was recovered from its verified output and relocation receipt without rerunning SAGE; its batch-summary row is now `COMPLETE`.
+- The authorized two-worker pilot completed and passed. G06/ch9 and G11/ch0 both ran `F1023_V120_D0121_P2` with `mapping_warning=NONE`, `Resume=false`, and the exact frozen source SHA-256 `bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c`. Their MATLAB execution intervals overlapped; the pilot receipt confirms `max_parallel=2`, `overlap_confirmed=true`, no staging collision, no duplicate dispatch, and no summary-write conflict.
+- Both pilot outputs completed Stage0–Stage4 and were relocated by verified same-volume `Move-Item`. Each relocation receipt records 21 files, matching source/destination byte totals, MATLAB exit code 0, the expected frozen SHA, and `Resume=false`. G06/ch9: Stage0 25,363 symbols / 25,353 windows; Stage1 25,353 scan rows; Stage2 61 evaluated windows / 244 L=1..4 rows / 66 selected paths (61 direct, 5 MPC); Stage3 5 persistence rows / 0 reliable centers; Stage4 0 joint rows / 0 confirmed paths. G11/ch0: Stage0 15,224 symbols / 15,210 windows; Stage1 15,210 scan rows; Stage2 67 evaluated windows / 268 L=1..4 rows / 71 selected paths (67 direct, 4 MPC); Stage3 4 persistence rows / 0 reliable centers; Stage4 0 joint rows / 0 confirmed paths. All nine Stage3 persistence rows failed the persistence criterion. The Stage4 CSVs are valid header-only outputs because the frozen `runJointStage` returns typed empty tables when Stage3 provides no reliable centers; this is a zero-result scientific outcome, not a missing-stage or confirmed-event claim.
+- Current batch summary SHA-256 is `06fb963027b4c5e54d38ff1363c03e5dd7c45ce1f7c948f54c0d8127b59925a9` and matches the pilot receipt. Summary state: 89 planned; G28/ch1 `ALREADY_COMPLETE`; G03/ch2 recovered `COMPLETE`; G06/ch9 and G11/ch0 `COMPLETE`; 3 new attempts / 3 new complete / 0 failed / 85 pending. Across the four complete tasks: 278 direct paths, 78 Stage2 MPC, 16 Stage3 persistent MPC, and 0 Stage4-confirmed MPC. Modeling population remains `ALL_STAGE2_MULTIPATH`; Stage3 and Stage4 are attributes, not admission gates.
+- The batch was paused immediately after the two-worker pilot: no additional task was scheduled or started. All pilot mapping warnings were `NONE`; no mapping-warning task was attempted. There is no active batch or per-run lock and no MATLAB process remains. The large raw-IQ file was read only for the authorized `F1023_V120_D0121_P2` dataset; its SHA-256 was not recomputed. No other raw-IQ dataset was read.
+- No remaining 85 tasks, 20.46 MHz tasks, full/bulk CIR or alpha export, local/global ledger, channel-model fitting, Paper Handoff edit, business-branch commit, or push occurred. A bounded read-only Stage2 hotspot/GPU audit is the next authorized step; no production GPU path is approved.
+
+```ini
+G03_CH2_POSTRUN_RECOVERY=COMPLETE_WITHOUT_RERUN
+FROZEN_SAGE_SHA_MATCH=YES
+PARALLEL_SCHEDULER_PILOT=PASS
+PARALLEL_WORKER_COUNT=2
+MATLAB_INTERVAL_OVERLAP=YES
+STAGING_COLLISION=NO
+DUPLICATE_DISPATCH=NO
+SUMMARY_WRITE_CONFLICT=NO
+TOTAL_PLANNED=89
+ALREADY_COMPLETE=1
+NEW_ATTEMPTED=3
+NEW_COMPLETE=3
+FAILED=0
+TOTAL_COMPLETE=4
+PENDING=85
+MAPPING_WARNING_ATTEMPTED=0
+TOTAL_DIRECT_PATH_ROWS=278
+TOTAL_STAGE2_MPC=78
+TOTAL_STAGE3_PERSISTENT_MPC=16
+TOTAL_STAGE4_CONFIRMED_MPC=0
+MODELING_POPULATION=ALL_STAGE2_MULTIPATH
+STAGE3_MODELING_GATE=NO
+STAGE4_MODELING_GATE=NO
+BATCH_PAUSED_AFTER_2_WORKER_PILOT=YES
+STAGE2_HOTSPOT_GPU_AUDIT=AUTHORIZED_NOT_STARTED
+PRODUCTION_GPU=NO
+20_46_MHZ_EXECUTED=NO
+PAPER_HANDOFF_UPDATED=NO
+BUSINESS_BRANCH_COMMIT_PUSH=NO
+```

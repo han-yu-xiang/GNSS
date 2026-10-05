@@ -1,0 +1,15 @@
+qualification_id,scene_id,prn,tracking_channel,window_id,recording_time_s,production_selected_L,production_path_count,production_mpc_count,separation_retry_status,representative_reason,formal_output_path
+Q_G28_W38,F1023_V70_D0117_P2,G28,1,38,38.5590604105572,1,1,0,PENDING_TRACE,L1_no_multipath,scenes\F1023_V70_D0117_P2\sage_results\rerun_20261003_frozen_v3\G28_ch1
+Q_G28_W298,F1023_V70_D0117_P2,G28,1,298,43.7590673509286,2,2,1,PENDING_TRACE,L2_single_mpc,scenes\F1023_V70_D0117_P2\sage_results\rerun_20261003_frozen_v3\G28_ch1
+Q_G28_W725,F1023_V70_D0117_P2,G28,1,725,52.2990788856305,3,3,2,PENDING_TRACE,L3_two_mpc_high_relative_doppler,scenes\F1023_V70_D0117_P2\sage_results\rerun_20261003_frozen_v3\G28_ch1
+Q_G28_W226,F1023_V70_D0117_P2,G28,1,226,42.3190653958944,4,4,3,PENDING_TRACE,L4_three_mpc,scenes\F1023_V70_D0117_P2\sage_results\rerun_20261003_frozen_v3\G28_ch1
+Q_G03_W1,F1023_V120_D0121_P2,G03,2,1,596.792752883675,1,1,0,PENDING_TRACE,L1_no_multipath_different_scene,scenes\F1023_V120_D0121_P2\sage_results\rerun_20261003_frozen_v3\G03_ch2
+Q_G03_W9,F1023_V120_D0121_P2,G03,2,9,596.952753567937,2,2,1,PENDING_TRACE,L2_single_mpc_different_scene,scenes\F1023_V120_D0121_P2\sage_results\rerun_20261003_frozen_v3\G03_ch2
+Q_G03_W11,F1023_V120_D0121_P2,G03,2,11,596.992753665689,2,2,1,PENDING_TRACE,L2_longer_delay_mpc,scenes\F1023_V120_D0121_P2\sage_results\rerun_20261003_frozen_v3\G03_ch2
+Q_G03_W173,F1023_V120_D0121_P2,G03,2,173,600.232764516129,3,3,2,TRIGGERED_CONFIRMED,L3_retry_triggered,scenes\F1023_V120_D0121_P2\sage_results\rerun_20261003_frozen_v3\G03_ch2
+Q_G06_W6850,F1023_V120_D0121_P2,G06,9,6850,163.771145454545,1,1,0,PENDING_TRACE,L1_no_multipath_pilot_task,scenes\F1023_V120_D0121_P2\sage_results\rerun_20261003_frozen_v3\G06_ch9
+Q_G06_W17197,F1023_V120_D0121_P2,G06,9,17197,370.711901368524,2,2,1,PENDING_TRACE,L2_longer_delay_high_relative_doppler,scenes\F1023_V120_D0121_P2\sage_results\rerun_20261003_frozen_v3\G06_ch9
+Q_G06_W17194,F1023_V120_D0121_P2,G06,9,17194,370.651901173021,3,3,2,PENDING_TRACE,L3_two_mpc_pilot_task,scenes\F1023_V120_D0121_P2\sage_results\rerun_20261003_frozen_v3\G06_ch9
+Q_G11_W9097,F1023_V120_D0121_P2,G11,0,9097,370.710859237537,1,1,0,PENDING_TRACE,L1_no_multipath_pilot_task,scenes\F1023_V120_D0121_P2\sage_results\rerun_20261003_frozen_v3\G11_ch0
+Q_G11_W15065,F1023_V120_D0121_P2,G11,0,15065,546.966347018573,2,2,1,PENDING_TRACE,L2_single_mpc_pilot_task,scenes\F1023_V120_D0121_P2\sage_results\rerun_20261003_frozen_v3\G11_ch0
+Q_G11_W9161,F1023_V120_D0121_P2,G11,0,9161,416.806080351906,4,4,3,PENDING_TRACE,L4_three_mpc_pilot_task,scenes\F1023_V120_D0121_P2\sage_results\rerun_20261003_frozen_v3\G11_ch0
