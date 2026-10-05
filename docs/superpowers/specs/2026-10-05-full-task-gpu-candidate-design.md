@@ -1,6 +1,6 @@
 # Full-Task GPU Candidate Design
 
-**Status:** DESIGN ONLY — awaiting GPT review
+**Status:** DESIGN REVISED AFTER AUTHORITATIVE SOURCE AUDIT — AWAITING GPT FINAL SPEC APPROVAL
 
 **Scope:** Experimental full-task Stage0–Stage4 candidate for two already completed CPU tasks
 
@@ -48,7 +48,11 @@ Experimental candidate in experiments/sage_gpu/full_task_candidate/
                  └── compare each stage to existing formal Frozen CPU output
 ```
 
-The candidate is a versioned copy of the authoritative local Frozen source, not a modification of the production file. Candidate-specific entry, project-root/output routing, GPU initialization/data movement, and provenance are isolated as non-scientific plumbing. The review branch's old Frozen file remains untouched.
+The candidate is a versioned copy of the authoritative local Frozen source, not a modification of the production file. Candidate-specific entry, project-root/output routing, task-level GPU initialization/data movement, and provenance are isolated as non-scientific plumbing. The review branch's old Frozen file remains untouched.
+
+GPU lifecycle is fixed at one initialization per task. Candidate entry first completes every preflight—authoritative Frozen SHA, task identity, GPU availability, exact candidate output namespace nonexistence, and formal reference-output identity. Only after all preflights pass, and before Stage0 starts, it initializes the selected device once with `gpuDevice(...)`. The same current device serves every Stage2 window/model fit in that task. It is not reset or reinitialized per window, `fitAllOrders`, model order, or path. If the device becomes unavailable during the task, execution fails closed; CPU fallback is prohibited.
+
+Candidate-only provenance is kept outside Frozen `cfg`; it is written to an independent lightweight artifact such as `candidate_provenance.json`.
 
 Alternative approaches were considered. Modifying Frozen production to add a GPU switch is prohibited. An external wrapper that runs Frozen CPU Stage2 and then substitutes files would not make Stage3/Stage4 consume the GPU candidate's in-memory fits and would not validate the requested pipeline. The isolated source copy is therefore the selected approach for this experimental validation.
 
@@ -70,16 +74,31 @@ experiments/sage_gpu/full_task_candidate/run_nav_sage_pipeline_gpu_candidate.m
 
 The qualified GPU implementation includes `fitAllOrdersGpu`, `initializeResidualPathGpu`, `runSageGpu`, `evaluateModelGpu`, `gridSearchPathGpu`, `refinePathGpu`, `scoreReplicaBatchGpu`, `makeReplicaBatchGpu`, `buildReplicasGpu`, `solveAmplitudesGpu`, `synthesizeGpu`, `residualRssGpu`, `replicaCoherenceGpu`, GPU path-state conversion, and CPU gather. Its residual initializer calls the shared `selectSeparatedResidualCandidate` helper.
 
+The Frozen `fitAllOrders(row, scanRow, rawFile, dopplerSign, cfg)` signature remains unchanged (`REQUIRES_FITALLORDERS_SIGNATURE_CHANGE=NO`). GPU execution context is not passed through a new argument; the function uses the task-entry-selected current GPU device. It must not initialize or reset a device itself.
+
 ## 5. Exact Stage2 replacement boundary
 
 The current Frozen source places the Stage1–Stage4 orchestration in `run_sage_stage1_stage4_local` (around line 811). The Stage2 boundary is:
 
-- `runStage2` (around line 1164): owns candidate-window order, checkpoint/resume handling, per-window failure capture, progress saves, and the `fits` collection. This controller remains byte-identical to Frozen and keeps the same `fitAllOrders` call signature.
-- `fitAllOrders` (around line 1211): per-window L=1..4 fitting and selected-order result. Its candidate body is limited to Frozen input preparation plus GPU initialization/data movement and a call to the already-qualified `fitAllOrdersGpu` implementation. That qualified model-order loop is reused without tuning or changing its order, validity, or stopping semantics.
+- `runStage2` (around line 1164): owns candidate-window order, checkpoint/resume handling, per-window failure capture, progress saves, and the `fits` collection. The complete candidate `runStage2` body must remain byte-identical to the authoritative Frozen body (`RUNSTAGE2_BYTE_IDENTICAL=REQUIRED`). Keep its signature, candidate ordering, direct `fits{position} = fitAllOrders(...)` assignment, fits-cell layout, catch behavior, completed tracking, checkpoint interval, checkpoint variables, and progress-file semantics unchanged.
+- `fitAllOrders` (around line 1211): per-window L=1..4 fitting and selected-order result. Its candidate body is limited to Frozen input preparation and GPU data movement/computation through the already-qualified `fitAllOrdersGpu` implementation. It does not initialize the GPU. The qualified model-order loop is reused without tuning or changing its order, validity, or stopping semantics.
 - Frozen CPU computational functions around the boundary include `initializeResidualPath` (around line 1281), `runSage` (around line 1314), `evaluateModel` (around line 1354), and their CPU search/refinement/replica/amplitude helpers. The GPU equivalent bodies are the qualified implementations identified above; they are not independently redesigned in this task.
 - `flattenStage2` (around line 1415) remains Frozen. It converts the returned fits into the existing model-order, selected-window, and selected-path tables and assigns path IDs and DIRECT/MPC labels.
 
-The candidate must gather GPU values back to CPU double/complex-double values before constructing the fit objects consumed by Frozen `flattenStage2`, Stage3, and Stage4. `runStage2` must retain its existing ordering, checkpoint structure, and per-window error behavior. The candidate must not add a fallback to CPU or silently mark an incomplete GPU fit as valid.
+The hard gather boundary is inside candidate `fitAllOrders`: all GPU-resident fit state must be gathered before that function returns to `runStage2`. Flow is `GPU fit computation → gather complete fit → CPU-resident MATLAB struct → return → fits{position}=... → checkpoint → flattenStage2 → Stage3 → Stage4`. No `gpuArray` may enter the `runStage2` fits cell, `stage2_nav_progress.mat`, `stage2Fits`, `flattenStage2`, Stage3, or Stage4. The candidate must not add a fallback to CPU or silently mark an incomplete GPU fit as valid.
+
+The returned fit must preserve the Frozen-compatible fields and CPU types:
+
+```text
+fit: windowId, catalogIndex, recordingTimeS, towS, models,
+     selectedOrder, errorMessage
+model: order, paths, rss, bic, valid, relativePowerDb,
+       minimumSeparationSamples, minimumMultipathPowerDb,
+       maximumRelativeDopplerHz, maximumCoherence, rssHistory
+path: delaySamples, dopplerHz, alpha, score
+```
+
+At return, numeric values are CPU `double`, validity fields are CPU `logical`, `alpha` is CPU complex double, and the containing cells/structs are CPU MATLAB values. Invalid models retain Frozen-compatible error semantics.
 
 ## 6. Stage2 scientific semantics that do not change
 
@@ -104,9 +123,9 @@ The implementation must not add a PRN-specific or scene-specific scientific bran
 
 Stage0, Stage1, Stage3, and Stage4 are not GPU-enabled or scientifically modified. Their implementation bodies are copied from the authoritative Frozen source. Any candidate entry/path change is separately classified as `NON_SCIENTIFIC_PLUMBING_DIFF`.
 
-Stage3's `evaluatePersistence(fits, windows, cfg)` consumes the in-memory Stage2 fits. It reads selected-order paths and relative powers, looks up neighboring fits by window ID, and applies the existing persistence comparisons. It does not consume the Stage2 CSVs as its computational input.
+Stage3's `evaluatePersistence(fits, windows, cfg)` consumes in-memory Stage2 fits, not Stage2 CSVs. It uses `selectedOrder`, the selected model and its `relativePowerDb`, path `delaySamples` and `dopplerHz`, and window identity/timing (`windowId` / `recordingTimeS`). Persistence matching is based on excess delay relative to the direct path, relative Doppler, and relative power; it is not based on a UUID or persistent path-object identity.
 
-Stage4's `runJointStage(reliable, fits, symbols, windows, rawFile, dopplerSign, cfg)` consumes Stage3 reliable centers and the in-memory Stage2 fits for every model order. It uses those paths as seeds for joint optimization and then applies the existing joint selection and confirmation rules. Consequently, candidate fit IDs, per-order validity/path structures, CPU-gathered values, and Stage3 center mappings must remain available and consistent.
+Stage4's `runJointStage(reliable, fits, symbols, windows, rawFile, dopplerSign, cfg)` consumes Stage3 reliable centers plus in-memory Stage2 fits. For each reliable center, `centerFit.models{1..4}` across all L=1..4 model orders may supply joint seeds; dependency includes `model.valid`, `model.paths`, and path `delaySamples` / `dopplerHz`. Do not describe Stage4 as consuming only the Stage2 selected model. Stage2 `alpha` is not the final Stage4 amplitude authority: Stage4 re-estimates snapshot amplitudes. Consequently, per-order validity/path structures, CPU-gathered values, and Stage3 center mappings must remain available and consistent.
 
 ## 8. Stage2 output contract and downstream dependencies
 
@@ -117,7 +136,7 @@ The Frozen orchestration writes and saves the following Stage2 artifacts:
 | `stage2_model_orders.csv` | `flattenStage2`; one row per evaluated window and L=1..4 | QA/comparison and public Stage2 result |
 | `stage2_selected_windows.csv` | `flattenStage2`; selected order and selected-model metrics per fitted window | QA/comparison and public Stage2 result |
 | `stage2_selected_paths.csv` | `flattenStage2`; selected paths in path order | QA/comparison and public Stage2 result |
-| `stage2_nav_progress.mat` | `runStage2` checkpoint: `fits`, `completed`, `candidateIndices`, and `cfg` | Resume/checkpoint state only; candidate execution still uses `Resume=false` |
+| `stage2_nav_progress.mat` | `runStage2` checkpoint: `fits`, `completed`, `candidateIndices`, and `cfg`; `fits` is the whole fits-cell collection | Resume/checkpoint state only; candidate execution still uses `Resume=false` |
 | `stage2_nav_sage_L1_L4.mat` | final `stage2Fits`, the three flattened tables, and `cfg` | serialized Stage2 result; Stage3/Stage4 consume `stage2Fits` during the pipeline run |
 
 The required Stage0–Stage4 artifact set is `stage0_nav_catalog.mat`, `stage0_valid_symbols.csv`, `stage0_valid_40ms_windows.csv`, `doppler_sign.mat`, `stage1_nav_fast_scan.csv`, `stage1_nav_fast_scan.mat`, `stage1_nav_progress.mat`, the five Stage2 artifacts above, `stage3_nav_persistence.mat`, `stage3_persistence.csv`, `stage3_reliable_centers.csv`, `stage4_nav_joint_100ms.mat`, `stage4_joint_summary.csv`, and `stage4_joint_paths.csv`. Candidate `run_context` and overview output are checked as run metadata/diagnostic artifacts. This contract does not include post-pipeline CIR/HDF5 or alpha sidecars that exist beside the formal G28 reference; the candidate must not create or require those sidecars.
@@ -144,6 +163,8 @@ doppler_offset_hz,relative_power_db
 
 The schemas are generated by the Frozen `emptyModelRecord`, `emptySelectedRecord`, `emptyPathRecord`, `struct2table`, and `writetable` code and must keep this exact order. In MATLAB, `model_valid`, `selected`, and `is_multipath` are logical; numeric estimates and identifiers are double. `model_order` and `selected_L` are total path count L; `multipath_count=L-1`; `path_id` is the delay-sorted ordinal; path 1 is the direct reference and later paths are MPCs. `rss` is the model residual sum of squares and `bic` is the existing model-selection quantity. Sequential BIC gain is previous BIC minus current BIC; RSS gain percentage uses the previous RSS and the Frozen denominator. `delay_samples` is absolute path delay; excess delay is relative to path 1; excess chips and path length are derived from that excess delay. `doppler_hz` is the path Doppler and `doppler_offset_hz` is relative to path 1. Relative power is normalized to path 1. Minimum multipath power, minimum separation, maximum relative Doppler, and maximum coherence retain the Frozen model diagnostics. The fit contract includes window identity, selected order, and L=1..4 model structs; each model carries validity, RSS/BIC, relative powers, diagnostics, and ordered paths with delay, Doppler, complex alpha, and score. No Stage3/4 implementation should infer fits by reparsing a partial CSV.
 
+Because `runStage2` checkpoints the whole `fits` cell collection, the necessary checkpoint-safety condition is that every candidate `fitAllOrders` return is already entirely CPU-resident. The checkpoint may contain only the Frozen-compatible CPU fit structs described above; gathering after assignment or after checkpoint is too late.
+
 ## 9. Candidate output namespace and execution order
 
 The only candidate output destinations are:
@@ -161,17 +182,19 @@ The known formal counts are sanity checks, not substitutes for reading the refer
 
 ## 10. Per-stage comparison policy
 
-**Stage0 — exact.** Compare required artifact presence, CSV headers/order, row counts, window/symbol identities, timing/sample indices, NAV symbols, tracking/code-frequency fields, and every exported value. Any difference fails the task.
+**Stage0 — exact CSV and semantic MAT comparison.** For `stage0_valid_symbols.csv` and `stage0_valid_40ms_windows.csv`, require identical headers, column order, row order, row count, and every cell value (`STAGE0_CSV_EXACT=YES`). Compare `stage0_nav_catalog.mat` semantically on `symbolCatalog`, `windowCatalog`, and Frozen scientific/configuration semantics in `cfg`; do not require whole-file MAT hash equality. Any scientific CSV or semantic MAT difference fails the task.
 
-**Stage1 — exact.** Compare artifact presence, headers/order, scan/selected window identity, main delay/Doppler/score, and every exported value. Any difference fails the task.
+**Stage1 — exact CSV and semantic MAT comparison.** For `stage1_nav_fast_scan.csv`, require identical headers, column order, row order, row count, and every cell value (`STAGE1_CSV_EXACT=YES`). Compare `stage1_nav_fast_scan.mat` semantically on `stage1Table`, `dopplerSignUsed`, and Frozen scientific/configuration semantics in `cfg`; compare `stage1_nav_progress.mat` on `records`, `completed`, and the same `cfg` semantics. Do not require whole-file MAT hash equality. Any scientific CSV or semantic MAT difference fails the task.
 
 **Stage2 — structural equivalence plus raw numeric reporting.** Compare evaluated-window identity/count, model-order row count, selected-window row count, selected-path row count, direct-path/MPC counts, all L=1..4 validity values, selected L, selected path count, order/identity, and DIRECT/MPC labels. Record maximum absolute and relative numeric differences for delay, Doppler, relative power, complex alpha, path score, RSS, and BIC. Do not introduce a numeric tolerance or claim bitwise equality.
 
 For every evaluated window, also record formal CPU and candidate GPU best L, second-best L, and BIC margin (`BIC(second-best) - BIC(best)` over valid models). Report the minimum margin and its window on each side. This is diagnostic only and does not change model selection.
 
-**Stage3 — structural/classification equivalence.** Compare persistence row count and keys, path/window mapping, every persistence decision and status/classification field, reliable-center identities/count, and exported schema/order. Record numeric differences separately where applicable.
+**Stage3 — structural/classification equivalence.** Compare persistence row count and keys, path/window mapping, every persistence decision and status/classification field, reliable-center identities/count, and exported schema/order. Record numeric differences separately where applicable. The comparison follows Frozen matching semantics (excess delay relative to direct, relative Doppler, relative power), not an invented stable path UUID.
 
-**Stage4 — structural/classification equivalence.** Compare joint-result/snapshot counts, center and path mapping, selected model order, validity, confirmed/not-confirmed classification, and exported schema/order. Record numeric fields separately where applicable. Require explicit matches for `STAGE4_RESULT_IDENTITY_MATCH` and `STAGE4_CONFIRMATION_CLASSIFICATION_MATCH`.
+**Stage4 — structural/classification equivalence.** Compare joint-result/snapshot counts, center and path mapping, selected model order, validity, confirmed/not-confirmed classification, and exported schema/order. Record numeric fields separately where applicable. Require explicit matches for `STAGE4_RESULT_IDENTITY_MATCH` and `STAGE4_CONFIRMATION_CLASSIFICATION_MATCH`. Candidate Stage4 consumes all L1–L4 model structures plus Stage3 reliable centers; it must not narrow seeds to only Stage2's selected model.
+
+Candidate-only run metadata is an expected non-scientific difference and must not cause Stage0/Stage1 scientific failure: `runContext.outputDir`, candidate namespace/output paths, `createdAtUtc`, relocation receipt, candidate provenance record, overview file path, and overview image bytes. Input provenance must still establish the same scene, PRN, tracking channel, raw source, tracking source, telemetry source, and sample rate. Normalize path separators before comparing equivalent input paths. Candidate-specific provenance is stored separately and is not added to `cfg`.
 
 For each stage, verify the expected artifact set and CSV schema. MAT files are checked for required presence and semantic contents, not binary hash identity. A candidate may pass only if its artifact set and downstream semantics match the formal result.
 
@@ -198,7 +221,10 @@ scene_id / PRN / tracking_channel
 Resume=false
 reference_output_namespace
 candidate_output_namespace
+gpu_identity
 ```
+
+Store this candidate-only record in `candidate_provenance.json` or an equivalent independent lightweight artifact. `CANDIDATE_PROVENANCE_IN_CFG=PROHIBITED`: do not add the candidate source SHA, Frozen source SHA, execution timestamp, candidate namespace, GPU identity, or validation identity to Frozen `cfg`. That `cfg` is serialized in the Stage0–Stage4 MAT outputs and must retain its Frozen schema and semantic state.
 
 Before execution, produce a source diff audit against the exact local Frozen source and classify every difference as exactly one of:
 
@@ -208,6 +234,8 @@ Before execution, produce a source diff audit against the exact local Frozen sou
 
 Any unclassified difference is `UNEXPECTED_DIFF` and blocks execution. The Frozen production source remains unchanged before and after execution.
 
+GPU task-level initialization belongs to `NON_SCIENTIFIC_PLUMBING_DIFF`; no separate `GPU_EXECUTION_CONTEXT_PLUMBING` class is needed. Candidate output routing to `sage_results/gpu_candidate_fulltask_20261005/<PRN>_ch<channel>` is also `NON_SCIENTIFIC_PLUMBING_DIFF` and must not change any input, scientific `cfg`, or Stage algorithm. Outside candidate entry, output routing, and provenance, these copied Frozen function bodies remain authoritative and unchanged: `runStage2`, `flattenStage2`, `evaluatePersistence`, `runJointStage`, and all Stage0/Stage1 scientific functions. Frozen CPU Stage2 helpers may remain as unused code or have only their candidate dispatch path replaced; do not delete large sets of Frozen helpers for cleanup.
+
 ## 13. Minimal testing strategy
 
 Tests are limited to the new candidate boundary:
@@ -215,7 +243,9 @@ Tests are limited to the new candidate boundary:
 - verify the authoritative Frozen SHA before/after and verify no production-path edit is present;
 - verify the two task identities resolve to their declared scene/PRN/channel and formal reference paths;
 - verify an existing candidate destination fails closed and cannot be resumed or overwritten;
-- verify the candidate Stage2 dispatch returns the fit structure required by Frozen flattening and Stage3/Stage4;
+- verify task entry initializes the GPU once after preflight and before Stage0, with no per-window/model initialization or CPU fallback;
+- verify candidate `fitAllOrders` keeps its Frozen signature and returns the complete CPU-resident fit contract before the unchanged `runStage2` assignment/checkpoint;
+- verify no `gpuArray` reaches the progress checkpoint, flattening, Stage3, or Stage4;
 - verify the comparison validator detects mismatched schemas, row/order/identity/classification fields and reports raw numeric deltas without tolerances.
 
 The principal scientific validation remains the two real full-task regressions. No large new unit-test framework or reimplementation of Frozen algorithm tests is in scope.
@@ -245,6 +275,8 @@ The review bundle may include the candidate source, minimal tests, and lightweig
 ## 16. Risks and known limitations
 
 - GPU floating-point differences can alter a model-validity, selection, persistence, or joint-confirmation boundary. No tolerance may hide such a change; any structural/classification mismatch stops the sequence.
+- **Accidental per-window GPU initialization:** repeated `gpuDevice` initialization/reset can significantly harm performance even without changing scientific results. Control: exactly one task-level initialization after all preflights and before Stage0; no later reinitialization.
+- **GPU state entering checkpoint/downstream:** a `gpuArray` inside the whole-fits checkpoint or downstream structures can break MAT checkpointing, `flattenStage2`, Stage3, or Stage4. Control: gather the complete fit inside candidate `fitAllOrders` before it returns to the unchanged `runStage2`.
 - The existing qualified GPU routines are local to a window-probe MATLAB file and coupled to its scratch/comparison harness. Only their needed qualified computational bodies can be reused in the candidate; integration must preserve their source identity and behavior.
 - Stage3 and Stage4 amplify the importance of complete candidate Stage2 in-memory structures; matching only Stage2 CSV row counts is insufficient.
 - The two tasks cover two scenes and selected PRN/channels only. A pass does not qualify the other 85 tasks, 20.46 MHz, or production GPU operation.
@@ -252,5 +284,5 @@ The review bundle may include the candidate source, minimal tests, and lightweig
 
 ## 17. Design-phase boundary
 
-This document records an approved architecture direction for GPT review. At this phase, the candidate and validators are not implemented; no implementation plan is written; no MATLAB/GPU run or raw-IQ read is authorized. Production GPU remains disabled, the Frozen CPU source is unmodified, the remaining 85-task batch remains paused, the Paper Handoff remains unchanged, and the business branch receives no commit or push.
+This document records the approved architecture direction refined after authoritative source audit and is awaiting GPT final spec approval. At this phase, the candidate and validators are not implemented; no implementation plan is written; no MATLAB/GPU run or raw-IQ read is authorized. Production GPU remains disabled, the Frozen CPU source is unmodified, the remaining 85-task batch remains paused, and the Paper Handoff remains unchanged. This spec revision may be committed and pushed only to the dedicated review/report branch; the business branch receives no commit or push.
 
