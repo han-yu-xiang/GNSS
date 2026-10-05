@@ -1,0 +1,89 @@
+{
+  "attestation_version": 1,
+  "attestation_scope": "historical_first_8_gpu_stage2_qualification_windows",
+  "source_review_commit": "c7a542daacf66dae4a098d95bad2693505e622c1",
+  "expected_frozen_sage_sha256": "bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c",
+  "evidence_driver_path": "experiments/sage_gpu/qualification/Invoke-GpuStage2Qualification.ps1",
+  "evidence_driver_blob_sha1": "f6ed124ddb8d9525a54dcd5f702e242dce64eff6",
+  "evidence_snapshot_path": "reports/project_stage_review_20261005/GNSS_PROJECT_STAGE_SNAPSHOT.md",
+  "evidence_snapshot_blob_sha1": "a344c0e1b2c9a303f2f7355b3b27e35d8f1b1b2a",
+  "qualification_windows": 8,
+  "per_window_embedded_frozen_sha": "MISSING",
+  "frozen_sha_provenance_source": "RUN_LEVEL_PREEXECUTION_GUARD_PLUS_CONTEMPORANEOUS_COMMITTED_SNAPSHOT",
+  "this_attestation_does_not_modify_historical_result_json": "YES",
+  "historical_stop_point": "Q_G06_W6850 identity gate before raw-IQ access",
+  "results": [
+    {
+      "qualification_id": "Q_G28_W38",
+      "result_path": "experiments/sage_gpu/qualification/results/Q_G28_W38.json",
+      "git_blob_sha1": "e11cebce04677c553eac8e53af2c43ad2c1d152e",
+      "byte_identity_verified": true,
+      "historical_status": "COMPLETE",
+      "cpu_production_reference": "PASS",
+      "gpu_structural_equivalence": "PASS"
+    },
+    {
+      "qualification_id": "Q_G28_W298",
+      "result_path": "experiments/sage_gpu/qualification/results/Q_G28_W298.json",
+      "git_blob_sha1": "68baed91877e2601c3b1e080078463424c0ec121",
+      "byte_identity_verified": true,
+      "historical_status": "COMPLETE",
+      "cpu_production_reference": "PASS",
+      "gpu_structural_equivalence": "PASS"
+    },
+    {
+      "qualification_id": "Q_G28_W725",
+      "result_path": "experiments/sage_gpu/qualification/results/Q_G28_W725.json",
+      "git_blob_sha1": "9ec1c3aded6cc563d0a69cd3d9d6a16751412d4a",
+      "byte_identity_verified": true,
+      "historical_status": "COMPLETE",
+      "cpu_production_reference": "PASS",
+      "gpu_structural_equivalence": "PASS"
+    },
+    {
+      "qualification_id": "Q_G28_W226",
+      "result_path": "experiments/sage_gpu/qualification/results/Q_G28_W226.json",
+      "git_blob_sha1": "ee5932e293a01d68cd6e69a0465851de46223e1f",
+      "byte_identity_verified": true,
+      "historical_status": "COMPLETE",
+      "cpu_production_reference": "PASS",
+      "gpu_structural_equivalence": "PASS"
+    },
+    {
+      "qualification_id": "Q_G03_W1",
+      "result_path": "experiments/sage_gpu/qualification/results/Q_G03_W1.json",
+      "git_blob_sha1": "22268233ef2e453fb0192a2beb84426baafaf1a4",
+      "byte_identity_verified": true,
+      "historical_status": "COMPLETE",
+      "cpu_production_reference": "PASS",
+      "gpu_structural_equivalence": "PASS"
+    },
+    {
+      "qualification_id": "Q_G03_W9",
+      "result_path": "experiments/sage_gpu/qualification/results/Q_G03_W9.json",
+      "git_blob_sha1": "ec79bd590e81883007ae385a20993ec0ab4b88e0",
+      "byte_identity_verified": true,
+      "historical_status": "COMPLETE",
+      "cpu_production_reference": "PASS",
+      "gpu_structural_equivalence": "PASS"
+    },
+    {
+      "qualification_id": "Q_G03_W11",
+      "result_path": "experiments/sage_gpu/qualification/results/Q_G03_W11.json",
+      "git_blob_sha1": "77e5116d57f1008e48a495ce891e261da8db2c43",
+      "byte_identity_verified": true,
+      "historical_status": "COMPLETE",
+      "cpu_production_reference": "PASS",
+      "gpu_structural_equivalence": "PASS"
+    },
+    {
+      "qualification_id": "Q_G03_W173",
+      "result_path": "experiments/sage_gpu/qualification/results/Q_G03_W173.json",
+      "git_blob_sha1": "4a9e3c45f557e7a5a8dbe9f38070c8adebf80a1c",
+      "byte_identity_verified": true,
+      "historical_status": "COMPLETE",
+      "cpu_production_reference": "PASS",
+      "gpu_structural_equivalence": "PASS"
+    }
+  ]
+}

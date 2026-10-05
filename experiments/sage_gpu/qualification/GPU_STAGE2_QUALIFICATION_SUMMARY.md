@@ -3,35 +3,60 @@
 Scope: the frozen 14-window qualification manifest only. This is experimental evidence, not production qualification.
 
 QUALIFICATION_WINDOWS_PLANNED=14
-QUALIFICATION_WINDOWS_EXECUTED=8
-SCENES_COVERED=2
-L1_WINDOWS=2
-L2_WINDOWS=3
-L3_WINDOWS=2
-L4_WINDOWS=1
-CPU_PRODUCTION_REFERENCE_PASS=8
+QUALIFICATION_WINDOWS_EXECUTED=14
+PREVIOUS_PASS_RESULTS_REUSED=8
+QUALIFICATION_WINDOWS_NEWLY_EXECUTED=6
+RESULTS_RUN_LEVEL_ATTESTED=8
+RESULTS_WITH_PER_WINDOW_EMBEDDED_SHA=6
 CPU_PRODUCTION_REFERENCE_FAIL=0
-GPU_STRUCTURAL_PASS=8
+CPU_PRODUCTION_REFERENCE_PASS=14
 GPU_STRUCTURAL_FAIL=0
-IDENTITY_GATE_FAIL=1
-RETRY_TRIGGERED_WINDOWS=4
-RETRY_NOT_TRIGGERED_WINDOWS=4
-RETRY_UNKNOWN_WINDOWS=1
-AUTHORIZED_RAW_IQ_RANGES_READ=8
-RAW_IQ_SAMPLES_PER_RANGE=409200
-GPU_STAGE2_QUALIFICATION=INCOMPLETE_STOPPED_ON_IDENTITY_MISMATCH
+IDENTITY_GATE_FAIL=0
+WINDOWS_WITH_AUTHORIZED_RAW_IQ_READ=6
+RETRY_TRIGGERED_WINDOWS=7
+RETRY_NOT_TRIGGERED_WINDOWS=7
+RETRY_UNKNOWN_WINDOWS=0
+GPU_STAGE2_QUALIFICATION=STRUCTURAL_PASS
 
-The qualification stopped before reading `Q_G06_W6850` raw IQ. Its frozen manifest time is `163.771145454545 s`, while its formal Stage0/Stage1/Stage2 output consistently records `163.771145552297 s` (difference `9.7752007377494e-8 s`). The qualification manifest and selected window were not changed; no timestamp was inferred or repaired.
+New per-window records are in `results/current/`; unchanged legacy records remain in `results/`; aggregate rows are in `GPU_STAGE2_QUALIFICATION_RESULTS.csv`.
 
-Per-window machine-readable records are in `results/`; aggregate rows are in `GPU_STAGE2_QUALIFICATION_RESULTS.csv`.
+The eight historical PASS JSON files remain byte-identical to their c7 commit blobs and still have no per-window Frozen SHA field. Their separate [run-level attestation](HISTORICAL_8_WINDOW_RUN_PROVENANCE_ATTESTATION.md) ties them to the committed pre-execution SHA guard and contemporaneous snapshot. The prior Q_G06/W6850 identity-fail JSON is preserved; the corrected timestamp is recorded in the manifest and correction note.
 
-## Observed retry trace
+## Selected performance windows
 
-`Q_G03_W173`, L3 residual-path initialization: candidate rank 1 (delay `2`, Doppler `-5401.146244779715 Hz`, score `38.95742749690587`) had minimum separation `0.7000000000000002` samples and was rejected with `REJECT_SEPARATION`. Candidate rank 2 (delay `4`, same Doppler, score `27.525929959768636`) had minimum separation `1.2999999999999998` samples and was accepted. This is the measured qualification trace, not a window-specific rule.
+Three newly executed windows were selected by model order: one L1, one L3, and one L4. Timings are supporting measurements only; they do not determine qualification status.
 
-The completed windows all passed CPU-to-formal structural reference and GPU structural comparison. Numeric deltas are retained in the CSV; the largest GPU-vs-CPU values observed were: delay `0`, Doppler `0`, relative power `1.1013412404281553e-13`, complex alpha `7.9300963114645856e-16`, path score `1.1937117960769683e-11`, RSS `2.3283064365386963e-10`, RSS relative `5.6919358877821749e-16`, BIC `4.5446313379216008e-10`, BIC relative `8.9163844956875942e-12`.
+| Qualification ID | L | CPU Stage2 (s) | GPU first (s) | GPU warm (s) | Transfer in (s) | Transfer out (s) | Compute speedup | Warm end-to-end speedup |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Q_G06_W6850 | 1 | 40.5040247 | 5.0311686 | 4.2219119 | 0.0657682 | 0.0028270 | 9.593763598 | 7.445002356 |
+| Q_G06_W17194 | 3 | 39.9017027 | 11.3112455 | 10.7035119 | 0.1388302 | 0.0070312 | 3.727907538 | 3.341076488 |
+| Q_G11_W9161 | 4 | 36.1938953 | 9.2514870 | 8.7940382 | 0.1759148 | 0.0090321 | 4.115730962 | 3.595386510 |
 
-No representative performance median is reported because the full 14-window set did not complete.
+```ini
+PERFORMANCE_WINDOWS=3
+CPU_MEDIAN_STAGE2_TIME=39.9017027
+GPU_MEDIAN_WARM_STAGE2_TIME=8.7940382
+MEDIAN_COMPUTE_SPEEDUP=4.115730961914631
+MEDIAN_END_TO_END_SPEEDUP=3.595386510020452
+```
+
+## Maximum observed CPU/GPU numeric differences
+
+These are raw observed maxima across the 14 windows; no new tolerance was applied. Structural status is reported separately.
+
+```ini
+MAX_DELAY_ABS_DIFF=0
+MAX_DOPPLER_ABS_DIFF=0
+MAX_RELATIVE_POWER_ABS_DIFF=1.4210854715202004e-13
+MAX_ALPHA_ABS_DIFF=1.2539879139791263e-15
+MAX_PATH_SCORE_ABS_DIFF=1.1937117960769683e-11
+MAX_RSS_ABS_DIFF=2.3283064365386963e-10
+MAX_RSS_REL_DIFF=5.6919358877821749e-16
+MAX_BIC_ABS_DIFF=4.5446313379216008e-10
+MAX_BIC_REL_DIFF=9.0419370848885707e-12
+STRUCTURAL_EQUIVALENCE=PASS
+NUMERIC_DIFFERENCES_RECORDED=YES
+```
 
 No raw IQ, MAT, HDF5, or large Stage output is part of the review bundle.
 

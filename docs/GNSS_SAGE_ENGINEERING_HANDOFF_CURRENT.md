@@ -2539,6 +2539,43 @@ OTHER_RAW_IQ_READ=NO
 BUSINESS_BRANCH_COMMIT_PUSH=NO
 ```
 
+## 109. Frozen GPU Stage2 14-window qualification completed (Experimental; 2026-10-05)
+
+- Completed the frozen 14-window Stage2 qualification set using the existing experimental CPU/GPU helpers. All 14 CPU-helper-to-formal-Frozen-CPU references passed, all 14 GPU structural comparisons passed, and no identity, CPU-reference, or GPU-structure failure remained in the canonical results. The final retry trace coverage is 7 `TRIGGERED`, 7 `NOT_TRIGGERED`, and 0 `UNKNOWN`; both retry branches are represented.
+- Eight historical PASS JSON files were reused without modification under the external run-level provenance attestation. Each local file was verified byte-identical to its result blob in review commit `c7a542daacf66dae4a098d95bad2693505e622c1`. The historical JSONs still lack a per-window `frozen_sage_sha256`; no SHA was backfilled. The attestation binds those results to the historical driver's pre-execution Frozen SHA guard and the contemporaneous committed snapshot.
+- Six remaining windows were newly executed sequentially. Each read only its authorized 40 ms range (409,200 samples); total newly read range was 2,455,200 samples. No other raw IQ was read. New per-window JSONs directly record the Frozen SHA `bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c`, driver SHA, and execution timestamp.
+- `Q_G06_W6850` manifest time was corrected to the formal Stage0/Stage1/Stage2 value `163.771145552297 s` before execution. The previous identity-failure JSON was preserved as historical evidence; the corrected run passed the full manifest/task/config/helper identity gate and both scientific comparison gates.
+- Structural equivalence passed; numeric differences are recorded separately, not characterized as bitwise or exact numeric equivalence. Across 14 windows, maximum observed CPU/GPU differences were: delay `0`, Doppler `0`, relative power `1.4210854715202004e-13`, complex alpha `1.2539879139791263e-15`, path score `1.1937117960769683e-11`, RSS `2.3283064365386963e-10`, and BIC `4.5446313379216008e-10` (relative differences are in the qualification results CSV).
+- Supporting performance measurements use three newly executed windows, one each at selected L=1/L=3/L=4. Their median CPU Stage2 time is `39.9017027 s`, median GPU warm Stage2 time `8.7940382 s`, median compute-only speedup `4.115730961914631×`, and median warm end-to-end speedup `3.595386510020452×`. These timings do not determine scientific qualification.
+- Frozen source SHA was verified before and after as `bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c`. This is Stage2-only experimental qualification, not full-task Stage0–Stage4 GPU validation. Production GPU remains disabled; the remaining 85-task CPU batch remains paused. Current Pester tests passed 24/24, and the MATLAB separated-candidate retry unit tests passed 4/4.
+- Lightweight records are maintained in `experiments/sage_gpu/qualification/GPU_STAGE2_QUALIFICATION_RESULTS.csv`, `GPU_STAGE2_QUALIFICATION_SUMMARY.md`, and `HISTORICAL_8_WINDOW_RUN_PROVENANCE_ATTESTATION.md`. No large MAT/HDF5, raw-IQ content, full Stage output tree, or archive artifact is part of the review bundle.
+
+```ini
+GPU_STAGE2_QUALIFICATION=STRUCTURAL_PASS
+QUALIFICATION_WINDOWS_PLANNED=14
+QUALIFICATION_WINDOWS_EXECUTED=14
+HISTORICAL_PASS_RESULTS_REUSED=8
+HISTORICAL_PASS_RESULTS_RERUN=0
+NEW_WINDOWS_EXECUTED=6
+CPU_PRODUCTION_REFERENCE_PASS=14
+CPU_PRODUCTION_REFERENCE_FAIL=0
+GPU_STRUCTURAL_PASS=14
+GPU_STRUCTURAL_FAIL=0
+RETRY_TRIGGERED_WINDOWS=7
+RETRY_NOT_TRIGGERED_WINDOWS=7
+RETRY_UNKNOWN_WINDOWS=0
+FROZEN_SAGE_SHA_UNCHANGED=YES
+FROZEN_PRODUCTION_MODIFIED=NO
+PRODUCTION_GPU_ENABLED=NO
+FULL_TASK_STAGE0_STAGE4_GPU_VALIDATION=NOT_COMPLETE
+NEW_RAW_IQ_WINDOWS_READ=6
+NEW_RAW_IQ_SAMPLES=2455200
+OTHER_RAW_IQ_READ=NO
+OTHER_SAGE_TASKS_STARTED=NO
+REMAINING_85_TASK_BATCH_RESUMED=NO
+NEXT_DECISION_REQUIRED=AUTHORIZE_OR_DEFER_FULL_TASK_GPU_CANDIDATE_VALIDATION
+```
+
 ## 108. Mainline post-run recovery and two-worker Frozen SAGE pilot passed (2026-10-05)
 
 - Section 107 remains as historical failure provenance. The post-run validator's PowerShell argument-binding defect was minimally corrected in the batch driver, not in frozen `run_nav_sage_pipeline.m`. The already-completed G03/ch2 task was recovered from its verified output and relocation receipt without rerunning SAGE; its batch-summary row is now `COMPLETE`.

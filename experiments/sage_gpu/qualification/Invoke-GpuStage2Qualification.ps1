@@ -6,6 +6,11 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $script:ExpectedFrozenSha256 = 'bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c'
+$script:RunLevelAttestationSourceCommit = 'c7a542daacf66dae4a098d95bad2693505e622c1'
+$script:RunLevelAttestationQualificationIds = @(
+    'Q_G28_W38', 'Q_G28_W298', 'Q_G28_W725', 'Q_G28_W226',
+    'Q_G03_W1', 'Q_G03_W9', 'Q_G03_W11', 'Q_G03_W173'
+)
 $script:QualificationMarker = 'GPU_STAGE2_QUALIFICATION_JSON='
 $script:ConfigMarker = 'GPU_STAGE2_CFG_IDENTITY='
 
@@ -97,6 +102,346 @@ function Invoke-GpuQualificationGpuAfterCpuReference {
     )
     [void](Assert-GpuQualificationCpuReference -CpuResult $CpuResult)
     return & $GpuProbe
+}
+
+function Get-GpuQualificationRequiredProperty {
+    param(
+        [Parameter(Mandatory)][object]$InputObject,
+        [Parameter(Mandatory)][string]$Name,
+        [Parameter(Mandatory)][string]$QualificationId
+    )
+    $property = $InputObject.PSObject.Properties[$Name]
+    if ($null -eq $property -or $null -eq $property.Value -or [string]::IsNullOrWhiteSpace([string]$property.Value)) {
+        throw "RESUME_PROVENANCE_MISSING qualification_id=$QualificationId field=$Name"
+    }
+    return $property.Value
+}
+
+function ConvertTo-GpuQualificationInvariantDouble {
+    param(
+        [Parameter(Mandatory)][object]$Value,
+        [Parameter(Mandatory)][string]$Field,
+        [Parameter(Mandatory)][string]$QualificationId
+    )
+    try {
+        $number = [double]::Parse([string]$Value, [System.Globalization.NumberStyles]::Float, [System.Globalization.CultureInfo]::InvariantCulture)
+    }
+    catch {
+        throw "RESUME_PROVENANCE_INVALID qualification_id=$QualificationId field=$Field value=$Value"
+    }
+    if ([double]::IsNaN($number) -or [double]::IsInfinity($number)) {
+        throw "RESUME_PROVENANCE_INVALID qualification_id=$QualificationId field=$Field value=$Value"
+    }
+    return $number
+}
+
+function Test-GpuQualificationPassFlag {
+    param([Parameter(Mandatory)][object]$Value)
+    if ($Value -is [bool]) { return $Value }
+    return ([string]$Value -match '^(?i:true)$')
+}
+
+function Invoke-GpuQualificationGit {
+    param(
+        [Parameter(Mandatory)][string]$RepositoryRoot,
+        [Parameter(Mandatory)][string[]]$GitArguments
+    )
+    $gitPrefix = @('-c', "safe.directory=$RepositoryRoot", '-C', $RepositoryRoot)
+    $output = & git @gitPrefix @GitArguments 2>&1
+    $exitCode = $LASTEXITCODE
+    if ($exitCode -ne 0) {
+        throw "RESUME_GIT_EVIDENCE_COMMAND_FAILED exit_code=$exitCode args=$($GitArguments -join ' ') output=$($output -join ' ')"
+    }
+    return (($output | ForEach-Object { [string]$_ }) -join "`n").Trim()
+}
+
+function Assert-GpuQualificationRunLevelAttestation {
+    param(
+        [Parameter(Mandatory)][object]$Result,
+        [Parameter(Mandatory)][object]$ManifestItem,
+        [Parameter(Mandatory)][string]$ResultPath,
+        [Parameter(Mandatory)][object]$Attestation,
+        [Parameter(Mandatory)][string]$ExpectedFrozenSha256,
+        [Parameter(Mandatory)][string]$RepositoryRoot
+    )
+    $id = [string]$ManifestItem.qualification_id
+    if ($id -cnotin $script:RunLevelAttestationQualificationIds) {
+        throw "RESUME_PROVENANCE_MISSING qualification_id=$id run-level fallback is not authorized for this ID."
+    }
+    if ([string]$Attestation.attestation_scope -cne 'historical_first_8_gpu_stage2_qualification_windows' -or
+        [string]$Attestation.source_review_commit -cne $script:RunLevelAttestationSourceCommit) {
+        throw "RESUME_ATTESTATION_COMMIT_MISMATCH qualification_id=$id expected_commit=$script:RunLevelAttestationSourceCommit actual=$($Attestation.source_review_commit)"
+    }
+    if ([string]$Attestation.expected_frozen_sage_sha256 -cne $ExpectedFrozenSha256 -or
+        [int]$Attestation.qualification_windows -ne 8 -or
+        [string]$Attestation.per_window_embedded_frozen_sha -cne 'MISSING' -or
+        [string]$Attestation.frozen_sha_provenance_source -cne 'RUN_LEVEL_PREEXECUTION_GUARD_PLUS_CONTEMPORANEOUS_COMMITTED_SNAPSHOT' -or
+        [string]$Attestation.this_attestation_does_not_modify_historical_result_json -cne 'YES') {
+        throw "RESUME_ATTESTATION_CONTENT_MISMATCH qualification_id=$id"
+    }
+    $expectedDriverPath = 'experiments/sage_gpu/qualification/Invoke-GpuStage2Qualification.ps1'
+    $expectedSnapshotPath = 'reports/project_stage_review_20261005/GNSS_PROJECT_STAGE_SNAPSHOT.md'
+    if ([string]$Attestation.evidence_driver_path -cne $expectedDriverPath -or
+        [string]$Attestation.evidence_snapshot_path -cne $expectedSnapshotPath) {
+        throw "RESUME_ATTESTATION_EVIDENCE_PATH_MISMATCH qualification_id=$id"
+    }
+
+    $expectedResultPath = "experiments/sage_gpu/qualification/results/$id.json"
+    $attestationRows = @($Attestation.results | Where-Object { [string]$_.qualification_id -ceq $id })
+    if ($attestationRows.Count -ne 1 -or [string]$attestationRows[0].result_path -cne $expectedResultPath -or
+        -not (Test-GpuQualificationPassFlag $attestationRows[0].byte_identity_verified) -or
+        [string]$attestationRows[0].historical_status -cne 'COMPLETE' -or
+        [string]$attestationRows[0].cpu_production_reference -cne 'PASS' -or
+        [string]$attestationRows[0].gpu_structural_equivalence -cne 'PASS') {
+        throw "RESUME_ATTESTATION_RESULT_ENTRY_MISMATCH qualification_id=$id"
+    }
+    $allAttestedIds = @($Attestation.results | ForEach-Object { [string]$_.qualification_id })
+    if ($allAttestedIds.Count -ne 8 -or (@($allAttestedIds | Select-Object -Unique).Count -ne 8) -or
+        @($allAttestedIds | Where-Object { $_ -cnotin $script:RunLevelAttestationQualificationIds }).Count -gt 0) {
+        throw 'RESUME_ATTESTATION_ALLOWLIST_MISMATCH'
+    }
+
+    $sourceCommit = [string]$Attestation.source_review_commit
+    $driverBlob = Invoke-GpuQualificationGit -RepositoryRoot $RepositoryRoot -GitArguments @('rev-parse', "${sourceCommit}:$expectedDriverPath")
+    $snapshotBlob = Invoke-GpuQualificationGit -RepositoryRoot $RepositoryRoot -GitArguments @('rev-parse', "${sourceCommit}:$expectedSnapshotPath")
+    if ($driverBlob -cne [string]$Attestation.evidence_driver_blob_sha1 -or
+        $snapshotBlob -cne [string]$Attestation.evidence_snapshot_blob_sha1) {
+        throw 'RESUME_ATTESTATION_EVIDENCE_BLOB_MISMATCH'
+    }
+    $historicalDriver = Invoke-GpuQualificationGit -RepositoryRoot $RepositoryRoot -GitArguments @('show', "${sourceCommit}:$expectedDriverPath")
+    $historicalSnapshot = Invoke-GpuQualificationGit -RepositoryRoot $RepositoryRoot -GitArguments @('show', "${sourceCommit}:$expectedSnapshotPath")
+    $hashGuardIndex = $historicalDriver.IndexOf('$actualHash = (Get-FileHash')
+    $mismatchGuardIndex = $historicalDriver.IndexOf('SAGE_SOURCE_HASH_MISMATCH')
+    $manifestReadIndex = $historicalDriver.IndexOf('$manifestPath =')
+    if (-not $historicalDriver.Contains($ExpectedFrozenSha256) -or
+        -not $historicalDriver.Contains('Get-FileHash') -or
+        -not $historicalDriver.Contains('SAGE_SOURCE_HASH_MISMATCH') -or
+        $hashGuardIndex -lt 0 -or $mismatchGuardIndex -le $hashGuardIndex -or $manifestReadIndex -le $mismatchGuardIndex -or
+        -not $historicalSnapshot.Contains('EXECUTED_WINDOWS=8') -or
+        -not $historicalSnapshot.Contains('CPU_PRODUCTION_REFERENCE_PASS=8') -or
+        -not $historicalSnapshot.Contains('GPU_STRUCTURAL_PASS=8') -or
+        -not $historicalSnapshot.Contains('FROZEN_PRODUCTION_MODIFIED=NO') -or
+        -not $historicalSnapshot.Contains('Q_G06_W6850') -or
+        -not $historicalSnapshot.Contains('STATUS=STOPPED_ON_IDENTITY_MISMATCH')) {
+        throw 'RESUME_ATTESTATION_RUN_EVIDENCE_MISMATCH'
+    }
+
+    $commitResultBlob = Invoke-GpuQualificationGit -RepositoryRoot $RepositoryRoot -GitArguments @('rev-parse', "${sourceCommit}:$expectedResultPath")
+    $localResultBlob = Invoke-GpuQualificationGit -RepositoryRoot $RepositoryRoot -GitArguments @('hash-object', '--', $ResultPath)
+    if ([string]$Result.status -cne [string]$attestationRows[0].historical_status -or
+        [string]$Result.cpu_production_reference -cne [string]$attestationRows[0].cpu_production_reference -or
+        [string]$Result.gpu_structural_equivalence -cne [string]$attestationRows[0].gpu_structural_equivalence -or
+        $commitResultBlob -cne [string]$attestationRows[0].git_blob_sha1 -or $localResultBlob -cne $commitResultBlob) {
+        throw "RESUME_ATTESTATION_BLOB_MISMATCH qualification_id=$id expected=$commitResultBlob attested=$($attestationRows[0].git_blob_sha1) local=$localResultBlob"
+    }
+    return [pscustomobject]@{
+        provenance_mode = 'RUN_LEVEL_ATTESTED'
+        result_blob_sha1 = $localResultBlob
+        source_review_commit = $sourceCommit
+    }
+}
+
+function Assert-GpuQualificationReusablePass {
+    param(
+        [Parameter(Mandatory)][object]$Result,
+        [Parameter(Mandatory)][object]$ManifestItem,
+        [Parameter(Mandatory)][string]$ExpectedFrozenSha256,
+        [Parameter(Mandatory)][string]$ResultPath,
+        [Parameter(Mandatory)][ValidateSet('LEGACY', 'CURRENT')][string]$ResultLocation,
+        [string]$AttestationPath = '',
+        [string]$RepositoryRoot = ''
+    )
+    $id = [string]$ManifestItem.qualification_id
+    $identityFields = @('qualification_id', 'scene_id', 'prn', 'tracking_channel', 'window_id', 'recording_time_s', 'production_selected_L', 'production_path_count')
+    foreach ($field in $identityFields) {
+        [void](Get-GpuQualificationRequiredProperty -InputObject $Result -Name $field -QualificationId $id)
+    }
+
+    if ([string]$Result.qualification_id -cne [string]$ManifestItem.qualification_id -or
+        [string]$Result.scene_id -cne [string]$ManifestItem.scene_id -or
+        (ConvertTo-GpuQualificationNumericPrn $Result.prn) -ne (ConvertTo-GpuQualificationNumericPrn $ManifestItem.prn) -or
+        [int]$Result.tracking_channel -ne [int]$ManifestItem.tracking_channel -or
+        [int]$Result.window_id -ne [int]$ManifestItem.window_id -or
+        (ConvertTo-GpuQualificationInvariantDouble -Value $Result.recording_time_s -Field 'recording_time_s' -QualificationId $id) -ne (ConvertTo-GpuQualificationInvariantDouble -Value $ManifestItem.recording_time_s -Field 'manifest.recording_time_s' -QualificationId $id) -or
+        [int]$Result.production_selected_L -ne [int]$ManifestItem.production_selected_L -or
+        [int]$Result.production_path_count -ne [int]$ManifestItem.production_path_count) {
+        throw "RESUME_IDENTITY_MISMATCH qualification_id=$id"
+    }
+
+    $shaProperty = $Result.PSObject.Properties['frozen_sage_sha256']
+    $runProvenance = $null
+    if ($null -eq $shaProperty -or [string]::IsNullOrWhiteSpace([string]$shaProperty.Value)) {
+        if ($ResultLocation -cne 'LEGACY' -or $id -cnotin $script:RunLevelAttestationQualificationIds) {
+            throw "RESUME_PROVENANCE_MISSING qualification_id=$id field=frozen_sage_sha256"
+        }
+        if ([string]::IsNullOrWhiteSpace($AttestationPath) -or -not (Test-Path -LiteralPath $AttestationPath -PathType Leaf) -or [string]::IsNullOrWhiteSpace($RepositoryRoot)) {
+            throw "RESUME_PROVENANCE_MISSING qualification_id=$id external run-level attestation unavailable."
+        }
+        try { $attestation = Get-Content -LiteralPath $AttestationPath -Raw | ConvertFrom-Json }
+        catch { throw "RESUME_ATTESTATION_INVALID_JSON qualification_id=$id path=$AttestationPath" }
+        $runProvenance = Assert-GpuQualificationRunLevelAttestation -Result $Result -ManifestItem $ManifestItem -ResultPath $ResultPath -Attestation $attestation -ExpectedFrozenSha256 $ExpectedFrozenSha256 -RepositoryRoot $RepositoryRoot
+    } else {
+        $frozenSha = [string]$shaProperty.Value
+        if ($frozenSha.ToLowerInvariant() -cne $ExpectedFrozenSha256.ToLowerInvariant()) {
+            throw "RESUME_PROVENANCE_MISMATCH qualification_id=$id field=frozen_sage_sha256 expected=$ExpectedFrozenSha256 actual=$frozenSha"
+        }
+    }
+    if ([string]$Result.status -cne 'COMPLETE' -or
+        [string]$Result.cpu_production_reference -cne 'PASS' -or
+        [string]$Result.gpu_structural_equivalence -cne 'PASS') {
+        throw "RESUME_STATUS_NOT_PASS qualification_id=$id status=$($Result.status) cpu=$($Result.cpu_production_reference) gpu=$($Result.gpu_structural_equivalence)"
+    }
+
+    if ($ResultLocation -ceq 'CURRENT') {
+        foreach ($field in @('result_source', 'provenance_mode', 'qualification_driver_sha256', 'execution_timestamp_utc')) {
+            [void](Get-GpuQualificationRequiredProperty -InputObject $Result -Name $field -QualificationId $id)
+        }
+        if ([string]$Result.result_source -cne 'NEW_EXECUTION' -or
+            [string]$Result.provenance_mode -cne 'PER_WINDOW_EMBEDDED_SHA' -or
+            [string]$Result.qualification_driver_sha256 -notmatch '^(?i:[0-9a-f]{64})$') {
+            throw "RESUME_PROVENANCE_INVALID qualification_id=$id current result is missing valid execution provenance."
+        }
+        $executionTimestamp = [DateTimeOffset]::MinValue
+        if (-not [DateTimeOffset]::TryParse([string]$Result.execution_timestamp_utc, [ref]$executionTimestamp)) {
+            throw "RESUME_PROVENANCE_INVALID qualification_id=$id field=execution_timestamp_utc"
+        }
+    }
+
+    $requiredPassFlags = @(
+        'selected_L_match',
+        'path_count_match',
+        'path_identity_match',
+        'path_label_match',
+        'model_validity_match'
+    )
+    if ($ResultLocation -ceq 'LEGACY') {
+        $requiredPassFlags = @(
+            'cpu_production_selected_L_match',
+            'cpu_production_path_count_match',
+            'cpu_production_path_identity_match',
+            'cpu_production_path_label_match',
+            'cpu_production_model_validity_match'
+        ) + $requiredPassFlags
+    }
+    foreach ($field in $requiredPassFlags) {
+        $value = Get-GpuQualificationRequiredProperty -InputObject $Result -Name $field -QualificationId $id
+        if (-not (Test-GpuQualificationPassFlag $value)) {
+            throw "RESUME_STATUS_NOT_PASS qualification_id=$id field=$field value=$value"
+        }
+    }
+    if ($null -ne $runProvenance) { return $runProvenance }
+    return [pscustomobject]@{ provenance_mode = 'PER_WINDOW_EMBEDDED_SHA'; result_blob_sha1 = ''; source_review_commit = '' }
+}
+
+function Test-GpuQualificationHistoricalIdentityFailure {
+    param(
+        [Parameter(Mandatory)][object]$Result,
+        [Parameter(Mandatory)][object]$ManifestItem
+    )
+    $id = [string]$ManifestItem.qualification_id
+    if ([string]$Result.status -cne 'FAIL_IDENTITY' -or [string]$Result.qualification_id -cne $id) { return $false }
+    foreach ($field in @('scene_id', 'prn', 'tracking_channel', 'window_id', 'production_selected_L', 'production_path_count', 'recording_time_s', 'notes')) {
+        if ($null -eq $Result.PSObject.Properties[$field]) { return $false }
+    }
+    if ([string]$Result.scene_id -cne [string]$ManifestItem.scene_id -or
+        (ConvertTo-GpuQualificationNumericPrn $Result.prn) -ne (ConvertTo-GpuQualificationNumericPrn $ManifestItem.prn) -or
+        [int]$Result.tracking_channel -ne [int]$ManifestItem.tracking_channel -or
+        [int]$Result.window_id -ne [int]$ManifestItem.window_id -or
+        [int]$Result.production_selected_L -ne [int]$ManifestItem.production_selected_L -or
+        [int]$Result.production_path_count -ne [int]$ManifestItem.production_path_count) { return $false }
+
+    $notes = [string]$Result.notes
+    $numberPattern = '[-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?'
+    $timeMatch = [regex]::Match($notes, "recording_time_s manifest=(?<old>$numberPattern) formal=(?<formal>$numberPattern)")
+    $stage0Match = [regex]::Match($notes, "formal_stage0_time=(?<formal>$numberPattern)")
+    if (-not $notes.Contains('INPUT_IDENTITY_VALIDATION=FAIL') -or -not $timeMatch.Success -or -not $stage0Match.Success) { return $false }
+    $oldTime = ConvertTo-GpuQualificationInvariantDouble -Value $timeMatch.Groups['old'].Value -Field 'historical.manifest_time' -QualificationId $id
+    $formalTime = ConvertTo-GpuQualificationInvariantDouble -Value $timeMatch.Groups['formal'].Value -Field 'historical.formal_time' -QualificationId $id
+    $stage0Time = ConvertTo-GpuQualificationInvariantDouble -Value $stage0Match.Groups['formal'].Value -Field 'historical.formal_stage0_time' -QualificationId $id
+    $resultTime = ConvertTo-GpuQualificationInvariantDouble -Value $Result.recording_time_s -Field 'historical.recording_time_s' -QualificationId $id
+    $currentTime = ConvertTo-GpuQualificationInvariantDouble -Value $ManifestItem.recording_time_s -Field 'manifest.recording_time_s' -QualificationId $id
+    return ($oldTime -ne $currentTime -and $resultTime -eq $oldTime -and $formalTime -eq $currentTime -and $stage0Time -eq $currentTime)
+}
+
+function Get-GpuQualificationResumePlan {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][object[]]$Manifest,
+        [Parameter(Mandatory)][string]$ResultsDirectory,
+        [Parameter(Mandatory)][string]$ExpectedFrozenSha256,
+        [string]$AttestationPath = '',
+        [string]$RepositoryRoot = ''
+    )
+    $canonical = [System.Collections.Generic.List[object]]::new()
+    $pending = [System.Collections.Generic.List[object]]::new()
+    $historical = [System.Collections.Generic.List[object]]::new()
+    $seenIds = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    $currentDirectory = Join-Path $ResultsDirectory 'current'
+
+    foreach ($item in $Manifest) {
+        $id = [string]$item.qualification_id
+        if ([string]::IsNullOrWhiteSpace($id) -or -not $seenIds.Add($id)) {
+            throw "QUALIFICATION_MANIFEST_DUPLICATE_ID qualification_id=$id"
+        }
+        $legacyPath = Join-Path $ResultsDirectory ($id + '.json')
+        $currentPath = Join-Path $currentDirectory ($id + '.json')
+        $hasLegacy = Test-Path -LiteralPath $legacyPath -PathType Leaf
+        $hasCurrent = Test-Path -LiteralPath $currentPath -PathType Leaf
+        $legacyIsHistorical = $false
+        $legacyResult = $null
+
+        if ($hasLegacy) {
+            try { $legacyResult = Get-Content -LiteralPath $legacyPath -Raw | ConvertFrom-Json }
+            catch { throw "RESUME_RESULT_INVALID_JSON qualification_id=$id path=$legacyPath" }
+            $legacyIsHistorical = Test-GpuQualificationHistoricalIdentityFailure -Result $legacyResult -ManifestItem $item
+        }
+
+        if ($hasLegacy -and $hasCurrent -and -not $legacyIsHistorical) {
+            throw "RESUME_AMBIGUOUS_CURRENT_RESULT qualification_id=$id legacy=$legacyPath current=$currentPath"
+        }
+        if ($legacyIsHistorical) {
+            $historical.Add([pscustomobject]@{
+                qualification_id = $id
+                path = $legacyPath
+                status = [string]$legacyResult.status
+                reason = 'PREVIOUS_IDENTITY_FAIL_MANIFEST_TIME_CORRECTION'
+            })
+        } elseif ($hasLegacy) {
+            $provenance = Assert-GpuQualificationReusablePass -Result $legacyResult -ManifestItem $item -ExpectedFrozenSha256 $ExpectedFrozenSha256 -ResultPath $legacyPath -ResultLocation 'LEGACY' -AttestationPath $AttestationPath -RepositoryRoot $RepositoryRoot
+            $legacyResult | Add-Member -NotePropertyName result_source -NotePropertyValue 'REUSED' -Force
+            $legacyResult | Add-Member -NotePropertyName provenance_mode -NotePropertyValue $provenance.provenance_mode -Force
+            $legacyResult | Add-Member -NotePropertyName resume_disposition -NotePropertyValue $(if ($provenance.provenance_mode -eq 'RUN_LEVEL_ATTESTED') { 'REUSED_RUN_LEVEL_ATTESTED' } else { 'REUSED_VALIDATED_PASS' }) -Force
+            if ($provenance.result_blob_sha1) { $legacyResult | Add-Member -NotePropertyName result_blob_sha1 -NotePropertyValue $provenance.result_blob_sha1 -Force }
+            $canonical.Add($legacyResult)
+        }
+
+        if ($hasCurrent) {
+            try { $currentResult = Get-Content -LiteralPath $currentPath -Raw | ConvertFrom-Json }
+            catch { throw "RESUME_RESULT_INVALID_JSON qualification_id=$id path=$currentPath" }
+            $provenance = Assert-GpuQualificationReusablePass -Result $currentResult -ManifestItem $item -ExpectedFrozenSha256 $ExpectedFrozenSha256 -ResultPath $currentPath -ResultLocation 'CURRENT' -AttestationPath $AttestationPath -RepositoryRoot $RepositoryRoot
+            if ($legacyIsHistorical) {
+                $currentResult | Add-Member -NotePropertyName resume_disposition -NotePropertyValue 'REUSED_VALIDATED_PASS' -Force
+                $canonical.Add($currentResult)
+            } elseif (-not $hasLegacy) {
+                $currentResult | Add-Member -NotePropertyName resume_disposition -NotePropertyValue 'REUSED_VALIDATED_PASS' -Force
+                $canonical.Add($currentResult)
+            }
+        }
+
+        if (-not $hasCurrent -and (-not $hasLegacy -or $legacyIsHistorical)) {
+            $pending.Add($item)
+        }
+    }
+
+    $canonicalIds = @($canonical | ForEach-Object { [string]$_.qualification_id })
+    if (($canonicalIds | Select-Object -Unique).Count -ne $canonicalIds.Count) {
+        throw 'RESUME_AGGREGATE_DUPLICATE_QUALIFICATION_ID'
+    }
+    return [pscustomobject]@{
+        CanonicalResults = $canonical.ToArray()
+        PendingItems = $pending.ToArray()
+        HistoricalResults = $historical.ToArray()
+    }
 }
 
 function Invoke-GpuQualificationMatlab {
@@ -216,11 +561,53 @@ function Get-GpuQualificationFormalWindow {
 
 function Write-GpuQualificationAggregate {
     param(
-        [Parameter(Mandatory)][object[]]$Results,
+        [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Results,
         [Parameter(Mandatory)][string]$CsvPath
     )
+    $ids = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    foreach ($result in $Results) {
+        if (-not $ids.Add([string]$result.qualification_id)) {
+            throw "RESUME_AGGREGATE_DUPLICATE_QUALIFICATION_ID qualification_id=$($result.qualification_id)"
+        }
+    }
     if ($Results.Count -gt 0) {
-        $Results | Export-Csv -LiteralPath $CsvPath -NoTypeInformation -Encoding UTF8
+        $columns = [System.Collections.Generic.List[string]]::new()
+        foreach ($result in $Results) {
+            foreach ($property in $result.PSObject.Properties) {
+                if (-not $columns.Contains([string]$property.Name)) {
+                    $columns.Add([string]$property.Name)
+                }
+            }
+        }
+        $normalizedResults = foreach ($result in $Results) {
+            $row = [ordered]@{}
+            foreach ($column in $columns) {
+                $property = $result.PSObject.Properties[$column]
+                $row[$column] = if ($null -eq $property) { $null } else { $property.Value }
+            }
+            [pscustomobject]$row
+        }
+        $normalizedResults | Export-Csv -LiteralPath $CsvPath -NoTypeInformation -Encoding UTF8
+    } else {
+        $columns = @(
+            'qualification_id', 'scene_id', 'prn', 'tracking_channel', 'window_id', 'recording_time_s',
+            'production_selected_L', 'cpu_selected_L', 'gpu_selected_L', 'production_path_count', 'cpu_path_count', 'gpu_path_count',
+            'cpu_production_reference', 'gpu_structural_equivalence', 'selected_L_match', 'path_count_match', 'path_identity_match',
+            'path_label_match', 'model_validity_match', 'max_delay_abs_diff', 'max_doppler_abs_diff', 'max_relative_power_abs_diff',
+            'max_alpha_abs_diff', 'max_path_score_abs_diff', 'max_rss_abs_diff', 'max_rss_rel_diff', 'max_bic_abs_diff', 'max_bic_rel_diff',
+            'cpu_best_l', 'cpu_second_best_l', 'cpu_bic_margin', 'gpu_best_l', 'gpu_second_best_l', 'gpu_bic_margin',
+            'cpu_stage2_seconds', 'gpu_first_stage2_seconds', 'gpu_warm_stage2_seconds', 'gpu_transfer_in_seconds',
+            'gpu_transfer_out_seconds', 'compute_speedup', 'end_to_end_warm_speedup', 'cpu_production_max_delay_abs_diff',
+            'cpu_production_max_doppler_abs_diff', 'cpu_production_max_relative_power_abs_diff', 'cpu_production_max_alpha_abs_diff',
+            'cpu_production_max_path_score_abs_diff', 'cpu_production_max_rss_abs_diff', 'cpu_production_max_rss_rel_diff',
+            'cpu_production_max_bic_abs_diff', 'cpu_production_max_bic_rel_diff', 'separation_retry_status', 'raw_iq_read',
+            'raw_iq_samples', 'status', 'notes', 'frozen_sage_sha256', 'result_source', 'provenance_mode',
+            'resume_disposition', 'result_blob_sha1', 'qualification_driver_sha256', 'execution_timestamp_utc'
+        )
+        $headerObject = [ordered]@{}
+        foreach ($column in $columns) { $headerObject[$column] = '' }
+        $header = @([pscustomobject]$headerObject | ConvertTo-Csv -NoTypeInformation)[0]
+        Set-Content -LiteralPath $CsvPath -Value $header -Encoding UTF8
     }
 }
 
@@ -238,6 +625,10 @@ function Write-GpuQualificationSummary {
     $retryTriggered = @($Results | Where-Object { $_.separation_retry_status -eq 'TRIGGERED' }).Count
     $retryNotTriggered = @($Results | Where-Object { $_.separation_retry_status -eq 'NOT_TRIGGERED' }).Count
     $retryUnknown = @($Results | Where-Object { $_.separation_retry_status -eq 'UNKNOWN' }).Count
+    $reused = @($Results | Where-Object { $_.result_source -eq 'REUSED' }).Count
+    $newExecution = @($Results | Where-Object { $_.result_source -eq 'NEW_EXECUTION' }).Count
+    $runLevelAttested = @($Results | Where-Object { $_.provenance_mode -eq 'RUN_LEVEL_ATTESTED' }).Count
+    $embeddedSha = @($Results | Where-Object { $_.provenance_mode -eq 'PER_WINDOW_EMBEDDED_SHA' }).Count
     $status = if ($gpuFailures -gt 0) {
         'FAIL_GPU_STRUCTURE'
     } elseif ($cpuFailures -gt 0) {
@@ -258,6 +649,10 @@ function Write-GpuQualificationSummary {
         '',
         'QUALIFICATION_WINDOWS_PLANNED=14',
         "QUALIFICATION_WINDOWS_EXECUTED=$completed",
+        "PREVIOUS_PASS_RESULTS_REUSED=$reused",
+        "QUALIFICATION_WINDOWS_NEWLY_EXECUTED=$newExecution",
+        "RESULTS_RUN_LEVEL_ATTESTED=$runLevelAttested",
+        "RESULTS_WITH_PER_WINDOW_EMBEDDED_SHA=$embeddedSha",
         "CPU_PRODUCTION_REFERENCE_FAIL=$cpuFailures",
         "CPU_PRODUCTION_REFERENCE_PASS=$cpuPasses",
         "GPU_STRUCTURAL_FAIL=$gpuFailures",
@@ -268,7 +663,7 @@ function Write-GpuQualificationSummary {
         "RETRY_UNKNOWN_WINDOWS=$retryUnknown",
         "GPU_STAGE2_QUALIFICATION=$status",
         '',
-        'Per-window machine-readable records are in `results/`; aggregate rows are in `GPU_STAGE2_QUALIFICATION_RESULTS.csv`.',
+        'New per-window records are in `results/current/`; unchanged legacy records remain in `results/`; aggregate rows are in `GPU_STAGE2_QUALIFICATION_RESULTS.csv`.',
         '',
         $(if ($completed -eq 14) { 'All 14 completed; performance summaries may be computed from the preselected representative L1/L3/L4 windows.' } else { 'Performance median is not reported because the 14-window structural comparison did not complete.' }),
         '',
@@ -278,6 +673,21 @@ function Write-GpuQualificationSummary {
     )
     Set-Content -LiteralPath $Path -Value $lines -Encoding UTF8
     return $status
+}
+
+function Write-GpuQualificationResult {
+    param(
+        [Parameter(Mandatory)][object]$Result,
+        [Parameter(Mandatory)][string]$Path
+    )
+    if (Test-Path -LiteralPath $Path) {
+        throw "QUALIFICATION_RESULT_COLLISION path=$Path; refusing overwrite."
+    }
+    $parent = Split-Path -Parent $Path
+    if (-not (Test-Path -LiteralPath $parent -PathType Container)) {
+        $null = New-Item -ItemType Directory -Path $parent -Force
+    }
+    $Result | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $Path -Encoding UTF8
 }
 
 function Get-GpuQualificationMatlabJson {
@@ -309,13 +719,6 @@ function Invoke-GpuStage2Qualification {
         throw "SAGE_SOURCE_HASH_MISMATCH expected=$script:ExpectedFrozenSha256 actual=$actualHash"
     }
 
-    if ([string]::IsNullOrWhiteSpace($MatlabPath)) {
-        $MatlabPath = (Get-Command matlab -CommandType Application -ErrorAction Stop).Source
-    }
-    if (-not (Test-Path -LiteralPath $MatlabPath -PathType Leaf)) {
-        throw "MATLAB_EXECUTABLE_MISSING path=$MatlabPath"
-    }
-
     $manifestPath = Join-Path $PSScriptRoot 'GPU_STAGE2_QUALIFICATION_MANIFEST.csv'
     $taskManifestPath = Join-Path $ProjectRoot 'reports\data_consolidation_20261003\MAINLINE_SAGE_1023_RERUN_MANIFEST.csv'
     $summaryPath = Join-Path $ProjectRoot 'reports\data_consolidation_20261003\MAINLINE_SAGE_1023_BATCH_RERUN_SUMMARY.csv'
@@ -329,20 +732,43 @@ function Invoke-GpuStage2Qualification {
     $resultsDirectory = Join-Path $PSScriptRoot 'results'
     $aggregatePath = Join-Path $PSScriptRoot 'GPU_STAGE2_QUALIFICATION_RESULTS.csv'
     $summaryMarkdownPath = Join-Path $PSScriptRoot 'GPU_STAGE2_QUALIFICATION_SUMMARY.md'
-    foreach ($path in @($resultsDirectory, $aggregatePath, $summaryMarkdownPath)) {
-        if (Test-Path -LiteralPath $path) {
-            throw "QUALIFICATION_OUTPUT_ALREADY_EXISTS path=$path; refusing resume or overwrite."
-        }
+    $attestationPath = Join-Path $PSScriptRoot 'HISTORICAL_8_WINDOW_RUN_PROVENANCE_ATTESTATION.json'
+    $repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
+    $resumePlan = Get-GpuQualificationResumePlan -Manifest $manifest -ResultsDirectory $resultsDirectory -ExpectedFrozenSha256 $actualHash -AttestationPath $attestationPath -RepositoryRoot $repositoryRoot
+    if (-not (Test-Path -LiteralPath $resultsDirectory -PathType Container)) {
+        $null = New-Item -ItemType Directory -Path $resultsDirectory -Force
     }
-    $null = New-Item -ItemType Directory -Path $resultsDirectory
     $csvCache = @{}
     $results = [System.Collections.Generic.List[object]]::new()
+    foreach ($result in $resumePlan.CanonicalResults) { $results.Add($result) }
+    $canonicalIds = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    foreach ($result in $results) { [void]$canonicalIds.Add([string]$result.qualification_id) }
+    Write-GpuQualificationAggregate -Results $results.ToArray() -CsvPath $aggregatePath
+    [void](Write-GpuQualificationSummary -Results $results.ToArray() -Path $summaryMarkdownPath)
+    if ($resumePlan.PendingItems.Count -eq 0) {
+        $verifiedHash = (Get-FileHash -LiteralPath $expectedSource -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($verifiedHash -cne $script:ExpectedFrozenSha256) {
+            throw "SAGE_SOURCE_HASH_CHANGED during qualification expected=$script:ExpectedFrozenSha256 actual=$verifiedHash"
+        }
+        return
+    }
+    if ([string]::IsNullOrWhiteSpace($MatlabPath)) {
+        $MatlabPath = (Get-Command matlab -CommandType Application -ErrorAction Stop).Source
+    }
+    if (-not (Test-Path -LiteralPath $MatlabPath -PathType Leaf)) {
+        throw "MATLAB_EXECUTABLE_MISSING path=$MatlabPath"
+    }
+    $currentResultsDirectory = Join-Path $resultsDirectory 'current'
+    $null = New-Item -ItemType Directory -Path $currentResultsDirectory -Force
+    $qualificationDriverPath = Join-Path $PSScriptRoot 'Invoke-GpuStage2Qualification.ps1'
+    $qualificationDriverSha256 = (Get-FileHash -LiteralPath $qualificationDriverPath -Algorithm SHA256).Hash.ToLowerInvariant()
     $stopReason = $null
     $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('gnss_gpu_qualification_' + [guid]::NewGuid().ToString('N'))
     $null = New-Item -ItemType Directory -Path $tempRoot
 
     try {
         foreach ($item in $manifest) {
+            if ($canonicalIds.Contains([string]$item.qualification_id)) { continue }
             $taskMatches = @($tasks | Where-Object {
                 $_.scene_id -eq $item.scene_id -and $_.prn -eq $item.prn -and $_.tracking_channel -eq $item.tracking_channel
             })
@@ -428,6 +854,12 @@ function Invoke-GpuStage2Qualification {
                 separation_retry_status = 'UNKNOWN'
                 raw_iq_read = 'NO'
                 raw_iq_samples = 0
+                frozen_sage_sha256 = $actualHash
+                result_source = 'NEW_EXECUTION'
+                provenance_mode = 'PER_WINDOW_EMBEDDED_SHA'
+                resume_disposition = 'NEW_EXECUTION'
+                qualification_driver_sha256 = $qualificationDriverSha256
+                execution_timestamp_utc = [DateTime]::UtcNow.ToString('o')
                 status = 'NOT_STARTED'
                 notes = ''
             }
@@ -438,9 +870,10 @@ function Invoke-GpuStage2Qualification {
                 if ($null -ne $formalWindow) {
                     $record.notes += " manifest_time=$($item.recording_time_s) formal_stage0_time=$($formalWindow.recordingTimeS)"
                 }
-                $recordJsonPath = Join-Path $resultsDirectory ($item.qualification_id + '.json')
-                [pscustomobject]$record | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $recordJsonPath -Encoding UTF8
+                $recordJsonPath = Join-Path $currentResultsDirectory ($item.qualification_id + '.json')
+                Write-GpuQualificationResult -Result ([pscustomobject]$record) -Path $recordJsonPath
                 $results.Add([pscustomobject]$record)
+                [void]$canonicalIds.Add([string]$item.qualification_id)
                 Write-GpuQualificationAggregate -Results $results.ToArray() -CsvPath $aggregatePath
                 break
             }
@@ -567,9 +1000,10 @@ function Invoke-GpuStage2Qualification {
                 }
             }
 
-            $recordPath = Join-Path $resultsDirectory ($item.qualification_id + '.json')
-            [pscustomobject]$record | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $recordPath -Encoding UTF8
+            $recordPath = Join-Path $currentResultsDirectory ($item.qualification_id + '.json')
+            Write-GpuQualificationResult -Result ([pscustomobject]$record) -Path $recordPath
             $results.Add([pscustomobject]$record)
+            [void]$canonicalIds.Add([string]$item.qualification_id)
             Write-GpuQualificationAggregate -Results $results.ToArray() -CsvPath $aggregatePath
             if ($record.status -ne 'COMPLETE') {
                 break
