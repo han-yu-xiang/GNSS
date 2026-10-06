@@ -68,12 +68,288 @@ $script:StartupMarker = 'MATLAB_STARTUP_OK'
 $script:TransportMarker = 'MATLAB_ARGUMENT_TRANSPORT_OK'
 $script:FunctionResolutionMarker = 'MATLAB_FUNCTION_RESOLUTION_OK'
 $script:GpuPreflightMarker = 'MATLAB_GPU_PREFLIGHT_OK'
+$script:FullTaskGpuResultColumns = @(
+    'task','scene_id','prn','tracking_channel',
+    'stage0_status','stage1_status','stage2_status','stage3_status','stage4_status',
+    'stage2_evaluated_windows','stage2_model_rows','stage2_selected_rows',
+    'stage2_path_rows','stage2_direct_rows','stage2_mpc_rows',
+    'stage3_persistence_rows','stage3_reliable_centers',
+    'stage4_joint_results','stage4_joint_path_rows','stage4_confirmation_match',
+    'max_delay_abs_diff','max_doppler_abs_diff','max_relative_power_abs_diff',
+    'max_alpha_abs_diff','max_path_score_abs_diff','max_rss_abs_diff',
+    'max_rss_rel_diff','max_bic_abs_diff','max_bic_rel_diff',
+    'frozen_source_sha256','candidate_source_sha256','gpu_identity','task_status',
+    'failure_identifier','failure_message','candidate_namespace','failure_timestamp_utc'
+)
+$script:FullTaskGpuWindowColumns = @(
+    'task','scene_id','prn','tracking_channel','window_id','recording_time_s',
+    'cpu_selected_L','gpu_selected_L','selected_L_match','path_count',
+    'path_identity_match','path_label_match','model_validity_match',
+    'max_delay_abs_diff','max_doppler_abs_diff','max_relative_power_abs_diff',
+    'max_alpha_abs_diff','max_path_score_abs_diff','max_rss_abs_diff','max_bic_abs_diff'
+)
+for ($order = 1; $order -le 4; $order++) {
+    $script:FullTaskGpuWindowColumns += "L${order}_valid_cpu", "L${order}_valid_gpu"
+}
+foreach ($transition in 1..3) {
+    $prefix = "L${transition}_to_L$($transition + 1)"
+    foreach ($suffix in @(
+        'checked_cpu','checked_gpu','model_valid_cpu','model_valid_gpu',
+        'bic_gain_cpu','bic_gain_gpu','bic_threshold_cpu','bic_threshold_gpu',
+        'bic_surplus_cpu','bic_surplus_gpu','rss_gain_percent_cpu',
+        'rss_gain_percent_gpu','rss_threshold_cpu','rss_threshold_gpu',
+        'rss_surplus_cpu','rss_surplus_gpu','accepted_cpu','accepted_gpu'
+    )) {
+        $script:FullTaskGpuWindowColumns += "${prefix}_${suffix}"
+    }
+}
 $script:TransportSmokeExpression = "a='F1023_V70_D0117_P2';b='TrackingChannel';c='E:/GNSS_Multipath_Project';assert(strcmp(a,'F1023_V70_D0117_P2'));assert(strcmp(b,'TrackingChannel'));assert(strcmp(c,'E:/GNSS_Multipath_Project'));disp('MATLAB_ARGUMENT_TRANSPORT_OK')"
 
 function Get-FullTaskGpuTaskSpec {
     [CmdletBinding()]
     param([Parameter(Mandatory = $true)][ValidateSet('TaskA', 'TaskB')][string]$Task)
     return $script:CandidateTasks[$Task]
+}
+
+function Get-FullTaskGpuEvidencePaths {
+    [CmdletBinding()]
+    param([string]$EvidenceDirectory)
+    if ([string]::IsNullOrWhiteSpace($EvidenceDirectory)) {
+        $EvidenceDirectory = Join-Path $script:CandidateProjectRoot 'experiments/sage_gpu/full_task_validation'
+    }
+    $EvidenceDirectory = [IO.Path]::GetFullPath($EvidenceDirectory)
+    return [pscustomobject]@{
+        Directory = $EvidenceDirectory
+        ResultsCsv = Join-Path $EvidenceDirectory 'FULL_TASK_GPU_VALIDATION_RESULTS.csv'
+        WindowCsv = Join-Path $EvidenceDirectory 'FULL_TASK_GPU_STAGE2_WINDOW_COMPARISON.csv'
+        Summary = Join-Path $EvidenceDirectory 'FULL_TASK_GPU_VALIDATION_SUMMARY.md'
+    }
+}
+
+function Get-FullTaskGpuEvidenceKey {
+    param([Parameter(Mandatory = $true)][object]$Value)
+    return '{0}|{1}|{2}|{3}' -f [string]$Value.task, [string]$Value.scene_id, `
+        [string]$Value.prn, [string]$Value.tracking_channel
+}
+
+function Assert-NoExistingFullTaskGpuEvidence {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][object]$TaskSpec,
+        [string]$EvidenceDirectory
+    )
+    $paths = Get-FullTaskGpuEvidencePaths -EvidenceDirectory $EvidenceDirectory
+    $hasResults = Test-Path -LiteralPath $paths.ResultsCsv -PathType Leaf
+    $hasWindows = Test-Path -LiteralPath $paths.WindowCsv -PathType Leaf
+    if ($hasResults -ne $hasWindows) {
+        throw 'FULL_TASK_GPU_EVIDENCE_FILES_INCONSISTENT'
+    }
+    if (-not $hasResults) { return $true }
+
+    $requiredResultColumns = $script:FullTaskGpuResultColumns
+    $resultHeader = @((Get-Content -LiteralPath $paths.ResultsCsv -TotalCount 1) -split ',')
+    if ($resultHeader.Count -ne $requiredResultColumns.Count -or
+            [string]::Join(',', $resultHeader) -cne [string]::Join(',', $requiredResultColumns)) {
+        throw 'FULL_TASK_GPU_RESULTS_SCHEMA_MISMATCH'
+    }
+    $windowHeader = @((Get-Content -LiteralPath $paths.WindowCsv -TotalCount 1) -split ',')
+    if ($windowHeader.Count -ne $script:FullTaskGpuWindowColumns.Count -or
+            [string]::Join(',', $windowHeader) -cne [string]::Join(',', $script:FullTaskGpuWindowColumns)) {
+        throw 'FULL_TASK_GPU_WINDOW_SCHEMA_MISMATCH'
+    }
+    $resultRows = @(Import-Csv -LiteralPath $paths.ResultsCsv)
+    $windowRows = @(Import-Csv -LiteralPath $paths.WindowCsv)
+    $key = '{0}|{1}|{2}|{3}' -f $TaskSpec.Task, $TaskSpec.SceneId, $TaskSpec.Prn, $TaskSpec.TrackingChannel
+    foreach ($row in $resultRows) {
+        if ((Get-FullTaskGpuEvidenceKey -Value $row) -ceq $key) {
+            throw "FULL_TASK_GPU_TASK_EVIDENCE_ALREADY_EXISTS task=$($TaskSpec.Task)"
+        }
+    }
+    foreach ($row in $windowRows) {
+        if ((Get-FullTaskGpuEvidenceKey -Value $row) -ceq $key) {
+            throw "FULL_TASK_GPU_TASK_EVIDENCE_ALREADY_EXISTS task=$($TaskSpec.Task)"
+        }
+    }
+    return $true
+}
+
+function Add-FullTaskGpuFailureReceipt {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][object]$TaskSpec,
+        [Parameter(Mandatory = $true)][string]$FailureIdentifier,
+        [Parameter(Mandatory = $true)][string]$FailureMessage,
+        [string]$GpuIdentity = 'NOT_RECORDED',
+        [string]$EvidenceDirectory
+    )
+    $paths = Get-FullTaskGpuEvidencePaths -EvidenceDirectory $EvidenceDirectory
+    if (-not (Test-Path -LiteralPath $paths.Directory -PathType Container)) {
+        New-Item -ItemType Directory -Path $paths.Directory -Force | Out-Null
+    }
+    Assert-NoExistingFullTaskGpuEvidence -TaskSpec $TaskSpec `
+        -EvidenceDirectory $paths.Directory | Out-Null
+
+    $failureMessageFlat = [regex]::Replace($FailureMessage, '[\r\n]+', ' ').Trim()
+    if ($failureMessageFlat.Length -gt 2000) {
+        $failureMessageFlat = $failureMessageFlat.Substring(0, 2000) + '...'
+    }
+    $candidateHash = if (Test-Path -LiteralPath (Join-Path $script:CandidateProjectRoot 'experiments/sage_gpu/full_task_candidate/run_nav_sage_pipeline_gpu_candidate.m') -PathType Leaf) {
+        (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $script:CandidateProjectRoot 'experiments/sage_gpu/full_task_candidate/run_nav_sage_pipeline_gpu_candidate.m')).Hash.ToLowerInvariant()
+    } else { 'NOT_AVAILABLE' }
+    $values = [ordered]@{}
+    foreach ($column in $script:FullTaskGpuResultColumns) { $values[$column] = '' }
+    $values.task = $TaskSpec.Task
+    $values.scene_id = $TaskSpec.SceneId
+    $values.prn = [string]$TaskSpec.Prn
+    $values.tracking_channel = [string]$TaskSpec.TrackingChannel
+    foreach ($stage in 0..4) { $values["stage${stage}_status"] = 'NOT_VERIFIED' }
+    $values.frozen_source_sha256 = $script:FrozenAuthoritySha256
+    $values.candidate_source_sha256 = $candidateHash
+    $values.gpu_identity = $GpuIdentity
+    $values.task_status = 'FAIL'
+    $values.failure_identifier = $FailureIdentifier
+    $values.failure_message = $failureMessageFlat
+    $values.candidate_namespace = $TaskSpec.CandidateOutputNamespace
+    $values.failure_timestamp_utc = [DateTimeOffset]::UtcNow.ToString('o')
+    $newRow = [pscustomobject]$values
+
+    $existingRows = @()
+    if (Test-Path -LiteralPath $paths.ResultsCsv -PathType Leaf) {
+        $existingHeader = @((Get-Content -LiteralPath $paths.ResultsCsv -TotalCount 1) -split ',')
+        if ($existingHeader.Count -ne $script:FullTaskGpuResultColumns.Count -or
+                [string]::Join(',', $existingHeader) -cne [string]::Join(',', $script:FullTaskGpuResultColumns)) {
+            throw 'FULL_TASK_GPU_RESULTS_SCHEMA_MISMATCH'
+        }
+        $existingRows = @(Import-Csv -LiteralPath $paths.ResultsCsv)
+    }
+    $temporaryPath = Join-Path $paths.Directory ('.FULL_TASK_GPU_VALIDATION_RESULTS.' + [guid]::NewGuid().ToString('N') + '.tmp')
+    try {
+        @($existingRows) + @($newRow) | Export-Csv -LiteralPath $temporaryPath -NoTypeInformation -Encoding utf8
+        Move-Item -LiteralPath $temporaryPath -Destination $paths.ResultsCsv -Force
+    }
+    finally {
+        if (Test-Path -LiteralPath $temporaryPath -PathType Leaf) {
+            Remove-Item -LiteralPath $temporaryPath -Force
+        }
+    }
+    return $newRow
+}
+
+function Update-FullTaskGpuValidationSummary {
+    [CmdletBinding()]
+    param(
+        [string]$EvidenceDirectory,
+        [string]$GpuIdentity = 'NOT_RECORDED'
+    )
+    $paths = Get-FullTaskGpuEvidencePaths -EvidenceDirectory $EvidenceDirectory
+    $results = @()
+    $windows = @()
+    if (Test-Path -LiteralPath $paths.ResultsCsv -PathType Leaf) {
+        $results = @(Import-Csv -LiteralPath $paths.ResultsCsv)
+    }
+    if (Test-Path -LiteralPath $paths.WindowCsv -PathType Leaf) {
+        $windows = @(Import-Csv -LiteralPath $paths.WindowCsv)
+    }
+
+    $lines = New-Object 'System.Collections.Generic.List[string]'
+    $lines.Add('# Full-Task GPU Candidate Validation')
+    $lines.Add('')
+    $lines.Add('This is a lightweight run-level validation record, not a project handoff or a production result.')
+    $lines.Add('')
+    $statusByTask = @{}
+    foreach ($taskName in @('TaskA', 'TaskB')) {
+        $row = @($results | Where-Object { $_.task -ceq $taskName } | Select-Object -First 1)
+        if ($row.Count -eq 0) { $statusByTask[$taskName] = 'NOT_RUN' }
+        else { $statusByTask[$taskName] = [string]$row[0].task_status }
+    }
+    $lines.Add('```ini')
+    $lines.Add("TASK_A=$($statusByTask.TaskA)")
+    $lines.Add("TASK_B=$($statusByTask.TaskB)")
+    $lines.Add("FROZEN_SHA=$script:FrozenAuthoritySha256")
+    $candidatePath = Join-Path $script:CandidateProjectRoot 'experiments/sage_gpu/full_task_candidate/run_nav_sage_pipeline_gpu_candidate.m'
+    $candidateSha = if (Test-Path -LiteralPath $candidatePath -PathType Leaf) {
+        (Get-FileHash -Algorithm SHA256 -LiteralPath $candidatePath).Hash.ToLowerInvariant()
+    } else { 'NOT_AVAILABLE' }
+    $lines.Add("CANDIDATE_SHA=$candidateSha")
+    $gpuRows = @($results | Where-Object { -not [string]::IsNullOrWhiteSpace($_.gpu_identity) } | Select-Object -First 1)
+    if ($gpuRows.Count -gt 0) { $GpuIdentity = [string]$gpuRows[0].gpu_identity }
+    $lines.Add("GPU_IDENTITY=$GpuIdentity")
+    $lines.Add('```')
+    $lines.Add('')
+
+    foreach ($taskName in @('TaskA', 'TaskB')) {
+        $row = @($results | Where-Object { $_.task -ceq $taskName } | Select-Object -First 1)
+        $lines.Add("## $taskName")
+        $lines.Add('')
+        if ($row.Count -eq 0) {
+            $lines.Add('Status: `NOT_RUN`.')
+            $lines.Add('')
+            continue
+        }
+        $value = $row[0]
+        $prnLabel = 'G{0:D2}' -f [int]$value.prn
+        $lines.Add("Task status: ``$($value.task_status)``")
+        $lines.Add("Scene/PRN/channel: ``$($value.scene_id) / $prnLabel / ch$($value.tracking_channel)``")
+        $lines.Add("Stage0–Stage4: ``$($value.stage0_status) / $($value.stage1_status) / $($value.stage2_status) / $($value.stage3_status) / $($value.stage4_status)``")
+        $lines.Add("Stage2 evaluated/model/selected/path rows: ``$($value.stage2_evaluated_windows) / $($value.stage2_model_rows) / $($value.stage2_selected_rows) / $($value.stage2_path_rows)``; direct/MPC ``$($value.stage2_direct_rows) / $($value.stage2_mpc_rows)``.")
+        $lines.Add("Stage3 persistence/reliable centers: ``$($value.stage3_persistence_rows) / $($value.stage3_reliable_centers)``; Stage4 joint results/paths/confirmation match: ``$($value.stage4_joint_results) / $($value.stage4_joint_path_rows) / $($value.stage4_confirmation_match)``.")
+        $lines.Add('')
+        $lines.Add('Numeric maxima (unthresholded):')
+        $lines.Add('')
+        $lines.Add(('- Delay / Doppler / relative power: ``{0} / {1} / {2}``' -f $value.max_delay_abs_diff, $value.max_doppler_abs_diff, $value.max_relative_power_abs_diff))
+        $lines.Add(('- Alpha / path score: ``{0} / {1}``' -f $value.max_alpha_abs_diff, $value.max_path_score_abs_diff))
+        $lines.Add(('- RSS absolute/relative: ``{0} / {1}``; BIC absolute/relative: ``{2} / {3}``' -f $value.max_rss_abs_diff, $value.max_rss_rel_diff, $value.max_bic_abs_diff, $value.max_bic_rel_diff))
+        if ($value.task_status -ceq 'FAIL') {
+            $lines.Add('')
+            $lines.Add("Failure: ``$($value.failure_identifier)`` — $($value.failure_message)")
+            $lines.Add("Candidate namespace: ``$($value.candidate_namespace)``; timestamp UTC: ``$($value.failure_timestamp_utc)``.")
+        }
+        $lines.Add('')
+    }
+
+    $lines.Add('## Sequential decision diagnostics')
+    $lines.Add('')
+    foreach ($kind in @('bic', 'rss')) {
+        foreach ($side in @('cpu', 'gpu')) {
+            $best = $null
+            foreach ($window in $windows) {
+                foreach ($fromOrder in 1..3) {
+                    $prefix = "L${fromOrder}_to_L$($fromOrder + 1)"
+                    $checkedField = "${prefix}_checked_${side}"
+                    if ([string]$window.$checkedField -notmatch '^(?i:true|1)$') { continue }
+                    $surplusField = "${prefix}_${kind}_surplus_${side}"
+                    $value = 0.0
+                    if (-not [double]::TryParse([string]$window.$surplusField, [Globalization.NumberStyles]::Float, [Globalization.CultureInfo]::InvariantCulture, [ref]$value) -or [double]::IsNaN($value) -or [double]::IsInfinity($value)) { continue }
+                    if ($null -eq $best -or $value -lt $best.Value) {
+                        $acceptedField = "${prefix}_accepted_${side}"
+                        $best = [pscustomobject]@{
+                            Value = $value
+                            Task = [string]$window.task
+                            Window = [string]$window.window_id
+                            Transition = $prefix
+                            Accepted = [string]$window.$acceptedField
+                        }
+                    }
+                }
+            }
+            $diagnosticName = "minimum_checked_${kind}_surplus_${side}"
+            if ($null -eq $best) {
+                $lines.Add("$diagnosticName=NOT_AVAILABLE")
+            }
+            else {
+                $formattedValue = $best.Value.ToString('R', [Globalization.CultureInfo]::InvariantCulture)
+                $lines.Add("$diagnosticName=$formattedValue task=$($best.Task) window=$($best.Window) transition=$($best.Transition) accepted=$($best.Accepted)")
+            }
+        }
+    }
+    $lines.Add('')
+    $lines.Add('## Runtime provenance note')
+    $lines.Add('')
+    $lines.Add('One MATLAB startup smoke printed its marker but exited with code 3. No workaround was applied. Subsequent full startup, ArgumentList, function-resolution, and synthetic test validation passed. A Task A preflight must repeat startup smoke; any nonzero exit blocks before Task A execution or raw-IQ access.')
+    $lines.Add('')
+    $content = [string]::Join("`n", $lines) + "`n"
+    [IO.File]::WriteAllText($paths.Summary, $content, [Text.UTF8Encoding]::new($false))
+    return $paths.Summary
 }
 
 function Assert-FullTaskGpuTaskIdentity {
@@ -166,7 +442,8 @@ function New-CandidateUnitTestExpression {
     $rootLiteral = ConvertTo-MatlabCharLiteral $paths.ReviewProjectRoot
     $candidateLiteral = ConvertTo-MatlabCharLiteral $paths.CandidateDirectory
     $gpuLiteral = ConvertTo-MatlabCharLiteral $paths.SageGpuDirectory
-    return "cd($rootLiteral); candidateDir=$candidateLiteral; sageGpuDir=$gpuLiteral; addpath(candidateDir); addpath(sageGpuDir); candidateFile=which('run_nav_sage_pipeline_gpu_candidate'); helperFile=which('selectSeparatedResidualCandidate'); assert(strcmpi(candidateFile,fullfile(candidateDir,'run_nav_sage_pipeline_gpu_candidate.m')) && strcmpi(helperFile,fullfile(sageGpuDir,'selectSeparatedResidualCandidate.m')),'MATLAB_FUNCTION_RESOLUTION_MISMATCH'); disp('MATLAB_FUNCTION_RESOLUTION_OK'); results = runtests('experiments/sage_gpu/full_task_validation/tests'); assert(~isempty(results) && all([results.Passed]), 'FULL_TASK_GPU_TESTS_FAILED')"
+    $validationLiteral = ConvertTo-MatlabCharLiteral (Join-Path $paths.ReviewProjectRoot 'experiments/sage_gpu/full_task_validation')
+    return "cd($rootLiteral); candidateDir=$candidateLiteral; sageGpuDir=$gpuLiteral; validationDir=$validationLiteral; addpath(candidateDir); addpath(sageGpuDir); addpath(validationDir); candidateFile=which('run_nav_sage_pipeline_gpu_candidate'); helperFile=which('selectSeparatedResidualCandidate'); assert(strcmpi(candidateFile,fullfile(candidateDir,'run_nav_sage_pipeline_gpu_candidate.m')) && strcmpi(helperFile,fullfile(sageGpuDir,'selectSeparatedResidualCandidate.m')),'MATLAB_FUNCTION_RESOLUTION_MISMATCH'); disp('MATLAB_FUNCTION_RESOLUTION_OK'); results = runtests('experiments/sage_gpu/full_task_validation/tests'); assert(~isempty(results) && all([results.Passed]), 'FULL_TASK_GPU_TESTS_FAILED')"
 }
 
 function New-CandidateMatlabProcessStartInfo {
@@ -375,6 +652,7 @@ function Invoke-CandidatePreflight {
     [CmdletBinding()]
     param([Parameter(Mandatory = $true)][object]$TaskSpec)
 
+    Assert-NoExistingFullTaskGpuEvidence -TaskSpec $TaskSpec | Out-Null
     Assert-CandidateImplementationSource
     $inputIdentity = Assert-CandidateInputsAndReference -TaskSpec $TaskSpec
     $matlabPath = Get-CandidateMatlabApplication
@@ -408,7 +686,18 @@ function New-CandidateRunAndCompareExpression {
     $referenceLiteral = ConvertTo-MatlabCharLiteral (Join-Path $script:FrozenProjectRoot ($TaskSpec.ReferenceOutputNamespace.Replace('/', '\')))
     $candidateOutputLiteral = ConvertTo-MatlabCharLiteral (Join-Path $script:FrozenProjectRoot ($TaskSpec.CandidateOutputNamespace.Replace('/', '\')))
     $validationLiteral = ConvertTo-MatlabCharLiteral (Join-Path $script:CandidateProjectRoot 'experiments/sage_gpu/full_task_validation')
-    return "cd($rootLiteral); candidateDir=$candidateLiteral; sageGpuDir=$gpuLiteral; validationDir=$validationLiteral; addpath(candidateDir); addpath(sageGpuDir); candidateFile=which('run_nav_sage_pipeline_gpu_candidate'); helperFile=which('selectSeparatedResidualCandidate'); assert(strcmpi(candidateFile,fullfile(candidateDir,'run_nav_sage_pipeline_gpu_candidate.m')) && strcmpi(helperFile,fullfile(sageGpuDir,'selectSeparatedResidualCandidate.m')),'MATLAB_FUNCTION_RESOLUTION_MISMATCH'); disp('MATLAB_FUNCTION_RESOLUTION_OK'); candidateResult=run_nav_sage_pipeline_gpu_candidate($sceneLiteral,$($TaskSpec.Prn),'TrackingChannel',$($TaskSpec.TrackingChannel),'ProjectRoot',$rootLiteral,'Resume',false); formalOutputDir=$referenceLiteral; candidateOutputDir=$candidateOutputLiteral; taskSceneId=$sceneLiteral; taskPrn=$($TaskSpec.Prn); taskChannel=$($TaskSpec.TrackingChannel); cd(validationDir); eval(fileread('Compare-FullTaskGpuCandidateOutputs.m')); assert(isstruct(candidateComparison) && isfield(candidateComparison,'Passed') && candidateComparison.Passed,'FULL_TASK_GPU_COMPARISON_FAILED')"
+    return "try; cd($rootLiteral); candidateDir=$candidateLiteral; sageGpuDir=$gpuLiteral; validationDir=$validationLiteral; comparisonEvidenceDirectory=validationDir; addpath(candidateDir); addpath(sageGpuDir); addpath(validationDir); candidateFile=which('run_nav_sage_pipeline_gpu_candidate'); helperFile=which('selectSeparatedResidualCandidate'); assert(strcmpi(candidateFile,fullfile(candidateDir,'run_nav_sage_pipeline_gpu_candidate.m')) && strcmpi(helperFile,fullfile(sageGpuDir,'selectSeparatedResidualCandidate.m')),'MATLAB_FUNCTION_RESOLUTION_MISMATCH'); disp('MATLAB_FUNCTION_RESOLUTION_OK'); candidateResult=run_nav_sage_pipeline_gpu_candidate($sceneLiteral,$($TaskSpec.Prn),'TrackingChannel',$($TaskSpec.TrackingChannel),'ProjectRoot',$rootLiteral,'Resume',false); formalOutputDir=$referenceLiteral; candidateOutputDir=$candidateOutputLiteral; taskSceneId=$sceneLiteral; taskPrn=$($TaskSpec.Prn); taskChannel=$($TaskSpec.TrackingChannel); cd(validationDir); eval(fileread('Compare-FullTaskGpuCandidateOutputs.m')); assert(isstruct(candidateComparison) && isfield(candidateComparison,'Passed') && candidateComparison.Passed,'FULL_TASK_GPU_COMPARISON_FAILED'); catch exception; failureIdentifier=exception.identifier; if isempty(failureIdentifier), failureIdentifier='UNIDENTIFIED_MATLAB_FAILURE'; end; failureMessage=regexprep(exception.message,'[\r\n]+',' '); fprintf(2,'FULL_TASK_GPU_FAILURE_IDENTIFIER=%s\n',failureIdentifier); fprintf(2,'FULL_TASK_GPU_FAILURE_MESSAGE=%s\n',failureMessage); rethrow(exception); end"
+}
+
+function Get-FullTaskGpuMatlabFailureDetails {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][object]$Result)
+    $output = "$(($Result.Stdout))`n$(($Result.Stderr))"
+    $identifierMatch = [regex]::Match($output, '(?m)^FULL_TASK_GPU_FAILURE_IDENTIFIER=(?<value>[^\r\n]+)')
+    $messageMatch = [regex]::Match($output, '(?m)^FULL_TASK_GPU_FAILURE_MESSAGE=(?<value>[^\r\n]*)')
+    $identifier = if ($identifierMatch.Success) { $identifierMatch.Groups['value'].Value.Trim() } else { "CANDIDATE_RUN_OR_COMPARISON_FAILED_EXIT_$($Result.ExitCode)" }
+    $message = if ($messageMatch.Success) { $messageMatch.Groups['value'].Value.Trim() } else { "MATLAB exited with code $($Result.ExitCode). $($Result.Stderr) $($Result.Stdout)" }
+    return [pscustomobject]@{ Identifier = $identifier; Message = $message }
 }
 
 function Invoke-RunAndCompare {
@@ -416,11 +705,26 @@ function Invoke-RunAndCompare {
     param([Parameter(Mandatory = $true)][object]$TaskSpec)
     $preflight = Invoke-CandidatePreflight -TaskSpec $TaskSpec
     $expression = New-CandidateRunAndCompareExpression -TaskSpec $TaskSpec
-    $result = Invoke-CandidateMatlabBatch -MatlabPath $preflight.MatlabPath `
-        -WorkingDirectory $script:CandidateProjectRoot -Expression $expression
-    if ($result.ExitCode -ne 0) {
-        throw "CANDIDATE_RUN_OR_COMPARISON_FAILED task=$($TaskSpec.Task) exit_code=$($result.ExitCode) stdout=$($result.Stdout) stderr=$($result.Stderr)"
+    try {
+        $result = Invoke-CandidateMatlabBatch -MatlabPath $preflight.MatlabPath `
+            -WorkingDirectory $script:CandidateProjectRoot -Expression $expression
     }
+    catch {
+        Add-FullTaskGpuFailureReceipt -TaskSpec $TaskSpec `
+            -FailureIdentifier 'CANDIDATE_RUNNER_EXCEPTION' `
+            -FailureMessage $_.Exception.Message -GpuIdentity $preflight.GpuName | Out-Null
+        Update-FullTaskGpuValidationSummary -GpuIdentity $preflight.GpuName | Out-Null
+        throw
+    }
+    if ($result.ExitCode -ne 0) {
+        $failure = Get-FullTaskGpuMatlabFailureDetails -Result $result
+        Add-FullTaskGpuFailureReceipt -TaskSpec $TaskSpec `
+            -FailureIdentifier $failure.Identifier -FailureMessage $failure.Message `
+            -GpuIdentity $preflight.GpuName | Out-Null
+        Update-FullTaskGpuValidationSummary -GpuIdentity $preflight.GpuName | Out-Null
+        throw "CANDIDATE_RUN_OR_COMPARISON_FAILED task=$($TaskSpec.Task) exit_code=$($result.ExitCode) identifier=$($failure.Identifier) message=$($failure.Message)"
+    }
+    Update-FullTaskGpuValidationSummary -GpuIdentity $preflight.GpuName | Out-Null
     return [pscustomobject]@{ Task = $TaskSpec.Task; Result = $result; GpuName = $preflight.GpuName }
 }
 

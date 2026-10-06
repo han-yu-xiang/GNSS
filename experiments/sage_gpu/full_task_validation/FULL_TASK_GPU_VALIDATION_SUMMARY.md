@@ -1,9 +1,10 @@
-# Full-Task GPU Candidate — Pre-Task-A Implementation Review
+# Full-Task GPU Candidate — Validator Review Fixes
 
-This is a lightweight implementation snapshot, not an experiment result or a replacement for either project handoff.
+STATUS SNAPSHOT ONLY. This is lightweight implementation/review evidence, not an experiment result or a replacement for either project handoff.
 
 ```ini
 IMPLEMENTATION_TASKS=1-4
+VALIDATOR_REVIEW_FIXES=COMPLETED
 TASK_A=NOT_RUN
 TASK_B=NOT_RUN
 TASK_A_PREFLIGHT_RUN=NO
@@ -35,9 +36,10 @@ The audit confirms `runStage2`, `flattenStage2`, `evaluatePersistence`, and `run
 ## Verification receipts
 
 ```ini
-Pester=17_PASS_0_FAIL
-MATLAB_COMPARISON_TESTS=11_PASS
-MATLAB_FIT_CONTRACT_TESTS=3_PASS
+Pester=19_PASS_0_FAIL
+MATLAB_COMPARISON_TESTS=15_PASS
+MATLAB_FIT_CONTRACT_TESTS=4_PASS
+MATLAB_TOTAL_SYNTHETIC_TESTS=19_PASS_0_FAIL
 MATLAB_FUNCTION_RESOLUTION=PASS
 MATLAB_STARTUP_AND_ARGUMENTLIST_SMOKES=PASS
 GIT_DIFF_CHECK=PASS
@@ -49,10 +51,34 @@ Final review found and fixed a validator gap: Stage2–Stage4 CSV numeric cells 
 
 No `FULL_TASK_GPU_VALIDATION_RESULTS.csv` or `FULL_TASK_GPU_STAGE2_WINDOW_COMPARISON.csv` rows are included because no real task comparison has run; no placeholder rows were created.
 
+## GPT implementation-review corrections
+
+```ini
+EVIDENCE_PERSISTENCE=IMPLEMENTED_AND_SYNTHETICALLY_TESTED
+RESULTS_CSV_TASK_APPEND=PASS
+WINDOW_CSV_PER_EVALUATED_WINDOW=PASS
+DUPLICATE_TASK_KEY=FAIL_CLOSED
+FAILURE_TERMINAL_RECEIPT=IMPLEMENTED
+SEQUENTIAL_SELECTION_REPLAY=IMPLEMENTED_AND_SYNTHETICALLY_TESTED
+GLOBAL_BIC_BEST_SECOND_MARGIN=REMOVED
+CPU_SELECTION_REPLAY=REQUIRED_TO_MATCH_FORMAL_SELECTED_ORDER
+GPU_SELECTION_REPLAY=REQUIRED_TO_MATCH_CANDIDATE_SELECTED_ORDER
+TASK_A_EXECUTION=NOT_AUTHORIZED
+TASK_B_EXECUTION=NOT_AUTHORIZED
+```
+
+Successful comparisons now persist a task-level row and one Stage2 comparison row per evaluated window under this `full_task_validation` directory. Task B appends without dropping Task A; an existing `(task, scene, PRN, channel)` evidence key blocks rather than overwriting. Candidate/comparison failures produce a lightweight terminal row and refresh this summary. No scientific output tree is used as an evidence destination.
+
+Sequential diagnostics replay the Frozen order-by-order decision using `maximumModelOrder`, `minimumSequentialBicGain`, and `minimumIncrementalRssPercent` from each saved Stage2 `cfg`. Each checked transition records BIC/RSS gain, threshold, threshold surplus, model validity, and accepted/rejected status. Later transitions after the first rejection remain unchecked (`NaN` numeric diagnostics). No global best-vs-second-best BIC margin is reported.
+
+One earlier MATLAB startup smoke printed its marker but exited with code 3. No workaround was made. Subsequent startup/ArgumentList/function-resolution smokes and the complete synthetic test run passed. The Task A preflight must repeat startup smoke; any nonzero exit blocks before candidate execution or raw-IQ access.
+
 ```ini
 ENGINEERING_HANDOFF_MODIFIED=NO
 PAPER_HANDOFF_MODIFIED=NO
 20_46_MHZ_EXECUTED=NO
 BUSINESS_BRANCH_COMMIT_PUSH=NO
-NEXT_STEP=GPT_REVIEW_IMPLEMENTATION_BUNDLE
+FROZEN_PRODUCTION_MODIFIED=NO
+CANDIDATE_SOURCE_MODIFIED=NO
+NEXT_STEP=GPT_REVIEW_VALIDATOR_FIXES
 ```

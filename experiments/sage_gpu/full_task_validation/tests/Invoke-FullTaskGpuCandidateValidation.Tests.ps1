@@ -178,15 +178,16 @@ Describe 'Full-task candidate Frozen source boundary' {
         $rejected | Should Be $true
     }
 
-    It 'builds RunUnitTests with only the two approved addpath directories' {
+    It 'builds RunUnitTests with only the three approved candidate, GPU, and validation directories' {
         $expression = New-CandidateUnitTestExpression -ReviewProjectRoot $script:ProjectRoot
-        ([regex]::Matches($expression, 'addpath\(').Count) | Should Be 2
+        ([regex]::Matches($expression, 'addpath\(').Count) | Should Be 3
         $expression | Should Match 'MATLAB_FUNCTION_RESOLUTION_MISMATCH'
         $expression | Should Match 'MATLAB_FUNCTION_RESOLUTION_OK'
         $expression | Should Match 'runtests\('
         $expression | Should Not Match 'genpath'
         $expression.Contains((ConvertTo-MatlabCharLiteral (Join-Path $script:ProjectRoot 'experiments/sage_gpu/full_task_candidate'))) | Should Be $true
         $expression.Contains((ConvertTo-MatlabCharLiteral (Join-Path $script:ProjectRoot 'experiments/sage_gpu'))) | Should Be $true
+        $expression.Contains((ConvertTo-MatlabCharLiteral (Join-Path $script:ProjectRoot 'experiments/sage_gpu/full_task_validation'))) | Should Be $true
     }
 
     It 'passes -batch and the whole expression as separate native arguments' {
@@ -236,6 +237,8 @@ Describe 'Full-task candidate Frozen source boundary' {
         $runAndCompare = [regex]::Match($driverSource, '(?s)function Invoke-RunAndCompare\b.*?(?=\r?\nfunction |\z)').Value
         $runAndCompare | Should Match '\$TaskSpec'
         ([regex]::Matches($runAndCompare, 'Invoke-CandidateMatlabBatch')).Count | Should Be 1
+        $runAndCompare | Should Match 'Add-FullTaskGpuFailureReceipt'
+        $runAndCompare | Should Match 'Update-FullTaskGpuValidationSummary'
     }
 
     It 'runs the independent comparison only after the one candidate invocation' {
@@ -244,6 +247,84 @@ Describe 'Full-task candidate Frozen source boundary' {
         $comparisonPosition = $expression.IndexOf("eval(fileread('Compare-FullTaskGpuCandidateOutputs.m'))")
         ($candidatePosition -ge 0 -and $comparisonPosition -gt $candidatePosition) | Should Be $true
         $expression | Should Match 'candidateComparison\.Passed'
+        $expression | Should Match 'comparisonEvidenceDirectory'
+        $expression | Should Match 'comparisonEvidenceDirectory=validationDir'
         $expression | Should Not Match 'genpath'
+    }
+
+    It 'writes a terminal failure row and refreshes the task-specific summary' {
+        $root = Join-Path ([IO.Path]::GetTempPath()) ('full-task-gpu-evidence-' + [guid]::NewGuid().ToString('N'))
+        $evidenceDirectory = Join-Path $root 'evidence'
+        New-Item -ItemType Directory -Path $evidenceDirectory -Force | Out-Null
+        try {
+            $taskSpec = Get-FullTaskGpuTaskSpec -Task 'TaskA'
+            Add-FullTaskGpuFailureReceipt -TaskSpec $taskSpec `
+                -FailureIdentifier 'SYNTHETIC_TEST_FAILURE' `
+                -FailureMessage 'synthetic comparison failure' `
+                -GpuIdentity 'RTX 4060 Laptop GPU' `
+                -EvidenceDirectory $evidenceDirectory | Out-Null
+            Update-FullTaskGpuValidationSummary -GpuIdentity 'RTX 4060 Laptop GPU' `
+                -EvidenceDirectory $evidenceDirectory | Out-Null
+
+            $resultPath = Join-Path $evidenceDirectory 'FULL_TASK_GPU_VALIDATION_RESULTS.csv'
+            $rows = @(Import-Csv -LiteralPath $resultPath)
+            $rows.Count | Should Be 1
+            $rows[0].task | Should Be 'TaskA'
+            $rows[0].task_status | Should Be 'FAIL'
+            $rows[0].failure_identifier | Should Be 'SYNTHETIC_TEST_FAILURE'
+            $rows[0].failure_message | Should Be 'synthetic comparison failure'
+            $rows[0].candidate_namespace | Should Be $taskSpec.CandidateOutputNamespace
+            [string]::IsNullOrWhiteSpace($rows[0].failure_timestamp_utc) | Should Be $false
+
+            $summary = Get-Content -LiteralPath (Join-Path $evidenceDirectory 'FULL_TASK_GPU_VALIDATION_SUMMARY.md') -Raw
+            $summary | Should Match 'TASK_A=FAIL'
+            $summary | Should Match 'TASK_B=NOT_RUN'
+            $summary | Should Match 'SYNTHETIC_TEST_FAILURE'
+            $summary | Should Match 'minimum_checked_bic_surplus_cpu'
+        }
+        finally {
+            if (Test-Path -LiteralPath $root) {
+                $resolvedRoot = [IO.Path]::GetFullPath($root)
+                $resolvedTemp = [IO.Path]::GetFullPath([IO.Path]::GetTempPath())
+                if (-not $resolvedRoot.StartsWith($resolvedTemp, [StringComparison]::OrdinalIgnoreCase)) {
+                    throw "UNSAFE_TEST_CLEANUP_PATH path=$resolvedRoot"
+                }
+                Remove-Item -LiteralPath $resolvedRoot -Recurse -Force
+            }
+        }
+    }
+
+    It 'rejects an existing task result key before task execution' {
+        $root = Join-Path ([IO.Path]::GetTempPath()) ('full-task-gpu-evidence-' + [guid]::NewGuid().ToString('N'))
+        $evidenceDirectory = Join-Path $root 'evidence'
+        New-Item -ItemType Directory -Path $evidenceDirectory -Force | Out-Null
+        try {
+            $taskSpec = Get-FullTaskGpuTaskSpec -Task 'TaskA'
+            Add-FullTaskGpuFailureReceipt -TaskSpec $taskSpec `
+                -FailureIdentifier 'SYNTHETIC_TEST_FAILURE' `
+                -FailureMessage 'existing result key' `
+                -GpuIdentity 'RTX 4060 Laptop GPU' `
+                -EvidenceDirectory $evidenceDirectory | Out-Null
+
+            $rejected = $false
+            try {
+                Assert-NoExistingFullTaskGpuEvidence -TaskSpec $taskSpec `
+                    -EvidenceDirectory $evidenceDirectory | Out-Null
+            }
+            catch {
+                $rejected = $true
+            }
+            $rejected | Should Be $true
+        }
+        finally {
+            if (Test-Path -LiteralPath $root) {
+                $resolvedRoot = [IO.Path]::GetFullPath($root)
+                $resolvedTemp = [IO.Path]::GetFullPath([IO.Path]::GetTempPath())
+                if (-not $resolvedRoot.StartsWith($resolvedTemp, [StringComparison]::OrdinalIgnoreCase)) {
+                    throw "UNSAFE_TEST_CLEANUP_PATH path=$resolvedRoot"
+                }
+                Remove-Item -LiteralPath $resolvedRoot -Recurse -Force
+            }
+        }
     }
 }

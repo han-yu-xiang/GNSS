@@ -2,7 +2,8 @@
 % names cannot contain hyphens, so the callable implementation uses the valid
 % identifier compareFullTaskGpuCandidateOutputs in the adjacent .m file.
 % The caller supplies these variables in its workspace:
-% formalOutputDir, candidateOutputDir, taskSceneId, taskPrn, taskChannel.
+% formalOutputDir, candidateOutputDir, taskSceneId, taskPrn, taskChannel,
+% and optionally comparisonEvidenceDirectory.
 
 try
     requiredInputs = {'formalOutputDir', 'candidateOutputDir', ...
@@ -14,9 +15,14 @@ try
                 upper(requiredInputs{inputIndex}));
         end
     end
+    evidenceDirectory = '';
+    if exist('comparisonEvidenceDirectory', 'var')
+        evidenceDirectory = char(comparisonEvidenceDirectory);
+    end
     candidateComparison = compareFullTaskGpuCandidateOutputs( ...
         char(formalOutputDir), char(candidateOutputDir), ...
-        char(taskSceneId), double(taskPrn), double(taskChannel));
+        char(taskSceneId), double(taskPrn), double(taskChannel), ...
+        evidenceDirectory);
 catch comparisonError
     if strcmp(comparisonError.identifier, ...
             'FullTaskGpuCandidate:COMPARISON_FAILED')
