@@ -237,4 +237,13 @@ Describe 'Full-task candidate Frozen source boundary' {
         $runAndCompare | Should Match '\$TaskSpec'
         ([regex]::Matches($runAndCompare, 'Invoke-CandidateMatlabBatch')).Count | Should Be 1
     }
+
+    It 'runs the independent comparison only after the one candidate invocation' {
+        $expression = New-CandidateRunAndCompareExpression -TaskSpec (Get-FullTaskGpuTaskSpec -Task 'TaskA')
+        $candidatePosition = $expression.IndexOf('candidateResult=run_nav_sage_pipeline_gpu_candidate(')
+        $comparisonPosition = $expression.IndexOf("eval(fileread('Compare-FullTaskGpuCandidateOutputs.m'))")
+        ($candidatePosition -ge 0 -and $comparisonPosition -gt $candidatePosition) | Should Be $true
+        $expression | Should Match 'candidateComparison\.Passed'
+        $expression | Should Not Match 'genpath'
+    }
 }
