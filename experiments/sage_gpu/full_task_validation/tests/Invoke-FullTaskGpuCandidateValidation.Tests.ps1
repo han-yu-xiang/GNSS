@@ -4,6 +4,21 @@ $script:AuthorityPath = 'E:/GNSS_Multipath_Project/scripts/sage_pipeline/run_nav
 $script:CandidatePath = Join-Path $script:ProjectRoot 'experiments/sage_gpu/full_task_candidate/run_nav_sage_pipeline_gpu_candidate.m'
 $script:ExpectedFrozenSha = 'bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c'
 
+function New-FormalRunContextHashtableFixture {
+    $json = @'
+{
+  "sceneId": "F1023_V70_D0117_P2",
+  "prn": 28,
+  "trackingChannel": 1,
+  "samplingRateHz": 10230000,
+  "rawFile": "E:/fake/raw.bin",
+  "trackingFile": "E:/fake/tracking.mat",
+  "telemetryFile": "E:/fake/telemetry.dat"
+}
+'@
+    return ConvertFrom-Json -InputObject $json -AsHashtable
+}
+
 if (Test-Path -LiteralPath $script:DriverPath) {
     . $script:DriverPath
 }
@@ -119,19 +134,42 @@ Describe 'Full-task candidate Frozen source boundary' {
         $taskB.ReferenceOutputNamespace | Should Be 'scenes/F1023_V120_D0121_P2/sage_results/rerun_20261003_frozen_v3/G03_ch2'
     }
 
-    It 'requires candidate request, formal context, cfg/input, and helper identity to agree' {
+    It 'accepts lower-camel run_context JSON keys from ConvertFrom-Json as hashtable' {
         $request = [pscustomobject]@{ SceneId='F1023_V70_D0117_P2'; Prn=28; TrackingChannel=1 }
-        $formal = [pscustomobject]@{
-            sceneId='F1023_V70_D0117_P2'; prn=28; trackingChannel=1; samplingRateHz=10230000
-            rawFile='E:/data/task-a.iq'; trackingFile='E:/data/task-a-track.mat'; telemetryFile='E:/data/task-a-telemetry.dat'
-        }
+        $formal = New-FormalRunContextHashtableFixture
         $cfg = [pscustomobject]@{
-            sceneId='F1023_V70_D0117_P2'; targetPrn=28; trackingChannel=1; fsHz=10230000
-            rawFile='E:\data\task-a.iq'; trackingFile='E:\data\task-a-track.mat'; telemetryFile='E:\data\task-a-telemetry.dat'
+            SceneId='F1023_V70_D0117_P2'; TargetPrn=28; TrackingChannel=1; FsHz=10230000
+            RawFile='E:/fake/raw.bin'; TrackingFile='E:/fake/tracking.mat'; TelemetryFile='E:/fake/telemetry.dat'
         }
         (Assert-FullTaskGpuTaskIdentity -CandidateRequest $request -FormalContext $formal -CandidateCfg $cfg -HelperRequestedPrn 28) | Should Be $true
+    }
 
-        $cfg.targetPrn = 3
+    It 'fails closed when lower-camel formal identity disagrees with the request' {
+        $request = [pscustomobject]@{ SceneId='F1023_V70_D0117_P2'; Prn=28; TrackingChannel=1 }
+        $formal = New-FormalRunContextHashtableFixture
+        $formal['trackingChannel'] = 9
+        $cfg = [pscustomobject]@{
+            SceneId='F1023_V70_D0117_P2'; TargetPrn=28; TrackingChannel=1; FsHz=10230000
+            RawFile='E:/fake/raw.bin'; TrackingFile='E:/fake/tracking.mat'; TelemetryFile='E:/fake/telemetry.dat'
+        }
+        $rejected = $false
+        try {
+            Assert-FullTaskGpuTaskIdentity -CandidateRequest $request -FormalContext $formal -CandidateCfg $cfg -HelperRequestedPrn 28 | Out-Null
+        }
+        catch {
+            $rejected = $true
+        }
+        $rejected | Should Be $true
+    }
+
+    It 'fails closed when a required lower-camel formal key is missing' {
+        $request = [pscustomobject]@{ SceneId='F1023_V70_D0117_P2'; Prn=28; TrackingChannel=1 }
+        $formal = New-FormalRunContextHashtableFixture
+        $formal.Remove('sceneId') | Out-Null
+        $cfg = [pscustomobject]@{
+            SceneId='F1023_V70_D0117_P2'; TargetPrn=28; TrackingChannel=1; FsHz=10230000
+            RawFile='E:/fake/raw.bin'; TrackingFile='E:/fake/tracking.mat'; TelemetryFile='E:/fake/telemetry.dat'
+        }
         $rejected = $false
         try {
             Assert-FullTaskGpuTaskIdentity -CandidateRequest $request -FormalContext $formal -CandidateCfg $cfg -HelperRequestedPrn 28 | Out-Null

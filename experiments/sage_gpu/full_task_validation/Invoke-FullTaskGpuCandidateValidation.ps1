@@ -361,10 +361,19 @@ function Assert-FullTaskGpuTaskIdentity {
         [Parameter(Mandatory = $true)][double]$HelperRequestedPrn
     )
 
-    $sceneValues = @([string]$CandidateRequest.SceneId, [string]$FormalContext.SceneId, [string]$CandidateCfg.SceneId)
-    $prnValues = @([double]$CandidateRequest.Prn, [double]$FormalContext.Prn, [double]$CandidateCfg.TargetPrn, $HelperRequestedPrn)
-    $channelValues = @([double]$CandidateRequest.TrackingChannel, [double]$FormalContext.TrackingChannel, [double]$CandidateCfg.TrackingChannel)
-    $rateValues = @([double]$FormalContext.SamplingRateHz, [double]$CandidateCfg.FsHz)
+    if ($FormalContext -isnot [System.Collections.IDictionary]) {
+        throw 'INPUT_IDENTITY_VALIDATION_FAIL formal_context_not_hashtable'
+    }
+    foreach ($requiredKey in @('sceneId', 'prn', 'trackingChannel', 'samplingRateHz', 'rawFile', 'trackingFile', 'telemetryFile')) {
+        if (-not $FormalContext.Contains($requiredKey)) {
+            throw "INPUT_IDENTITY_VALIDATION_FAIL formal_context_field_missing field=$requiredKey"
+        }
+    }
+
+    $sceneValues = @([string]$CandidateRequest.SceneId, [string]$FormalContext['sceneId'], [string]$CandidateCfg.SceneId)
+    $prnValues = @([double]$CandidateRequest.Prn, [double]$FormalContext['prn'], [double]$CandidateCfg.TargetPrn, $HelperRequestedPrn)
+    $channelValues = @([double]$CandidateRequest.TrackingChannel, [double]$FormalContext['trackingChannel'], [double]$CandidateCfg.TrackingChannel)
+    $rateValues = @([double]$FormalContext['samplingRateHz'], [double]$CandidateCfg.FsHz)
 
     if (@($sceneValues | Select-Object -Unique).Count -ne 1 -or
             @($prnValues | Select-Object -Unique).Count -ne 1 -or
@@ -373,11 +382,17 @@ function Assert-FullTaskGpuTaskIdentity {
         throw 'INPUT_IDENTITY_VALIDATION_FAIL scene_prn_channel_or_sample_rate_mismatch'
     }
 
-    foreach ($field in @('RawFile', 'TrackingFile', 'TelemetryFile')) {
-        if ((Normalize-CandidateIdentityPath ([string]$FormalContext.$field)) -cne
-                (Normalize-CandidateIdentityPath ([string]$CandidateCfg.$field))) {
-            throw "INPUT_IDENTITY_VALIDATION_FAIL input_path_mismatch field=$field"
-        }
+    if ((Normalize-CandidateIdentityPath ([string]$FormalContext['rawFile'])) -cne
+            (Normalize-CandidateIdentityPath ([string]$CandidateCfg.RawFile))) {
+        throw 'INPUT_IDENTITY_VALIDATION_FAIL input_path_mismatch field=RawFile'
+    }
+    if ((Normalize-CandidateIdentityPath ([string]$FormalContext['trackingFile'])) -cne
+            (Normalize-CandidateIdentityPath ([string]$CandidateCfg.TrackingFile))) {
+        throw 'INPUT_IDENTITY_VALIDATION_FAIL input_path_mismatch field=TrackingFile'
+    }
+    if ((Normalize-CandidateIdentityPath ([string]$FormalContext['telemetryFile'])) -cne
+            (Normalize-CandidateIdentityPath ([string]$CandidateCfg.TelemetryFile))) {
+        throw 'INPUT_IDENTITY_VALIDATION_FAIL input_path_mismatch field=TelemetryFile'
     }
     return $true
 }
@@ -616,9 +631,9 @@ function Assert-CandidateInputsAndReference {
     $identityPassed = Assert-FullTaskGpuTaskIdentity -CandidateRequest $candidateRequest `
         -FormalContext $formal -CandidateCfg $candidateCfgIdentity -HelperRequestedPrn $TaskSpec.Prn
     if (-not $identityPassed -or
-            (Normalize-CandidateIdentityPath ([string]$formal.RawFile)) -cne (Normalize-CandidateIdentityPath $rawPath) -or
-            (Normalize-CandidateIdentityPath ([string]$formal.TrackingFile)) -cne (Normalize-CandidateIdentityPath $trackingPath) -or
-            (Normalize-CandidateIdentityPath ([string]$formal.TelemetryFile)) -cne (Normalize-CandidateIdentityPath $telemetryPath)) {
+            (Normalize-CandidateIdentityPath ([string]$formal['rawFile'])) -cne (Normalize-CandidateIdentityPath $rawPath) -or
+            (Normalize-CandidateIdentityPath ([string]$formal['trackingFile'])) -cne (Normalize-CandidateIdentityPath $trackingPath) -or
+            (Normalize-CandidateIdentityPath ([string]$formal['telemetryFile'])) -cne (Normalize-CandidateIdentityPath $telemetryPath)) {
         throw "INPUT_IDENTITY_VALIDATION_FAIL task=$($TaskSpec.Task)"
     }
 
