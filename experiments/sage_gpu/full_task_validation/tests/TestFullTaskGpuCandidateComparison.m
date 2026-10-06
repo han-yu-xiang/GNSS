@@ -76,6 +76,16 @@ verifyError(testCase, @() runFixtureComparison(pair), ...
     'FullTaskGpuCandidate:COMPARISON_FAILED');
 end
 
+function testStage2NumericCsvMustMatchItsMatTable(testCase)
+pair = makeFixturePair(testCase);
+file = fullfile(pair.CandidateDir, 'stage2_selected_paths.csv');
+tableValue = readtable(file);
+tableValue.delay_samples(1) = tableValue.delay_samples(1) + 0.25;
+writetable(tableValue, file);
+verifyError(testCase, @() runFixtureComparison(pair), ...
+    'FullTaskGpuCandidate:COMPARISON_FAILED');
+end
+
 function testStage3PersistenceClassificationMismatchFails(testCase)
 pair = makeFixturePair(testCase);
 file = fullfile(pair.CandidateDir, 'stage3_nav_persistence.mat');

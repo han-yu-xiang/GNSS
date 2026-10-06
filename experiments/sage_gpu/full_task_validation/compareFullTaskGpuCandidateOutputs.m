@@ -783,6 +783,10 @@ if ~isequal(referenceCsvTable.Properties.VariableNames, ...
         candidateMatTable.Properties.VariableNames)
     comparisonFailure([stageName '_CSV_MAT_SCHEMA_MISMATCH']);
 end
+assertCsvMatchesMat(referenceCsv, referenceMatTable, ...
+    [stageName '_REFERENCE']);
+assertCsvMatchesMat(candidateCsv, candidateMatTable, ...
+    [stageName '_CANDIDATE']);
 for columnIndex = 1:numel(structuralColumns)
     field = structuralColumns{columnIndex};
     if ~isequaln(referenceCsvTable.(field), candidateCsvTable.(field)) || ...
@@ -793,6 +797,26 @@ for columnIndex = 1:numel(structuralColumns)
             candidateMatTable.(field))
         comparisonFailure([stageName '_STRUCTURE_MISMATCH_' upper(field)]);
     end
+end
+end
+
+function assertCsvMatchesMat(csvPath, matTable, stageName)
+temporaryCsv = [tempname, '.csv'];
+cleanup = onCleanup(@() deleteTemporaryFile(temporaryCsv)); %#ok<NASGU>
+writetable(matTable, temporaryCsv);
+expected = readCsvStrings(temporaryCsv);
+actual = readCsvStrings(csvPath);
+if ~isequal(expected.Properties.VariableNames, ...
+        actual.Properties.VariableNames) || ...
+        height(expected) ~= height(actual) || ...
+        ~isequaln(table2cell(expected), table2cell(actual))
+    comparisonFailure([stageName '_CSV_MAT_VALUE_MISMATCH']);
+end
+end
+
+function deleteTemporaryFile(path)
+if isfile(path)
+    delete(path);
 end
 end
 
