@@ -98,4 +98,143 @@ Describe 'Full-task candidate Frozen source boundary' {
             }
         }
     }
+
+    It 'escapes MATLAB char literals by doubling embedded apostrophes' {
+        (ConvertTo-MatlabCharLiteral "E:/reviewer's project") | Should Be "'E:/reviewer''s project'"
+    }
+
+    It 'maps only the two approved tasks to their exact namespaces' {
+        $taskA = Get-FullTaskGpuTaskSpec -Task 'TaskA'
+        $taskA.SceneId | Should Be 'F1023_V70_D0117_P2'
+        $taskA.Prn | Should Be 28
+        $taskA.TrackingChannel | Should Be 1
+        $taskA.CandidateOutputNamespace | Should Be 'scenes/F1023_V70_D0117_P2/sage_results/gpu_candidate_fulltask_20261005/G28_ch1'
+        $taskA.ReferenceOutputNamespace | Should Be 'scenes/F1023_V70_D0117_P2/sage_results/rerun_20261003_frozen_v3/G28_ch1'
+
+        $taskB = Get-FullTaskGpuTaskSpec -Task 'TaskB'
+        $taskB.SceneId | Should Be 'F1023_V120_D0121_P2'
+        $taskB.Prn | Should Be 3
+        $taskB.TrackingChannel | Should Be 2
+        $taskB.CandidateOutputNamespace | Should Be 'scenes/F1023_V120_D0121_P2/sage_results/gpu_candidate_fulltask_20261005/G03_ch2'
+        $taskB.ReferenceOutputNamespace | Should Be 'scenes/F1023_V120_D0121_P2/sage_results/rerun_20261003_frozen_v3/G03_ch2'
+    }
+
+    It 'requires candidate request, formal context, cfg/input, and helper identity to agree' {
+        $request = [pscustomobject]@{ SceneId='F1023_V70_D0117_P2'; Prn=28; TrackingChannel=1 }
+        $formal = [pscustomobject]@{
+            sceneId='F1023_V70_D0117_P2'; prn=28; trackingChannel=1; samplingRateHz=10230000
+            rawFile='E:/data/task-a.iq'; trackingFile='E:/data/task-a-track.mat'; telemetryFile='E:/data/task-a-telemetry.dat'
+        }
+        $cfg = [pscustomobject]@{
+            sceneId='F1023_V70_D0117_P2'; targetPrn=28; trackingChannel=1; fsHz=10230000
+            rawFile='E:\data\task-a.iq'; trackingFile='E:\data\task-a-track.mat'; telemetryFile='E:\data\task-a-telemetry.dat'
+        }
+        (Assert-FullTaskGpuTaskIdentity -CandidateRequest $request -FormalContext $formal -CandidateCfg $cfg -HelperRequestedPrn 28) | Should Be $true
+
+        $cfg.targetPrn = 3
+        $rejected = $false
+        try {
+            Assert-FullTaskGpuTaskIdentity -CandidateRequest $request -FormalContext $formal -CandidateCfg $cfg -HelperRequestedPrn 28 | Out-Null
+        }
+        catch {
+            $rejected = $true
+        }
+        $rejected | Should Be $true
+    }
+
+    It 'blocks an existing candidate namespace without touching it' {
+        $root = Join-Path ([IO.Path]::GetTempPath()) ('gpu-candidate-' + [guid]::NewGuid().ToString('N'))
+        $existing = Join-Path $root 'existing'
+        New-Item -ItemType Directory -Path $existing -Force | Out-Null
+        try {
+            (Assert-CandidateOutputAbsent -Path (Join-Path $root 'absent')) | Should Be $true
+            $rejected = $false
+            try {
+                Assert-CandidateOutputAbsent -Path $existing | Out-Null
+            }
+            catch {
+                $rejected = $true
+            }
+            $rejected | Should Be $true
+            (Test-Path -LiteralPath $existing -PathType Container) | Should Be $true
+        }
+        finally {
+            Remove-Item -LiteralPath $root -Recurse -Force
+        }
+    }
+
+    It 'validates exact MATLAB function resolution after path normalization' {
+        $candidate = Join-Path $script:ProjectRoot 'experiments/sage_gpu/full_task_candidate/run_nav_sage_pipeline_gpu_candidate.m'
+        $selector = Join-Path $script:ProjectRoot 'experiments/sage_gpu/selectSeparatedResidualCandidate.m'
+        (Assert-MatlabFunctionResolution -CandidateResolvedPath $candidate.Replace('\','/') -SelectorResolvedPath $selector -CandidateExpectedPath $candidate -SelectorExpectedPath $selector) | Should Be $true
+
+        $rejected = $false
+        try {
+            Assert-MatlabFunctionResolution -CandidateResolvedPath (Join-Path $script:ProjectRoot 'wrong.m') -SelectorResolvedPath $selector -CandidateExpectedPath $candidate -SelectorExpectedPath $selector | Out-Null
+        }
+        catch {
+            $rejected = $true
+        }
+        $rejected | Should Be $true
+    }
+
+    It 'builds RunUnitTests with only the two approved addpath directories' {
+        $expression = New-CandidateUnitTestExpression -ReviewProjectRoot $script:ProjectRoot
+        ([regex]::Matches($expression, 'addpath\(').Count) | Should Be 2
+        $expression | Should Match 'MATLAB_FUNCTION_RESOLUTION_MISMATCH'
+        $expression | Should Match 'MATLAB_FUNCTION_RESOLUTION_OK'
+        $expression | Should Match 'runtests\('
+        $expression | Should Not Match 'genpath'
+        $expression.Contains((ConvertTo-MatlabCharLiteral (Join-Path $script:ProjectRoot 'experiments/sage_gpu/full_task_candidate'))) | Should Be $true
+        $expression.Contains((ConvertTo-MatlabCharLiteral (Join-Path $script:ProjectRoot 'experiments/sage_gpu'))) | Should Be $true
+    }
+
+    It 'passes -batch and the whole expression as separate native arguments' {
+        $expression = "disp('ARGUMENT_LIST_SMOKE')"
+        $startInfo = New-CandidateMatlabProcessStartInfo -MatlabPath 'C:/MATLAB/bin/matlab.exe' -WorkingDirectory $script:ProjectRoot -Expression $expression
+        $startInfo.UseShellExecute | Should Be $false
+        $startInfo.RedirectStandardOutput | Should Be $true
+        $startInfo.RedirectStandardError | Should Be $true
+        $startInfo.ArgumentList.Count | Should Be 2
+        $startInfo.ArgumentList[0] | Should Be '-batch'
+        $startInfo.ArgumentList[1] | Should Be $expression
+    }
+
+    It 'initializes one GPU device after all candidate preflights and before Stage0, with no fallback' {
+        $candidateSource = [IO.File]::ReadAllText($script:CandidatePath)
+        ([regex]::Matches($candidateSource, '\bgpuDevice\s*\(').Count) | Should Be 1
+        $entry = @(Get-MatlabFunctionBlocks -LiteralPath $script:CandidatePath | Where-Object { $_.Name -eq 'run_nav_sage_pipeline_gpu_candidate' })[0]
+        $sequence = @('assertFrozenSageSourceHash', 'assertCandidateTaskIdentity', 'assertReferenceContextIdentity', 'assertGpuAvailability', 'assertCandidateOutputAbsent', 'gpuDevice(', '%% Stage 0')
+        $position = -1
+        foreach ($token in $sequence) {
+            $nextPosition = $entry.Normalized.IndexOf($token, $position + 1)
+            ($nextPosition -gt $position) | Should Be $true
+            $position = $nextPosition
+        }
+        $candidateSource | Should Not Match 'gpuDeviceReset'
+        $candidateSource | Should Not Match 'fitAllOrdersCpu'
+
+        foreach ($functionName in @('fitAllOrders', 'fitAllOrdersGpu', 'initializeResidualPathGpu', 'runSageGpu', 'evaluateModelGpu')) {
+            $block = @(Get-MatlabFunctionBlocks -LiteralPath $script:CandidatePath | Where-Object { $_.Name -eq $functionName })[0]
+            $block.Normalized | Should Not Match '\bgpuDevice\s*\('
+        }
+    }
+
+    It 'keeps candidate provenance outside the Frozen cfg' {
+        $candidateSource = [IO.File]::ReadAllText($script:CandidatePath)
+        $candidateSource | Should Match 'candidate_provenance\.json'
+        $candidateSource | Should Match 'frozen_source_sha256'
+        $candidateSource | Should Match 'gpu_candidate_source_sha256'
+        $candidateSource | Should Not Match 'cfg\s*\.\s*(frozen_source_sha256|gpu_candidate_source_sha256|qualified_gpu_stage2_source_identity|candidate_output_namespace|gpu_identity)'
+        $candidateSource | Should Not Match 'cfg\s*\.\s*(sceneId|prnLabel|trackingChannel)\s*='
+    }
+
+    It 'invokes exactly one named task and does not queue a follow-up task' {
+        $driverSource = [IO.File]::ReadAllText($script:DriverPath)
+        $driverSource | Should Not Match 'foreach\s*\(\s*\$task\s+in\s+\$script:CandidateTasks'
+        $driverSource | Should Not Match 'Start-Job|Start-ThreadJob'
+        $runAndCompare = [regex]::Match($driverSource, '(?s)function Invoke-RunAndCompare\b.*?(?=\r?\nfunction |\z)').Value
+        $runAndCompare | Should Match '\$TaskSpec'
+        ([regex]::Matches($runAndCompare, 'Invoke-CandidateMatlabBatch')).Count | Should Be 1
+    }
 }
