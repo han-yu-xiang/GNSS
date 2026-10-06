@@ -265,7 +265,6 @@ Describe 'Full-task candidate Frozen source boundary' {
         $candidateSource | Should Match 'frozen_source_sha256'
         $candidateSource | Should Match 'gpu_candidate_source_sha256'
         $candidateSource | Should Not Match 'cfg\s*\.\s*(frozen_source_sha256|gpu_candidate_source_sha256|qualified_gpu_stage2_source_identity|candidate_output_namespace|gpu_identity)'
-        $candidateSource | Should Not Match 'cfg\s*\.\s*(sceneId|prnLabel|trackingChannel)\s*='
     }
 
     It 'invokes exactly one named task and does not queue a follow-up task' {
@@ -364,5 +363,52 @@ Describe 'Full-task candidate Frozen source boundary' {
                 Remove-Item -LiteralPath $resolvedRoot -Recurse -Force
             }
         }
+    }
+}
+
+Describe 'Candidate cfg Frozen identity schema regression' {
+    It 'copies scene, PRN label, and tracking channel after default config and before saving run context' {
+        $candidateSource = [IO.File]::ReadAllText($script:CandidatePath)
+        $defaultConfigMatch = [regex]::Match(
+            $candidateSource,
+            'cfg\s*=\s*default_sage_configuration\(\s*prnNumber,\s*\.\.\.\s*context\.samplingRateHz,\s*options\.Resume\s*\);')
+        $saveRunContextIndex = $candidateSource.IndexOf('saveRunContext(context, cfg);', [StringComparison]::Ordinal)
+        $requiredAssignments = [ordered]@{
+            sceneId = 'cfg\.sceneId\s*=\s*char\(context\.sceneId\)\s*;'
+            prnLabel = 'cfg\.prnLabel\s*=\s*char\(context\.prnLabel\)\s*;'
+            trackingChannel = 'cfg\.trackingChannel\s*=\s*context\.trackingChannel\s*;'
+        }
+        $failureReasons = New-Object 'System.Collections.Generic.List[string]'
+        if (-not $defaultConfigMatch.Success) {
+            $failureReasons.Add('default_sage_configuration call not found')
+        }
+        if ($saveRunContextIndex -lt 0) {
+            $failureReasons.Add('saveRunContext(context, cfg) call not found')
+        }
+
+        $assignmentPositions = New-Object 'System.Collections.Generic.List[int]'
+        foreach ($field in $requiredAssignments.Keys) {
+            $assignmentMatch = [regex]::Match($candidateSource, $requiredAssignments[$field])
+            if (-not $assignmentMatch.Success) {
+                $failureReasons.Add("missing cfg.$field assignment")
+                continue
+            }
+            $assignmentPositions.Add($assignmentMatch.Index)
+            if ($defaultConfigMatch.Success -and $assignmentMatch.Index -lt ($defaultConfigMatch.Index + $defaultConfigMatch.Length)) {
+                $failureReasons.Add("cfg.$field assignment precedes default_sage_configuration")
+            }
+            if ($saveRunContextIndex -ge 0 -and $assignmentMatch.Index -gt $saveRunContextIndex) {
+                $failureReasons.Add("cfg.$field assignment follows saveRunContext")
+            }
+        }
+
+        for ($index = 1; $index -lt $assignmentPositions.Count; $index++) {
+            if ($assignmentPositions[$index] -le $assignmentPositions[$index - 1]) {
+                $failureReasons.Add('identity assignments are not in sceneId, prnLabel, trackingChannel order')
+                break
+            }
+        }
+
+        ($failureReasons -join '; ') | Should Be ''
     }
 }
