@@ -1,5 +1,5 @@
 function result = run_nav_sage_pipeline_gpu_candidate(sceneId, prn, varargin)
-%RUN_NAV_SAGE_PIPELINE Navigation-symbol-aided multipath estimation.
+%RUN_NAV_SAGE_PIPELINE_GPU_CANDIDATE Navigation-symbol-aided multipath estimation.
 %
 % First-stage generic entry point for one scene, one GPS PRN, and one
 % explicitly selected GNSS-SDR tracking channel. This version intentionally
@@ -7,7 +7,7 @@ function result = run_nav_sage_pipeline_gpu_candidate(sceneId, prn, varargin)
 % configuration remains unchanged.
 %
 % Example:
-%   run_nav_sage_pipeline("F1023_V70_D0117_P4", 11, ...
+%   run_nav_sage_pipeline_gpu_candidate("F1023_V70_D0117_P4", 11, ...
 %       "TrackingChannel", 2)
 %
 % Processing stages:
