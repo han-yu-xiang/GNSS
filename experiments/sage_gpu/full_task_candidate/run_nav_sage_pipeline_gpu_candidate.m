@@ -1213,68 +1213,13 @@ function fit = fitAllOrders( ...
 observed = loadNavWipedFortyMs(row, rawFile, cfg);
 context = makeSignalContext( ...
     row.code_frequency_hz, cfg.samplesPer40Ms, cfg);
-referenceDoppler = dopplerSign * row.tracking_doppler_hz;
-
-seed = makePath(scanRow.main_delay_samples, ...
-    scanRow.main_doppler_hz);
-seed = refinePath(seed, observed, context, ...
-    cfg.mainDelayMinimumSamples, ...
-    cfg.mainDelayMaximumSamples, ...
-    referenceDoppler - cfg.mainDopplerHalfWidthHz, ...
-    referenceDoppler + cfg.mainDopplerHalfWidthHz, ...
-    cfg.delayStepSamples, cfg.localDelayHalfWidthSamples, ...
-    cfg.localDopplerStepHz, cfg.localDopplerHalfWidthHz);
-seed = solveAmplitudes(seed, observed, context);
-
-models = cell(cfg.maximumModelOrder, 1);
-models{1} = evaluateModel(seed, observed, context, ...
-    referenceDoppler, row.relative_doppler_bound_hz, cfg);
-
-for order = 2:cfg.maximumModelOrder
-    try
-        previousPaths = models{order - 1}.paths;
-        if isempty(previousPaths)
-            error("Previous model has no usable paths.");
-        end
-        residual = observed - synthesize(previousPaths, context);
-        newPath = initializeResidualPath(residual, ...
-            previousPaths, context, ...
-            row.relative_doppler_bound_hz, cfg);
-        initial = sortPaths([previousPaths, newPath]);
-        [paths, history] = runSage(initial, observed, context, ...
-            referenceDoppler, row.relative_doppler_bound_hz, cfg);
-        models{order} = evaluateModel(paths, observed, context, ...
-            referenceDoppler, row.relative_doppler_bound_hz, cfg);
-        models{order}.rssHistory = history;
-    catch exception
-        models{order} = invalidModel(order, exception.message);
-    end
+fitGpu = fitAllOrdersGpu( ...
+    row, scanRow, observed, context, dopplerSign, cfg);
+fit = gatherGpuFit(fitGpu);
+if isfield(fit, "seedTraceByOrder")
+    fit = rmfield(fit, "seedTraceByOrder");
 end
-
-selectedOrder = 1;
-for order = 2:cfg.maximumModelOrder
-    previous = models{selectedOrder};
-    current = models{order};
-    bicGain = previous.bic - current.bic;
-    rssGainPercent = 100 * (previous.rss - current.rss) ...
-        / max(previous.rss, eps);
-    if current.valid ...
-            && bicGain >= cfg.minimumSequentialBicGain ...
-            && rssGainPercent >= cfg.minimumIncrementalRssPercent
-        selectedOrder = order;
-    else
-        break;
-    end
-end
-
-fit = struct( ...
-    "windowId", row.window_id, ...
-    "catalogIndex", row.window_id, ...
-    "recordingTimeS", row.recording_time_s, ...
-    "towS", row.tow_s, ...
-    "models", {models}, ...
-    "selectedOrder", selectedOrder, ...
-    "errorMessage", "");
+assertCpuResidentFrozenFit(fit);
 end
 
 
@@ -2266,4 +2211,318 @@ record = struct( ...
     "excess_delay_chips", nan, "doppler_hz", nan, ...
     "doppler_offset_hz", nan, ...
     "mean_relative_power_db", nan);
+end
+
+
+function fit = fitAllOrdersGpu(row, scanRow, observed, context, dopplerSign, cfg)
+referenceDoppler = dopplerSign * row.tracking_doppler_hz;
+seed = makePath(scanRow.main_delay_samples, scanRow.main_doppler_hz);
+seed = refinePathGpu(seed, observed, context, ...
+    cfg.mainDelayMinimumSamples, cfg.mainDelayMaximumSamples, ...
+    referenceDoppler - cfg.mainDopplerHalfWidthHz, ...
+    referenceDoppler + cfg.mainDopplerHalfWidthHz, ...
+    cfg.delayStepSamples, cfg.localDelayHalfWidthSamples, ...
+    cfg.localDopplerStepHz, cfg.localDopplerHalfWidthHz);
+seed = solveAmplitudesGpu(seed, observed, context);
+
+models = cell(cfg.maximumModelOrder, 1);
+seedTraceByOrder = cell(cfg.maximumModelOrder, 1);
+models{1} = evaluateModelGpu(seed, observed, context, ...
+    referenceDoppler, row.relative_doppler_bound_hz, cfg);
+for order = 2:cfg.maximumModelOrder
+    try
+        previousPaths = models{order - 1}.paths;
+        if isempty(previousPaths)
+            error("Previous model has no usable paths.");
+        end
+        residual = observed - synthesizeGpu(previousPaths, context);
+        [newPath, seedTraceByOrder{order}] = initializeResidualPathGpu(residual, previousPaths, ...
+            context, row.relative_doppler_bound_hz, cfg);
+        initial = sortPaths([previousPaths, newPath]);
+        initial = ensureGpuPathState(initial);
+        [paths, history] = runSageGpu(initial, observed, context, ...
+            referenceDoppler, row.relative_doppler_bound_hz, cfg);
+        models{order} = evaluateModelGpu(paths, observed, context, ...
+            referenceDoppler, row.relative_doppler_bound_hz, cfg);
+        models{order}.rssHistory = history;
+    catch exception
+        models{order} = invalidModel(order, exception.message);
+    end
+end
+
+selectedOrder = 1;
+for order = 2:cfg.maximumModelOrder
+    previous = models{selectedOrder};
+    current = models{order};
+    bicGain = previous.bic - current.bic;
+    rssGainPercent = 100 * (previous.rss - current.rss) ...
+        / max(previous.rss, eps);
+    if current.valid ...
+            && bicGain >= cfg.minimumSequentialBicGain ...
+            && rssGainPercent >= cfg.minimumIncrementalRssPercent
+        selectedOrder = order;
+    else
+        break;
+    end
+end
+fit = struct( ...
+    "windowId", row.window_id, ...
+    "catalogIndex", row.window_id, ...
+    "recordingTimeS", row.recording_time_s, ...
+    "towS", row.tow_s, ...
+    "models", {models}, ...
+    "selectedOrder", selectedOrder, ...
+    "seedTraceByOrder", {seedTraceByOrder}, ...
+    "errorMessage", "");
+end
+
+function [newPath, seedTrace] = initializeResidualPathGpu(residual, existing, context, dopplerBound, cfg)
+earliestDelay = min([existing.delaySamples]);
+delayMinimum = ceil(earliestDelay + cfg.minimumPathSeparationSamples);
+delayMaximum = floor(earliestDelay + cfg.maximumExcessDelaySamples);
+delays = delayMinimum:delayMaximum;
+directDoppler = existing(1).dopplerHz;
+dopplers = directDoppler + makeGrid( ...
+    -dopplerBound, dopplerBound, cfg.scanResidualDopplerStepHz);
+[~, metricGpu] = gridSearchPathGpu(residual, context, delays, dopplers);
+[candidate, seedTrace] = selectSeparatedResidualCandidate( ...
+    delays, dopplers, gather(metricGpu), ...
+    [existing.delaySamples], cfg.minimumPathSeparationSamples);
+newPath = makePath(candidate.delaySamples, candidate.dopplerHz);
+newPath.score = candidate.score;
+end
+
+function [paths, history] = runSageGpu(paths, observed, context, referenceDoppler, dopplerBound, cfg)
+paths = ensureGpuPathState(paths);
+history = nan(cfg.maximumSageIterations, 1);
+for iteration = 1:cfg.maximumSageIterations
+    for pathIndex = 1:numel(paths)
+        otherIndices = setdiff(1:numel(paths), pathIndex);
+        hidden = observed;
+        if ~isempty(otherIndices)
+            hidden = hidden - synthesizeGpu(paths(otherIndices), context);
+        end
+        candidate = refinePathGpu(paths(pathIndex), hidden, context, ...
+            cfg.mainDelayMinimumSamples, ...
+            cfg.mainDelayMaximumSamples + cfg.maximumExcessDelaySamples, ...
+            referenceDoppler - dopplerBound, ...
+            referenceDoppler + dopplerBound, ...
+            cfg.delayStepSamples, cfg.localDelayHalfWidthSamples, ...
+            cfg.localDopplerStepHz, cfg.localDopplerHalfWidthHz);
+        if isempty(otherIndices) ...
+                || all(abs(candidate.delaySamples ...
+                    - [paths(otherIndices).delaySamples]) ...
+                    >= cfg.minimumPathSeparationSamples)
+            paths(pathIndex) = candidate;
+        end
+    end
+    paths = solveAmplitudesGpu(sortPaths(paths), observed, context);
+    history(iteration) = residualRssGpu(observed, paths, context);
+    if iteration > 1 ...
+            && abs(history(iteration - 1) - history(iteration)) ...
+                / max(history(iteration - 1), eps) < cfg.sageTolerance
+        history = history(1:iteration);
+        return;
+    end
+end
+end
+
+function model = evaluateModelGpu(paths, observed, context, referenceDoppler, dopplerBound, cfg)
+paths = solveAmplitudesGpu(sortPaths(paths), observed, context);
+rss = residualRssGpu(observed, paths, context);
+n = numel(observed);
+order = numel(paths);
+parameterCount = 4 * order + 1;
+bic = 2 * n * log(max(rss / n, realmin)) + parameterCount * log(2 * n);
+alpha = pathAlphaGpu(paths);
+powers = abs(alpha).^2;
+relativePowerDb = gather(10 * log10( ...
+    max(powers, realmin) / max(powers(1), realmin)));
+
+if order == 1
+    minimumSeparation = nan;
+    minimumMultipathPower = nan;
+    maximumRelativeDoppler = 0;
+else
+    minimumSeparation = min(diff([paths.delaySamples]));
+    minimumMultipathPower = min(relativePowerDb(2:end));
+    maximumRelativeDoppler = max(abs( ...
+        [paths(2:end).dopplerHz] - paths(1).dopplerHz));
+end
+coherence = replicaCoherenceGpu(paths, context);
+valid = all(isfinite([rss, bic])) ...
+    && abs(paths(1).dopplerHz - referenceDoppler) ...
+        <= cfg.mainDopplerHalfWidthHz + dopplerBound;
+if order > 1
+    valid = valid ...
+        && minimumSeparation >= cfg.minimumPathSeparationSamples - 1e-6 ...
+        && minimumMultipathPower >= cfg.minimumPathPowerDb ...
+        && maximumRelativeDoppler <= dopplerBound + 1e-6 ...
+        && coherence <= cfg.maximumPathCoherence;
+end
+model = struct( ...
+    "order", order, "paths", paths, ...
+    "rss", rss, "bic", bic, "valid", valid, ...
+    "relativePowerDb", relativePowerDb, ...
+    "minimumSeparationSamples", minimumSeparation, ...
+    "minimumMultipathPowerDb", minimumMultipathPower, ...
+    "maximumRelativeDopplerHz", maximumRelativeDoppler, ...
+    "maximumCoherence", coherence, ...
+    "rssHistory", []);
+end
+
+function [bestPath, metric] = gridSearchPathGpu(observed, context, delayCandidates, dopplerCandidates)
+delayCandidates = round(delayCandidates(:));
+dopplerCandidates = dopplerCandidates(:).';
+assert(~isempty(delayCandidates) && ~isempty(dopplerCandidates), ...
+    "Empty delay or Doppler search grid.");
+indices = mod(delayCandidates, context.n) + 1;
+dopplerGpu = gpuArray(dopplerCandidates);
+wiped = observed .* exp(-1j * 2 * pi ...
+    * (context.timeSeconds .* dopplerGpu));
+correlation = ifft(fft(wiped, [], 1) ...
+    .* conj(context.localCodeFft), [], 1);
+metric = abs(correlation(indices, :)).^2 / context.n;
+[score, linearIndex] = max(metric(:));
+score = gpuProbeToCpu(score);
+linearIndex = round(gpuProbeToCpu(linearIndex));
+[delayIndex, dopplerIndex] = ind2sub(size(metric), linearIndex);
+bestPath = makePath(delayCandidates(delayIndex), dopplerCandidates(dopplerIndex));
+bestPath.score = score;
+end
+
+function path = refinePathGpu(path, observed, context, delayMinimum, delayMaximum, ...
+    dopplerMinimum, dopplerMaximum, delayStep, delayHalfWidth, dopplerStep, dopplerHalfWidth)
+for iteration = 1:2
+    delayGrid = makeGrid( ...
+        max(delayMinimum, path.delaySamples - delayHalfWidth), ...
+        min(delayMaximum, path.delaySamples + delayHalfWidth), delayStep);
+    scores = scoreReplicaBatchGpu(delayGrid, ...
+        repmat(path.dopplerHz, size(delayGrid)), observed, context);
+    [score, best] = max(scores);
+    path.delaySamples = delayGrid(round(gpuProbeToCpu(best)));
+
+    dopplerGrid = makeGrid( ...
+        max(dopplerMinimum, path.dopplerHz - dopplerHalfWidth), ...
+        min(dopplerMaximum, path.dopplerHz + dopplerHalfWidth), dopplerStep);
+    scores = scoreReplicaBatchGpu( ...
+        repmat(path.delaySamples, size(dopplerGrid)), dopplerGrid, observed, context);
+    [score, best] = max(scores);
+    path.score = gpuProbeToCpu(score);
+    path.dopplerHz = dopplerGrid(round(gpuProbeToCpu(best)));
+end
+end
+
+function scores = scoreReplicaBatchGpu(delayCandidates, dopplerCandidates, observed, context)
+replicas = makeReplicaBatchGpu(delayCandidates, dopplerCandidates, context);
+products = replicas' * observed;
+gram = replicas' * replicas;
+energy = real(diag(gram));
+scores = abs(products).^2 ./ max(energy, eps);
+end
+
+function replicas = makeReplicaBatchGpu(delaySamples, dopplerHz, context)
+delays = double(delaySamples(:).');
+dopplers = double(dopplerHz(:).');
+if isscalar(delays) && numel(dopplers) > 1
+    delays = repmat(delays, size(dopplers));
+elseif isscalar(dopplers) && numel(delays) > 1
+    dopplers = repmat(dopplers, size(delays));
+end
+assert(numel(delays) == numel(dopplers), ...
+    "Delay/Doppler candidate vectors must be scalar-expanded or paired.");
+delays = gpuArray(delays);
+dopplers = gpuArray(dopplers);
+phase = exp(-1j * 2 * pi ...
+    * (context.signedBins .* delays) / context.n);
+shiftedCode = ifft(context.localCodeFft .* phase, [], 1);
+replicas = shiftedCode .* exp(1j * 2 * pi ...
+    * (context.timeSeconds .* dopplers));
+end
+
+function replicas = buildReplicasGpu(paths, context)
+delays = [paths.delaySamples];
+dopplers = [paths.dopplerHz];
+replicas = makeReplicaBatchGpu(delays, dopplers, context);
+end
+
+function paths = solveAmplitudesGpu(paths, observed, context)
+replicas = buildReplicasGpu(paths, context);
+alpha = replicas \ observed;
+gram = replicas' * replicas;
+energy = real(diag(gram));
+scores = abs(replicas' * observed).^2 ./ max(energy, eps);
+for index = 1:numel(paths)
+    paths(index).alpha = alpha(index);
+    paths(index).score = scores(index);
+end
+end
+
+function signal = synthesizeGpu(paths, context)
+paths = ensureGpuPathState(paths);
+replicas = buildReplicasGpu(paths, context);
+signal = replicas * pathAlphaGpu(paths);
+end
+
+function rss = residualRssGpu(observed, paths, context)
+residual = observed - synthesizeGpu(paths, context);
+rss = gpuProbeToCpu(real(residual' * residual));
+end
+
+function coherence = replicaCoherenceGpu(paths, context)
+if numel(paths) < 2
+    coherence = 0;
+    return;
+end
+replicas = buildReplicasGpu(paths, context);
+replicas = replicas ./ max(sqrt(sum(abs(replicas).^2, 1)), eps);
+matrix = abs(replicas' * replicas);
+matrix(1:size(matrix, 1) + 1:end) = 0;
+coherence = gpuProbeToCpu(max(matrix(:)));
+end
+
+function paths = ensureGpuPathState(paths)
+for index = 1:numel(paths)
+    if ~isa(paths(index).alpha, "gpuArray")
+        paths(index).alpha = gpuArray(paths(index).alpha);
+    end
+    if ~isa(paths(index).score, "gpuArray")
+        paths(index).score = gpuArray(paths(index).score);
+    end
+end
+end
+
+function alpha = pathAlphaGpu(paths)
+alphaCells = cell(1, numel(paths));
+for index = 1:numel(paths)
+    alphaCells{index} = paths(index).alpha;
+end
+alpha = [alphaCells{:}].';
+if ~isa(alpha, "gpuArray")
+    alpha = gpuArray(alpha);
+end
+end
+
+function fitCpu = gatherGpuFit(fitGpu)
+fitCpu = fitGpu;
+for order = 1:numel(fitGpu.models)
+    model = fitGpu.models{order};
+    if isempty(model.paths)
+        fitCpu.models{order} = model;
+        continue;
+    end
+    paths = model.paths;
+    for index = 1:numel(paths)
+        paths(index).alpha = gpuProbeToCpu(paths(index).alpha);
+        paths(index).score = gpuProbeToCpu(paths(index).score);
+    end
+    model.paths = paths;
+    fitCpu.models{order} = model;
+end
+end
+
+function value = gpuProbeToCpu(value)
+if isa(value, "gpuArray")
+    value = gather(value);
+end
 end

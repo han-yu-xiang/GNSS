@@ -30,6 +30,13 @@ Describe 'Full-task candidate Frozen source boundary' {
         $rejected | Should Be $true
     }
 
+    It 'pins the qualified GPU helper and shared selector source identities' {
+        $identity = Get-QualifiedGpuSourceIdentity
+        $identity.ProbeSha256 | Should Be 'bfe56ad02c99240257fddd212ba43ee5606a81740b3dda716c5947c433cbfa88'
+        $identity.SelectorSha256 | Should Be 'a40c6459e66a384e85053589b270c5d2e112363872153fbf46da5c56fd4bb1f5'
+        $identity.Match | Should Be $true
+    }
+
     It 'keeps the immutable Frozen function bodies and runStage2 byte-identical' {
         $audit = Get-FullTaskGpuSourceBoundaryAudit -AuthorityPath $script:AuthorityPath -CandidatePath $script:CandidatePath
         $audit.Status | Should Be 'PASS'
@@ -43,6 +50,25 @@ Describe 'Full-task candidate Frozen source boundary' {
 
         $runStage2 = @($audit.Rows | Where-Object { $_.Function -eq 'runStage2' })[0]
         $runStage2.ByteIdentical | Should Be $true
+    }
+
+    It 'limits the Stage2 replacement to GPU fit computation, CPU gather, and the pre-return contract check' {
+        $audit = Get-FullTaskGpuSourceBoundaryAudit -AuthorityPath $script:AuthorityPath -CandidatePath $script:CandidatePath
+        $fitRow = @($audit.Rows | Where-Object { $_.Function -eq 'fitAllOrders' })[0]
+        $fitRow.Category | Should Be 'GPU_STAGE2_COMPUTATIONAL_DIFFERENCE'
+        $fitRow.Status | Should Be 'ALLOWED_DIFF'
+        $audit.UnexpectedDiffCount | Should Be 0
+
+        $candidate = Get-MatlabFunctionBlocks -LiteralPath $script:CandidatePath
+        $fit = @($candidate | Where-Object { $_.Name -eq 'fitAllOrders' })[0]
+        $fit.Normalized | Should Match '(?s)function\s+fit\s*=\s*fitAllOrders\s*\(\s*\.\.\.\s*row,\s*scanRow,\s*rawFile,\s*dopplerSign,\s*cfg\s*\)'
+        $sequence = @('loadNavWipedFortyMs', 'makeSignalContext', 'fitAllOrdersGpu', 'gatherGpuFit', 'assertCpuResidentFrozenFit')
+        $position = -1
+        foreach ($name in $sequence) {
+            $nextPosition = $fit.Normalized.IndexOf($name, $position + 1)
+            ($nextPosition -gt $position) | Should Be $true
+            $position = $nextPosition
+        }
     }
 
     It 'fails closed on an injected unclassified function change' {

@@ -1,5 +1,21 @@
 $script:FrozenAuthorityPath = 'E:/GNSS_Multipath_Project/scripts/sage_pipeline/run_nav_sage_pipeline.m'
 $script:FrozenAuthoritySha256 = 'bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c'
+$script:CandidateProjectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../..'))
+$script:QualifiedGpuProbePath = Join-Path $script:CandidateProjectRoot 'experiments/sage_gpu/stage2_window_173_gpu_probe.m'
+$script:QualifiedGpuProbeSha256 = 'bfe56ad02c99240257fddd212ba43ee5606a81740b3dda716c5947c433cbfa88'
+$script:QualifiedSelectorPath = Join-Path $script:CandidateProjectRoot 'experiments/sage_gpu/selectSeparatedResidualCandidate.m'
+$script:QualifiedSelectorSha256 = 'a40c6459e66a384e85053589b270c5d2e112363872153fbf46da5c56fd4bb1f5'
+$script:CandidateChangedFunctionCategories = @{
+    fitAllOrders = 'GPU_STAGE2_COMPUTATIONAL_DIFFERENCE'
+}
+$script:QualifiedGpuCandidateFunctions = @(
+    'fitAllOrdersGpu', 'initializeResidualPathGpu', 'runSageGpu',
+    'evaluateModelGpu', 'gridSearchPathGpu', 'refinePathGpu',
+    'scoreReplicaBatchGpu', 'makeReplicaBatchGpu', 'buildReplicasGpu',
+    'solveAmplitudesGpu', 'synthesizeGpu', 'residualRssGpu',
+    'replicaCoherenceGpu', 'ensureGpuPathState', 'pathAlphaGpu',
+    'gatherGpuFit', 'gpuProbeToCpu'
+)
 $script:FrozenImmutableFunctionSha256 = @{
     runStage2 = '96dc162a17cf87dde5300ccd902a8a08fa6c0c10643c0d7b446a214ff1eb8f8e'
     flattenStage2 = '22c15b598ff84df379710b2ec9ce4d054855fb5a2fc4786c4b7d734da4b16d2c'
@@ -46,6 +62,39 @@ function Assert-FrozenSourceIdentity {
         throw "FROZEN_SOURCE_PATH_MISMATCH actual=$resolvedPath expected=$resolvedAuthority"
     }
 
+    return $identity
+}
+
+function Get-QualifiedGpuSourceIdentity {
+    [CmdletBinding()]
+    param()
+
+    foreach ($path in @($script:QualifiedGpuProbePath, $script:QualifiedSelectorPath)) {
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+            throw "QUALIFIED_GPU_SOURCE_NOT_FOUND path=$path"
+        }
+    }
+
+    $probeHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $script:QualifiedGpuProbePath).Hash.ToLowerInvariant()
+    $selectorHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $script:QualifiedSelectorPath).Hash.ToLowerInvariant()
+    [pscustomobject]@{
+        ProbePath     = $script:QualifiedGpuProbePath
+        ProbeSha256   = $probeHash
+        SelectorPath  = $script:QualifiedSelectorPath
+        SelectorSha256 = $selectorHash
+        Match         = ($probeHash -ceq $script:QualifiedGpuProbeSha256 -and
+            $selectorHash -ceq $script:QualifiedSelectorSha256)
+    }
+}
+
+function Assert-QualifiedGpuSourceIdentity {
+    [CmdletBinding()]
+    param()
+
+    $identity = Get-QualifiedGpuSourceIdentity
+    if (-not $identity.Match) {
+        throw "QUALIFIED_GPU_SOURCE_IDENTITY_MISMATCH probe=$($identity.ProbeSha256) selector=$($identity.SelectorSha256)"
+    }
     return $identity
 }
 
@@ -124,10 +173,12 @@ function Get-FullTaskGpuSourceBoundaryAudit {
     )
 
     $authorityIdentity = Assert-FrozenSourceIdentity -Path $AuthorityPath
+    $qualifiedIdentity = Assert-QualifiedGpuSourceIdentity
     $candidateFullPath = (Resolve-Path -LiteralPath $CandidatePath).Path
     $candidateHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $candidateFullPath).Hash.ToLowerInvariant()
     $authorityBlocks = @(Get-MatlabFunctionBlocks -LiteralPath $AuthorityPath)
     $candidateBlocks = @(Get-MatlabFunctionBlocks -LiteralPath $candidateFullPath)
+    $qualifiedBlocks = @(Get-MatlabFunctionBlocks -LiteralPath $qualifiedIdentity.ProbePath)
     $rows = New-Object 'System.Collections.Generic.List[object]'
 
     for ($index = 0; $index -lt $authorityBlocks.Count; $index++) {
@@ -173,6 +224,11 @@ function Get-FullTaskGpuSourceBoundaryAudit {
             $status = 'UNEXPECTED_DIFF'
             $reason = 'PINNED_FROZEN_FUNCTION_CHANGED'
         }
+        elseif ($script:CandidateChangedFunctionCategories.ContainsKey($authorityBlock.Name)) {
+            $category = $script:CandidateChangedFunctionCategories[$authorityBlock.Name]
+            $status = 'ALLOWED_DIFF'
+            $reason = 'EXPLICITLY_SCOPED_CANDIDATE_STAGE2_SUBSTITUTION'
+        }
         elseif ($index -eq 0) {
             $renamedCandidate = $candidateBlock.RawText.Replace('run_nav_sage_pipeline_gpu_candidate', 'run_nav_sage_pipeline')
             if ($renamedCandidate -ceq $authorityBlock.RawText) {
@@ -201,12 +257,25 @@ function Get-FullTaskGpuSourceBoundaryAudit {
 
     for ($index = $authorityBlocks.Count; $index -lt $candidateBlocks.Count; $index++) {
         $candidateBlock = $candidateBlocks[$index]
-        $rows.Add([pscustomobject]@{
-            Function = $candidateBlock.Name; AuthoritySha256 = ''; CandidateSha256 = $candidateBlock.Sha256
-            Category = 'UNEXPECTED_DIFF'; Status = 'UNEXPECTED_DIFF'; ByteIdentical = $false
-            NormalizedExact = $false; AuthorityStartLine = $null; CandidateStartLine = $candidateBlock.StartLine
-            Reason = 'UNAPPROVED_CANDIDATE_ONLY_FUNCTION'
-        })
+        $qualifiedBlock = @($qualifiedBlocks | Where-Object { $_.Name -eq $candidateBlock.Name }) | Select-Object -First 1
+        if ($script:QualifiedGpuCandidateFunctions -contains $candidateBlock.Name -and
+                $null -ne $qualifiedBlock -and
+                $candidateBlock.Normalized -ceq $qualifiedBlock.Normalized) {
+            $rows.Add([pscustomobject]@{
+                Function = $candidateBlock.Name; AuthoritySha256 = ''; CandidateSha256 = $candidateBlock.Sha256
+                Category = 'GPU_STAGE2_COMPUTATIONAL_DIFFERENCE'; Status = 'ALLOWED_DIFF'; ByteIdentical = $false
+                NormalizedExact = $true; AuthorityStartLine = $null; CandidateStartLine = $candidateBlock.StartLine
+                Reason = 'EXACT_PINNED_QUALIFIED_GPU_FUNCTION_REUSED'
+            })
+        }
+        else {
+            $rows.Add([pscustomobject]@{
+                Function = $candidateBlock.Name; AuthoritySha256 = ''; CandidateSha256 = $candidateBlock.Sha256
+                Category = 'UNEXPECTED_DIFF'; Status = 'UNEXPECTED_DIFF'; ByteIdentical = $false
+                NormalizedExact = $false; AuthorityStartLine = $null; CandidateStartLine = $candidateBlock.StartLine
+                Reason = 'UNAPPROVED_OR_MODIFIED_CANDIDATE_ONLY_FUNCTION'
+            })
+        }
     }
 
     $rowArray = $rows.ToArray()
