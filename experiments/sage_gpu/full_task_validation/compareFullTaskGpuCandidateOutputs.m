@@ -465,15 +465,22 @@ for fitIndex = 1:numel(referenceFits)
             'valid','relativePowerDb'}, 'STAGE2_REFERENCE_MODEL');
         validateFields(candidateModel, {'order','paths','rss','bic', ...
             'valid','relativePowerDb'}, 'STAGE2_CANDIDATE_MODEL');
+        referencePathCount = numel(referenceModel.paths);
+        candidatePathCount = numel(candidateModel.paths);
+        if referencePathCount ~= candidatePathCount
+            comparisonFailure(sprintf('STAGE2_PATH_COUNT_MISMATCH_L%d', order));
+        end
         if referenceModel.order ~= order || candidateModel.order ~= order || ...
                 ~isequaln(referenceModel.valid, candidateModel.valid)
             comparisonFailure(sprintf('STAGE2_MODEL_VALIDITY_OR_ORDER_MISMATCH_L%d', order));
         end
         cpuValidity(order) = logical(referenceModel.valid);
         gpuValidity(order) = logical(candidateModel.valid);
-        if numel(referenceModel.paths) ~= numel(candidateModel.paths) || ...
-                numel(referenceModel.paths) ~= order
-            comparisonFailure(sprintf('STAGE2_PATH_COUNT_MISMATCH_L%d', order));
+        emptyInvalidModel = referencePathCount == 0 && ...
+            ~logical(referenceModel.valid);
+        if referencePathCount ~= order && ~emptyInvalidModel
+            comparisonFailure(sprintf( ...
+                'STAGE2_MODEL_PATH_STRUCTURE_INVALID_L%d', order));
         end
         if numel(referenceModel.relativePowerDb) ~= order || ...
                 numel(candidateModel.relativePowerDb) ~= order
@@ -493,7 +500,7 @@ for fitIndex = 1:numel(referenceFits)
             candidateModel.maximumRelativeDopplerHz);
         oneWindow = accumulateNumericDiff(oneWindow, 'MaximumCoherence', ...
             referenceModel.maximumCoherence, candidateModel.maximumCoherence);
-        for pathIndex = 1:order
+        for pathIndex = 1:referencePathCount
             referencePath = referenceModel.paths(pathIndex);
             candidatePath = candidateModel.paths(pathIndex);
             validateFields(referencePath, {'delaySamples','dopplerHz', ...

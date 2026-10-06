@@ -65,6 +65,41 @@ verifyTrue(testCase, isnan(replay.Transitions(2).BicGain));
 verifyTrue(testCase, isnan(replay.Transitions(3).RssGainPercent));
 end
 
+function testMatchingInvalidModelWithNoPathsPassesAndStopsReplay(testCase)
+pair = makeFixturePair(testCase);
+setL3ModelOutputState(pair.FormalDir, 0, 'CPU invalid-model detail');
+setL3ModelOutputState(pair.CandidateDir, 0, 'GPU invalid-model detail');
+
+comparison = runFixtureComparison(pair);
+
+verifyTrue(testCase, comparison.Passed);
+verifyEqual(testCase, comparison.Stage2.Status, 'PASS');
+window = comparison.Stage2.WindowRows{1};
+verifyTrue(testCase, window.CpuTransitions(2).Checked);
+verifyFalse(testCase, window.CpuTransitions(2).Accepted);
+verifyFalse(testCase, window.CpuTransitions(3).Checked);
+verifyTrue(testCase, window.GpuTransitions(2).Checked);
+verifyFalse(testCase, window.GpuTransitions(2).Accepted);
+verifyFalse(testCase, window.GpuTransitions(3).Checked);
+end
+
+function testInvalidModelCpuGpuPathCountMismatchFailsClosed(testCase)
+pair = makeFixturePair(testCase);
+setL3ModelOutputState(pair.FormalDir, 0, 'CPU invalid-model detail');
+
+verifyComparisonFailureReason(testCase, pair, ...
+    'STAGE2_PATH_COUNT_MISMATCH_L3');
+end
+
+function testInvalidModelPartialPathStructureFailsClosed(testCase)
+pair = makeFixturePair(testCase);
+setL3ModelOutputState(pair.FormalDir, 1, 'CPU partial model');
+setL3ModelOutputState(pair.CandidateDir, 1, 'GPU partial model');
+
+verifyComparisonFailureReason(testCase, pair, ...
+    'STAGE2_MODEL_PATH_STRUCTURE_INVALID_L3');
+end
+
 function testPassingComparisonPersistsOneTaskResultWithoutTaskBPlaceholder(testCase)
 pair = makeFixturePair(testCase, 'TaskA');
 evidenceDirectory = makeEvidenceDirectory(testCase);
@@ -260,6 +295,57 @@ cleanup = onCleanup(@() cd(previousDirectory)); %#ok<NASGU>
 cd(validationDir);
 eval(fileread(scriptPath));
 comparison = candidateComparison;
+end
+
+function setL3ModelOutputState(outputDir, pathCount, errorMessage)
+stage2Path = fullfile(outputDir, 'stage2_nav_sage_L1_L4.mat');
+stage2Data = load(stage2Path);
+fit = stage2Data.stage2Fits{1};
+model = fit.models{3};
+model.paths = model.paths(1:pathCount);
+model.valid = false;
+if pathCount == 0
+    model.rss = inf;
+    model.bic = inf;
+    model.relativePowerDb = nan(1, 3);
+    model.minimumSeparationSamples = nan;
+    model.minimumMultipathPowerDb = nan;
+    model.maximumRelativeDopplerHz = nan;
+    model.maximumCoherence = nan;
+end
+model.errorMessage = string(errorMessage);
+fit.models{3} = model;
+stage2Data.stage2Fits{1} = fit;
+modelRow = stage2Data.modelTable.model_order == 3;
+if pathCount == 0
+    stage2Data.modelTable.rss(modelRow) = inf;
+    stage2Data.modelTable.bic(modelRow) = inf;
+end
+save(stage2Path, '-struct', 'stage2Data');
+writetable(stage2Data.modelTable, ...
+    fullfile(outputDir, 'stage2_model_orders.csv'));
+
+progressPath = fullfile(outputDir, 'stage2_nav_progress.mat');
+progressData = load(progressPath);
+progressData.fits{1}.models{3} = model;
+save(progressPath, '-struct', 'progressData');
+end
+
+function verifyComparisonFailureReason(testCase, pair, expectedReason)
+didFail = false;
+failureIdentifier = '';
+failureMessage = '';
+try
+    runFixtureComparison(pair);
+catch exception
+    didFail = true;
+    failureIdentifier = exception.identifier;
+    failureMessage = exception.message;
+end
+verifyTrue(testCase, didFail);
+verifyEqual(testCase, failureIdentifier, ...
+    'FullTaskGpuCandidate:COMPARISON_FAILED');
+verifyTrue(testCase, contains(failureMessage, expectedReason));
 end
 
 function pair = makeFixturePair(testCase, taskName)
