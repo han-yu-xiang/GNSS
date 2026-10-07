@@ -2534,6 +2534,8 @@ function fitCpu = gatherGpuFit(fitGpu)
 fitCpu = fitGpu;
 for order = 1:numel(fitGpu.models)
     model = fitGpu.models{order};
+    model.relativePowerDb = reshape( ...
+        gpuProbeToCpu(model.relativePowerDb), 1, []);
     if isempty(model.paths)
         fitCpu.models{order} = model;
         continue;

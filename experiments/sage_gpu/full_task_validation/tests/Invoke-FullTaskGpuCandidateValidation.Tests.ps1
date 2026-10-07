@@ -3,6 +3,7 @@ $script:DriverPath = Join-Path $script:ProjectRoot 'experiments/sage_gpu/full_ta
 $script:AuthorityPath = 'E:/GNSS_Multipath_Project/scripts/sage_pipeline/run_nav_sage_pipeline.m'
 $script:CandidatePath = Join-Path $script:ProjectRoot 'experiments/sage_gpu/full_task_candidate/run_nav_sage_pipeline_gpu_candidate.m'
 $script:ExpectedFrozenSha = 'bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c'
+$script:ApprovedGatherGpuFitFunctionSha256 = 'e888255d30e77a5e1231f44e3d07b566df3fa74d55358d03b4732791bcc45571'
 
 function New-FormalRunContextHashtableFixture {
     $json = @'
@@ -83,6 +84,23 @@ Describe 'Full-task candidate Frozen source boundary' {
             $nextPosition = $fit.Normalized.IndexOf($name, $position + 1)
             ($nextPosition -gt $position) | Should Be $true
             $position = $nextPosition
+        }
+    }
+
+    It 'restores relativePowerDb to a CPU row vector before every Frozen fit assignment' {
+        $candidate = Get-MatlabFunctionBlocks -LiteralPath $script:CandidatePath
+        $gather = @($candidate | Where-Object { $_.Name -eq 'gatherGpuFit' })[0]
+        $normalization = [regex]::Match(
+            $gather.RawText,
+            '(?s)model\.relativePowerDb\s*=\s*reshape\(\s*\.\.\.\s*gpuProbeToCpu\(model\.relativePowerDb\)\s*,\s*1\s*,\s*\[\]\s*\)\s*;')
+        $assignments = [regex]::Matches(
+            $gather.RawText,
+            'fitCpu\.models\{order\}\s*=\s*model\s*;')
+
+        $normalization.Success | Should Be $true
+        $assignments.Count | Should Be 2
+        foreach ($assignment in $assignments) {
+            ($normalization.Index -lt $assignment.Index) | Should Be $true
         }
     }
 
@@ -410,5 +428,72 @@ Describe 'Candidate cfg Frozen identity schema regression' {
         }
 
         ($failureReasons -join '; ') | Should Be ''
+    }
+}
+
+Describe 'Candidate Frozen output boundary adapter exact source pin' {
+    It 'blocks gatherGpuFit when its exact function hash is not pinned' {
+        $oldPins = $script:CandidateFrozenBoundaryAdapterFunctionSha256
+        try {
+            $script:CandidateFrozenBoundaryAdapterFunctionSha256 = @{}
+            $audit = Get-FullTaskGpuSourceBoundaryAudit -AuthorityPath $script:AuthorityPath -CandidatePath $script:CandidatePath
+            $row = @($audit.Rows | Where-Object { $_.Function -eq 'gatherGpuFit' })[0]
+
+            $row.Status | Should Be 'UNEXPECTED_DIFF'
+            $row.Reason | Should Be 'UNAPPROVED_OR_MODIFIED_CANDIDATE_ONLY_FUNCTION'
+        }
+        finally {
+            $script:CandidateFrozenBoundaryAdapterFunctionSha256 = $oldPins
+        }
+    }
+
+    It 'allows only the approved gatherGpuFit function-block SHA as a Frozen output boundary adapter' {
+        $blocks = @(Get-MatlabFunctionBlocks -LiteralPath $script:CandidatePath)
+        $gather = @($blocks | Where-Object { $_.Name -eq 'gatherGpuFit' })[0]
+        $oldPins = $script:CandidateFrozenBoundaryAdapterFunctionSha256
+        try {
+            $gather.Sha256 | Should Be $script:ApprovedGatherGpuFitFunctionSha256
+            $script:CandidateFrozenBoundaryAdapterFunctionSha256 = @{
+                gatherGpuFit = $script:ApprovedGatherGpuFitFunctionSha256
+            }
+            $audit = Get-FullTaskGpuSourceBoundaryAudit -AuthorityPath $script:AuthorityPath -CandidatePath $script:CandidatePath
+            $row = @($audit.Rows | Where-Object { $_.Function -eq 'gatherGpuFit' })[0]
+
+            $row.Category | Should Be 'FROZEN_OUTPUT_BOUNDARY_ADAPTER_DIFF'
+            $row.Status | Should Be 'ALLOWED_DIFF'
+            $row.Reason | Should Be 'EXACT_PINNED_FROZEN_OUTPUT_BOUNDARY_ADAPTER'
+        }
+        finally {
+            $script:CandidateFrozenBoundaryAdapterFunctionSha256 = $oldPins
+        }
+    }
+
+    It 'blocks any gatherGpuFit edit that no longer matches its approved function hash' {
+        $temporaryCandidate = Join-Path ([IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString('N') + '.m')
+        $oldPins = $script:CandidateFrozenBoundaryAdapterFunctionSha256
+        try {
+            Copy-Item -LiteralPath $script:CandidatePath -Destination $temporaryCandidate
+            $source = [IO.File]::ReadAllText($temporaryCandidate)
+            $mutated = $source.Replace(
+                '    model.relativePowerDb = reshape( ...',
+                "    % pin mismatch`r`n    model.relativePowerDb = reshape( ...")
+            ($mutated -ne $source) | Should Be $true
+            [IO.File]::WriteAllText($temporaryCandidate, $mutated, (New-Object Text.UTF8Encoding($false)))
+            $script:CandidateFrozenBoundaryAdapterFunctionSha256 = @{
+                gatherGpuFit = $script:ApprovedGatherGpuFitFunctionSha256
+            }
+
+            $audit = Get-FullTaskGpuSourceBoundaryAudit -AuthorityPath $script:AuthorityPath -CandidatePath $temporaryCandidate
+            $row = @($audit.Rows | Where-Object { $_.Function -eq 'gatherGpuFit' })[0]
+
+            $row.Status | Should Be 'UNEXPECTED_DIFF'
+            $row.Reason | Should Be 'UNAPPROVED_OR_MODIFIED_CANDIDATE_ONLY_FUNCTION'
+        }
+        finally {
+            $script:CandidateFrozenBoundaryAdapterFunctionSha256 = $oldPins
+            if (Test-Path -LiteralPath $temporaryCandidate) {
+                Remove-Item -LiteralPath $temporaryCandidate -Force
+            }
+        }
     }
 }

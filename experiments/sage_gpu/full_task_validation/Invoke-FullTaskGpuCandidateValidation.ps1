@@ -42,6 +42,9 @@ $script:CandidatePlumbingFunctionCategories = @{
     computeFileSha256 = 'PROVENANCE_INSTRUMENTATION'
     writeCandidateProvenance = 'PROVENANCE_INSTRUMENTATION'
 }
+$script:CandidateFrozenBoundaryAdapterFunctionSha256 = @{
+    gatherGpuFit = 'e888255d30e77a5e1231f44e3d07b566df3fa74d55358d03b4732791bcc45571'
+}
 $script:CandidateTasks = @{
     TaskA = [pscustomobject]@{
         Task = 'TaskA'
@@ -993,7 +996,25 @@ function Get-FullTaskGpuSourceBoundaryAudit {
     for ($index = $authorityBlocks.Count; $index -lt $candidateBlocks.Count; $index++) {
         $candidateBlock = $candidateBlocks[$index]
         $qualifiedBlock = @($qualifiedBlocks | Where-Object { $_.Name -eq $candidateBlock.Name }) | Select-Object -First 1
-        if ($script:CandidatePlumbingFunctionCategories.ContainsKey($candidateBlock.Name)) {
+        if ($script:CandidateFrozenBoundaryAdapterFunctionSha256.ContainsKey($candidateBlock.Name)) {
+            if ($candidateBlock.Sha256 -ceq $script:CandidateFrozenBoundaryAdapterFunctionSha256[$candidateBlock.Name]) {
+                $rows.Add([pscustomobject]@{
+                    Function = $candidateBlock.Name; AuthoritySha256 = ''; CandidateSha256 = $candidateBlock.Sha256
+                    Category = 'FROZEN_OUTPUT_BOUNDARY_ADAPTER_DIFF'; Status = 'ALLOWED_DIFF'; ByteIdentical = $false
+                    NormalizedExact = $false; AuthorityStartLine = $null; CandidateStartLine = $candidateBlock.StartLine
+                    Reason = 'EXACT_PINNED_FROZEN_OUTPUT_BOUNDARY_ADAPTER'
+                })
+            }
+            else {
+                $rows.Add([pscustomobject]@{
+                    Function = $candidateBlock.Name; AuthoritySha256 = ''; CandidateSha256 = $candidateBlock.Sha256
+                    Category = 'UNEXPECTED_DIFF'; Status = 'UNEXPECTED_DIFF'; ByteIdentical = $false
+                    NormalizedExact = $false; AuthorityStartLine = $null; CandidateStartLine = $candidateBlock.StartLine
+                    Reason = 'UNAPPROVED_OR_MODIFIED_CANDIDATE_ONLY_FUNCTION'
+                })
+            }
+        }
+        elseif ($script:CandidatePlumbingFunctionCategories.ContainsKey($candidateBlock.Name)) {
             $rows.Add([pscustomobject]@{
                 Function = $candidateBlock.Name; AuthoritySha256 = ''; CandidateSha256 = $candidateBlock.Sha256
                 Category = $script:CandidatePlumbingFunctionCategories[$candidateBlock.Name]; Status = 'ALLOWED_DIFF'; ByteIdentical = $false
