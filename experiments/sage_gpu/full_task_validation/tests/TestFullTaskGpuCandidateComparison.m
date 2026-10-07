@@ -225,6 +225,91 @@ verifyError(testCase, @() runFixtureComparison(pair), ...
     'FullTaskGpuCandidate:COMPARISON_FAILED');
 end
 
+function testStage2RecordingTimeCsvRoundTripDoesNotRequireMatBitwiseIdentity(testCase)
+pair = makeFixturePair(testCase);
+recordingTimeS = 38.559060410557187;
+outputDirs = {pair.FormalDir, pair.CandidateDir};
+for side = 1:numel(outputDirs)
+    stage2Path = fullfile(outputDirs{side}, ...
+        'stage2_nav_sage_L1_L4.mat');
+    stage2Data = load(stage2Path);
+    stage2Data.modelTable.recording_time_s(:) = recordingTimeS;
+    save(stage2Path, '-struct', 'stage2Data');
+    writetable(stage2Data.modelTable, fullfile(outputDirs{side}, ...
+        'stage2_model_orders.csv'));
+end
+
+formalMat = load(fullfile(pair.FormalDir, ...
+    'stage2_nav_sage_L1_L4.mat'));
+candidateMat = load(fullfile(pair.CandidateDir, ...
+    'stage2_nav_sage_L1_L4.mat'));
+formalCsvPath = fullfile(pair.FormalDir, 'stage2_model_orders.csv');
+candidateCsvPath = fullfile(pair.CandidateDir, 'stage2_model_orders.csv');
+formalOptions = detectImportOptions(formalCsvPath, 'TextType', 'string');
+formalOptions.VariableNamingRule = 'preserve';
+formalCsv = readtable(formalCsvPath, formalOptions);
+candidateOptions = detectImportOptions(candidateCsvPath, ...
+    'TextType', 'string');
+candidateOptions.VariableNamingRule = 'preserve';
+candidateCsv = readtable(candidateCsvPath, candidateOptions);
+
+verifyTrue(testCase, isequaln(formalMat.modelTable.recording_time_s, ...
+    candidateMat.modelTable.recording_time_s));
+verifyEqual(testCase, fileread(formalCsvPath), fileread(candidateCsvPath));
+verifyTrue(testCase, isequaln(formalCsv.recording_time_s, ...
+    candidateCsv.recording_time_s));
+verifyFalse(testCase, isequaln(formalCsv.recording_time_s, ...
+    formalMat.modelTable.recording_time_s));
+verifyFalse(testCase, isequaln(candidateCsv.recording_time_s, ...
+    candidateMat.modelTable.recording_time_s));
+
+comparison = runFixtureComparison(pair);
+verifyTrue(testCase, comparison.Passed);
+verifyEqual(testCase, comparison.Stage2.Status, 'PASS');
+end
+
+function testStage2MatRecordingTimeMismatchStillFailsExactIdentityGate(testCase)
+pair = makeFixturePair(testCase);
+recordingTimeS = 38.559060410557187;
+for outputDir = {pair.FormalDir, pair.CandidateDir}
+    stage2Path = fullfile(outputDir{1}, 'stage2_nav_sage_L1_L4.mat');
+    stage2Data = load(stage2Path);
+    stage2Data.modelTable.recording_time_s(:) = recordingTimeS;
+    save(stage2Path, '-struct', 'stage2Data');
+    writetable(stage2Data.modelTable, fullfile(outputDir{1}, ...
+        'stage2_model_orders.csv'));
+end
+
+candidatePath = fullfile(pair.CandidateDir, ...
+    'stage2_nav_sage_L1_L4.mat');
+candidateData = load(candidatePath);
+candidateData.modelTable.recording_time_s(1) = ...
+    recordingTimeS + eps(recordingTimeS);
+save(candidatePath, '-struct', 'candidateData');
+formalCsvPath = fullfile(pair.FormalDir, 'stage2_model_orders.csv');
+candidateCsvPath = fullfile(pair.CandidateDir, 'stage2_model_orders.csv');
+writetable(candidateData.modelTable, candidateCsvPath);
+
+formalData = load(fullfile(pair.FormalDir, ...
+    'stage2_nav_sage_L1_L4.mat'));
+verifyFalse(testCase, isequaln(formalData.modelTable.recording_time_s, ...
+    candidateData.modelTable.recording_time_s));
+verifyEqual(testCase, fileread(formalCsvPath), fileread(candidateCsvPath));
+verifyComparisonFailureReason(testCase, pair, ...
+    'STAGE2_MODEL_ORDERS_STRUCTURE_MISMATCH_RECORDING_TIME_S');
+end
+
+function testStage2RecordingTimeCsvTamperStillFailsMatIntegrityGate(testCase)
+pair = makeFixturePair(testCase);
+file = fullfile(pair.CandidateDir, 'stage2_model_orders.csv');
+tableValue = readtable(file);
+tableValue.recording_time_s(1) = tableValue.recording_time_s(1) + 0.25;
+writetable(tableValue, file);
+
+verifyComparisonFailureReason(testCase, pair, ...
+    'STAGE2_MODEL_ORDERS_CANDIDATE_CSV_MAT_VALUE_MISMATCH');
+end
+
 function testStage3PersistenceClassificationMismatchFails(testCase)
 pair = makeFixturePair(testCase);
 file = fullfile(pair.CandidateDir, 'stage3_nav_persistence.mat');
