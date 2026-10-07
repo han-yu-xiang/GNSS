@@ -2616,3 +2616,34 @@ PRODUCTION_GPU=NO
 PAPER_HANDOFF_UPDATED=NO
 BUSINESS_BRANCH_COMMIT_PUSH=NO
 ```
+
+## 110. Frozen GPU full-task Stage0–Stage4 qualification completed (2026-10-07)
+
+- This section records full-task implementation-equivalence validation only. The Frozen CPU SAGE remains the authority; the GPU candidate is not enabled for production.
+- Source identity: Frozen authority `E:\GNSS_Multipath_Project\scripts\sage_pipeline\run_nav_sage_pipeline.m`, SHA-256 `bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c`; GPU candidate SHA-256 `5ea69f6b0ebc5e5be13cb109e4ec3eec30f377b52a5f22beed224164a035be3b`; comparator round-trip fix commit `088dea0aa2e33b4820c5ce151283198ba4c89550`.
+- Task A, `F1023_V70_D0117_P2 / G28 / ch1`: Stage0 900 valid symbols / 898 valid 40 ms windows; Stage1 898 scan rows / 54 Stage2 windows; Stage2 54 evaluated windows / 216 model rows / 54 selected rows / 77 selected paths (54 direct, 23 MPC); Stage3 23 persistence rows / 2 reliable centers; Stage4 2 joint results / 2 joint path rows / 0 strict confirmed paths. The existing attempt3 candidate was not rerun. Its original failure was a comparator CSV floating-point round-trip exact-check false failure, not invalidated GPU computation. After the comparator fix, the existing output replay passed Stage0–Stage4 with 54 window comparisons and zero structural mismatch. The fix added no tolerance, rounding, or recording-time special case; MAT-to-MAT, CSV-to-CSV, and CSV-to-own-MAT serialization integrity checks remain.
+- Task B, `F1023_V120_D0121_P2 / G03 / ch2`: one `RunAndCompare` attempt, internal preflight passed, no automatic retry. Stage0 232 valid symbols / 230 valid 40 ms windows; Stage1 230 scan rows; Stage2 96 evaluated windows / 384 model rows / 96 selected rows / 142 selected paths (96 direct, 46 MPC); Stage3 46 persistence rows / 8 reliable centers; Stage4 8 joint results / 8 joint path rows / 0 strict confirmed paths. Stage0–Stage4 comparison passed for all 96 windows with zero structural mismatch.
+- Stage3 counts use distinct tables and meanings: the historical `persistent MPC` count is 9 rows where `persistenceTable.persistence_pass` passes; `reliable centers` is 8 rows in `stage3_reliable_centers.csv` / `reliableTable`. `STAGE3_COUNT_SEMANTICS_CONFLICT=NO`.
+- Across Task A and Task B, the combined window-comparison CSV has 150 rows (54 + 96): selected-L, path-identity, path-label, and model-validity mismatches are all zero. Numeric differences are retained as `RECORDED_UNTHRESHOLDED_NUMERIC_DIFFERENCES`; no tolerance was added and no bitwise-equivalence claim is made. Maximum observed absolute differences: delay `0`, Doppler `0`, relative power `6.6080474425689317e-13`, complex alpha `2.1798662911312568e-15`, path score `1.7962520360015333e-11`, RSS `2.3283064365386963e-10` (relative `5.6952125339143077e-16`), and BIC `5.4535576055059209e-10` (relative `7.3840627515281781e-12`).
+- The Task A attempt3 historical false-failure archive at `experiments/sage_gpu/full_task_validation/archive/task_a_attempt3_comparator_false_failure_20261007T115504Z/` contains only its original results CSV and summary; no window-comparison file was fabricated. Their SHA-256 values remain `6fa98e9672316afe8b7d576aa063b930454c5bca0f3cbe9239931b7d0c662859` and `7f735ef292a5935c608eea75e467eb23b606dfa7f4cd32bcfab153f3ad7763f5`, respectively.
+- Final active lightweight evidence SHA-256: `FULL_TASK_GPU_VALIDATION_RESULTS.csv` `facb6f31bb08c84ec2534c50852b831f03ce148e9b43560bfb83813627091482`; `FULL_TASK_GPU_STAGE2_WINDOW_COMPARISON.csv` `3173e5e5f6fc5beb3ad768ba4c0a94c8f5e06f6444946d14997ca16360cf2e7d`; `FULL_TASK_GPU_VALIDATION_SUMMARY.md` `0034837e54f464a414ffd8cc11a9fb291891fab1ce9fd48e5b731efe39904c9e`.
+- The final source-boundary audit passed with `UNEXPECTED_DIFF_COUNT=0`; `runStage2`, `flattenStage2`, `evaluatePersistence`, and `runJointStage` remain unchanged. The two completed RunAndCompare validations read only their authorized Task A and Task B raw-IQ inputs. This handoff/evidence formalization performed no MATLAB/SAGE execution and read no raw IQ.
+
+```ini
+TASK_A_WINDOW_ROWS=54
+TASK_B_WINDOW_ROWS=96
+TOTAL_WINDOW_ROWS=150
+SELECTED_L_MISMATCH=0
+PATH_IDENTITY_MISMATCH=0
+PATH_LABEL_MISMATCH=0
+MODEL_VALIDITY_MISMATCH=0
+TASK_A_STRICT_CONFIRMED=0
+TASK_B_STRICT_CONFIRMED=0
+GPU_FULL_TASK_QUALIFICATION=PASS
+GPU_STAGE0_STAGE4_STRUCTURAL_EQUIVALENCE=VALIDATED
+FROZEN_PRODUCTION_MODIFIED=NO
+PRODUCTION_GPU_ENABLED=NO
+REMAINING_85_TASK_BATCH_RESUMED=NO
+PAPER_HANDOFF_UPDATED=NO
+NEXT_DECISION_REQUIRED=DESIGN_AND_REVIEW_PRODUCTION_GPU_INTEGRATION_PATH_BEFORE_RESUMING_85_TASK_BATCH
+```
