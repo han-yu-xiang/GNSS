@@ -755,8 +755,10 @@ function Read-And-ValidateExistingFrozenSageBatchSummary {
     }
 
     $manifestRunIds = @($ManifestRows | ForEach-Object { [string]$_.run_id })
-    if ($manifestRunIds.Count -ne @($manifestRunIds | Sort-Object -Unique).Count) {
-        throw 'BATCH_SUMMARY_MANIFEST_DUPLICATE_RUN_ID'
+    $manifestRunIdSet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    foreach ($runId in $manifestRunIds) {
+        if ([string]::IsNullOrEmpty($runId)) { throw 'BATCH_SUMMARY_MANIFEST_RUN_ID_MISSING' }
+        if (-not $manifestRunIdSet.Add($runId)) { throw 'BATCH_SUMMARY_MANIFEST_DUPLICATE_RUN_ID' }
     }
 
     $hashBeforeRead = (Get-FileHash -LiteralPath $SummaryPath -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -772,17 +774,37 @@ function Read-And-ValidateExistingFrozenSageBatchSummary {
     }
 
     $summaryRunIds = @($summaryRows | ForEach-Object { [string]$_.run_id })
-    if ($summaryRunIds.Count -ne @($summaryRunIds | Sort-Object -Unique).Count) {
-        throw 'BATCH_SUMMARY_DUPLICATE_RUN_ID'
+    $summaryRunIdSet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    foreach ($runId in $summaryRunIds) {
+        if ([string]::IsNullOrEmpty($runId)) { throw 'BATCH_SUMMARY_RUN_ID_MISSING' }
+        if (-not $summaryRunIdSet.Add($runId)) { throw 'BATCH_SUMMARY_DUPLICATE_RUN_ID' }
+    }
+
+    if ($summaryRunIdSet.Count -ne $manifestRunIdSet.Count) { throw 'BATCH_SUMMARY_RUN_ID_SET_MISMATCH' }
+    foreach ($runId in $manifestRunIds) {
+        if (-not $summaryRunIdSet.Contains($runId)) { throw 'BATCH_SUMMARY_RUN_ID_SET_MISMATCH' }
+    }
+    foreach ($runId in $summaryRunIds) {
+        if (-not $manifestRunIdSet.Contains($runId)) { throw 'BATCH_SUMMARY_RUN_ID_SET_MISMATCH' }
+    }
+
+    $expectedSummaryRunIds = @($script:FrozenBatchBaselineRunId) + @(
+        $manifestRunIds | Where-Object { $_ -cne $script:FrozenBatchBaselineRunId }
+    )
+    if ($expectedSummaryRunIds.Count -ne $summaryRunIds.Count) { throw 'BATCH_SUMMARY_RUN_ID_SET_MISMATCH' }
+    for ($index = 0; $index -lt $expectedSummaryRunIds.Count; $index++) {
+        if ($summaryRunIds[$index] -cne $expectedSummaryRunIds[$index]) {
+            throw "BATCH_SUMMARY_CANONICAL_ORDER_MISMATCH index=$($index + 1) expected=$($expectedSummaryRunIds[$index]) actual=$($summaryRunIds[$index])"
+        }
     }
 
     $identityFields = @('run_id', 'scene_id', 'prn', 'tracking_channel', 'mapping_warning', 'output_namespace', 'frozen_sage_sha256')
-    for ($index = 0; $index -lt $ManifestRows.Count; $index++) {
-        $manifestRow = $ManifestRows[$index]
-        $summaryRow = $summaryRows[$index]
-        if ([string]$summaryRow.run_id -cne [string]$manifestRow.run_id) {
-            throw "BATCH_SUMMARY_RUN_ID_ORDER_MISMATCH index=$($index + 1) expected=$($manifestRow.run_id) actual=$($summaryRow.run_id)"
+    foreach ($summaryRow in $summaryRows) {
+        $matchingManifestRows = @($ManifestRows | Where-Object { [string]$_.run_id -ceq [string]$summaryRow.run_id })
+        if ($matchingManifestRows.Count -ne 1) {
+            throw "BATCH_SUMMARY_MANIFEST_RUN_ID_CARDINALITY run_id=$($summaryRow.run_id) expected=1 actual=$($matchingManifestRows.Count)"
         }
+        $manifestRow = $matchingManifestRows[0]
         foreach ($field in $identityFields) {
             $summaryProperty = $summaryRow.PSObject.Properties[$field]
             $manifestProperty = $manifestRow.PSObject.Properties[$field]

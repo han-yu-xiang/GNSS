@@ -259,6 +259,11 @@ function New-BatchFixtureExistingSummaryState {
         [string]$PilotStatus = 'PENDING',
         [string]$MismatchField = '',
         [switch]$ReverseSummaryOrder,
+        [switch]$SwapNonBaselineSummaryOrder,
+        [switch]$RunIdSetMismatch,
+        [switch]$MissingSummaryRunId,
+        [switch]$DuplicateSummaryRunId,
+        [switch]$DuplicateManifestRunId,
         [switch]$WriteSummary = $true
     )
 
@@ -267,7 +272,6 @@ function New-BatchFixtureExistingSummaryState {
     [void](New-Item -ItemType Directory -Path $summaryDirectory -Force)
     $baseline = New-BatchFixtureManifestRow
     $manifestRows = [System.Collections.Generic.List[object]]::new()
-    $manifestRows.Add($baseline)
 
     $pilot = New-BatchFixtureManifestRow
     $pilot.run_id = 'run_20261003_F1023_V120_D0121_P2_G12_ch11'
@@ -293,13 +297,20 @@ function New-BatchFixtureExistingSummaryState {
         $row.output_namespace = 'scenes\{0}\sage_results\rerun_20261003_frozen_v3\{1}_ch{2}' -f $scene, $prn, $channel
         $manifestRows.Add($row)
     }
+    $manifestRows.Add($baseline)
+    if ($DuplicateManifestRunId) { $manifestRows[0].run_id = [string]$manifestRows[1].run_id }
 
     $summaryRows = [System.Collections.Generic.List[object]]::new()
     $summaryRows.Add((New-FrozenSageBatchSummaryRow -ManifestRow $baseline -Status 'ALREADY_COMPLETE'))
-    $summaryRows.Add((New-FrozenSageBatchSummaryRow -ManifestRow $pilot -Status $PilotStatus -FailureReason $(if ($PilotStatus -eq 'FAILED') { 'FIXTURE_FAILURE' } else { '' })))
-    for ($index = 2; $index -lt $manifestRows.Count; $index++) {
-        $status = if ($index -le 4) { 'COMPLETE' } else { 'PENDING' }
-        $summaryRows.Add((New-FrozenSageBatchSummaryRow -ManifestRow $manifestRows[$index] -Status $status))
+    $completedRows = 0
+    foreach ($manifestRow in @($manifestRows | Where-Object { [string]$_.run_id -cne [string]$baseline.run_id })) {
+        if ([string]$manifestRow.run_id -ceq [string]$pilot.run_id) {
+            $summaryRows.Add((New-FrozenSageBatchSummaryRow -ManifestRow $manifestRow -Status $PilotStatus -FailureReason $(if ($PilotStatus -eq 'FAILED') { 'FIXTURE_FAILURE' } else { '' })))
+            continue
+        }
+        $completedRows++
+        $status = if ($completedRows -le 3) { 'COMPLETE' } else { 'PENDING' }
+        $summaryRows.Add((New-FrozenSageBatchSummaryRow -ManifestRow $manifestRow -Status $status))
     }
 
     if (-not [string]::IsNullOrWhiteSpace($MismatchField)) {
@@ -310,6 +321,14 @@ function New-BatchFixtureExistingSummaryState {
         $summaryRows[0] = $summaryRows[1]
         $summaryRows[1] = $first
     }
+    if ($SwapNonBaselineSummaryOrder) {
+        $second = $summaryRows[1]
+        $summaryRows[1] = $summaryRows[2]
+        $summaryRows[2] = $second
+    }
+    if ($RunIdSetMismatch) { $summaryRows[2].run_id = 'run_fixture_not_in_manifest' }
+    if ($MissingSummaryRunId) { $summaryRows[2].run_id = '' }
+    if ($DuplicateSummaryRunId) { $summaryRows[2].run_id = [string]$summaryRows[1].run_id }
 
     $summaryPath = Join-Path $summaryDirectory 'MAINLINE_SAGE_1023_BATCH_RERUN_SUMMARY.csv'
     if ($WriteSummary) {
@@ -385,6 +404,8 @@ Describe 'Invoke-FrozenSageRerunBatch safety contract' {
         @($state.SummaryRows | Where-Object { $_.execution_status -eq 'PENDING' }).Count | Should Be 85
         $state.ExecutionRows.Count | Should Be 1
         $state.ExecutionRows[0].run_id | Should Be $fixture.PilotRunId
+        @($state.SummaryRows | Where-Object { [string]$_.run_id -ceq $fixture.PilotRunId }).Count | Should Be 1
+        [string](@($state.SummaryRows | Where-Object { [string]$_.run_id -ceq $fixture.PilotRunId })[0].execution_status) | Should Be 'PENDING'
         (Get-FileHash -LiteralPath $fixture.SummaryPath -Algorithm SHA256).Hash.ToLowerInvariant() | Should Be $beforeHash
     }
 
@@ -440,14 +461,78 @@ Describe 'Invoke-FrozenSageRerunBatch safety contract' {
         $result.Error | Should Match 'scene_id'
     }
 
-    It 'rejects summary rows that are not in manifest order' {
+    It 'accepts the canonical baseline-first summary when the baseline is not first in manifest order' {
+        $fixture = New-BatchFixtureExistingSummaryState
+        $result = Invoke-BatchProductionFunctionSafely -Name 'Read-And-ValidateExistingFrozenSageBatchSummary' -Arguments @{
+            SummaryPath = $fixture.SummaryPath
+            ManifestRows = $fixture.ManifestRows
+            AuthorizedRunIds = $fixture.AuthorizedRunIds
+        }
+        $result.Error | Should Be $null
+        [string]$fixture.ManifestRows[0].run_id | Should Not Be $script:FrozenBatchBaselineRunId
+        [string]$result.Value.SummaryRows[0].run_id | Should Be $script:FrozenBatchBaselineRunId
+        $expectedCanonicalIds = @($script:FrozenBatchBaselineRunId) + @($fixture.ManifestRows | Where-Object { [string]$_.run_id -cne $script:FrozenBatchBaselineRunId } | ForEach-Object { [string]$_.run_id })
+        (@($result.Value.SummaryRows | ForEach-Object { [string]$_.run_id }) -join ',') | Should Be ($expectedCanonicalIds -join ',')
+    }
+
+    It 'rejects a summary that does not use canonical baseline-first order' {
         $fixture = New-BatchFixtureExistingSummaryState -ReverseSummaryOrder
         $result = Invoke-BatchProductionFunctionSafely -Name 'Read-And-ValidateExistingFrozenSageBatchSummary' -Arguments @{
             SummaryPath = $fixture.SummaryPath
             ManifestRows = $fixture.ManifestRows
             AuthorizedRunIds = $fixture.AuthorizedRunIds
         }
-        $result.Error | Should Match 'BATCH_SUMMARY_RUN_ID_ORDER_MISMATCH'
+        $result.Error | Should Match 'BATCH_SUMMARY_CANONICAL_ORDER_MISMATCH'
+    }
+
+    It 'rejects arbitrary permutations among non-baseline summary rows' {
+        $fixture = New-BatchFixtureExistingSummaryState -SwapNonBaselineSummaryOrder
+        $result = Invoke-BatchProductionFunctionSafely -Name 'Read-And-ValidateExistingFrozenSageBatchSummary' -Arguments @{
+            SummaryPath = $fixture.SummaryPath
+            ManifestRows = $fixture.ManifestRows
+            AuthorizedRunIds = $fixture.AuthorizedRunIds
+        }
+        $result.Error | Should Match 'BATCH_SUMMARY_CANONICAL_ORDER_MISMATCH'
+    }
+
+    It 'rejects a summary run-ID set that differs from the manifest' {
+        $fixture = New-BatchFixtureExistingSummaryState -RunIdSetMismatch
+        $result = Invoke-BatchProductionFunctionSafely -Name 'Read-And-ValidateExistingFrozenSageBatchSummary' -Arguments @{
+            SummaryPath = $fixture.SummaryPath
+            ManifestRows = $fixture.ManifestRows
+            AuthorizedRunIds = $fixture.AuthorizedRunIds
+        }
+        $result.Error | Should Match 'BATCH_SUMMARY_RUN_ID_SET_MISMATCH'
+    }
+
+    It 'rejects a summary row with a missing run ID' {
+        $fixture = New-BatchFixtureExistingSummaryState -MissingSummaryRunId
+        $result = Invoke-BatchProductionFunctionSafely -Name 'Read-And-ValidateExistingFrozenSageBatchSummary' -Arguments @{
+            SummaryPath = $fixture.SummaryPath
+            ManifestRows = $fixture.ManifestRows
+            AuthorizedRunIds = $fixture.AuthorizedRunIds
+        }
+        $result.Error | Should Match 'BATCH_SUMMARY_RUN_ID_MISSING'
+    }
+
+    It 'rejects duplicate summary run IDs' {
+        $fixture = New-BatchFixtureExistingSummaryState -DuplicateSummaryRunId
+        $result = Invoke-BatchProductionFunctionSafely -Name 'Read-And-ValidateExistingFrozenSageBatchSummary' -Arguments @{
+            SummaryPath = $fixture.SummaryPath
+            ManifestRows = $fixture.ManifestRows
+            AuthorizedRunIds = $fixture.AuthorizedRunIds
+        }
+        $result.Error | Should Match 'BATCH_SUMMARY_DUPLICATE_RUN_ID'
+    }
+
+    It 'rejects duplicate manifest run IDs' {
+        $fixture = New-BatchFixtureExistingSummaryState -DuplicateManifestRunId
+        $result = Invoke-BatchProductionFunctionSafely -Name 'Read-And-ValidateExistingFrozenSageBatchSummary' -Arguments @{
+            SummaryPath = $fixture.SummaryPath
+            ManifestRows = $fixture.ManifestRows
+            AuthorizedRunIds = $fixture.AuthorizedRunIds
+        }
+        $result.Error | Should Match 'BATCH_SUMMARY_MANIFEST_DUPLICATE_RUN_ID'
     }
 
     It 'preserves the existing-summary SHA compare-and-swap ownership guard' {
