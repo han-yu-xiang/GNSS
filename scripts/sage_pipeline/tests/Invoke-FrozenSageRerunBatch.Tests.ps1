@@ -254,6 +254,78 @@ function New-BatchFixtureManifestRow {
     }
 }
 
+function New-BatchFixtureExistingSummaryState {
+    param(
+        [string]$PilotStatus = 'PENDING',
+        [string]$MismatchField = '',
+        [switch]$ReverseSummaryOrder,
+        [switch]$WriteSummary = $true
+    )
+
+    $root = Join-Path $TestDrive ('existing-summary-' + [guid]::NewGuid().ToString('N'))
+    $summaryDirectory = Join-Path $root 'reports\data_consolidation_20261003'
+    [void](New-Item -ItemType Directory -Path $summaryDirectory -Force)
+    $baseline = New-BatchFixtureManifestRow
+    $manifestRows = [System.Collections.Generic.List[object]]::new()
+    $manifestRows.Add($baseline)
+
+    $pilot = New-BatchFixtureManifestRow
+    $pilot.run_id = 'run_20261003_F1023_V120_D0121_P2_G12_ch11'
+    $pilot.dataset_id = 'F1023_V120_D0121_P2'
+    $pilot.scene_id = 'F1023_V120_D0121_P2'
+    $pilot.prn = 'G12'
+    $pilot.tracking_channel = '11'
+    $pilot.mapping_warning = 'NONE'
+    $pilot.output_namespace = 'scenes\F1023_V120_D0121_P2\sage_results\rerun_20261003_frozen_v3\G12_ch11'
+    $manifestRows.Add($pilot)
+
+    for ($index = 3; $index -le 89; $index++) {
+        $scene = 'FIXTURE_SCENE_{0:D2}' -f $index
+        $prn = 'G{0:D2}' -f $index
+        $channel = [string]($index % 33)
+        $row = New-BatchFixtureManifestRow
+        $row.run_id = 'run_fixture_{0:D2}' -f $index
+        $row.dataset_id = $scene
+        $row.scene_id = $scene
+        $row.prn = $prn
+        $row.tracking_channel = $channel
+        $row.mapping_warning = 'NONE'
+        $row.output_namespace = 'scenes\{0}\sage_results\rerun_20261003_frozen_v3\{1}_ch{2}' -f $scene, $prn, $channel
+        $manifestRows.Add($row)
+    }
+
+    $summaryRows = [System.Collections.Generic.List[object]]::new()
+    $summaryRows.Add((New-FrozenSageBatchSummaryRow -ManifestRow $baseline -Status 'ALREADY_COMPLETE'))
+    $summaryRows.Add((New-FrozenSageBatchSummaryRow -ManifestRow $pilot -Status $PilotStatus -FailureReason $(if ($PilotStatus -eq 'FAILED') { 'FIXTURE_FAILURE' } else { '' })))
+    for ($index = 2; $index -lt $manifestRows.Count; $index++) {
+        $status = if ($index -le 4) { 'COMPLETE' } else { 'PENDING' }
+        $summaryRows.Add((New-FrozenSageBatchSummaryRow -ManifestRow $manifestRows[$index] -Status $status))
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($MismatchField)) {
+        $summaryRows[1].PSObject.Properties[$MismatchField].Value = 'FIXTURE_IDENTITY_MISMATCH'
+    }
+    if ($ReverseSummaryOrder) {
+        $first = $summaryRows[0]
+        $summaryRows[0] = $summaryRows[1]
+        $summaryRows[1] = $first
+    }
+
+    $summaryPath = Join-Path $summaryDirectory 'MAINLINE_SAGE_1023_BATCH_RERUN_SUMMARY.csv'
+    if ($WriteSummary) {
+        $summaryRows | Export-Csv -LiteralPath $summaryPath -NoTypeInformation -Encoding utf8NoBOM
+    }
+    return [pscustomobject]@{
+        Root = $root
+        SummaryPath = $summaryPath
+        ManifestRows = @($manifestRows)
+        SummaryRows = @($summaryRows)
+        BaselineSummaryRow = New-FrozenSageBatchSummaryRow -ManifestRow $baseline -Status 'ALREADY_COMPLETE'
+        PilotRunId = [string]$pilot.run_id
+        AuthorizedRunIds = @([string]$pilot.run_id)
+    }
+}
+
 Describe 'Invoke-FrozenSageRerunBatch safety contract' {
     It 'resolves exactly one explicit execution mode' {
         $validate = Invoke-BatchProductionFunctionSafely -Name 'Resolve-FrozenSageBatchMode' -Arguments @{
@@ -289,6 +361,146 @@ Describe 'Invoke-FrozenSageRerunBatch safety contract' {
         $result.Available | Should Be $true
         $result.Error | Should Be $null
         ($result.Value -join ',') | Should Be 'run_id,scene_id,prn,tracking_channel,mapping_warning,execution_status,matlab_exit_code,stage0_valid_nav_symbols,stage0_valid_40ms_windows,stage1_scanned_windows,stage2_evaluated_windows,stage2_selected_path_count,direct_path_count,stage2_mpc_count,stage3_persistence_row_count,stage3_persistent_mpc_count,stage4_joint_result_count,stage4_confirmed_mpc_count,output_namespace,frozen_sage_sha256,failure_reason'
+    }
+
+    It 'resumes a valid plan from the existing 89-row summary without rebuilding other rows' {
+        $fixture = New-BatchFixtureExistingSummaryState
+        $beforeHash = (Get-FileHash -LiteralPath $fixture.SummaryPath -Algorithm SHA256).Hash.ToLowerInvariant()
+        $result = Invoke-BatchProductionFunctionSafely -Name 'Resolve-FrozenSageBatchSummaryState' -Arguments @{
+            SummaryPath = $fixture.SummaryPath
+            ManifestRows = $fixture.ManifestRows
+            BaselineSummaryRow = $fixture.BaselineSummaryRow
+            PlanProvided = $true
+            AuthorizedRunIds = $fixture.AuthorizedRunIds
+        }
+
+        $result.Available | Should Be $true
+        $result.Error | Should Be $null
+        $state = $result.Value
+        $state.IsExistingSummary | Should Be $true
+        $state.SummaryRows.Count | Should Be 89
+        $state.ExpectedCurrentHash | Should Be $beforeHash
+        @($state.SummaryRows | Where-Object { $_.execution_status -eq 'ALREADY_COMPLETE' }).Count | Should Be 1
+        @($state.SummaryRows | Where-Object { $_.execution_status -eq 'COMPLETE' }).Count | Should Be 3
+        @($state.SummaryRows | Where-Object { $_.execution_status -eq 'PENDING' }).Count | Should Be 85
+        $state.ExecutionRows.Count | Should Be 1
+        $state.ExecutionRows[0].run_id | Should Be $fixture.PilotRunId
+        (Get-FileHash -LiteralPath $fixture.SummaryPath -Algorithm SHA256).Hash.ToLowerInvariant() | Should Be $beforeHash
+    }
+
+    It 'keeps an existing summary fail-closed when no execution plan is supplied' {
+        $fixture = New-BatchFixtureExistingSummaryState
+        $result = Invoke-BatchProductionFunctionSafely -Name 'Resolve-FrozenSageBatchSummaryState' -Arguments @{
+            SummaryPath = $fixture.SummaryPath
+            ManifestRows = $fixture.ManifestRows
+            BaselineSummaryRow = $fixture.BaselineSummaryRow
+            PlanProvided = $false
+            AuthorizedRunIds = @()
+        }
+        $result.Error | Should Match 'BATCH_SUMMARY_ALREADY_EXISTS'
+    }
+
+    It 'rejects an authorized task that is already complete' {
+        $fixture = New-BatchFixtureExistingSummaryState -PilotStatus 'COMPLETE'
+        $result = Invoke-BatchProductionFunctionSafely -Name 'Resolve-FrozenSageBatchSummaryState' -Arguments @{
+            SummaryPath = $fixture.SummaryPath
+            ManifestRows = $fixture.ManifestRows
+            BaselineSummaryRow = $fixture.BaselineSummaryRow
+            PlanProvided = $true
+            AuthorizedRunIds = $fixture.AuthorizedRunIds
+        }
+        $result.Error | Should Match 'GPU_EXECUTION_PLAN_TASK_NOT_PENDING'
+    }
+
+    It 'rejects resumable summaries containing IN_PROGRESS or FAILED rows' {
+        foreach ($status in @('IN_PROGRESS', 'FAILED')) {
+            $fixture = New-BatchFixtureExistingSummaryState -PilotStatus $status
+            $result = Invoke-BatchProductionFunctionSafely -Name 'Resolve-FrozenSageBatchSummaryState' -Arguments @{
+                SummaryPath = $fixture.SummaryPath
+                ManifestRows = $fixture.ManifestRows
+                BaselineSummaryRow = $fixture.BaselineSummaryRow
+                PlanProvided = $true
+                AuthorizedRunIds = $fixture.AuthorizedRunIds
+            }
+            $result.Error | Should Match 'BATCH_SUMMARY_STATUS_NOT_RESUMABLE'
+            $result.Error | Should Match $status
+        }
+    }
+
+    It 'rejects a summary whose immutable identity differs from the manifest' {
+        $fixture = New-BatchFixtureExistingSummaryState -MismatchField 'scene_id'
+        $result = Invoke-BatchProductionFunctionSafely -Name 'Resolve-FrozenSageBatchSummaryState' -Arguments @{
+            SummaryPath = $fixture.SummaryPath
+            ManifestRows = $fixture.ManifestRows
+            BaselineSummaryRow = $fixture.BaselineSummaryRow
+            PlanProvided = $true
+            AuthorizedRunIds = $fixture.AuthorizedRunIds
+        }
+        $result.Error | Should Match 'BATCH_SUMMARY_MANIFEST_IDENTITY_MISMATCH'
+        $result.Error | Should Match 'scene_id'
+    }
+
+    It 'rejects summary rows that are not in manifest order' {
+        $fixture = New-BatchFixtureExistingSummaryState -ReverseSummaryOrder
+        $result = Invoke-BatchProductionFunctionSafely -Name 'Read-And-ValidateExistingFrozenSageBatchSummary' -Arguments @{
+            SummaryPath = $fixture.SummaryPath
+            ManifestRows = $fixture.ManifestRows
+            AuthorizedRunIds = $fixture.AuthorizedRunIds
+        }
+        $result.Error | Should Match 'BATCH_SUMMARY_RUN_ID_ORDER_MISMATCH'
+    }
+
+    It 'preserves the existing-summary SHA compare-and-swap ownership guard' {
+        $fixture = New-BatchFixtureExistingSummaryState
+        $stateResult = Invoke-BatchProductionFunctionSafely -Name 'Resolve-FrozenSageBatchSummaryState' -Arguments @{
+            SummaryPath = $fixture.SummaryPath
+            ManifestRows = $fixture.ManifestRows
+            BaselineSummaryRow = $fixture.BaselineSummaryRow
+            PlanProvided = $true
+            AuthorizedRunIds = $fixture.AuthorizedRunIds
+        }
+        $stateResult.Error | Should Be $null
+        [System.IO.File]::AppendAllText($fixture.SummaryPath, "external-change`n")
+        $writeResult = Invoke-BatchProductionFunctionSafely -Name 'Write-FrozenSageBatchSummary' -Arguments @{
+            SummaryPath = $fixture.SummaryPath
+            Rows = $stateResult.Value.SummaryRows
+            ExpectedCurrentHash = $stateResult.Value.ExpectedCurrentHash
+        }
+        $writeResult.Error | Should Match 'BATCH_SUMMARY_OWNERSHIP_HASH_MISMATCH'
+        (Get-Content -Raw -LiteralPath $fixture.SummaryPath).EndsWith("external-change`n") | Should Be $true
+    }
+
+    It 'preserves fresh-batch baseline and pending-row initialization when no summary exists' {
+        $fixture = New-BatchFixtureExistingSummaryState -WriteSummary:$false
+        $stateResult = Invoke-BatchProductionFunctionSafely -Name 'Resolve-FrozenSageBatchSummaryState' -Arguments @{
+            SummaryPath = $fixture.SummaryPath
+            ManifestRows = $fixture.ManifestRows
+            BaselineSummaryRow = $fixture.BaselineSummaryRow
+            PlanProvided = $false
+            AuthorizedRunIds = @()
+        }
+        $stateResult.Error | Should Be $null
+        $stateResult.Value.IsExistingSummary | Should Be $false
+        $stateResult.Value.SummaryRows.Count | Should Be 89
+        $stateResult.Value.ExpectedCurrentHash | Should Be ''
+        @($stateResult.Value.SummaryRows | Where-Object { $_.execution_status -eq 'ALREADY_COMPLETE' }).Count | Should Be 1
+        @($stateResult.Value.SummaryRows | Where-Object { $_.execution_status -eq 'PENDING' }).Count | Should Be 88
+    }
+
+    It 'marks plan scope complete independently from unrelated global pending tasks' {
+        $fixture = New-BatchFixtureExistingSummaryState
+        $fixture.SummaryRows[1].execution_status = 'COMPLETE'
+        $result = Invoke-BatchProductionFunctionSafely -Name 'Get-FrozenSagePlanScopeCompletion' -Arguments @{
+            Rows = $fixture.SummaryRows
+            AuthorizedRunIds = $fixture.AuthorizedRunIds
+            StopReason = ''
+        }
+        $result.Error | Should Be $null
+        $result.Value.FinalStatus | Should Be 'PLAN_SCOPE_COMPLETED'
+        $result.Value.AuthorizedTaskCount | Should Be 1
+        $result.Value.AuthorizedCompleteCount | Should Be 1
+        $result.Value.GlobalCompleteCount | Should Be 5
+        $result.Value.GlobalPendingCount | Should Be 84
     }
 
     It 'refuses to start when any runner or batch lock is already present' {

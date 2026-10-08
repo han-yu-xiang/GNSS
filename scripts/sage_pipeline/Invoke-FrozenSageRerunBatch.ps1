@@ -638,6 +638,54 @@ function Get-FrozenSageBatchAggregates {
     }
 }
 
+function Get-FrozenSagePlanScopeCompletion {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][object[]]$Rows,
+        [Parameter(Mandatory)][string[]]$AuthorizedRunIds,
+        [string]$StopReason = ''
+    )
+
+    if ($AuthorizedRunIds.Count -eq 0 -or $AuthorizedRunIds.Count -ne @($AuthorizedRunIds | Sort-Object -Unique).Count) {
+        throw 'GPU_EXECUTION_PLAN_AUTHORIZED_RUN_IDS_INVALID'
+    }
+    $authorizedRows = foreach ($runId in $AuthorizedRunIds) {
+        $matches = @($Rows | Where-Object { [string]$_.run_id -ceq [string]$runId })
+        if ($matches.Count -ne 1) {
+            throw "GPU_EXECUTION_PLAN_SUMMARY_RUN_ID_NOT_UNIQUE run_id=$runId count=$($matches.Count)"
+        }
+        $matches[0]
+    }
+    $authorizedComplete = @($authorizedRows | Where-Object { [string]$_.execution_status -ceq 'COMPLETE' }).Count
+    $authorizedFailed = @($authorizedRows | Where-Object { [string]$_.execution_status -ceq 'FAILED' }).Count
+    $authorizedPending = @($authorizedRows | Where-Object { [string]$_.execution_status -in @('PENDING', 'IN_PROGRESS') }).Count
+    $globalAggregates = Get-FrozenSageBatchAggregates -Rows $Rows
+
+    if (-not [string]::IsNullOrWhiteSpace($StopReason)) {
+        $finalStatus = 'STOPPED'
+        $resolvedStopReason = $StopReason
+    } elseif ($authorizedPending -gt 0) {
+        $finalStatus = 'STOPPED'
+        $resolvedStopReason = 'PLAN_SCOPE_INCOMPLETE'
+    } elseif ($authorizedFailed -gt 0) {
+        $finalStatus = 'PLAN_SCOPE_COMPLETED_WITH_FAILURES'
+        $resolvedStopReason = ''
+    } else {
+        $finalStatus = 'PLAN_SCOPE_COMPLETED'
+        $resolvedStopReason = ''
+    }
+
+    return [pscustomobject][ordered]@{
+        FinalStatus = $finalStatus
+        StopReason = $resolvedStopReason
+        AuthorizedTaskCount = $AuthorizedRunIds.Count
+        AuthorizedCompleteCount = $authorizedComplete
+        AuthorizedFailedCount = $authorizedFailed
+        GlobalCompleteCount = $globalAggregates.TOTAL_COMPLETE
+        GlobalPendingCount = $globalAggregates._pending
+    }
+}
+
 function Format-FrozenSageBatchAggregates {
     param([Parameter(Mandatory)][object]$Aggregates)
     foreach ($property in $Aggregates.PSObject.Properties) {
@@ -689,6 +737,168 @@ function Get-FrozenSageBatchManifestContext {
     $otherWarnings = @($rows | Where-Object { [string]$_.mapping_warning -notin @('NONE', 'NAV_MAPPING_VALID_TRACKING_START_LOG_MISSING') })
     if ($otherWarnings.Count -gt 0) { throw 'BATCH_UNSUPPORTED_MAPPING_WARNING_PRESENT' }
     return [pscustomobject]@{ Rows = $rows; Baseline = $baseline[0]; ManifestPath = $manifestPath; AuditPath = $auditPath }
+}
+
+function Read-And-ValidateExistingFrozenSageBatchSummary {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$SummaryPath,
+        [Parameter(Mandatory)][object[]]$ManifestRows,
+        [string[]]$AuthorizedRunIds = @()
+    )
+
+    if (-not (Test-Path -LiteralPath $SummaryPath -PathType Leaf)) {
+        throw "BATCH_SUMMARY_MISSING path=$SummaryPath"
+    }
+    if ($ManifestRows.Count -ne $script:FrozenBatchExpectedTaskCount) {
+        throw "BATCH_SUMMARY_MANIFEST_ROW_COUNT_MISMATCH expected=$($script:FrozenBatchExpectedTaskCount) actual=$($ManifestRows.Count)"
+    }
+
+    $manifestRunIds = @($ManifestRows | ForEach-Object { [string]$_.run_id })
+    if ($manifestRunIds.Count -ne @($manifestRunIds | Sort-Object -Unique).Count) {
+        throw 'BATCH_SUMMARY_MANIFEST_DUPLICATE_RUN_ID'
+    }
+
+    $hashBeforeRead = (Get-FileHash -LiteralPath $SummaryPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    $summaryRows = @(Import-Csv -LiteralPath $SummaryPath -ErrorAction Stop)
+    if ($summaryRows.Count -ne $script:FrozenBatchExpectedTaskCount) {
+        throw "BATCH_SUMMARY_ROW_COUNT_MISMATCH expected=$($script:FrozenBatchExpectedTaskCount) actual=$($summaryRows.Count)"
+    }
+
+    $expectedColumns = @(Get-FrozenSageBatchSummaryColumns)
+    $actualColumns = @($summaryRows[0].PSObject.Properties.Name)
+    if (($actualColumns -join ',') -cne ($expectedColumns -join ',')) {
+        throw 'BATCH_SUMMARY_SCHEMA_MISMATCH'
+    }
+
+    $summaryRunIds = @($summaryRows | ForEach-Object { [string]$_.run_id })
+    if ($summaryRunIds.Count -ne @($summaryRunIds | Sort-Object -Unique).Count) {
+        throw 'BATCH_SUMMARY_DUPLICATE_RUN_ID'
+    }
+
+    $identityFields = @('run_id', 'scene_id', 'prn', 'tracking_channel', 'mapping_warning', 'output_namespace', 'frozen_sage_sha256')
+    for ($index = 0; $index -lt $ManifestRows.Count; $index++) {
+        $manifestRow = $ManifestRows[$index]
+        $summaryRow = $summaryRows[$index]
+        if ([string]$summaryRow.run_id -cne [string]$manifestRow.run_id) {
+            throw "BATCH_SUMMARY_RUN_ID_ORDER_MISMATCH index=$($index + 1) expected=$($manifestRow.run_id) actual=$($summaryRow.run_id)"
+        }
+        foreach ($field in $identityFields) {
+            $summaryProperty = $summaryRow.PSObject.Properties[$field]
+            $manifestProperty = $manifestRow.PSObject.Properties[$field]
+            if ($null -eq $summaryProperty -or $null -eq $manifestProperty -or
+                [string]$summaryProperty.Value -cne [string]$manifestProperty.Value) {
+                throw "BATCH_SUMMARY_MANIFEST_IDENTITY_MISMATCH field=$field run_id=$($manifestRow.run_id)"
+            }
+        }
+    }
+
+    $baselineRows = @($summaryRows | Where-Object { [string]$_.run_id -ceq $script:FrozenBatchBaselineRunId })
+    if ($baselineRows.Count -ne 1 -or [string]$baselineRows[0].execution_status -cne 'ALREADY_COMPLETE') {
+        throw 'BATCH_SUMMARY_BASELINE_STATUS_INVALID expected=ALREADY_COMPLETE'
+    }
+
+    foreach ($row in $summaryRows) {
+        $runId = [string]$row.run_id
+        $status = [string]$row.execution_status
+        if ($runId -ceq $script:FrozenBatchBaselineRunId) { continue }
+        if ($status -cnotin @('COMPLETE', 'PENDING')) {
+            throw "BATCH_SUMMARY_STATUS_NOT_RESUMABLE run_id=$runId status=$status"
+        }
+    }
+
+    $authorizedIds = @($AuthorizedRunIds)
+    if ($authorizedIds.Count -ne @($authorizedIds | Sort-Object -Unique).Count) {
+        throw 'GPU_EXECUTION_PLAN_DUPLICATE_AUTHORIZED_RUN_ID'
+    }
+    foreach ($runId in $authorizedIds) {
+        $matchingRows = @($summaryRows | Where-Object { [string]$_.run_id -ceq [string]$runId })
+        if ($matchingRows.Count -ne 1 -or [string]$matchingRows[0].execution_status -cne 'PENDING') {
+            $status = if ($matchingRows.Count -eq 1) { [string]$matchingRows[0].execution_status } else { 'MISSING_OR_DUPLICATE' }
+            throw "GPU_EXECUTION_PLAN_TASK_NOT_PENDING run_id=$runId status=$status"
+        }
+    }
+
+    $validatedHash = (Get-FileHash -LiteralPath $SummaryPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    if (-not [string]::Equals($hashBeforeRead, $validatedHash, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "BATCH_SUMMARY_CHANGED_DURING_VALIDATION before=$hashBeforeRead after=$validatedHash"
+    }
+    return [pscustomobject]@{
+        SummaryRows = $summaryRows
+        Sha256 = $validatedHash
+        RowCount = $summaryRows.Count
+        BaselineCount = $baselineRows.Count
+        CompleteCount = @($summaryRows | Where-Object { [string]$_.execution_status -eq 'COMPLETE' }).Count
+        PendingCount = @($summaryRows | Where-Object { [string]$_.execution_status -eq 'PENDING' }).Count
+    }
+}
+
+function Resolve-FrozenSageBatchSummaryState {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$SummaryPath,
+        [Parameter(Mandatory)][object[]]$ManifestRows,
+        [Parameter(Mandatory)][object]$BaselineSummaryRow,
+        [Parameter(Mandatory)][bool]$PlanProvided,
+        [string[]]$AuthorizedRunIds = @()
+    )
+
+    if ((Test-Path -LiteralPath $SummaryPath) -and -not (Test-Path -LiteralPath $SummaryPath -PathType Leaf)) {
+        throw "BATCH_SUMMARY_PATH_NOT_FILE path=$SummaryPath"
+    }
+    $allNewRows = @($ManifestRows | Where-Object { [string]$_.run_id -cne $script:FrozenBatchBaselineRunId })
+    $authorizedIds = @($AuthorizedRunIds)
+    if ($PlanProvided) {
+        if ($authorizedIds.Count -eq 0) { throw 'GPU_EXECUTION_PLAN_HAS_NO_PENDING_MANIFEST_RUN_IDS' }
+        if ($authorizedIds.Count -ne @($authorizedIds | Sort-Object -Unique).Count) {
+            throw 'GPU_EXECUTION_PLAN_DUPLICATE_AUTHORIZED_RUN_ID'
+        }
+        if ($authorizedIds -ccontains $script:FrozenBatchBaselineRunId) {
+            throw "GPU_EXECUTION_PLAN_RUN_ID_ALREADY_COMPLETE run_id=$script:FrozenBatchBaselineRunId"
+        }
+        $executionRows = foreach ($runId in $authorizedIds) {
+            $matchingRows = @($allNewRows | Where-Object { [string]$_.run_id -ceq [string]$runId })
+            if ($matchingRows.Count -ne 1) {
+                throw "GPU_EXECUTION_PLAN_MANIFEST_RUN_ID_NOT_UNIQUE run_id=$runId count=$($matchingRows.Count)"
+            }
+            $matchingRows[0]
+        }
+    } else {
+        if ($authorizedIds.Count -gt 0) { throw 'GPU_AUTHORIZED_RUN_IDS_REQUIRE_EXECUTION_PLAN' }
+        $executionRows = @($allNewRows)
+    }
+
+    if (Test-Path -LiteralPath $SummaryPath -PathType Leaf) {
+        if (-not $PlanProvided) {
+            throw "BATCH_SUMMARY_ALREADY_EXISTS path=$SummaryPath; an explicit validated execution plan is required to continue."
+        }
+        $validated = Read-And-ValidateExistingFrozenSageBatchSummary `
+            -SummaryPath $SummaryPath -ManifestRows $ManifestRows -AuthorizedRunIds $authorizedIds
+        $summaryRows = [System.Collections.Generic.List[object]]::new()
+        foreach ($row in $validated.SummaryRows) { $summaryRows.Add($row) }
+        return [pscustomobject]@{
+            IsExistingSummary = $true
+            SummaryRows = $summaryRows
+            ExpectedCurrentHash = $validated.Sha256
+            AllNewRows = $allNewRows
+            ExecutionRows = @($executionRows)
+            SummaryValidation = $validated
+        }
+    }
+
+    $summaryRows = [System.Collections.Generic.List[object]]::new()
+    $summaryRows.Add($BaselineSummaryRow)
+    foreach ($row in $allNewRows) {
+        $summaryRows.Add((New-FrozenSageBatchSummaryRow -ManifestRow $row -Status 'PENDING'))
+    }
+    return [pscustomobject]@{
+        IsExistingSummary = $false
+        SummaryRows = $summaryRows
+        ExpectedCurrentHash = ''
+        AllNewRows = $allNewRows
+        ExecutionRows = @($executionRows)
+        SummaryValidation = $null
+    }
 }
 
 function Get-FrozenSageTaskPaths {
@@ -917,7 +1127,8 @@ function Move-FrozenSageBatchLockToReceipt {
         [Parameter(Mandatory)][string]$ReceiptRoot,
         [Parameter(Mandatory)][string]$FinalStatus,
         [Parameter(Mandatory)][string]$StopReason,
-        [Parameter(Mandatory)][object]$Aggregates
+        [Parameter(Mandatory)][object]$Aggregates,
+        [AllowNull()][object]$PlanScopeSummary = $null
     )
     if (-not (Test-Path -LiteralPath $LockPath -PathType Leaf)) { throw "BATCH_LOCK_MISSING path=$LockPath" }
     $timestamp = [System.DateTimeOffset]::UtcNow.ToString('yyyyMMddTHHmmssfffZ')
@@ -934,6 +1145,12 @@ function Move-FrozenSageBatchLockToReceipt {
         archived_lock_path = $lockDestination
         move_method = 'Move-Item'
         aggregate_status = $Aggregates
+    }
+    if ($null -ne $PlanScopeSummary) {
+        $receipt['authorized_task_count'] = $PlanScopeSummary.AuthorizedTaskCount
+        $receipt['authorized_complete_count'] = $PlanScopeSummary.AuthorizedCompleteCount
+        $receipt['global_complete_count'] = $PlanScopeSummary.GlobalCompleteCount
+        $receipt['global_pending_count'] = $PlanScopeSummary.GlobalPendingCount
     }
     $receiptPath = Join-Path $receiptDirectory 'batch_receipt.json'
     [System.IO.File]::WriteAllText($receiptPath, ($receipt | ConvertTo-Json -Depth 8) + [Environment]::NewLine, [System.Text.UTF8Encoding]::new($false))
@@ -1606,27 +1823,24 @@ function Invoke-FrozenSageRerunBatch {
     $baselineOutput = Join-Path $projectRoot ([string]$context.Baseline.output_namespace)
     $baselineReport = Join-Path $projectRoot $script:FrozenBatchBaselineReportRelativePath
     $baselineSummary = Get-FrozenSageBaselineSummaryRow -ManifestRow $context.Baseline -OutputPath $baselineOutput -RegressionReportPath $baselineReport
-    $scopeRows = if ([string]::IsNullOrWhiteSpace($PlanPath)) {
-        @($context.Rows)
+    $summaryPath = Join-Path $projectRoot $script:FrozenBatchSummaryRelativePath
+    $planProvided = -not [string]::IsNullOrWhiteSpace($PlanPath)
+    $summaryState = Resolve-FrozenSageBatchSummaryState `
+        -SummaryPath $summaryPath `
+        -ManifestRows $context.Rows `
+        -BaselineSummaryRow $baselineSummary `
+        -PlanProvided $planProvided `
+        -AuthorizedRunIds $planResolution.AuthorizedRunIds
+    $allNewRows = @($summaryState.AllNewRows)
+    $newRows = @($summaryState.ExecutionRows)
+    if ($planProvided -and $newRows.Count -eq 0) { throw 'GPU_EXECUTION_PLAN_HAS_NO_PENDING_MANIFEST_RUN_IDS' }
+    $scopeRows = if ($planProvided) {
+        @($context.Baseline) + @($newRows)
     } else {
-        @($context.Rows | Where-Object {
-            [string]$_.run_id -ceq $script:FrozenBatchBaselineRunId -or
-            $planResolution.AuthorizedRunIds -ccontains [string]$_.run_id
-        })
+        @($context.Rows)
     }
     [void](Assert-FrozenSageAllOutputNamespacesAbsent -ProjectRoot $projectRoot -ManifestRows $scopeRows -BaselineRunId $script:FrozenBatchBaselineRunId)
 
-    $summaryPath = Join-Path $projectRoot $script:FrozenBatchSummaryRelativePath
-    if (Test-Path -LiteralPath $summaryPath) { throw "BATCH_SUMMARY_ALREADY_EXISTS path=$summaryPath; no resume/overwrite is authorized." }
-    $allNewRows = @($context.Rows | Where-Object { [string]$_.run_id -cne $script:FrozenBatchBaselineRunId })
-    $newRows = if ([string]::IsNullOrWhiteSpace($PlanPath)) {
-        $allNewRows
-    } else {
-        @($allNewRows | Where-Object { $planResolution.AuthorizedRunIds -ccontains [string]$_.run_id })
-    }
-    if (-not [string]::IsNullOrWhiteSpace($PlanPath) -and $newRows.Count -eq 0) {
-        throw 'GPU_EXECUTION_PLAN_HAS_NO_PENDING_MANIFEST_RUN_IDS'
-    }
     if (-not $ShouldExecute) {
         $preflightFailures = [System.Collections.Generic.List[string]]::new()
         foreach ($row in $newRows) {
@@ -1640,7 +1854,13 @@ function Invoke-FrozenSageRerunBatch {
         }
         [void](Assert-FrozenSageNoActiveRunnerLocks -ProjectRoot $projectRoot)
         [void](Assert-FrozenSageNoMatlabProcess)
-        Write-Output "VALIDATION_ONLY tasks=$($newRows.Count) manifest_tasks=$($allNewRows.Count) baseline=ALREADY_COMPLETE mapping_warnings=$(@($newRows | Where-Object { $_.mapping_warning -ne 'NONE' }).Count) matlab_invoked=false raw_iq_content_read=false execution_mode=$($executionPlan.ExecutionMode)"
+        $summaryMode = if ($summaryState.IsExistingSummary) { 'EXISTING_PLAN_SCOPED' } else { 'FRESH_SUMMARY' }
+        $globalPending = @($summaryState.SummaryRows | Where-Object { [string]$_.execution_status -eq 'PENDING' }).Count
+        Write-Output "VALIDATION_ONLY tasks=$($newRows.Count) manifest_tasks=$($allNewRows.Count) baseline=ALREADY_COMPLETE mapping_warnings=$(@($newRows | Where-Object { $_.mapping_warning -ne 'NONE' }).Count) matlab_invoked=false raw_iq_content_read=false execution_mode=$($executionPlan.ExecutionMode) summary_mode=$summaryMode global_pending=$globalPending"
+        foreach ($row in $newRows) {
+            $summaryRow = @($summaryState.SummaryRows | Where-Object { [string]$_.run_id -ceq [string]$row.run_id }) | Select-Object -First 1
+            Write-Output "PLAN_TASK run_id=$($row.run_id) status=$($summaryRow.execution_status)"
+        }
         if ($preflightFailures.Count -gt 0) { $preflightFailures | ForEach-Object { Write-Output "TASK_SPECIFIC_PREFLIGHT_FAILURE $_" } }
         return
     }
@@ -1651,15 +1871,16 @@ function Invoke-FrozenSageRerunBatch {
     $batchLock = New-FrozenSageBatchLock -LockPath $activeLockPath
     $script:FrozenBatchOwnedLockPath = $activeLockPath
     $batchLockSafeToMove = $true
-    $summaryRows = [System.Collections.Generic.List[object]]::new()
-    $summaryRows.Add($baselineSummary)
-    foreach ($row in $allNewRows) { $summaryRows.Add((New-FrozenSageBatchSummaryRow -ManifestRow $row -Status 'PENDING')) }
-    $summaryHash = ''
+    $summaryRows = $summaryState.SummaryRows
+    $summaryHash = [string]$summaryState.ExpectedCurrentHash
     $stopReason = ''
     $batchStatus = 'STOPPED'
+    $scopeCompletion = $null
     try {
-        $checkpoint = Write-FrozenSageBatchSummary -SummaryPath $summaryPath -Rows @($summaryRows) -ExpectedCurrentHash ''
-        $summaryHash = $checkpoint.Sha256
+        if (-not $summaryState.IsExistingSummary) {
+            $checkpoint = Write-FrozenSageBatchSummary -SummaryPath $summaryPath -Rows @($summaryRows) -ExpectedCurrentHash ''
+            $summaryHash = $checkpoint.Sha256
+        }
         foreach ($manifestRow in $newRows) {
             $summaryRow = @($summaryRows | Where-Object { [string]$_.run_id -ceq [string]$manifestRow.run_id })[0]
             if ([string]$summaryRow.execution_status -ne 'PENDING') { throw "BATCH_TASK_NOT_PENDING run_id=$($manifestRow.run_id)" }
@@ -1768,18 +1989,31 @@ function Invoke-FrozenSageRerunBatch {
             }
         }
 
-        $pendingRows = @($summaryRows | Where-Object { [string]$_.execution_status -eq 'PENDING' })
-        if ($stopReason -eq '' -and $pendingRows.Count -eq 0) {
-            $failedRows = @($summaryRows | Where-Object { [string]$_.execution_status -eq 'FAILED' })
-            $batchStatus = if ($failedRows.Count -gt 0) { 'COMPLETED_WITH_FAILURES' } else { 'COMPLETED' }
-        }
-        elseif ($stopReason -eq '') { $stopReason = 'BATCH_TERMINATED_WITH_PENDING_TASKS' }
         $aggregates = Get-FrozenSageBatchAggregates -Rows @($summaryRows)
+        if ($planProvided) {
+            $scopeCompletion = Get-FrozenSagePlanScopeCompletion `
+                -Rows @($summaryRows) `
+                -AuthorizedRunIds $planResolution.AuthorizedRunIds `
+                -StopReason $stopReason
+            $batchStatus = $scopeCompletion.FinalStatus
+            if ([string]::IsNullOrWhiteSpace($stopReason) -and -not [string]::IsNullOrWhiteSpace($scopeCompletion.StopReason)) {
+                $stopReason = $scopeCompletion.StopReason
+            }
+            Write-Output "$($scopeCompletion.FinalStatus) authorized=$($scopeCompletion.AuthorizedTaskCount) authorized_complete=$($scopeCompletion.AuthorizedCompleteCount) global_complete=$($scopeCompletion.GlobalCompleteCount) remaining_global_pending=$($scopeCompletion.GlobalPendingCount)"
+        } else {
+            $pendingRows = @($summaryRows | Where-Object { [string]$_.execution_status -eq 'PENDING' })
+            if ($stopReason -eq '' -and $pendingRows.Count -eq 0) {
+                $failedRows = @($summaryRows | Where-Object { [string]$_.execution_status -eq 'FAILED' })
+                $batchStatus = if ($failedRows.Count -gt 0) { 'COMPLETED_WITH_FAILURES' } else { 'COMPLETED' }
+            }
+            elseif ($stopReason -eq '') { $stopReason = 'BATCH_TERMINATED_WITH_PENDING_TASKS' }
+        }
         Write-Output '--- BATCH_AGGREGATES ---'
         Format-FrozenSageBatchAggregates -Aggregates $aggregates | ForEach-Object { Write-Output $_ }
         if ($stopReason -ne '') { Write-Output "STOP_BATCH reason=$stopReason" }
     } catch {
         $stopReason = "BATCH_COORDINATOR_EXCEPTION:$($_.Exception.Message)"
+        $batchStatus = 'STOPPED'
         Write-Output "STOP_BATCH reason=$stopReason"
         $inProgress = @($summaryRows | Where-Object { [string]$_.execution_status -eq 'IN_PROGRESS' })
         foreach ($unfinished in $inProgress) {
@@ -1796,10 +2030,19 @@ function Invoke-FrozenSageRerunBatch {
         if ($batchLockSafeToMove) {
             try {
                 $aggregates = Get-FrozenSageBatchAggregates -Rows @($summaryRows)
+                if ($planProvided -and $null -eq $scopeCompletion) {
+                    $scopeCompletion = Get-FrozenSagePlanScopeCompletion `
+                        -Rows @($summaryRows) `
+                        -AuthorizedRunIds $planResolution.AuthorizedRunIds `
+                        -StopReason $stopReason
+                    if ($batchStatus -eq 'STOPPED') { $batchStatus = $scopeCompletion.FinalStatus }
+                }
                 $receipts = Join-Path $executionLogParent 'frozen_sage_batch_receipts'
                 if (-not (Test-Path -LiteralPath $receipts -PathType Container)) { [void](New-Item -ItemType Directory -Path $receipts -ErrorAction Stop) }
                 if (Test-Path -LiteralPath $activeLockPath -PathType Leaf) {
-                    $receipt = Move-FrozenSageBatchLockToReceipt -LockPath $activeLockPath -ReceiptRoot $receipts -FinalStatus $batchStatus -StopReason $stopReason -Aggregates $aggregates
+                    $receipt = Move-FrozenSageBatchLockToReceipt `
+                        -LockPath $activeLockPath -ReceiptRoot $receipts -FinalStatus $batchStatus `
+                        -StopReason $stopReason -Aggregates $aggregates -PlanScopeSummary $scopeCompletion
                     $script:FrozenBatchOwnedLockPath = ''
                     Write-Output "BATCH_LOCK_MOVED_TO_RECEIPT path=$receipt"
                 }
