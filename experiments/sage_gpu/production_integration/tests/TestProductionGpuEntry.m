@@ -60,7 +60,7 @@ verifyFalse(testCase, isfile(fullfile(fixture.OutputDir, ...
 verifyEqual(testCase, dir(fixture.RawPath).bytes, 0);
 end
 
-function testDirectEntryRejectsMissingReleasePinBeforeOutputOrInputResolution(testCase)
+function testDirectEntryRejectsMissingPlanPathBeforeOutputOrInputResolution(testCase)
 addProductionEntryPath();
 projectRoot = tempname;
 mkdir(projectRoot);
@@ -72,11 +72,11 @@ verifyError(testCase, @() run_nav_sage_pipeline_gpu_production( ...
     'ProjectRoot', projectRoot, 'Resume', false, ...
     'RunId', 'caller_chosen_run', ...
     'ExecutionPlanPath', fullfile(projectRoot, 'fake-plan.json')), ...
-    'GNSS:SAGE:GPU_EXECUTION_PLAN_NOT_RELEASED');
+    'GNSS:SAGE:GPU_EXECUTION_PLAN_NOT_FOUND');
 verifyFalse(testCase, isfolder(outputPath));
 end
 
-function testDirectEntryRejectsSchemaValidFakePlanWhilePlanPinIsEmpty(testCase)
+function testDirectEntryRejectsSchemaValidFakePlanAgainstReleasedPin(testCase)
 addProductionEntryPath();
 fixture = makeGpuPlanFixture(testCase, false);
 projectRoot = fullfile(fixture.Root, 'unresolved-project');
@@ -86,7 +86,7 @@ verifyError(testCase, @() run_nav_sage_pipeline_gpu_production( ...
     fixture.SceneId, 3, 'TrackingChannel', fixture.TrackingChannel, ...
     'ProjectRoot', projectRoot, 'Resume', false, ...
     'RunId', fixture.RunId, 'ExecutionPlanPath', fixture.PlanPath), ...
-    'GNSS:SAGE:GPU_EXECUTION_PLAN_NOT_RELEASED');
+    'GNSS:SAGE:GPU_EXECUTION_PLAN_SHA_MISMATCH');
 verifyFalse(testCase, isfolder(outputPath));
 end
 

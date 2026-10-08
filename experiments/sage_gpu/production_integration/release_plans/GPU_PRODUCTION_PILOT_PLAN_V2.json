@@ -1,0 +1,13 @@
+{
+  "schema_version": "frozen-sage-gpu-execution-plan-v2",
+  "execution_mode": "GPU_STAGE2_QUALIFIED",
+  "source_manifest_sha256": "52edba87ee8c6726ea905a3f79879c5351131f9f78fd9120c0881e9473731ac5",
+  "resume": false,
+  "max_parallel_matlab": 1,
+  "authorized_tasks": [
+    {
+      "run_id": "run_20261003_F1023_V120_D0121_P2_G12_ch11",
+      "task_identity_sha256": "d4c495c2b1eafb3ddffca033856a067d99e7689acd7b3c60a313e2068104beeb"
+    }
+  ]
+}
