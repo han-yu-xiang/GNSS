@@ -1,0 +1,791 @@
+{
+  "schema_version": "frozen-sage-production-gpu-source-contract-v1",
+  "frozen_authority_sha256": "bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c",
+  "qualified_candidate_sha256": "5ea69f6b0ebc5e5be13cb109e4ec3eec30f377b52a5f22beed224164a035be3b",
+  "qualified_probe_sha256": "bfe56ad02c99240257fddd212ba43ee5606a81740b3dda716c5947c433cbfa88",
+  "qualified_selector_sha256": "a40c6459e66a384e85053589b270c5d2e112363872153fbf46da5c56fd4bb1f5",
+  "production_entry_sha256": "3189f465f2ced7b66f4835c2c3242fc1caf6d6c4bcdf0f30cb7804348413518d",
+  "frozen_function_order": [
+    "run_nav_sage_pipeline",
+    "parsePipelineInputs",
+    "normalizePrn",
+    "resolveInputs",
+    "absoluteFileNames",
+    "saveRunContext",
+    "runContextsMatch",
+    "readTelemetryDat",
+    "readTrackingMat",
+    "readNmeaSpeed",
+    "buildSymbolCatalog",
+    "buildFortyMsCatalog",
+    "interpolateNmeaSpeed",
+    "speedToDopplerBound",
+    "checkpointConfigurationMatches",
+    "pickVector",
+    "padVector",
+    "plotOverview",
+    "emptySymbolRecord",
+    "emptyWindowRecord",
+    "default_sage_configuration",
+    "compute_sage_doppler_bound",
+    "run_sage_stage1_stage4_local",
+    "determineDopplerSign",
+    "runFastScan",
+    "scanOneWindow",
+    "selectResidualPeaks",
+    "chooseStage2Candidates",
+    "runStage2",
+    "fitAllOrders",
+    "initializeResidualPath",
+    "runSage",
+    "evaluateModel",
+    "invalidModel",
+    "flattenStage2",
+    "evaluatePersistence",
+    "runJointStage",
+    "optimizeJointPaths",
+    "refineJointPath",
+    "evaluateJointModel",
+    "invalidJointModel",
+    "solveSnapshotAlpha",
+    "findFitByWindowId",
+    "longestTrueRun",
+    "loadNavWipedFortyMs",
+    "loadNavWipedTwentyMs",
+    "normalizeSignal",
+    "makeSignalContext",
+    "gridSearchPath",
+    "refinePath",
+    "makeReplica",
+    "buildReplicas",
+    "solveAmplitudes",
+    "synthesize",
+    "residualRss",
+    "replicaCoherence",
+    "makePath",
+    "sortPaths",
+    "makeGrid",
+    "signedFftBins",
+    "readIq",
+    "generateGpsCaCode",
+    "emptyStage1Record",
+    "emptyPeak",
+    "emptyModelRecord",
+    "emptySelectedRecord",
+    "emptyPathRecord",
+    "emptyPersistenceRecord",
+    "emptyReliableRecord",
+    "emptyJointSummaryRecord",
+    "emptyJointPathRecord"
+  ],
+  "frozen_function_aliases": {
+    "run_nav_sage_pipeline": "run_nav_sage_pipeline_gpu_production"
+  },
+  "expected_production_function_order": [
+    "run_nav_sage_pipeline_gpu_production",
+    "parsePipelineInputs",
+    "normalizePrn",
+    "resolveInputs",
+    "absoluteFileNames",
+    "saveRunContext",
+    "runContextsMatch",
+    "readTelemetryDat",
+    "readTrackingMat",
+    "readNmeaSpeed",
+    "buildSymbolCatalog",
+    "buildFortyMsCatalog",
+    "interpolateNmeaSpeed",
+    "speedToDopplerBound",
+    "checkpointConfigurationMatches",
+    "pickVector",
+    "padVector",
+    "plotOverview",
+    "emptySymbolRecord",
+    "emptyWindowRecord",
+    "default_sage_configuration",
+    "compute_sage_doppler_bound",
+    "run_sage_stage1_stage4_local",
+    "determineDopplerSign",
+    "runFastScan",
+    "scanOneWindow",
+    "selectResidualPeaks",
+    "chooseStage2Candidates",
+    "runStage2",
+    "fitAllOrders",
+    "initializeResidualPath",
+    "runSage",
+    "evaluateModel",
+    "invalidModel",
+    "flattenStage2",
+    "evaluatePersistence",
+    "runJointStage",
+    "optimizeJointPaths",
+    "refineJointPath",
+    "evaluateJointModel",
+    "invalidJointModel",
+    "solveSnapshotAlpha",
+    "findFitByWindowId",
+    "longestTrueRun",
+    "loadNavWipedFortyMs",
+    "loadNavWipedTwentyMs",
+    "normalizeSignal",
+    "makeSignalContext",
+    "gridSearchPath",
+    "refinePath",
+    "makeReplica",
+    "buildReplicas",
+    "solveAmplitudes",
+    "synthesize",
+    "residualRss",
+    "replicaCoherence",
+    "makePath",
+    "sortPaths",
+    "makeGrid",
+    "signedFftBins",
+    "readIq",
+    "generateGpsCaCode",
+    "emptyStage1Record",
+    "emptyPeak",
+    "emptyModelRecord",
+    "emptySelectedRecord",
+    "emptyPathRecord",
+    "emptyPersistenceRecord",
+    "emptyReliableRecord",
+    "emptyJointSummaryRecord",
+    "emptyJointPathRecord",
+    "fitAllOrdersGpu",
+    "initializeResidualPathGpu",
+    "runSageGpu",
+    "evaluateModelGpu",
+    "gridSearchPathGpu",
+    "refinePathGpu",
+    "scoreReplicaBatchGpu",
+    "makeReplicaBatchGpu",
+    "buildReplicasGpu",
+    "solveAmplitudesGpu",
+    "synthesizeGpu",
+    "residualRssGpu",
+    "replicaCoherenceGpu",
+    "ensureGpuPathState",
+    "pathAlphaGpu",
+    "gatherGpuFit",
+    "gpuProbeToCpu",
+    "assertProductionGpuInputIdentity",
+    "assertProductionGpuRunContextIdentity",
+    "assertProductionGpuAvailability",
+    "initializeProductionGpuDevice",
+    "writeGpuExecutionProvenance",
+    "computeFileSha256",
+    "validateProductionGpuExecutionPlan",
+    "computeCanonicalGpuTaskIdentitySha256",
+    "getProductionGpuRuntimeLockPath",
+    "acquireProductionGpuRuntimeLock",
+    "releaseProductionGpuRuntimeLock",
+    "writeGpuExecutionAttempt"
+  ],
+  "function_contracts": [
+    {
+      "name": "run_nav_sage_pipeline_gpu_production",
+      "classification": "ALLOWED_PRODUCTION_PLUMBING",
+      "source": "production",
+      "sha256": "004f31d335465779deb3cc655d2c0dd6b33d6c6e3ad83a23ab225d34044c527e"
+    },
+    {
+      "name": "parsePipelineInputs",
+      "classification": "ALLOWED_PRODUCTION_PLUMBING",
+      "source": "production",
+      "sha256": "0bdcbfcd8d47fce48cde1c71dfb42f9a0410d08578568ce19b563acb319f3254"
+    },
+    {
+      "name": "normalizePrn",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "7689ba741e10d65cfc96dd3a22774fb47340a2c5cce4708c7b988e09b2ad88b8"
+    },
+    {
+      "name": "resolveInputs",
+      "classification": "ALLOWED_PRODUCTION_PLUMBING",
+      "source": "production",
+      "sha256": "3282b77a70fcf589cae185ed7914afa898dbeb80835e6db814464222102d68af"
+    },
+    {
+      "name": "absoluteFileNames",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "b41f4a052a2c90e23f5be3d62b4bc94d620b908ca85db5ed3dd38520f806f55c"
+    },
+    {
+      "name": "saveRunContext",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "c56ad627fc87b817d643e4b874b38eebb1052f1de6cada914fad7b365a346726"
+    },
+    {
+      "name": "runContextsMatch",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "40d9777133adf81a669bd657bf7d006354405d01a76ea09980402a79ac9b93a4"
+    },
+    {
+      "name": "readTelemetryDat",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "604af85df3f1f8a16bf881295aa5843f3a720d929adacfc410c1ab469a999278"
+    },
+    {
+      "name": "readTrackingMat",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "2891df81380df6fe2a7f8719b48314e74b01445fb6c57154dd8256a0ea871a29"
+    },
+    {
+      "name": "readNmeaSpeed",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "72ce5facb9e2829d36baf5257d9b21c33b27326c0e0ae86922dbfef932d0379b"
+    },
+    {
+      "name": "buildSymbolCatalog",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "50e768f7616c6cee5cbc873a502dbeaf2ba43cb9cb359f87fa69254e59888c9d"
+    },
+    {
+      "name": "buildFortyMsCatalog",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "e79a88c68223ecd58a086680a80223bdcc71efd3f4e87ef7143475f692b6cc60"
+    },
+    {
+      "name": "interpolateNmeaSpeed",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "8ffdef1822638e95973919ffa17e7efe9e0fe8743d28606bb1f9a0e1da0159aa"
+    },
+    {
+      "name": "speedToDopplerBound",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "b8a595b8c9e660a7fdadac7213c5c2e395ad07e4a9e9524cc6719576b205f324"
+    },
+    {
+      "name": "checkpointConfigurationMatches",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "5dd46e5b724d32a3cc0120dd6a628506130c7faf4451fd4812c8a7a5df2ce1c9"
+    },
+    {
+      "name": "pickVector",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "3bb26a3c601365d51415cbce19ddbea8bd42ee02b8e456c9b90bda39bee6dacf"
+    },
+    {
+      "name": "padVector",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "50b4334a9d826b9e6309a50d0126e07c4dbd5043891e54362662cbedd9774de6"
+    },
+    {
+      "name": "plotOverview",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "4ce39560c6ba98ba2a044943c42f970ab4178a254ababd6cf97e6e956263b311"
+    },
+    {
+      "name": "emptySymbolRecord",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "ec84e11d375c41051da5aabd73496114ba83fdf5d7cab3f784fd9c158cfb87b4"
+    },
+    {
+      "name": "emptyWindowRecord",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "c797f42b47be85b462ffc559089aecb995a2ea59ea4af99f934fe95222b8a0e2"
+    },
+    {
+      "name": "default_sage_configuration",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "620cdb4ca17db522eb7e0e660a9a51143275b7cec93718d91f36998fc50a9bce"
+    },
+    {
+      "name": "compute_sage_doppler_bound",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "66cac458a297e40715096f1b7ed22a310c0244e7565ae17001baff0d53c29948"
+    },
+    {
+      "name": "run_sage_stage1_stage4_local",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "f08745e309cad19f800c5c88e3da58442bee2f011328ab12c954b23a01661e0a"
+    },
+    {
+      "name": "determineDopplerSign",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "1c0d01f1be3e4edf3de81c1fec349059882b493aa86aeb4f8d31cd4f41463840"
+    },
+    {
+      "name": "runFastScan",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "0bb71cff340f9be9e2db4780feef2d6dc34c5c5c871d4221bd3c80c1081200c8"
+    },
+    {
+      "name": "scanOneWindow",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "b1cbb9c02ae6052a6671c47b72b9935e7764dc33e000c22b740a7c1af7c9d974"
+    },
+    {
+      "name": "selectResidualPeaks",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "05942f39da06d59cc55bbfe243a2d721b8d5130e17c3d8772f4a0ad88314c551"
+    },
+    {
+      "name": "chooseStage2Candidates",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "be1842b9c0378823627720b40a418a47bb53f128d704fac11a18c83d28a3fb1c"
+    },
+    {
+      "name": "runStage2",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "96dc162a17cf87dde5300ccd902a8a08fa6c0c10643c0d7b446a214ff1eb8f8e"
+    },
+    {
+      "name": "fitAllOrders",
+      "classification": "ALLOWED_PRODUCTION_PLUMBING",
+      "source": "production",
+      "sha256": "ed626c79e50157cc2f40b78c145a2f53b27e5bbd5890e68e6af87cbfe4d45c8b"
+    },
+    {
+      "name": "initializeResidualPath",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "f44cd27a2f6ec92b4fc2817e4625bf736e5cb10d883e8e0a362d737777b9c2e3"
+    },
+    {
+      "name": "runSage",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "674801d9bb7d5d2a6de338cf1a8b7c45636646fa20fe8081edcc069dfa93a51a"
+    },
+    {
+      "name": "evaluateModel",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "7a3e1fcb4d80ffd9deabfd617b41c874ede0e5258149c72b377377db2ebb9b40"
+    },
+    {
+      "name": "invalidModel",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "7e72f8bef0782163b2a52b506208b8622eb390644d3eda322f00f1d55c8be2f2"
+    },
+    {
+      "name": "flattenStage2",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "22c15b598ff84df379710b2ec9ce4d054855fb5a2fc4786c4b7d734da4b16d2c"
+    },
+    {
+      "name": "evaluatePersistence",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "221746eb016bdc94aacd9d95a5a89b4315c266a9418fd897f9962b3934940152"
+    },
+    {
+      "name": "runJointStage",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "cc0ab1a13007aeceb805bde92f74b806de5136ed45a5e9f645544fc40707a52f"
+    },
+    {
+      "name": "optimizeJointPaths",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "3917fa7d61760881b1b2786dfb4ec6069992f692e8a560ac240404266cf0190c"
+    },
+    {
+      "name": "refineJointPath",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "663442c76c131ca47ab08509c7cc490ac2fb00e0a55d12013ec00a0d89981798"
+    },
+    {
+      "name": "evaluateJointModel",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "6183248afae6015afe1b8e385e6e119a05cc28e66fd20c7b48fd6cb76b68c0aa"
+    },
+    {
+      "name": "invalidJointModel",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "ea5802a43419fc6bd76a4deb8e25b547fc6f4b6b733b526c94247b0da1d108aa"
+    },
+    {
+      "name": "solveSnapshotAlpha",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "de75946938cf22a2d05e91c224944b4760bbc361b4d58bc0d48cbe7960340b41"
+    },
+    {
+      "name": "findFitByWindowId",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "d435a1a84e389b7e51d259c70c1cef8a3c3d22064a10790701c1c7b22edc8ad5"
+    },
+    {
+      "name": "longestTrueRun",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "5173b2b88c1c7ce1cd59e843ed97304410e40b2950693d981df27cd1d74645c1"
+    },
+    {
+      "name": "loadNavWipedFortyMs",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "6acb34fb0947c21ed756382ae782d1bfbebc213c44bef2e9415add42b9e621e0"
+    },
+    {
+      "name": "loadNavWipedTwentyMs",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "c40540ccc71b49a64cd503f6d7465269cd3f43618153e92241495fda7f9cd188"
+    },
+    {
+      "name": "normalizeSignal",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "30c29be623977f72316b7dcfaaf84b5682301e805e8eedb989e9b18ac341f889"
+    },
+    {
+      "name": "makeSignalContext",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "9113c435aaf0c8edd5255cbb220f295ad8597f30e1717f70ae6d844e9393e630"
+    },
+    {
+      "name": "gridSearchPath",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "00c363ec74cb20134bc4b637b6a38a03af5b4cd8e358460e801b1a314f16e0c5"
+    },
+    {
+      "name": "refinePath",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "3a5ea9c15a3d7e7782c3a4b9865478c575ca162de79c19f157ceb30dc6067cea"
+    },
+    {
+      "name": "makeReplica",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "05fbb751db4853c9fba1c1803090f72de27c7c1c9de64c34e4fdffafdbfba8ae"
+    },
+    {
+      "name": "buildReplicas",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "5d7ef37c3366683190eb8e617c972957160e22cfd8c14a5e0794b7d65503e302"
+    },
+    {
+      "name": "solveAmplitudes",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "2ffd946f95b5c2057ec08e83c8209c66a8918d78432f6c70e69297624c19ac46"
+    },
+    {
+      "name": "synthesize",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "ecd635e3bfe26c5083f16a9558f525087358ffb5f2ed6730abc2da8894d15a6f"
+    },
+    {
+      "name": "residualRss",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "16b105cf87d6a7226cb48ce331d733ad3d94d7d5453330f3f38ed06a36fd779c"
+    },
+    {
+      "name": "replicaCoherence",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "ced331b69986a652516339c819dd0c6a8e12cf5b5ee562b0302e5ef20036d441"
+    },
+    {
+      "name": "makePath",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "9d0b7187a87840537c4a1409a10ac6ae758e03540a6f4845418450f6f376049b"
+    },
+    {
+      "name": "sortPaths",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "b7aece91e4b2fc15f44466b6d9a4bd1fe1bf3abb68b4bc6118bf4d14d2dbbfe5"
+    },
+    {
+      "name": "makeGrid",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "dabc9b25697f49276717cb9d14e4fb4b270051d77eb9ae4dee97e11e4af9261b"
+    },
+    {
+      "name": "signedFftBins",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "4dc2001545ca0d2fab9dd15984ae7bfa06515ba95ced6392283d336077f27693"
+    },
+    {
+      "name": "readIq",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "143e42dc0380cd61d90fa97fbba138051025d420b6e0410cf3b829488e774ec9"
+    },
+    {
+      "name": "generateGpsCaCode",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "dafd2c864f3eeda19d22b1a4b09ee4a2315a79623360359459b2a332c2b0b1ed"
+    },
+    {
+      "name": "emptyStage1Record",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "f0492cf31b338f08889ebbe4f75e134574534c10ada11754006be74bcb404bc9"
+    },
+    {
+      "name": "emptyPeak",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "8be547280d695e0a792e04f028a7ee5c46bbea8dc944620adcccecb9a40a2cc9"
+    },
+    {
+      "name": "emptyModelRecord",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "fb93efcd3de261010a19caf424ea1ff2b38f694d6632c5c06ace0191f3cda9ed"
+    },
+    {
+      "name": "emptySelectedRecord",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "de682f47f0a65f9c1dd5199a5ffaa1e7c33a8f0e3825a4a15222256922439d34"
+    },
+    {
+      "name": "emptyPathRecord",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "e2cbde9fb75c601865892ee72802e10394098ed48e60fb86fd8d0d7def373a9f"
+    },
+    {
+      "name": "emptyPersistenceRecord",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "322205ed13257752a3ac99a42f0cbdc5d1fc2c0151d1d4e059fcab3c70f4f4ed"
+    },
+    {
+      "name": "emptyReliableRecord",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "c64c9b24e30cf0be8d56e9fcf384a970e61cf67b0e19db6b15af3ed68db49e94"
+    },
+    {
+      "name": "emptyJointSummaryRecord",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "52d2eef931ec69675ae6a2d34244002106803a6138b9ba57c0285d6befbeeb33"
+    },
+    {
+      "name": "emptyJointPathRecord",
+      "classification": "MUST_BE_BYTE_IDENTICAL_TO_FROZEN",
+      "source": "frozen",
+      "sha256": "96f7c82fe891c963b76631ada118781b0bfe959904b8bbd21b58eba5d5e30c9e"
+    },
+    {
+      "name": "fitAllOrdersGpu",
+      "classification": "MUST_MATCH_QUALIFIED_GPU_RAW",
+      "source": "qualified_candidate",
+      "sha256": "b2d311ece353815c3e3702a395192069bafd9a6f67266327af4250e64362a914"
+    },
+    {
+      "name": "initializeResidualPathGpu",
+      "classification": "MUST_MATCH_QUALIFIED_GPU_RAW",
+      "source": "qualified_candidate",
+      "sha256": "93f5178325ea189736d588de2c0a464dc8006db1c51a95d02b819f0b501ddc92"
+    },
+    {
+      "name": "runSageGpu",
+      "classification": "MUST_MATCH_QUALIFIED_GPU_RAW",
+      "source": "qualified_candidate",
+      "sha256": "758601ff822cf7134a50ed6836bcf071d7e2c34359c7750b1f243e1dbf34d377"
+    },
+    {
+      "name": "evaluateModelGpu",
+      "classification": "MUST_MATCH_QUALIFIED_GPU_RAW",
+      "source": "qualified_candidate",
+      "sha256": "2812e5416173d9e0265b0829bfebb9d46b9141eece06753d1094d644def15974"
+    },
+    {
+      "name": "gridSearchPathGpu",
+      "classification": "MUST_MATCH_QUALIFIED_GPU_RAW",
+      "source": "qualified_candidate",
+      "sha256": "ce7afa83f96183c06901bc490003ff4862e692236afc7b4a10eafadaa65ad8a6"
+    },
+    {
+      "name": "refinePathGpu",
+      "classification": "MUST_MATCH_QUALIFIED_GPU_RAW",
+      "source": "qualified_candidate",
+      "sha256": "c158dcf9586d184ecc0d3f76281842b247a1a0b7e3c951e6fe439a0ef53e470c"
+    },
+    {
+      "name": "scoreReplicaBatchGpu",
+      "classification": "MUST_MATCH_QUALIFIED_GPU_RAW",
+      "source": "qualified_candidate",
+      "sha256": "97091c1f38ca113397e83ecb7a481af9da827d055a2c0d77f41fc6cfe4cb8b1e"
+    },
+    {
+      "name": "makeReplicaBatchGpu",
+      "classification": "MUST_MATCH_QUALIFIED_GPU_RAW",
+      "source": "qualified_candidate",
+      "sha256": "234608434c59cf5a8ea6af37459f4375c8370e5a3e638b8b1c129c30c5d1200a"
+    },
+    {
+      "name": "buildReplicasGpu",
+      "classification": "MUST_MATCH_QUALIFIED_GPU_RAW",
+      "source": "qualified_candidate",
+      "sha256": "f95b7227a2b988b97980d127c0abe3bb0d4db0b0bfc9e01ca8518619306050e0"
+    },
+    {
+      "name": "solveAmplitudesGpu",
+      "classification": "MUST_MATCH_QUALIFIED_GPU_RAW",
+      "source": "qualified_candidate",
+      "sha256": "1f056fcbc1410b990eaa6b3e655e5e737a86f138180f69216605f4230b630d5c"
+    },
+    {
+      "name": "synthesizeGpu",
+      "classification": "MUST_MATCH_QUALIFIED_GPU_RAW",
+      "source": "qualified_candidate",
+      "sha256": "ca4499a85ee25ae7f3cbf5df11ed14f728f0b3405dbc3974558c2ae64a2a7475"
+    },
+    {
+      "name": "residualRssGpu",
+      "classification": "MUST_MATCH_QUALIFIED_GPU_RAW",
+      "source": "qualified_candidate",
+      "sha256": "51bcb63b2628f7bc313d2e6b6125254dc72d5146f286fbda972047ed5ff209f8"
+    },
+    {
+      "name": "replicaCoherenceGpu",
+      "classification": "MUST_MATCH_QUALIFIED_GPU_RAW",
+      "source": "qualified_candidate",
+      "sha256": "e7ef5bce7ba274afd67c208cc99abdce9999e5bee38d24373e651f1821ce4868"
+    },
+    {
+      "name": "ensureGpuPathState",
+      "classification": "MUST_MATCH_QUALIFIED_GPU_RAW",
+      "source": "qualified_candidate",
+      "sha256": "e226fde4a2a60d9d04382bc0200493df26083a78ea8ed66cae35e7febaf8854d"
+    },
+    {
+      "name": "pathAlphaGpu",
+      "classification": "MUST_MATCH_QUALIFIED_GPU_RAW",
+      "source": "qualified_candidate",
+      "sha256": "38ac820b5d248f002c767280f569f7bcbbff483c6a79f69dd702ae32a5a03f9c"
+    },
+    {
+      "name": "gatherGpuFit",
+      "classification": "EXACT_PINNED",
+      "source": "qualified_candidate",
+      "sha256": "e888255d30e77a5e1231f44e3d07b566df3fa74d55358d03b4732791bcc45571"
+    },
+    {
+      "name": "gpuProbeToCpu",
+      "classification": "MUST_MATCH_QUALIFIED_GPU_RAW",
+      "source": "qualified_candidate",
+      "sha256": "0932abbfd3d54807cff90eecf28cd182e2d41402d4a26b5c367fac676a3fa362"
+    },
+    {
+      "name": "assertProductionGpuInputIdentity",
+      "classification": "ALLOWED_PRODUCTION_PLUMBING",
+      "source": "production",
+      "sha256": "fd576d0eb2608404d81e2d1deec7c9c2da4e449d6a36d5c504df7b2de3df5dca"
+    },
+    {
+      "name": "assertProductionGpuRunContextIdentity",
+      "classification": "ALLOWED_PRODUCTION_PLUMBING",
+      "source": "production",
+      "sha256": "c5d83dd058fb947b93ffcfc23b56566e5cd3c9ab076cae91bd47fda9875f55c9"
+    },
+    {
+      "name": "assertProductionGpuAvailability",
+      "classification": "ALLOWED_PRODUCTION_PLUMBING",
+      "source": "production",
+      "sha256": "4db568fb0f11bcdb372669e35ab23db09ce1041b6a8f7b1a1c15d69453010baa"
+    },
+    {
+      "name": "initializeProductionGpuDevice",
+      "classification": "ALLOWED_PRODUCTION_PLUMBING",
+      "source": "production",
+      "sha256": "a2ee08b065217d0c10722d90f39041beef00beb2df4b2a841c8d54f1a5866357"
+    },
+    {
+      "name": "writeGpuExecutionProvenance",
+      "classification": "ALLOWED_PRODUCTION_PLUMBING",
+      "source": "production",
+      "sha256": "7ea3fd47cf687419714c44983cf874f9d32fba626db6c3e4d7e962d463eb4910"
+    },
+    {
+      "name": "computeFileSha256",
+      "classification": "ALLOWED_PRODUCTION_PLUMBING",
+      "source": "production",
+      "sha256": "68a9871cab0e3db1c346a899456c7d365d95b3490b8da5418ac9eafee5631a58"
+    },
+    {
+      "name": "validateProductionGpuExecutionPlan",
+      "classification": "ALLOWED_PRODUCTION_PLUMBING",
+      "source": "production",
+      "sha256": "adbc7f9ab6ca1e46fd70b311abeff3ce0ecf7f35c73056f879babf17570067b1"
+    },
+    {
+      "name": "computeCanonicalGpuTaskIdentitySha256",
+      "classification": "ALLOWED_PRODUCTION_PLUMBING",
+      "source": "production",
+      "sha256": "e5964496c65cd0fbc1b2f9b8f6a174df4da35fc45967e06f43eca20e9625f289"
+    },
+    {
+      "name": "getProductionGpuRuntimeLockPath",
+      "classification": "ALLOWED_PRODUCTION_PLUMBING",
+      "source": "production",
+      "sha256": "56d823dd2dc7a133b77060ade126819454656d5ce2df924055eb5cf219022592"
+    },
+    {
+      "name": "acquireProductionGpuRuntimeLock",
+      "classification": "ALLOWED_PRODUCTION_PLUMBING",
+      "source": "production",
+      "sha256": "b4868db325b8feecdab1bce38f0e4ab08450a553d15d02c6a3c2edd39ce1c991"
+    },
+    {
+      "name": "releaseProductionGpuRuntimeLock",
+      "classification": "ALLOWED_PRODUCTION_PLUMBING",
+      "source": "production",
+      "sha256": "a9902c279921cdaded4a44e4b0f867207d95463f56455569c40ec00df3d558e1"
+    },
+    {
+      "name": "writeGpuExecutionAttempt",
+      "classification": "ALLOWED_PRODUCTION_PLUMBING",
+      "source": "production",
+      "sha256": "aa7cb3f6b8ded4068b0b8afd9d60a105411a3dbb0d97bcedd972625847e76e8b"
+    }
+  ],
+  "exact_pinned_blocks": {
+    "gatherGpuFit": "e888255d30e77a5e1231f44e3d07b566df3fa74d55358d03b4732791bcc45571"
+  }
+}

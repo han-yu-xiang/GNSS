@@ -2,6 +2,7 @@
 param(
     [switch]$ValidateOnly,
     [switch]$Execute,
+    [string]$ExecutionPlanPath,
     [string]$ValidateRecoveryRunId,
     [string]$RecoverRunId,
     [switch]$ParallelPilot
@@ -12,10 +13,12 @@ $ErrorActionPreference = 'Stop'
 $OutputEncoding = [System.Text.UTF8Encoding]::new($false)
 $script:FrozenBatchRequestedValidateOnly = [bool]$ValidateOnly.IsPresent
 $script:FrozenBatchRequestedExecute = [bool]$Execute.IsPresent
+$script:FrozenBatchRequestedExecutionPlanPath = $ExecutionPlanPath
 
 if (-not (Get-Command -Name 'Get-FrozenSagePreflight' -ErrorAction SilentlyContinue)) {
     . (Join-Path $PSScriptRoot 'Invoke-FrozenSageRerunSingle.ps1')
 }
+$ExecutionPlanPath = $script:FrozenBatchRequestedExecutionPlanPath
 
 $script:FrozenBatchProjectRoot = 'E:\GNSS_Multipath_Project'
 $script:FrozenBatchManifestRelativePath = 'reports\data_consolidation_20261003\MAINLINE_SAGE_1023_RERUN_MANIFEST.csv'
@@ -48,6 +51,94 @@ function Resolve-FrozenSageBatchMode {
     }
     if ($Execute) { return 'EXECUTE' }
     return 'VALIDATE_ONLY'
+}
+
+function Resolve-FrozenSageBatchExecutionPlan {
+    [CmdletBinding()]
+    param(
+        [AllowNull()][string]$ExecutionPlanPath,
+        [Parameter(Mandatory)][string]$ManifestPath,
+        [Parameter(Mandatory)][string]$SourceContractPath,
+        [Parameter(Mandatory)][object[]]$ManifestRows
+    )
+
+    if ([string]::IsNullOrWhiteSpace($ExecutionPlanPath)) {
+        return [pscustomobject]@{
+            ExecutionPlan = [pscustomobject]@{
+                ExecutionMode = 'CPU_FROZEN'; ExecutionPlanSha256 = ''
+                SourceManifestSha256 = ''; GpuSourceContractSha256 = ''
+                Resume = $false; MaxParallelMatlab = 1; AuthorizedRunIds = @()
+                AuthorizedTasks = @()
+            }
+            AuthorizedRunIds = @()
+        }
+    }
+    [void](Assert-FrozenSageExecutionPlanPin -ExecutionPlanPath $ExecutionPlanPath)
+    [void](Assert-FrozenSageGpuRuntimeReleasePins -SourceContractPath $SourceContractPath)
+    if (-not (Test-Path -LiteralPath $ExecutionPlanPath -PathType Leaf)) {
+        throw "GPU_EXECUTION_PLAN_NOT_FOUND path=$ExecutionPlanPath"
+    }
+    try {
+        $planDocument = Get-Content -Raw -LiteralPath $ExecutionPlanPath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+    } catch {
+        throw "GPU_EXECUTION_PLAN_JSON_INVALID detail=$($_.Exception.Message)"
+    }
+    if ($planDocument.PSObject.Properties.Name -cnotcontains 'authorized_tasks' -or
+        $null -eq $planDocument.authorized_tasks) {
+        throw 'GPU_EXECUTION_PLAN_AUTHORIZED_TASKS_INVALID expected_nonempty_array'
+    }
+    $authorizedTasks = @($planDocument.authorized_tasks)
+    $authorizedIds = @($authorizedTasks | ForEach-Object { [string]$_.run_id })
+    if ($authorizedTasks.Count -eq 0 -or $authorizedIds -contains '') {
+        throw 'GPU_EXECUTION_PLAN_AUTHORIZED_TASKS_INVALID expected_nonempty_task_objects'
+    }
+    $duplicateRunIds = @($authorizedIds | Group-Object | Where-Object Count -gt 1 | ForEach-Object Name)
+    if ($duplicateRunIds.Count -gt 0) {
+        throw "GPU_EXECUTION_PLAN_DUPLICATE_AUTHORIZED_RUN_ID ids=$($duplicateRunIds -join ',')"
+    }
+    $validatedPlan = $null
+    foreach ($authorizedId in $authorizedIds) {
+        $rowCount = @($ManifestRows | Where-Object { [string]$_.run_id -ceq $authorizedId }).Count
+        if ($rowCount -ne 1) {
+            throw "GPU_EXECUTION_PLAN_MANIFEST_RUN_ID_NOT_UNIQUE run_id=$authorizedId count=$rowCount"
+        }
+        $resolved = Resolve-FrozenSageExecutionPlan `
+            -ExecutionPlanPath $ExecutionPlanPath `
+            -RunId $authorizedId `
+            -ManifestPath $ManifestPath `
+            -SourceContractPath $SourceContractPath
+        if ($null -eq $validatedPlan) { $validatedPlan = $resolved }
+    }
+    $batchBaseline = $script:FrozenBatchBaselineRunId
+    if ($authorizedIds -ccontains $batchBaseline) {
+        throw "GPU_EXECUTION_PLAN_RUN_ID_ALREADY_COMPLETE run_id=$batchBaseline"
+    }
+    $validatedPlan | Add-Member -NotePropertyName AuthorizedRunIds -NotePropertyValue $authorizedIds -Force
+    $validatedPlan | Add-Member -NotePropertyName AuthorizedTasks -NotePropertyValue $authorizedTasks -Force
+    return [pscustomobject]@{
+        ExecutionPlan = $validatedPlan
+        AuthorizedRunIds = $authorizedIds
+    }
+}
+
+function Assert-FrozenSageGpuParallelPilotNotAllowed {
+    param([AllowNull()][string]$ExecutionPlanPath)
+    if ([string]::IsNullOrWhiteSpace($ExecutionPlanPath)) { return $true }
+    [void](Assert-FrozenSageExecutionPlanPin -ExecutionPlanPath $ExecutionPlanPath)
+    $sourcePaths = Get-FrozenSageGpuSourcePaths
+    [void](Assert-FrozenSageGpuRuntimeReleasePins -SourceContractPath $sourcePaths.SourceContract)
+    if (-not (Test-Path -LiteralPath $ExecutionPlanPath -PathType Leaf)) {
+        throw "GPU_EXECUTION_PLAN_NOT_FOUND path=$ExecutionPlanPath"
+    }
+    try {
+        $plan = Get-Content -Raw -LiteralPath $ExecutionPlanPath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+    } catch {
+        throw "GPU_EXECUTION_PLAN_JSON_INVALID detail=$($_.Exception.Message)"
+    }
+    if ([string]$plan.execution_mode -ceq 'GPU_STAGE2_QUALIFIED') {
+        throw 'GPU_PARALLEL_PILOT_NOT_ALLOWED max_parallel_matlab_must_be_1'
+    }
+    return $true
 }
 
 function Assert-FrozenSageNoActiveRunnerLocks {
@@ -331,6 +422,12 @@ function Get-FrozenSageFailureDisposition {
     )
 
     if (-not $RunnerProcessEnded) {
+        return 'STOP_BATCH'
+    }
+    if ($FailureReason -in @(
+        'GPU_GLOBAL_LOCK_PRESENT', 'GPU_SOURCE_IDENTITY_MISMATCH', 'GPU_NOT_AVAILABLE',
+        'GPU_INITIALIZATION_FAILED', 'GPU_STAGE2_MATLAB_FAILURE'
+    )) {
         return 'STOP_BATCH'
     }
     $inputFailures = @(
@@ -626,11 +723,13 @@ function Assert-FrozenSageAllOutputNamespacesAbsent {
 function Start-FrozenSageSingleTaskProcess {
     param(
         [Parameter(Mandatory)][string]$ProjectRoot,
-        [Parameter(Mandatory)][string]$RunId
+        [Parameter(Mandatory)][string]$RunId,
+        [AllowNull()][string]$ExecutionPlanPath
     )
     $childPowerShell = Join-Path $PSHOME 'pwsh.exe'
     if (-not (Test-Path -LiteralPath $childPowerShell -PathType Leaf)) { throw "POWERSHELL_CHILD_EXECUTABLE_MISSING path=$childPowerShell" }
-    $singleRunner = Join-Path $ProjectRoot 'scripts\sage_pipeline\Invoke-FrozenSageRerunSingle.ps1'
+    $singleRunner = Join-Path $PSScriptRoot 'Invoke-FrozenSageRerunSingle.ps1'
+    if (-not (Test-Path -LiteralPath $singleRunner -PathType Leaf)) { throw "SINGLE_TASK_RUNNER_MISSING path=$singleRunner" }
     $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
     $startInfo.FileName = $childPowerShell
     $startInfo.WorkingDirectory = $ProjectRoot
@@ -638,7 +737,12 @@ function Start-FrozenSageSingleTaskProcess {
     $startInfo.RedirectStandardOutput = $true
     $startInfo.RedirectStandardError = $true
     $startInfo.CreateNoWindow = $true
-    foreach ($argument in @('-NoProfile', '-File', $singleRunner, '-RunId', $RunId, '-Execute')) { [void]$startInfo.ArgumentList.Add($argument) }
+    foreach ($argument in @('-NoProfile', '-File', $singleRunner, '-RunId', $RunId)) { [void]$startInfo.ArgumentList.Add($argument) }
+    if (-not [string]::IsNullOrWhiteSpace($ExecutionPlanPath)) {
+        [void]$startInfo.ArgumentList.Add('-ExecutionPlanPath')
+        [void]$startInfo.ArgumentList.Add([System.IO.Path]::GetFullPath($ExecutionPlanPath))
+    }
+    [void]$startInfo.ArgumentList.Add('-Execute')
     $process = [System.Diagnostics.Process]::new()
     $process.StartInfo = $startInfo
     if (-not $process.Start()) { throw "SINGLE_TASK_RUNNER_START_FAILED run_id=$RunId" }
@@ -662,7 +766,8 @@ function Assert-FrozenSageSuccessfulTask {
     param(
         [Parameter(Mandatory)][object]$ManifestRow,
         [Parameter(Mandatory)][object]$ChildResult,
-        [Parameter(Mandatory)][string]$ProjectRoot
+        [Parameter(Mandatory)][string]$ProjectRoot,
+        [string]$ExecutionMode = 'CPU_FROZEN'
     )
     if (-not $ChildResult.ProcessEnded -or $ChildResult.ExitCode -ne 0) {
         throw "SINGLE_TASK_RUNNER_FAILED exit_code=$($ChildResult.ExitCode) process_ended=$($ChildResult.ProcessEnded)"
@@ -676,6 +781,11 @@ function Assert-FrozenSageSuccessfulTask {
     }
     if (-not $output.Contains("FROZEN_SAGE_SHA_AFTER=$($ManifestRow.frozen_sage_sha256)")) {
         throw "SINGLE_TASK_POST_RUN_HASH_EVIDENCE_MISSING run_id=$($ManifestRow.run_id)"
+    }
+    if ($ExecutionMode -eq 'GPU_STAGE2_QUALIFIED' -and
+        (-not $output.Contains('GPU_PREFLIGHT_PASS') -or
+         -not $output.Contains('execution_mode=GPU_STAGE2_QUALIFIED'))) {
+        throw "GPU_TASK_SUCCESS_MARKER_MISSING run_id=$($ManifestRow.run_id)"
     }
     $paths = Get-FrozenSageTaskPaths -ProjectRoot $ProjectRoot -ManifestRow $ManifestRow
     [void](Assert-StageOutputsComplete -OutputPath $paths.FinalPath)
@@ -702,6 +812,19 @@ function Assert-FrozenSageSuccessfulTask {
         [int]$receipt.tracking_channel -ne [int]$ManifestRow.tracking_channel -or
         -not [string]::Equals($receiptFinalPath, $expectedFinalPath, [System.StringComparison]::OrdinalIgnoreCase)) {
         throw "SINGLE_TASK_RELOCATION_RECEIPT_INVALID run_id=$($ManifestRow.run_id)"
+    }
+    if ($ExecutionMode -eq 'GPU_STAGE2_QUALIFIED') {
+        $provenancePath = Join-Path $paths.FinalPath 'gpu_execution_provenance.json'
+        if ([string]$receipt.execution_mode -cne 'GPU_STAGE2_QUALIFIED' -or
+            -not [string]::Equals([System.IO.Path]::GetFullPath([string]$receipt.gpu_execution_provenance_path),
+                [System.IO.Path]::GetFullPath($provenancePath), [System.StringComparison]::OrdinalIgnoreCase) -or
+            -not (Test-Path -LiteralPath $provenancePath -PathType Leaf) -or
+            [string]$receipt.gpu_execution_provenance_sha256 -cne
+                (Get-FileHash -LiteralPath $provenancePath -Algorithm SHA256).Hash.ToLowerInvariant()) {
+            throw "GPU_TASK_PROVENANCE_RECEIPT_INVALID run_id=$($ManifestRow.run_id)"
+        }
+    } elseif ($receipt.PSObject.Properties.Name -contains 'execution_mode') {
+        throw "CPU_TASK_RECEIPT_HAS_GPU_FIELDS run_id=$($ManifestRow.run_id)"
     }
     $lockReceipt = Get-Content -Raw -LiteralPath $lockReceiptPath | ConvertFrom-Json -ErrorAction Stop
     if ([string]$lockReceipt.run_id -cne [string]$ManifestRow.run_id -or [string]$lockReceipt.scene_id -cne [string]$ManifestRow.scene_id -or
@@ -741,6 +864,15 @@ function Get-FrozenSageFailureEvidence {
             MatlabExitCode = if ($null -eq $receipt.matlab_exit_code) { -1 } else { [int]$receipt.matlab_exit_code }
             ReceiptPath = $receiptPath
             FailureTimestampUtc = [string]$receipt.archived_utc
+        }
+    }
+    $gpuFailure = [regex]::Match($text, 'GPU_(?:GLOBAL_LOCK_PRESENT|SOURCE_IDENTITY_MISMATCH|NOT_AVAILABLE|INITIALIZATION_FAILED|STAGE2_MATLAB_FAILURE)')
+    if ($gpuFailure.Success) {
+        return [pscustomobject]@{
+            FailureReason = $gpuFailure.Value
+            MatlabStarted = $false; MatlabProcessId = -1
+            MatlabProcessEnded = $false; MatlabExitCode = -1
+            ReceiptPath = ''; FailureTimestampUtc = [System.DateTimeOffset]::UtcNow.ToString('o')
         }
     }
     $reason = Get-FrozenSageTaskSpecificInputReason -Text $text
@@ -843,13 +975,14 @@ function Select-FrozenSageParallelPilotTasks {
 function New-FrozenSageSingleTaskProcessStartInfo {
     param(
         [Parameter(Mandatory)][string]$ProjectRoot,
-        [Parameter(Mandatory)][string]$RunId
+        [Parameter(Mandatory)][string]$RunId,
+        [AllowNull()][string]$ExecutionPlanPath
     )
     $childPowerShell = Join-Path $PSHOME 'pwsh.exe'
     if (-not (Test-Path -LiteralPath $childPowerShell -PathType Leaf)) {
         throw "POWERSHELL_CHILD_EXECUTABLE_MISSING path=$childPowerShell"
     }
-    $singleRunner = Join-Path $ProjectRoot 'scripts\sage_pipeline\Invoke-FrozenSageRerunSingle.ps1'
+    $singleRunner = Join-Path $PSScriptRoot 'Invoke-FrozenSageRerunSingle.ps1'
     if (-not (Test-Path -LiteralPath $singleRunner -PathType Leaf)) { throw "SINGLE_TASK_RUNNER_MISSING path=$singleRunner" }
     $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
     $startInfo.FileName = $childPowerShell
@@ -858,18 +991,24 @@ function New-FrozenSageSingleTaskProcessStartInfo {
     $startInfo.RedirectStandardOutput = $true
     $startInfo.RedirectStandardError = $true
     $startInfo.CreateNoWindow = $true
-    foreach ($argument in @('-NoProfile', '-File', $singleRunner, '-RunId', $RunId, '-Execute')) {
+    foreach ($argument in @('-NoProfile', '-File', $singleRunner, '-RunId', $RunId)) {
         [void]$startInfo.ArgumentList.Add($argument)
     }
+    if (-not [string]::IsNullOrWhiteSpace($ExecutionPlanPath)) {
+        [void]$startInfo.ArgumentList.Add('-ExecutionPlanPath')
+        [void]$startInfo.ArgumentList.Add([System.IO.Path]::GetFullPath($ExecutionPlanPath))
+    }
+    [void]$startInfo.ArgumentList.Add('-Execute')
     return $startInfo
 }
 
 function Start-FrozenSageSingleTaskProcessAsync {
     param(
         [Parameter(Mandatory)][string]$ProjectRoot,
-        [Parameter(Mandatory)][string]$RunId
+        [Parameter(Mandatory)][string]$RunId,
+        [AllowNull()][string]$ExecutionPlanPath
     )
-    $startInfo = New-FrozenSageSingleTaskProcessStartInfo -ProjectRoot $ProjectRoot -RunId $RunId
+    $startInfo = New-FrozenSageSingleTaskProcessStartInfo -ProjectRoot $ProjectRoot -RunId $RunId -ExecutionPlanPath $ExecutionPlanPath
     $process = [System.Diagnostics.Process]::new()
     $process.StartInfo = $startInfo
     $startedUtc = [System.DateTimeOffset]::UtcNow
@@ -1440,7 +1579,10 @@ function Invoke-FrozenSageParallelPilot {
 }
 
 function Invoke-FrozenSageRerunBatch {
-    param([Parameter(Mandatory)][bool]$ShouldExecute)
+    param(
+        [Parameter(Mandatory)][bool]$ShouldExecute,
+        [AllowNull()][string]$PlanPath
+    )
 
     $projectRoot = $script:FrozenBatchProjectRoot
     if (-not [string]::Equals([System.IO.Path]::GetFullPath($projectRoot), (Get-Location).Path, [System.StringComparison]::OrdinalIgnoreCase)) {
@@ -1453,19 +1595,43 @@ function Invoke-FrozenSageRerunBatch {
     [void](Assert-FrozenSageHash -ActualHash $sourceHash -ExpectedHash $script:FrozenSourceSha256)
 
     $context = Get-FrozenSageBatchManifestContext -ProjectRoot $projectRoot
+    $manifestPath = Join-Path $projectRoot $script:FrozenBatchManifestRelativePath
+    $gpuPaths = Get-FrozenSageGpuSourcePaths
+    $planResolution = Resolve-FrozenSageBatchExecutionPlan `
+        -ExecutionPlanPath $PlanPath `
+        -ManifestPath $manifestPath `
+        -SourceContractPath $gpuPaths.SourceContract `
+        -ManifestRows $context.Rows
+    $executionPlan = $planResolution.ExecutionPlan
     $baselineOutput = Join-Path $projectRoot ([string]$context.Baseline.output_namespace)
     $baselineReport = Join-Path $projectRoot $script:FrozenBatchBaselineReportRelativePath
     $baselineSummary = Get-FrozenSageBaselineSummaryRow -ManifestRow $context.Baseline -OutputPath $baselineOutput -RegressionReportPath $baselineReport
-    [void](Assert-FrozenSageAllOutputNamespacesAbsent -ProjectRoot $projectRoot -ManifestRows $context.Rows -BaselineRunId $script:FrozenBatchBaselineRunId)
+    $scopeRows = if ([string]::IsNullOrWhiteSpace($PlanPath)) {
+        @($context.Rows)
+    } else {
+        @($context.Rows | Where-Object {
+            [string]$_.run_id -ceq $script:FrozenBatchBaselineRunId -or
+            $planResolution.AuthorizedRunIds -ccontains [string]$_.run_id
+        })
+    }
+    [void](Assert-FrozenSageAllOutputNamespacesAbsent -ProjectRoot $projectRoot -ManifestRows $scopeRows -BaselineRunId $script:FrozenBatchBaselineRunId)
 
     $summaryPath = Join-Path $projectRoot $script:FrozenBatchSummaryRelativePath
     if (Test-Path -LiteralPath $summaryPath) { throw "BATCH_SUMMARY_ALREADY_EXISTS path=$summaryPath; no resume/overwrite is authorized." }
-    $newRows = @($context.Rows | Where-Object { [string]$_.run_id -cne $script:FrozenBatchBaselineRunId })
+    $allNewRows = @($context.Rows | Where-Object { [string]$_.run_id -cne $script:FrozenBatchBaselineRunId })
+    $newRows = if ([string]::IsNullOrWhiteSpace($PlanPath)) {
+        $allNewRows
+    } else {
+        @($allNewRows | Where-Object { $planResolution.AuthorizedRunIds -ccontains [string]$_.run_id })
+    }
+    if (-not [string]::IsNullOrWhiteSpace($PlanPath) -and $newRows.Count -eq 0) {
+        throw 'GPU_EXECUTION_PLAN_HAS_NO_PENDING_MANIFEST_RUN_IDS'
+    }
     if (-not $ShouldExecute) {
         $preflightFailures = [System.Collections.Generic.List[string]]::new()
         foreach ($row in $newRows) {
             try {
-                $preflight = Get-FrozenSagePreflight -RunId ([string]$row.run_id)
+                $preflight = Get-FrozenSagePreflight -RunId ([string]$row.run_id) -ExecutionPlan $executionPlan
                 if ([string]$preflight.MappingWarning -cne [string]$row.mapping_warning) { throw 'MANIFEST_MAPPING_WARNING_CHANGED' }
             } catch {
                 $reason = Get-FrozenSageTaskSpecificInputReason -Text $_.Exception.Message
@@ -1474,7 +1640,7 @@ function Invoke-FrozenSageRerunBatch {
         }
         [void](Assert-FrozenSageNoActiveRunnerLocks -ProjectRoot $projectRoot)
         [void](Assert-FrozenSageNoMatlabProcess)
-        Write-Output "VALIDATION_ONLY tasks=$($newRows.Count) baseline=ALREADY_COMPLETE mapping_warnings=$(@($newRows | Where-Object { $_.mapping_warning -ne 'NONE' }).Count) matlab_invoked=false raw_iq_content_read=false"
+        Write-Output "VALIDATION_ONLY tasks=$($newRows.Count) manifest_tasks=$($allNewRows.Count) baseline=ALREADY_COMPLETE mapping_warnings=$(@($newRows | Where-Object { $_.mapping_warning -ne 'NONE' }).Count) matlab_invoked=false raw_iq_content_read=false execution_mode=$($executionPlan.ExecutionMode)"
         if ($preflightFailures.Count -gt 0) { $preflightFailures | ForEach-Object { Write-Output "TASK_SPECIFIC_PREFLIGHT_FAILURE $_" } }
         return
     }
@@ -1487,7 +1653,7 @@ function Invoke-FrozenSageRerunBatch {
     $batchLockSafeToMove = $true
     $summaryRows = [System.Collections.Generic.List[object]]::new()
     $summaryRows.Add($baselineSummary)
-    foreach ($row in $newRows) { $summaryRows.Add((New-FrozenSageBatchSummaryRow -ManifestRow $row -Status 'PENDING')) }
+    foreach ($row in $allNewRows) { $summaryRows.Add((New-FrozenSageBatchSummaryRow -ManifestRow $row -Status 'PENDING')) }
     $summaryHash = ''
     $stopReason = ''
     $batchStatus = 'STOPPED'
@@ -1508,7 +1674,7 @@ function Invoke-FrozenSageRerunBatch {
                 $beforeHash = (Get-FileHash -LiteralPath $sourcePath -Algorithm SHA256).Hash.ToLowerInvariant()
                 [void](Assert-FrozenSageHash -ActualHash $beforeHash -ExpectedHash $script:FrozenSourceSha256)
                 [void](Assert-FrozenSageManifestRow -Row $manifestRow -ExpectedRunId ([string]$manifestRow.run_id))
-                $preflight = Get-FrozenSagePreflight -RunId ([string]$manifestRow.run_id)
+                $preflight = Get-FrozenSagePreflight -RunId ([string]$manifestRow.run_id) -ExecutionPlan $executionPlan
                 if ([string]$preflight.MappingWarning -cne [string]$manifestRow.mapping_warning) { throw 'MANIFEST_MAPPING_WARNING_CHANGED' }
             } catch {
                 $preflightMessage = $_.Exception.Message
@@ -1526,7 +1692,7 @@ function Invoke-FrozenSageRerunBatch {
             $batchLockSafeToMove = $false
             $child = $null
             try {
-                $child = Start-FrozenSageSingleTaskProcess -ProjectRoot $projectRoot -RunId ([string]$manifestRow.run_id)
+                $child = Start-FrozenSageSingleTaskProcess -ProjectRoot $projectRoot -RunId ([string]$manifestRow.run_id) -ExecutionPlanPath $PlanPath
             } finally {
                 if ($null -ne $child -and $child.ProcessEnded) { $batchLockSafeToMove = $true }
             }
@@ -1541,7 +1707,7 @@ function Invoke-FrozenSageRerunBatch {
 
             if ($child.ExitCode -eq 0) {
                 try {
-                    $validated = Assert-FrozenSageSuccessfulTask -ManifestRow $manifestRow -ChildResult $child -ProjectRoot $projectRoot
+                    $validated = Assert-FrozenSageSuccessfulTask -ManifestRow $manifestRow -ChildResult $child -ProjectRoot $projectRoot -ExecutionMode $executionPlan.ExecutionMode
                     $summaryRow.execution_status = 'COMPLETE'
                     $summaryRow.matlab_exit_code = '0'
                     foreach ($field in $validated.Metrics.PSObject.Properties.Name) { $summaryRow.$field = [string]$validated.Metrics.$field }
@@ -1648,17 +1814,18 @@ function Invoke-FrozenSageRerunBatch {
 
 if ($MyInvocation.InvocationName -ne '.') {
     if (-not [string]::IsNullOrWhiteSpace($ValidateRecoveryRunId)) {
-        if ($ValidateOnly -or $Execute -or $ParallelPilot -or -not [string]::IsNullOrWhiteSpace($RecoverRunId)) { throw 'RECOVERY_VALIDATION_MODE_CANNOT_BE_COMBINED_WITH_OTHER_MODES' }
+        if ($ValidateOnly -or $Execute -or $ParallelPilot -or -not [string]::IsNullOrWhiteSpace($RecoverRunId) -or -not [string]::IsNullOrWhiteSpace($ExecutionPlanPath)) { throw 'RECOVERY_VALIDATION_MODE_CANNOT_BE_COMBINED_WITH_OTHER_MODES' }
         Invoke-FrozenSageBatchPostRunRecovery -ProjectRoot $script:FrozenBatchProjectRoot -RunId $ValidateRecoveryRunId -ValidateOnly
     } elseif (-not [string]::IsNullOrWhiteSpace($RecoverRunId)) {
-        if ($ValidateOnly -or $Execute -or $ParallelPilot) { throw 'RECOVERY_MODE_CANNOT_BE_COMBINED_WITH_OTHER_MODES' }
+        if ($ValidateOnly -or $Execute -or $ParallelPilot -or -not [string]::IsNullOrWhiteSpace($ExecutionPlanPath)) { throw 'RECOVERY_MODE_CANNOT_BE_COMBINED_WITH_OTHER_MODES' }
         Invoke-FrozenSageBatchPostRunRecovery -ProjectRoot $script:FrozenBatchProjectRoot -RunId $RecoverRunId
     } elseif ($ParallelPilot) {
         if ($ValidateOnly -or $Execute) { throw 'PARALLEL_PILOT_MODE_CANNOT_BE_COMBINED_WITH_SERIAL_MODES' }
+        [void](Assert-FrozenSageGpuParallelPilotNotAllowed -ExecutionPlanPath $ExecutionPlanPath)
         Invoke-FrozenSageParallelPilot -ProjectRoot $script:FrozenBatchProjectRoot -MaxParallel 2
     } else {
         $requestedMode = Resolve-FrozenSageBatchMode -ValidateOnly $script:FrozenBatchRequestedValidateOnly -Execute $script:FrozenBatchRequestedExecute
         $shouldExecute = ($requestedMode -eq 'EXECUTE')
-        Invoke-FrozenSageRerunBatch -ShouldExecute:$shouldExecute
+        Invoke-FrozenSageRerunBatch -ShouldExecute:$shouldExecute -PlanPath $ExecutionPlanPath
     }
 }

@@ -32,6 +32,49 @@ function Write-BatchFixtureCsv {
     $Rows | Export-Csv -LiteralPath $Path -NoTypeInformation
 }
 
+function New-FrozenSageBatchExecutionPlanFixture {
+    param([string[]]$AuthorizedRunIds = @('run_fixture_first', 'run_fixture_second'))
+    $root = Join-Path $TestDrive ('batch-gpu-plan-' + [guid]::NewGuid().ToString('N'))
+    [void](New-Item -ItemType Directory -Path $root -Force)
+    $manifestPath = Join-Path $root 'manifest.csv'
+    $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..'))
+    $planPath = Join-Path $root 'plan.json'
+    $manifestRows = @(
+        [pscustomobject]@{ run_id = 'run_fixture_first'; scene_id = 'FIXTURE_SCENE'; prn = 'G03'; tracking_channel = '2' },
+        [pscustomobject]@{ run_id = 'run_fixture_second'; scene_id = 'FIXTURE_SCENE'; prn = 'G04'; tracking_channel = '1' }
+    )
+    Write-BatchFixtureCsv -Path $manifestPath -Rows $manifestRows
+    $authorizedTasks = @(
+        foreach ($runId in $AuthorizedRunIds) {
+            $row = @($manifestRows | Where-Object { $_.run_id -ceq $runId }) | Select-Object -First 1
+            if ($null -eq $row) {
+                [pscustomobject]@{ run_id = $runId; task_identity_sha256 = '0' * 64 }
+                continue
+            }
+            $canonical = "run_id=$($row.run_id)`nscene_id=$($row.scene_id)`nprn=$($row.prn)`ntracking_channel=$([int]$row.tracking_channel)`n"
+            $digest = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData(
+                [Text.UTF8Encoding]::new($false).GetBytes($canonical))).ToLowerInvariant()
+            [pscustomobject]@{ run_id = $runId; task_identity_sha256 = $digest }
+        }
+    )
+    $plan = [ordered]@{
+        schema_version = 'frozen-sage-gpu-execution-plan-v2'
+        execution_mode = 'GPU_STAGE2_QUALIFIED'
+        source_manifest_sha256 = (Get-FileHash -LiteralPath $manifestPath -Algorithm SHA256).Hash.ToLowerInvariant()
+        resume = $false
+        max_parallel_matlab = 1
+        authorized_tasks = $authorizedTasks
+    }
+    [IO.File]::WriteAllText($planPath, ($plan | ConvertTo-Json -Depth 6), [Text.UTF8Encoding]::new($false))
+    $script:ApprovedGpuExecutionPlanSha256 = (Get-FileHash -LiteralPath $planPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    return [pscustomobject]@{
+        Root = $root; ManifestPath = $manifestPath
+        SourceContractPath = Join-Path $repoRoot 'experiments\sage_gpu\production_integration\PRODUCTION_GPU_SOURCE_CONTRACT.json'
+        ExecutionPlanPath = $planPath
+        ManifestRows = $manifestRows
+    }
+}
+
 function New-BatchFixtureStageOutput {
     param([Parameter(Mandatory)][string]$Path)
     [void](New-Item -ItemType Directory -Path $Path -Force)
@@ -450,9 +493,7 @@ Describe 'Invoke-FrozenSageRerunBatch safety contract' {
 
     It 'builds each worker command with a single explicit run id and native arguments' {
         $root = Join-Path $TestDrive 'worker-start-info'
-        $runner = Join-Path $root 'scripts\sage_pipeline\Invoke-FrozenSageRerunSingle.ps1'
-        [void](New-Item -ItemType Directory -Path (Split-Path -Parent $runner) -Force)
-        [System.IO.File]::WriteAllText($runner, 'fixture runner')
+        $runner = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\Invoke-FrozenSageRerunSingle.ps1'))
         $result = Invoke-BatchProductionFunctionSafely -Name 'New-FrozenSageSingleTaskProcessStartInfo' -Arguments @{
             ProjectRoot = $root
             RunId = 'run_fixture_exact_task'
@@ -467,6 +508,96 @@ Describe 'Invoke-FrozenSageRerunBatch safety contract' {
         $result.Value.ArgumentList[3] | Should Be '-RunId'
         $result.Value.ArgumentList[4] | Should Be 'run_fixture_exact_task'
         $result.Value.ArgumentList[5] | Should Be '-Execute'
+    }
+
+    It 'propagates a validated GPU plan path to the review-checkout single runner' {
+        $fixture = New-FrozenSageBatchExecutionPlanFixture
+        $expectedRunner = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\Invoke-FrozenSageRerunSingle.ps1'))
+        $result = Invoke-BatchProductionFunctionSafely -Name 'New-FrozenSageSingleTaskProcessStartInfo' -Arguments @{
+            ProjectRoot = 'E:\GNSS_Multipath_Project'
+            RunId = 'run_fixture_first'
+            ExecutionPlanPath = $fixture.ExecutionPlanPath
+        }
+        $result.Available | Should Be $true
+        $result.Error | Should Be $null
+        $result.Value.ArgumentList[2] | Should Be $expectedRunner
+        $result.Value.ArgumentList[5] | Should Be '-ExecutionPlanPath'
+        $result.Value.ArgumentList[6] | Should Be ([IO.Path]::GetFullPath($fixture.ExecutionPlanPath))
+        $result.Value.ArgumentList[7] | Should Be '-Execute'
+    }
+
+    It 'resolves batch GPU plan scope only to existing manifest run ids' {
+        $fixture = New-FrozenSageBatchExecutionPlanFixture
+        $result = Invoke-BatchProductionFunctionSafely -Name 'Resolve-FrozenSageBatchExecutionPlan' -Arguments @{
+            ExecutionPlanPath = $fixture.ExecutionPlanPath
+            ManifestPath = $fixture.ManifestPath
+            SourceContractPath = $fixture.SourceContractPath
+            ManifestRows = $fixture.ManifestRows
+        }
+        $result.Available | Should Be $true
+        $result.Error | Should Be $null
+        $result.Value.ExecutionPlan.ExecutionMode | Should Be 'GPU_STAGE2_QUALIFIED'
+        ($result.Value.AuthorizedRunIds -join ',') | Should Be 'run_fixture_first,run_fixture_second'
+    }
+
+    It 'uses plan v2 task identities without embedding source-contract or entry hashes' {
+        $fixture = New-FrozenSageBatchExecutionPlanFixture
+        $plan = Get-Content -Raw -LiteralPath $fixture.ExecutionPlanPath | ConvertFrom-Json
+        $plan.schema_version | Should Be 'frozen-sage-gpu-execution-plan-v2'
+        ($plan.PSObject.Properties.Name -contains 'gpu_source_contract_sha256') | Should Be $false
+        ($plan.PSObject.Properties.Name -contains 'production_gpu_entry_sha256') | Should Be $false
+        @($plan.authorized_tasks | ForEach-Object { $_.task_identity_sha256 -match '^[0-9a-f]{64}$' }).Count | Should Be 2
+    }
+
+    It 'reuses the single-runner plan pin and rejects a plan before batch authorization parsing' {
+        $fixture = New-FrozenSageBatchExecutionPlanFixture
+        $script:ApprovedGpuExecutionPlanSha256 = ''
+        $result = Invoke-BatchProductionFunctionSafely -Name 'Resolve-FrozenSageBatchExecutionPlan' -Arguments @{
+            ExecutionPlanPath = $fixture.ExecutionPlanPath; ManifestPath = $fixture.ManifestPath
+            SourceContractPath = $fixture.SourceContractPath; ManifestRows = $fixture.ManifestRows
+        }
+        $result.Error | Should Match 'GPU_EXECUTION_PLAN_NOT_RELEASED'
+        $batchSource = Get-Content -Raw -LiteralPath $batchRunnerPath
+        $batchSource | Should Not Match '\$script:ApprovedGpu(?:ProductionEntry|SourceContract|ExecutionPlan)Sha256\s*='
+    }
+
+    It 'rejects a GPU plan whose authorized run id is absent from the manifest' {
+        $fixture = New-FrozenSageBatchExecutionPlanFixture -AuthorizedRunIds @('run_not_in_manifest')
+        $result = Invoke-BatchProductionFunctionSafely -Name 'Resolve-FrozenSageBatchExecutionPlan' -Arguments @{
+            ExecutionPlanPath = $fixture.ExecutionPlanPath
+            ManifestPath = $fixture.ManifestPath
+            SourceContractPath = $fixture.SourceContractPath
+            ManifestRows = $fixture.ManifestRows
+        }
+        $result.Error | Should Match 'RUN_ID_NOT_UNIQUE'
+    }
+
+    It 'rejects GPU execution plans with duplicate authorized run ids' {
+        $fixture = New-FrozenSageBatchExecutionPlanFixture -AuthorizedRunIds @('run_fixture_first', 'run_fixture_first')
+        $result = Invoke-BatchProductionFunctionSafely -Name 'Resolve-FrozenSageBatchExecutionPlan' -Arguments @{
+            ExecutionPlanPath = $fixture.ExecutionPlanPath
+            ManifestPath = $fixture.ManifestPath
+            SourceContractPath = $fixture.SourceContractPath
+            ManifestRows = $fixture.ManifestRows
+        }
+        $result.Error | Should Match 'DUPLICATE.*RUN_ID'
+    }
+
+    It 'blocks GPU execution plans from the two-worker parallel pilot' {
+        $fixture = New-FrozenSageBatchExecutionPlanFixture
+        $result = Invoke-BatchProductionFunctionSafely -Name 'Assert-FrozenSageGpuParallelPilotNotAllowed' -Arguments @{
+            ExecutionPlanPath = $fixture.ExecutionPlanPath
+        }
+        $result.Error | Should Match 'GPU_PARALLEL_PILOT_NOT_ALLOWED'
+    }
+
+    It 'classifies a held cross-run GPU lock as systemic and stops the batch' {
+        $result = Invoke-BatchProductionFunctionSafely -Name 'Get-FrozenSageFailureDisposition' -Arguments @{
+            FailureReason = 'GPU_GLOBAL_LOCK_PRESENT'; RunnerProcessEnded = $true
+            MatlabStarted = $false; MatlabProcessEnded = $false
+        }
+        $result.Error | Should Be $null
+        $result.Value | Should Be 'STOP_BATCH'
     }
 
     It 'returns NA for zero retention denominators and a numeric ratio otherwise' {
@@ -587,6 +718,19 @@ Describe 'Invoke-FrozenSageRerunBatch safety contract' {
             @{ FailureReason = 'REQUIRED_INPUT_MISSING'; RunnerProcessEnded = $true; MatlabStarted = $true; MatlabProcessEnded = $true }
         )) {
             $result = Invoke-BatchProductionFunctionSafely -Name 'Get-FrozenSageFailureDisposition' -Arguments $case
+            $result.Error | Should Be $null
+            $result.Value | Should Be 'STOP_BATCH'
+        }
+    }
+
+    It 'stops the batch for every GPU system failure classification' {
+        foreach ($reason in @('GPU_SOURCE_IDENTITY_MISMATCH', 'GPU_NOT_AVAILABLE', 'GPU_INITIALIZATION_FAILED', 'GPU_STAGE2_MATLAB_FAILURE')) {
+            $result = Invoke-BatchProductionFunctionSafely -Name 'Get-FrozenSageFailureDisposition' -Arguments @{
+                FailureReason = $reason
+                RunnerProcessEnded = $true
+                MatlabStarted = $true
+                MatlabProcessEnded = $true
+            }
             $result.Error | Should Be $null
             $result.Value | Should Be 'STOP_BATCH'
         }

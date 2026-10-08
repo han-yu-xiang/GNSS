@@ -2647,3 +2647,24 @@ REMAINING_85_TASK_BATCH_RESUMED=NO
 PAPER_HANDOFF_UPDATED=NO
 NEXT_DECISION_REQUIRED=DESIGN_AND_REVIEW_PRODUCTION_GPU_INTEGRATION_PATH_BEFORE_RESUMING_85_TASK_BATCH
 ```
+
+## 111. Production GPU Stage2 integration implemented in review checkout, release blocked (2026-10-08)
+
+- Architecture remains P1. The Frozen CPU `scripts/sage_pipeline/run_nav_sage_pipeline.m` remains the scientific authority, SHA-256 `bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c`; Frozen production source is unchanged.
+- The production GPU entry is implemented in the C: review checkout, SHA-256 `3189f465f2ced7b66f4835c2c3242fc1caf6d6c4bcdf0f30cb7804348413518d`. Its source contract SHA-256 is `c952c7886bfaf6d6b80f2c42549db1f1285b245c51761b1297a4c1bd9d74dd68`. Frozen Stage0/1/3/4 remain authoritative and unchanged; qualified GPU Stage2 computational blocks remain raw-block identical to the qualification candidate, and `gatherGpuFit` remains exact-pinned. Production output schemas, scientific thresholds, and GPU arithmetic are unchanged.
+- `CPU_FROZEN` remains the default and CPU expression is unchanged. GPU has no CPU fallback and requires `Resume=false`. PowerShell independently pins the production entry and source contract. Execution-plan v2 does not carry contract or entry hashes. Both PowerShell and MATLAB require an independently approved execution-plan SHA; both plan pins are currently empty. Therefore direct MATLAB GPU invocation and supported PowerShell GPU execution fail closed, before scientific execution.
+- Cross-run GPU serialization is enforced by the PowerShell global lock. Direct MATLAB invocation is additionally guarded by a process-lifetime OS file lock at `ProjectRoot/dataset_generation_logs/batch_sage_execution/.gpu_stage2_qualified_runtime.lock`; lock-file existence alone is not treated as an active lock. GPU attempt provenance and runtime provenance are implemented separately; GPU relocation validates both and records their hashes.
+- Final production source-boundary audit: PASS, `UNEXPECTED_DIFF_COUNT=0`. Pester: 137 passed and one previously accepted review-base exception caused by the stale review-copy Frozen SHA (`9a263f8b...` versus absolute authority `bffc123c...`); no new test failures. MATLAB synthetic unit tests: 12/12 passed.
+- This implementation remains in the review checkout. No E: deployment, approved/active GPU plan, pilot selection, production GPU execution, raw-IQ read, full-task MATLAB/SAGE run, or 85-task batch resume occurred. Paper Handoff was not changed.
+
+```ini
+PRODUCTION_GPU_INTEGRATION_IMPLEMENTATION=COMPLETED_IN_REVIEW
+PRODUCTION_GPU_RELEASE=NOT_RELEASED
+APPROVED_GPU_EXECUTION_PLAN=NONE
+GPU_EXECUTION_CURRENTLY_BLOCKED=YES
+E_PRODUCTION_DEPLOYMENT=NOT_STARTED
+GPU_PRODUCTION_PILOT=NOT_STARTED
+REMAINING_85_TASK_BATCH_RESUMED=NO
+FROZEN_PRODUCTION_MODIFIED=NO
+NEXT_DECISION_REQUIRED=PREPARE_CONTROLLED_DEPLOYMENT_AND_SINGLE_TASK_GPU_PILOT_RELEASE
+```

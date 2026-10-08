@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
     [string]$RunId,
+    [string]$ExecutionPlanPath,
     [switch]$Execute
 )
 
@@ -12,6 +13,13 @@ $script:FrozenProjectRoot = 'E:\GNSS_Multipath_Project'
 $script:FrozenSampleRateHz = 10230000
 $script:FrozenSourceRelativePath = 'scripts\sage_pipeline\run_nav_sage_pipeline.m'
 $script:FrozenSourceSha256 = 'bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c'
+$script:QualifiedCandidateSha256 = '5ea69f6b0ebc5e5be13cb109e4ec3eec30f377b52a5f22beed224164a035be3b'
+$script:QualifiedProbeSha256 = 'bfe56ad02c99240257fddd212ba43ee5606a81740b3dda716c5947c433cbfa88'
+$script:QualifiedSelectorSha256 = 'a40c6459e66a384e85053589b270c5d2e112363872153fbf46da5c56fd4bb1f5'
+$script:ApprovedGpuProductionEntrySha256 = '3189f465f2ced7b66f4835c2c3242fc1caf6d6c4bcdf0f30cb7804348413518d'
+$script:ApprovedGpuSourceContractSha256 = 'c952c7886bfaf6d6b80f2c42549db1f1285b245c51761b1297a4c1bd9d74dd68'
+$script:ApprovedGpuExecutionPlanSha256 = ''
+$script:ProductionGpuSourceContractRelativePath = 'experiments\sage_gpu\production_integration\PRODUCTION_GPU_SOURCE_CONTRACT.json'
 $script:FrozenManifestRelativePath = 'reports\data_consolidation_20261003\MAINLINE_SAGE_1023_RERUN_MANIFEST.csv'
 $script:FrozenNamespaceRoot = 'sage_results\rerun_20261003_frozen_v3'
 $script:TransientNamespaceRoot = 'sage_results\nav_sage_v2'
@@ -28,6 +36,390 @@ function Assert-FrozenSageHash {
         throw "FROZEN_SAGE_SOURCE_HASH_MISMATCH expected=$ExpectedHash actual=$ActualHash"
     }
     return $true
+}
+
+function Assert-FrozenSageExecutionPlanPin {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$ExecutionPlanPath)
+
+    if ([string]::IsNullOrWhiteSpace($script:ApprovedGpuExecutionPlanSha256)) {
+        throw 'GPU_EXECUTION_PLAN_NOT_RELEASED approved_plan_sha256_is_empty'
+    }
+    if ($script:ApprovedGpuExecutionPlanSha256 -notmatch '^[0-9a-fA-F]{64}$') {
+        throw 'GPU_EXECUTION_PLAN_RELEASE_PIN_INVALID'
+    }
+    if (-not (Test-Path -LiteralPath $ExecutionPlanPath -PathType Leaf)) {
+        throw "GPU_EXECUTION_PLAN_NOT_FOUND path=$ExecutionPlanPath"
+    }
+    $actualHash = (Get-FileHash -LiteralPath $ExecutionPlanPath -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()
+    if (-not [string]::Equals($actualHash, $script:ApprovedGpuExecutionPlanSha256, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "GPU_EXECUTION_PLAN_SHA_MISMATCH expected=$script:ApprovedGpuExecutionPlanSha256 actual=$actualHash"
+    }
+    return $actualHash
+}
+
+function Get-FrozenSageCanonicalTaskIdentitySha256 {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$RunId,
+        [Parameter(Mandatory)][string]$SceneId,
+        [Parameter(Mandatory)][string]$PrnLabel,
+        [Parameter(Mandatory)][int]$TrackingChannel
+    )
+
+    if ($RunId -notmatch '^[A-Za-z0-9_.-]+$' -or
+        $SceneId -notmatch '^[A-Za-z0-9_-]+$' -or $PrnLabel -notmatch '^G\d{2}$' -or
+        $TrackingChannel -lt 0 -or $TrackingChannel -gt 32) {
+        throw 'GPU_EXECUTION_PLAN_TASK_IDENTITY_INVALID'
+    }
+    $canonical = "run_id=$RunId`nscene_id=$SceneId`nprn=$PrnLabel`ntracking_channel=$TrackingChannel`n"
+    $bytes = [System.Text.UTF8Encoding]::new($false).GetBytes($canonical)
+    return [Convert]::ToHexString([System.Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant()
+}
+
+function Assert-FrozenSageGpuRuntimeReleasePins {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$SourceContractPath)
+
+    $productionEntryPath = Join-Path $PSScriptRoot 'run_nav_sage_pipeline_gpu_production.m'
+    foreach ($source in @(
+        @{ Field = 'source_contract_sha256'; Path = $SourceContractPath; Pin = $script:ApprovedGpuSourceContractSha256 },
+        @{ Field = 'production_entry_sha256'; Path = $productionEntryPath; Pin = $script:ApprovedGpuProductionEntrySha256 }
+    )) {
+        if (-not (Test-Path -LiteralPath $source.Path -PathType Leaf)) {
+            throw "GPU_SOURCE_IDENTITY_MISMATCH field=$($source.Field) source_missing=$($source.Path)"
+        }
+        $actual = (Get-FileHash -LiteralPath $source.Path -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()
+        if ([string]::IsNullOrWhiteSpace([string]$source.Pin) -or
+            -not [string]::Equals($actual, [string]$source.Pin, [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "GPU_SOURCE_IDENTITY_MISMATCH field=$($source.Field) pinned=$($source.Pin) actual=$actual"
+        }
+    }
+    return $true
+}
+
+function Resolve-FrozenSageExecutionPlan {
+    [CmdletBinding()]
+    param(
+        [AllowNull()][string]$ExecutionPlanPath,
+        [Parameter(Mandatory)][string]$RunId,
+        [Parameter(Mandatory)][string]$ManifestPath,
+        [Parameter(Mandatory)][string]$SourceContractPath
+    )
+
+    if ([string]::IsNullOrWhiteSpace($ExecutionPlanPath)) {
+        return [pscustomobject]@{
+            ExecutionMode = 'CPU_FROZEN'
+            ExecutionPlanSha256 = ''
+            SourceManifestSha256 = ''
+            GpuSourceContractSha256 = ''
+            Resume = $false
+            MaxParallelMatlab = 1
+            AuthorizedRunIds = @()
+            AuthorizedTasks = @()
+        }
+    }
+    $planHash = Assert-FrozenSageExecutionPlanPin -ExecutionPlanPath $ExecutionPlanPath
+    if (-not (Test-Path -LiteralPath $ManifestPath -PathType Leaf)) {
+        throw "GPU_EXECUTION_PLAN_MANIFEST_NOT_FOUND path=$ManifestPath"
+    }
+    if (-not (Test-Path -LiteralPath $SourceContractPath -PathType Leaf)) {
+        throw "GPU_EXECUTION_PLAN_SOURCE_CONTRACT_NOT_FOUND path=$SourceContractPath"
+    }
+    [void](Assert-FrozenSageGpuRuntimeReleasePins -SourceContractPath $SourceContractPath)
+    $contractHash = (Get-FileHash -LiteralPath $SourceContractPath -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()
+
+    $document = $null
+    try {
+        $planJson = [System.IO.File]::ReadAllText($ExecutionPlanPath)
+        $document = [System.Text.Json.JsonDocument]::Parse($planJson)
+        if ($document.RootElement.ValueKind -ne [System.Text.Json.JsonValueKind]::Object) {
+            throw 'GPU_EXECUTION_PLAN_SCHEMA_INVALID root_must_be_object'
+        }
+        $properties = [System.Collections.Generic.Dictionary[string, System.Text.Json.JsonElement]]::new([System.StringComparer]::Ordinal)
+        foreach ($property in $document.RootElement.EnumerateObject()) {
+            if ($properties.ContainsKey($property.Name)) {
+                throw "GPU_EXECUTION_PLAN_SCHEMA_INVALID duplicate_field=$($property.Name)"
+            }
+            $properties.Add($property.Name, $property.Value.Clone())
+        }
+        $requiredFields = @(
+            'schema_version', 'execution_mode', 'source_manifest_sha256',
+            'resume', 'max_parallel_matlab', 'authorized_tasks'
+        )
+        $missingFields = @($requiredFields | Where-Object { -not $properties.ContainsKey($_) })
+        $unknownFields = @($properties.Keys | Where-Object { $_ -notin $requiredFields })
+        if ($missingFields.Count -gt 0 -or $unknownFields.Count -gt 0) {
+            throw "GPU_EXECUTION_PLAN_SCHEMA_INVALID missing=$($missingFields -join ',') unknown=$($unknownFields -join ',')"
+        }
+
+        foreach ($field in @('schema_version', 'execution_mode', 'source_manifest_sha256')) {
+            if ($properties[$field].ValueKind -ne [System.Text.Json.JsonValueKind]::String) {
+                throw "GPU_EXECUTION_PLAN_FIELD_TYPE_INVALID field=$field expected=string"
+            }
+        }
+        if ($properties['resume'].ValueKind -ne [System.Text.Json.JsonValueKind]::False) {
+            throw 'GPU_EXECUTION_PLAN_RESUME_NOT_ALLOWED expected=false'
+        }
+        if ($properties['max_parallel_matlab'].ValueKind -ne [System.Text.Json.JsonValueKind]::Number) {
+            throw 'GPU_EXECUTION_PLAN_MAX_PARALLEL_INVALID expected_integer_1'
+        }
+        $maxParallel = 0
+        if (-not $properties['max_parallel_matlab'].TryGetInt32([ref]$maxParallel) -or $maxParallel -ne 1) {
+            throw "GPU_EXECUTION_PLAN_MAX_PARALLEL_MUST_BE_ONE actual=$($properties['max_parallel_matlab'].GetRawText())"
+        }
+        if ($properties['authorized_tasks'].ValueKind -ne [System.Text.Json.JsonValueKind]::Array) {
+            throw 'GPU_EXECUTION_PLAN_AUTHORIZED_TASKS_INVALID expected_array'
+        }
+        $authorizedTasks = [System.Collections.Generic.List[object]]::new()
+        foreach ($item in $properties['authorized_tasks'].EnumerateArray()) {
+            if ($item.ValueKind -ne [System.Text.Json.JsonValueKind]::Object) {
+                throw 'GPU_EXECUTION_PLAN_AUTHORIZED_TASKS_INVALID entries_must_be_objects'
+            }
+            $taskProperties = [System.Collections.Generic.Dictionary[string, System.Text.Json.JsonElement]]::new([System.StringComparer]::Ordinal)
+            foreach ($field in $item.EnumerateObject()) {
+                if ($taskProperties.ContainsKey($field.Name)) {
+                    throw "GPU_EXECUTION_PLAN_AUTHORIZED_TASKS_INVALID duplicate_field=$($field.Name)"
+                }
+                $taskProperties.Add($field.Name, $field.Value.Clone())
+            }
+            $taskFields = @('run_id', 'task_identity_sha256')
+            $missingTaskFields = @($taskFields | Where-Object { -not $taskProperties.ContainsKey($_) })
+            $unknownTaskFields = @($taskProperties.Keys | Where-Object { $_ -notin $taskFields })
+            if ($missingTaskFields.Count -gt 0 -or $unknownTaskFields.Count -gt 0) {
+                throw "GPU_EXECUTION_PLAN_AUTHORIZED_TASKS_INVALID missing=$($missingTaskFields -join ',') unknown=$($unknownTaskFields -join ',')"
+            }
+            foreach ($field in $taskFields) {
+                if ($taskProperties[$field].ValueKind -ne [System.Text.Json.JsonValueKind]::String) {
+                    throw "GPU_EXECUTION_PLAN_AUTHORIZED_TASKS_INVALID field=$field expected=string"
+                }
+            }
+            $taskRunId = $taskProperties['run_id'].GetString()
+            $taskIdentity = $taskProperties['task_identity_sha256'].GetString()
+            if ([string]::IsNullOrWhiteSpace($taskRunId) -or $taskIdentity -notmatch '^[0-9a-fA-F]{64}$') {
+                throw 'GPU_EXECUTION_PLAN_AUTHORIZED_TASKS_INVALID run_id_or_identity_hash_invalid'
+            }
+            $authorizedTasks.Add([pscustomobject]@{ RunId = $taskRunId; TaskIdentitySha256 = $taskIdentity.ToLowerInvariant() })
+        }
+    } catch {
+        if ($_.Exception.Message -match '^GPU_EXECUTION_PLAN_') { throw }
+        throw "GPU_EXECUTION_PLAN_JSON_INVALID detail=$($_.Exception.Message)"
+    } finally {
+        if ($null -ne $document) { $document.Dispose() }
+    }
+
+    if ($properties['schema_version'].GetString() -cne 'frozen-sage-gpu-execution-plan-v2') {
+        throw "GPU_EXECUTION_PLAN_SCHEMA_VERSION_UNSUPPORTED actual=$($properties['schema_version'].GetString())"
+    }
+    $executionMode = $properties['execution_mode'].GetString()
+    if ($executionMode -cne 'GPU_STAGE2_QUALIFIED') {
+        throw "GPU_EXECUTION_PLAN_UNKNOWN_EXECUTION_MODE actual=$executionMode"
+    }
+    if ($maxParallel -ne 1) {
+        throw "GPU_EXECUTION_PLAN_MAX_PARALLEL_MUST_BE_ONE actual=$maxParallel"
+    }
+
+    $manifestHash = (Get-FileHash -LiteralPath $ManifestPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    $plannedManifestHash = $properties['source_manifest_sha256'].GetString()
+    if ($plannedManifestHash -notmatch '^[0-9a-fA-F]{64}$' -or
+        -not [string]::Equals($plannedManifestHash, $manifestHash, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "GPU_EXECUTION_PLAN_SOURCE_MANIFEST_SHA_MISMATCH expected=$manifestHash actual=$plannedManifestHash"
+    }
+    if ($authorizedTasks.Count -eq 0) {
+        throw 'GPU_EXECUTION_PLAN_AUTHORIZED_TASKS_INVALID expected_nonempty_array'
+    }
+    $duplicateRunIds = @($authorizedTasks | Group-Object -Property RunId | Where-Object Count -gt 1 | ForEach-Object Name)
+    if ($duplicateRunIds.Count -gt 0) {
+        throw "GPU_EXECUTION_PLAN_DUPLICATE_AUTHORIZED_RUN_ID ids=$($duplicateRunIds -join ',')"
+    }
+    $manifestRows = @(Import-Csv -LiteralPath $ManifestPath -ErrorAction Stop)
+    $requiredManifestFields = @('run_id', 'scene_id', 'prn', 'tracking_channel')
+    if ($manifestRows.Count -eq 0) {
+        throw 'GPU_EXECUTION_PLAN_MANIFEST_SCHEMA_INVALID empty_manifest'
+    }
+    $missingManifestFields = @($requiredManifestFields | Where-Object { $manifestRows[0].PSObject.Properties.Name -cnotcontains $_ })
+    if ($missingManifestFields.Count -gt 0) {
+        throw "GPU_EXECUTION_PLAN_MANIFEST_SCHEMA_INVALID missing=$($missingManifestFields -join ',')"
+    }
+    $authorizedMatches = @($authorizedTasks | Where-Object { [string]$_.RunId -ceq $RunId })
+    if ($authorizedMatches.Count -ne 1) {
+        throw "GPU_EXECUTION_PLAN_UNAUTHORIZED_RUN_ID run_id=$RunId matches=$($authorizedMatches.Count)"
+    }
+    $manifestRunIdCount = @($manifestRows | Where-Object { [string]$_.run_id -ceq $RunId }).Count
+    if ($manifestRunIdCount -ne 1) {
+        throw "GPU_EXECUTION_PLAN_MANIFEST_RUN_ID_NOT_UNIQUE run_id=$RunId count=$manifestRunIdCount"
+    }
+    $manifestRow = @($manifestRows | Where-Object { [string]$_.run_id -ceq $RunId })[0]
+    $channel = 0
+    if ([string]$manifestRow.scene_id -notmatch '^[A-Za-z0-9_-]+$' -or
+        [string]$manifestRow.prn -notmatch '^G\d{2}$' -or
+        -not [int]::TryParse([string]$manifestRow.tracking_channel, [ref]$channel) -or $channel -lt 0 -or $channel -gt 32) {
+        throw "GPU_EXECUTION_PLAN_MANIFEST_TASK_IDENTITY_INVALID run_id=$RunId"
+    }
+    $manifestIdentity = Get-FrozenSageCanonicalTaskIdentitySha256 -RunId $RunId `
+        -SceneId ([string]$manifestRow.scene_id) -PrnLabel ([string]$manifestRow.prn) -TrackingChannel $channel
+    if (-not [string]::Equals($manifestIdentity, [string]$authorizedMatches[0].TaskIdentitySha256, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "GPU_EXECUTION_PLAN_TASK_IDENTITY_MISMATCH run_id=$RunId expected=$manifestIdentity actual=$($authorizedMatches[0].TaskIdentitySha256)"
+    }
+
+    $finalPlanHash = (Get-FileHash -LiteralPath $ExecutionPlanPath -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()
+    if (-not [string]::Equals($finalPlanHash, $planHash, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw 'GPU_EXECUTION_PLAN_SHA_CHANGED_DURING_VALIDATION'
+    }
+    return [pscustomobject]@{
+        ExecutionMode = $executionMode
+        ExecutionPlanSha256 = $planHash
+        SourceManifestSha256 = $manifestHash
+        GpuSourceContractSha256 = $contractHash
+        Resume = $false
+        MaxParallelMatlab = 1
+        AuthorizedRunIds = @($authorizedTasks | ForEach-Object { [string]$_.RunId })
+        AuthorizedTasks = @($authorizedTasks.ToArray())
+        TaskIdentitySha256 = $manifestIdentity
+    }
+}
+
+function Get-FrozenSageGpuSourcePaths {
+    $codeRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
+    return [pscustomobject]@{
+        CodeRoot = $codeRoot
+        ProductionEntry = Join-Path $codeRoot 'scripts\sage_pipeline\run_nav_sage_pipeline_gpu_production.m'
+        Candidate = Join-Path $codeRoot 'experiments\sage_gpu\full_task_candidate\run_nav_sage_pipeline_gpu_candidate.m'
+        Probe = Join-Path $codeRoot 'experiments\sage_gpu\stage2_window_173_gpu_probe.m'
+        Selector = Join-Path $codeRoot 'experiments\sage_gpu\selectSeparatedResidualCandidate.m'
+        SourceContract = Join-Path $codeRoot $script:ProductionGpuSourceContractRelativePath
+    }
+}
+
+function Assert-FrozenSageGpuSourceIdentity {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][object]$ExecutionPlan,
+        [Parameter(Mandatory)][string]$FrozenAuthorityPath,
+        [Parameter(Mandatory)][string]$QualifiedCandidatePath,
+        [Parameter(Mandatory)][string]$QualifiedProbePath,
+        [Parameter(Mandatory)][string]$QualifiedSelectorPath,
+        [Parameter(Mandatory)][string]$ProductionEntryPath,
+        [Parameter(Mandatory)][string]$SourceContractPath
+    )
+
+    if ([string]$ExecutionPlan.ExecutionMode -cne 'GPU_STAGE2_QUALIFIED') {
+        throw "GPU_SOURCE_IDENTITY_MISMATCH execution_mode=$($ExecutionPlan.ExecutionMode)"
+    }
+    $contractHash = (Get-FileHash -LiteralPath $SourceContractPath -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()
+    if (-not [string]::Equals($contractHash, $script:ApprovedGpuSourceContractSha256, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "GPU_SOURCE_IDENTITY_MISMATCH field=source_contract_sha256 pinned=$script:ApprovedGpuSourceContractSha256 actual=$contractHash"
+    }
+    try {
+        $contract = Get-Content -Raw -LiteralPath $SourceContractPath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+    } catch {
+        throw "GPU_SOURCE_IDENTITY_MISMATCH field=source_contract_json detail=$($_.Exception.Message)"
+    }
+    $required = @(
+        'schema_version', 'frozen_authority_sha256', 'qualified_candidate_sha256',
+        'qualified_probe_sha256', 'qualified_selector_sha256', 'production_entry_sha256'
+    )
+    $missing = @($required | Where-Object { $contract.PSObject.Properties.Name -cnotcontains $_ })
+    if ($missing.Count -gt 0 -or $contract.schema_version -cne 'frozen-sage-production-gpu-source-contract-v1') {
+        throw "GPU_SOURCE_IDENTITY_MISMATCH field=source_contract_schema missing=$($missing -join ',') schema=$($contract.schema_version)"
+    }
+
+    $identityFiles = @(
+        @{ Field = 'frozen_authority_sha256'; Path = $FrozenAuthorityPath; Pin = $script:FrozenSourceSha256 },
+        @{ Field = 'qualified_candidate_sha256'; Path = $QualifiedCandidatePath; Pin = $script:QualifiedCandidateSha256 },
+        @{ Field = 'qualified_probe_sha256'; Path = $QualifiedProbePath; Pin = $script:QualifiedProbeSha256 },
+        @{ Field = 'qualified_selector_sha256'; Path = $QualifiedSelectorPath; Pin = $script:QualifiedSelectorSha256 },
+        @{ Field = 'production_entry_sha256'; Path = $ProductionEntryPath; Pin = $script:ApprovedGpuProductionEntrySha256 }
+    )
+    $actual = [ordered]@{}
+    foreach ($item in $identityFiles) {
+        if (-not (Test-Path -LiteralPath $item.Path -PathType Leaf)) {
+            throw "GPU_SOURCE_IDENTITY_MISMATCH field=$($item.Field) source_missing=$($item.Path)"
+        }
+        $actualHash = (Get-FileHash -LiteralPath $item.Path -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()
+        $contractHashValue = [string]$contract.($item.Field)
+        if ($contractHashValue -notmatch '^[0-9a-fA-F]{64}$' -or
+            -not [string]::Equals($actualHash, $contractHashValue, [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "GPU_SOURCE_IDENTITY_MISMATCH field=$($item.Field) contract=$contractHashValue actual=$actualHash"
+        }
+        if (-not [string]::IsNullOrEmpty([string]$item.Pin) -and
+            -not [string]::Equals($actualHash, [string]$item.Pin, [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "GPU_SOURCE_IDENTITY_MISMATCH field=$($item.Field) pinned=$($item.Pin) actual=$actualHash"
+        }
+        $actual[$item.Field] = $actualHash
+    }
+    return [pscustomobject]@{
+        CodeRoot = [System.IO.Path]::GetFullPath((Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $ProductionEntryPath))))
+        ProductionEntryPath = [System.IO.Path]::GetFullPath($ProductionEntryPath)
+        SelectorPath = [System.IO.Path]::GetFullPath($QualifiedSelectorPath)
+        SourceContractPath = [System.IO.Path]::GetFullPath($SourceContractPath)
+        SourceContractSha256 = $contractHash
+        FrozenAuthoritySha256 = $actual.frozen_authority_sha256
+        QualifiedCandidateSha256 = $actual.qualified_candidate_sha256
+        QualifiedProbeSha256 = $actual.qualified_probe_sha256
+        QualifiedSelectorSha256 = $actual.qualified_selector_sha256
+        ProductionEntrySha256 = $actual.production_entry_sha256
+    }
+}
+
+function Assert-GpuMatlabAvailabilitySmoke {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][int]$ExitCode,
+        [Parameter(Mandatory)][AllowEmptyString()][string]$Stdout
+    )
+    $markerPresent = $Stdout.Contains('GPU_PREFLIGHT_OK')
+    $deviceName = @($Stdout -split "`r?`n" | ForEach-Object { $_.Trim() } | Where-Object {
+        -not [string]::IsNullOrWhiteSpace($_) -and $_ -ne 'GPU_PREFLIGHT_OK'
+    } | Select-Object -Last 1) | Select-Object -First 1
+    if ($ExitCode -ne 0 -or -not $markerPresent -or [string]::IsNullOrWhiteSpace([string]$deviceName)) {
+        throw "GPU_NOT_AVAILABLE exit_code=$ExitCode marker_present=$markerPresent device_name_present=$(-not [string]::IsNullOrWhiteSpace([string]$deviceName))"
+    }
+    return [string]$deviceName
+}
+
+function Get-GpuMatlabAvailabilityExpression {
+    return "assert(canUseGPU);d=gpuDevice();disp(d.Name);disp('GPU_PREFLIGHT_OK')"
+}
+
+function ConvertTo-MatlabCharLiteral {
+    param([Parameter(Mandatory)][string]$Value)
+    return "'" + $Value.Replace("'", "''") + "'"
+}
+
+function Get-GpuSageMatlabExpression {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$SceneId,
+        [Parameter(Mandatory)][int]$Prn,
+        [Parameter(Mandatory)][int]$TrackingChannel,
+        [Parameter(Mandatory)][string]$ProjectRoot,
+        [Parameter(Mandatory)][string]$RunId,
+        [Parameter(Mandatory)][string]$ExecutionPlanPath,
+        [Parameter(Mandatory)][string]$ProductionEntryPath,
+        [Parameter(Mandatory)][string]$SelectorPath
+    )
+    if ($SceneId -notmatch '^[A-Za-z0-9_-]+$' -or $Prn -lt 1 -or $Prn -gt 32 -or
+        $TrackingChannel -lt 0 -or $TrackingChannel -gt 32 -or
+        $RunId -notmatch '^[A-Za-z0-9_.-]+$' -or
+        [string]::IsNullOrWhiteSpace($ExecutionPlanPath)) {
+        throw 'GPU_MATLAB_INVOCATION_IDENTITY_INVALID'
+    }
+    $entryPath = [System.IO.Path]::GetFullPath($ProductionEntryPath).Replace('\', '/')
+    $selectorPath = [System.IO.Path]::GetFullPath($SelectorPath).Replace('\', '/')
+    $entryDirectory = [System.IO.Path]::GetDirectoryName([System.IO.Path]::GetFullPath($ProductionEntryPath)).Replace('\', '/')
+    $selectorDirectory = [System.IO.Path]::GetDirectoryName([System.IO.Path]::GetFullPath($SelectorPath)).Replace('\', '/')
+    $projectRoot = [System.IO.Path]::GetFullPath($ProjectRoot).Replace('\', '/')
+    $planPath = [System.IO.Path]::GetFullPath($ExecutionPlanPath).Replace('\', '/')
+    $matlabEntry = ConvertTo-MatlabCharLiteral $entryPath
+    $matlabSelector = ConvertTo-MatlabCharLiteral $selectorPath
+    $matlabEntryDirectory = ConvertTo-MatlabCharLiteral $entryDirectory
+    $matlabSelectorDirectory = ConvertTo-MatlabCharLiteral $selectorDirectory
+    $matlabScene = ConvertTo-MatlabCharLiteral $SceneId
+    $matlabProjectRoot = ConvertTo-MatlabCharLiteral $projectRoot
+    $matlabRunId = ConvertTo-MatlabCharLiteral $RunId
+    $matlabPlanPath = ConvertTo-MatlabCharLiteral $planPath
+    return "addpath($matlabEntryDirectory,'-begin');addpath($matlabSelectorDirectory,'-begin');assert(strcmpi(strrep(which('run_nav_sage_pipeline_gpu_production'),'\','/'),$matlabEntry),'GPU_PRODUCTION_ENTRY_RESOLUTION_MISMATCH');assert(strcmpi(strrep(which('selectSeparatedResidualCandidate'),'\','/'),$matlabSelector),'GPU_SELECTOR_RESOLUTION_MISMATCH');run_nav_sage_pipeline_gpu_production($matlabScene,$Prn,'TrackingChannel',$TrackingChannel,'ProjectRoot',$matlabProjectRoot,'Resume',false,'RunId',$matlabRunId,'ExecutionPlanPath',$matlabPlanPath)"
 }
 
 function Assert-FrozenSageManifestRow {
@@ -148,6 +540,127 @@ function Get-FrozenSageTaskRunnerLockPath {
     $safeRunId = [regex]::Replace($RunId, '[^A-Za-z0-9_-]', '_')
     if ([string]::IsNullOrWhiteSpace($safeRunId)) { throw 'RUN_ID_REQUIRED_FOR_TASK_LOCK' }
     return Join-Path $ExecutionLogParent ('.windows_runner_active_{0}.lock' -f $safeRunId)
+}
+
+function Get-FrozenSageGpuGlobalLockPath {
+    param([Parameter(Mandatory)][string]$ExecutionLogParent)
+    return Join-Path $ExecutionLogParent '.gpu_stage2_qualified_active.lock'
+}
+
+function New-FrozenSageRunnerLockPayload {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][object]$Preflight,
+        [Parameter(Mandatory)][object]$ExecutionPlan
+    )
+
+    $payload = [ordered]@{
+        run_id = [string]$Preflight.RunId
+        scene_id = [string]$Preflight.SceneId
+        prn = [int]$Preflight.Prn
+        tracking_channel = [int]$Preflight.TrackingChannel
+        mapping_warning = [string]$Preflight.MappingWarning
+        resume = $false
+    }
+    if ([string]$Preflight.ExecutionMode -eq 'GPU_STAGE2_QUALIFIED') {
+        $payload.execution_mode = 'GPU_STAGE2_QUALIFIED'
+        $payload.execution_plan_sha256 = [string]$ExecutionPlan.ExecutionPlanSha256
+        $payload.gpu_source_contract_sha256 = $script:ApprovedGpuSourceContractSha256
+        $payload.production_gpu_entry_sha256 = $script:ApprovedGpuProductionEntrySha256
+        $payload.frozen_authority_sha256 = $script:FrozenSourceSha256
+        $payload.qualified_candidate_sha256 = $script:QualifiedCandidateSha256
+        $payload.qualified_selector_sha256 = $script:QualifiedSelectorSha256
+        $payload.qualified_probe_sha256 = $script:QualifiedProbeSha256
+    }
+    $payload.windows_identity = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+    $payload.powershell_version = $PSVersionTable.PSVersion.ToString()
+    $payload.process_id = $PID
+    $payload.started_utc = [System.DateTimeOffset]::UtcNow.ToString('o')
+    return $payload
+}
+
+function New-FrozenSageGpuGlobalLock {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$ExecutionMode,
+        [Parameter(Mandatory)][string]$LockPath,
+        [Parameter(Mandatory)][object]$Payload
+    )
+
+    if ($ExecutionMode -ceq 'CPU_FROZEN') { return $null }
+    if ($ExecutionMode -cne 'GPU_STAGE2_QUALIFIED') { throw "EXECUTION_MODE_UNSUPPORTED mode=$ExecutionMode" }
+    $requiredFields = @('run_id', 'scene_id', 'prn', 'tracking_channel', 'execution_mode', 'execution_plan_sha256', 'process_id', 'started_utc')
+    $payloadFields = if ($Payload -is [System.Collections.IDictionary]) { @($Payload.Keys | ForEach-Object { [string]$_ }) } else { @($Payload.PSObject.Properties.Name) }
+    $missing = @($requiredFields | Where-Object { $payloadFields -cnotcontains $_ })
+    if ($missing.Count -gt 0 -or [string]$Payload.execution_mode -cne 'GPU_STAGE2_QUALIFIED' -or
+        [string]$Payload.execution_plan_sha256 -notmatch '^[0-9a-fA-F]{64}$') {
+        throw "GPU_GLOBAL_LOCK_PAYLOAD_INVALID missing=$($missing -join ',')"
+    }
+    try {
+        $stream = [System.IO.File]::Open($LockPath, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None)
+    } catch [System.IO.IOException] {
+        throw "GPU_GLOBAL_LOCK_PRESENT path=$LockPath"
+    }
+    try {
+        $writer = [System.IO.StreamWriter]::new($stream, [System.Text.UTF8Encoding]::new($false), 1024, $true)
+        $writer.Write(($Payload | ConvertTo-Json -Depth 6))
+        $writer.Flush()
+        $writer.Dispose()
+        return [pscustomobject]@{ Path = $LockPath; Stream = $stream; Payload = $Payload }
+    } catch {
+        $stream.Dispose()
+        throw
+    }
+}
+
+function Move-FrozenSageGpuGlobalLockToArchive {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$LockPath,
+        [Parameter(Mandatory)][string]$DestinationPath,
+        [Parameter(Mandatory)][object]$ExpectedPayload
+    )
+
+    if (-not (Test-Path -LiteralPath $LockPath -PathType Leaf)) { throw "OWNED_GPU_GLOBAL_LOCK_MISSING path=$LockPath" }
+    if (Test-Path -LiteralPath $DestinationPath) { throw "GPU_GLOBAL_LOCK_ARCHIVE_COLLISION path=$DestinationPath" }
+    $actualText = Get-Content -Raw -LiteralPath $LockPath -ErrorAction Stop
+    $actualDocument = [System.Text.Json.JsonDocument]::Parse($actualText)
+    try {
+        $actual = $actualDocument.RootElement
+        foreach ($field in @('run_id', 'scene_id', 'prn', 'tracking_channel', 'execution_mode', 'execution_plan_sha256', 'process_id', 'started_utc')) {
+            $actualElement = [System.Text.Json.JsonElement]::new()
+            if (-not $actual.TryGetProperty($field, [ref]$actualElement)) {
+                throw "GPU_GLOBAL_LOCK_OWNERSHIP_MISMATCH field=$field"
+            }
+            $actualValue = if ($actualElement.ValueKind -eq [System.Text.Json.JsonValueKind]::String) {
+                $actualElement.GetString()
+            } else {
+                $actualElement.ToString()
+            }
+            if ($field -eq 'started_utc') {
+                $actualTime = [System.DateTimeOffset]::Parse($actualValue, [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::RoundtripKind).ToUniversalTime()
+                $expectedTime = ([System.DateTimeOffset]$ExpectedPayload.$field).ToUniversalTime()
+                $matches = $actualTime.UtcDateTime.Ticks -eq $expectedTime.UtcDateTime.Ticks
+            } else {
+                $matches = [string]::Equals([string]$actualValue, [string]$ExpectedPayload.$field, [System.StringComparison]::Ordinal)
+            }
+            if (-not $matches) { throw "GPU_GLOBAL_LOCK_OWNERSHIP_MISMATCH field=$field" }
+        }
+    } finally {
+        $actualDocument.Dispose()
+    }
+    $expectedHash = (Get-FileHash -LiteralPath $LockPath -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()
+    $destinationParent = Split-Path -Parent $DestinationPath
+    if (-not (Test-Path -LiteralPath $destinationParent -PathType Container)) {
+        throw "GPU_GLOBAL_LOCK_ARCHIVE_PARENT_MISSING path=$destinationParent"
+    }
+    Move-Item -LiteralPath $LockPath -Destination $DestinationPath -ErrorAction Stop
+    if ((Test-Path -LiteralPath $LockPath) -or -not (Test-Path -LiteralPath $DestinationPath -PathType Leaf)) {
+        throw 'GPU_GLOBAL_LOCK_ARCHIVE_MOVE_UNVERIFIED'
+    }
+    $actualHash = (Get-FileHash -LiteralPath $DestinationPath -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()
+    if ($actualHash -cne $expectedHash) { throw 'GPU_GLOBAL_LOCK_ARCHIVE_HASH_MISMATCH' }
+    return [pscustomobject]@{ Path = $DestinationPath; Sha256 = $actualHash; MoveMethod = 'Move-Item' }
 }
 
 function Assert-StageOutputsComplete {
@@ -296,7 +809,9 @@ function Move-FrozenRunnerLockToFailureReceipt {
         [Parameter(Mandatory)][object]$LockPayload,
         [Parameter(Mandatory)][string]$FailureReason,
         [Parameter(Mandatory)][string]$ErrorMessage,
-        [object]$MatlabProcessState
+        [object]$MatlabProcessState,
+        [AllowNull()][string]$GpuGlobalLockPath = $null,
+        [object]$GpuGlobalLockPayload = $null
     )
 
     if (-not (Test-Path -LiteralPath $GlobalLockPath -PathType Leaf)) {
@@ -340,11 +855,25 @@ function Move-FrozenRunnerLockToFailureReceipt {
     [void](New-Item -ItemType Directory -Path $receiptDirectory -ErrorAction Stop)
 
     $archivedLockPath = Join-Path $receiptDirectory 'windows_runner_global_lock.json'
+    $archivedGpuLockPath = Join-Path $receiptDirectory 'gpu_stage2_global_lock_receipt.json'
+    if ($null -ne $GpuGlobalLockPayload -and
+        ([string]::IsNullOrWhiteSpace($GpuGlobalLockPath) -or -not (Test-Path -LiteralPath $GpuGlobalLockPath -PathType Leaf))) {
+        throw 'OWNED_GPU_GLOBAL_LOCK_MISSING'
+    }
     $lockHash = (Get-FileHash -LiteralPath $GlobalLockPath -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()
     if (Test-Path -LiteralPath $archivedLockPath) {
         throw "FAILURE_LOCK_DESTINATION_COLLISION path=$archivedLockPath"
     }
+    if ($null -ne $GpuGlobalLockPayload -and (Test-Path -LiteralPath $archivedGpuLockPath)) {
+        throw "GPU_GLOBAL_LOCK_ARCHIVE_COLLISION path=$archivedGpuLockPath"
+    }
     Move-Item -LiteralPath $GlobalLockPath -Destination $archivedLockPath -ErrorAction Stop
+    $gpuLockArchive = $null
+    if ($null -ne $GpuGlobalLockPayload) {
+        if ([string]::IsNullOrWhiteSpace($GpuGlobalLockPath)) { throw 'OWNED_GPU_GLOBAL_LOCK_PATH_MISSING' }
+        $gpuLockArchive = Move-FrozenSageGpuGlobalLockToArchive `
+            -LockPath $GpuGlobalLockPath -DestinationPath $archivedGpuLockPath -ExpectedPayload $GpuGlobalLockPayload
+    }
     $archivedUtc = [System.DateTimeOffset]::UtcNow.ToString('o')
     $mappingWarning = ''
     if ($LockPayload.PSObject.Properties.Name -contains 'mapping_warning') {
@@ -372,12 +901,26 @@ function Move-FrozenRunnerLockToFailureReceipt {
         move_method = 'Move-Item'
         lock_sha256 = $lockHash
     }
+    foreach ($field in @(
+        'execution_mode', 'execution_plan_sha256', 'gpu_source_contract_sha256',
+        'production_gpu_entry_sha256', 'frozen_authority_sha256',
+        'qualified_candidate_sha256', 'qualified_selector_sha256', 'qualified_probe_sha256'
+    )) {
+        if ($LockPayload.PSObject.Properties.Name -contains $field) {
+            $failureReceipt[$field] = $LockPayload.$field
+        }
+    }
+    if ($null -ne $gpuLockArchive) {
+        $failureReceipt['gpu_global_lock_receipt_path'] = $gpuLockArchive.Path
+        $failureReceipt['gpu_global_lock_receipt_sha256'] = $gpuLockArchive.Sha256
+    }
     $receiptPath = Join-Path $receiptDirectory 'failure_receipt.json'
     $json = $failureReceipt | ConvertTo-Json -Depth 6
     [System.IO.File]::WriteAllText($receiptPath, $json + [Environment]::NewLine, [System.Text.UTF8Encoding]::new($false))
     return [pscustomobject]@{
         LockPath = $archivedLockPath
         ReceiptPath = $receiptPath
+        GpuGlobalLockReceiptPath = if ($null -ne $gpuLockArchive) { $gpuLockArchive.Path } else { $null }
     }
 }
 
@@ -395,11 +938,110 @@ function Get-DirectoryMetrics {
     }
 }
 
+function Assert-FrozenSageGpuExecutionProvenance {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Directory,
+        [Parameter(Mandatory)][object]$Context
+    )
+
+    $attemptPath = Join-Path $Directory 'gpu_execution_attempt.json'
+    $runtimePath = Join-Path $Directory 'gpu_execution_provenance.json'
+    foreach ($path in @($attemptPath, $runtimePath)) {
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+            throw "GPU_EXECUTION_PROVENANCE_MISSING path=$path"
+        }
+    }
+    try {
+        $attempt = Get-Content -Raw -LiteralPath $attemptPath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+        $runtime = Get-Content -Raw -LiteralPath $runtimePath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+    } catch {
+        throw "GPU_EXECUTION_PROVENANCE_INVALID detail=$($_.Exception.Message)"
+    }
+
+    $expectedRunId = [string]$Context.RunId
+    $expectedScene = [string]$Context.SceneId
+    $expectedPrn = 'G{0:D2}' -f [int]$Context.Prn
+    $expectedChannel = [int]$Context.TrackingChannel
+    $expectedPlanSha = [string]$Context.ExecutionPlanSha256
+    if ([string]::IsNullOrWhiteSpace($expectedRunId) -or
+        $expectedPlanSha -notmatch '^[0-9a-fA-F]{64}$') {
+        throw 'GPU_EXECUTION_PROVENANCE_EXPECTED_IDENTITY_INVALID'
+    }
+
+    $attemptFields = @(
+        'run_id', 'scene_id', 'prn', 'tracking_channel', 'execution_mode',
+        'execution_plan_sha256', 'gpu_source_contract_sha256',
+        'frozen_authority_sha256', 'qualified_candidate_sha256',
+        'qualified_probe_sha256', 'qualified_selector_sha256', 'resume',
+        'attempt_timestamp', 'attempt_status'
+    )
+    $runtimeFields = @(
+        'run_id', 'execution_mode', 'execution_plan_sha256',
+        'gpu_source_contract_sha256', 'production_gpu_entry_sha256',
+        'frozen_authority_sha256', 'qualified_candidate_sha256',
+        'qualified_probe_sha256', 'qualified_selector_sha256',
+        'gpu_identity', 'matlab_version', 'resume', 'execution_timestamp'
+    )
+    foreach ($field in $attemptFields) {
+        if ($attempt.PSObject.Properties.Name -cnotcontains $field) {
+            throw "GPU_ATTEMPT_PROVENANCE_SCHEMA_INVALID missing=$field"
+        }
+    }
+    foreach ($field in $runtimeFields) {
+        if ($runtime.PSObject.Properties.Name -cnotcontains $field) {
+            throw "GPU_RUNTIME_PROVENANCE_SCHEMA_INVALID missing=$field"
+        }
+    }
+
+    foreach ($record in @($attempt, $runtime)) {
+        if ([string]$record.run_id -cne $expectedRunId -or
+            [string]$record.execution_mode -cne 'GPU_STAGE2_QUALIFIED' -or
+            [string]$record.execution_plan_sha256 -cne $expectedPlanSha -or
+            [bool]$record.resume) {
+            throw 'GPU_EXECUTION_PROVENANCE_IDENTITY_MISMATCH'
+        }
+        foreach ($fieldPin in @(
+            @{ Field = 'gpu_source_contract_sha256'; Pin = $script:ApprovedGpuSourceContractSha256 },
+            @{ Field = 'frozen_authority_sha256'; Pin = $script:FrozenSourceSha256 },
+            @{ Field = 'qualified_candidate_sha256'; Pin = $script:QualifiedCandidateSha256 },
+            @{ Field = 'qualified_probe_sha256'; Pin = $script:QualifiedProbeSha256 },
+            @{ Field = 'qualified_selector_sha256'; Pin = $script:QualifiedSelectorSha256 }
+        )) {
+            if ([string]$record.($fieldPin.Field) -cne [string]$fieldPin.Pin) {
+                throw "GPU_EXECUTION_PROVENANCE_SOURCE_MISMATCH field=$($fieldPin.Field)"
+            }
+        }
+    }
+    if ([string]$attempt.scene_id -cne $expectedScene -or
+        [string]$attempt.prn -cne $expectedPrn -or
+        [int]$attempt.tracking_channel -ne $expectedChannel -or
+        [string]$attempt.attempt_status -cne 'AUTHORIZED' -or
+        [string]$runtime.production_gpu_entry_sha256 -cne $script:ApprovedGpuProductionEntrySha256 -or
+        [string]::IsNullOrWhiteSpace([string]$runtime.gpu_identity) -or
+        [string]::IsNullOrWhiteSpace([string]$runtime.matlab_version)) {
+        throw 'GPU_EXECUTION_PROVENANCE_IDENTITY_MISMATCH'
+    }
+    $attemptTime = [DateTimeOffset]::MinValue
+    $runtimeTime = [DateTimeOffset]::MinValue
+    if (-not [DateTimeOffset]::TryParse([string]$attempt.attempt_timestamp, [ref]$attemptTime) -or
+        -not [DateTimeOffset]::TryParse([string]$runtime.execution_timestamp, [ref]$runtimeTime)) {
+        throw 'GPU_EXECUTION_PROVENANCE_TIMESTAMP_INVALID'
+    }
+    return [pscustomobject]@{
+        AttemptPath = $attemptPath
+        RuntimePath = $runtimePath
+        AttemptSha256 = (Get-FileHash -LiteralPath $attemptPath -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()
+        RuntimeSha256 = (Get-FileHash -LiteralPath $runtimePath -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()
+    }
+}
+
 function Move-ValidatedStageOutput {
     param(
         [Parameter(Mandatory)][string]$StagingPath,
         [Parameter(Mandatory)][string]$FinalPath,
-        [Parameter(Mandatory)][object]$Context
+        [Parameter(Mandatory)][object]$Context,
+        [string]$ExecutionMode = 'CPU_FROZEN'
     )
 
     if (-not (Test-Path -LiteralPath $StagingPath -PathType Container)) {
@@ -410,6 +1052,11 @@ function Move-ValidatedStageOutput {
     }
     if (-not [string]::Equals((Split-Path -Qualifier $StagingPath), (Split-Path -Qualifier $FinalPath), [System.StringComparison]::OrdinalIgnoreCase)) {
         throw "OUTPUT_PATHS_NOT_ON_SAME_VOLUME staging=$StagingPath final=$FinalPath"
+    }
+    if ($ExecutionMode -eq 'GPU_STAGE2_QUALIFIED') {
+        [void](Assert-FrozenSageGpuExecutionProvenance -Directory $StagingPath -Context $Context)
+    } elseif ($ExecutionMode -cne 'CPU_FROZEN') {
+        throw "EXECUTION_MODE_UNSUPPORTED mode=$ExecutionMode"
     }
 
     $sourceMetrics = Get-DirectoryMetrics -Path $StagingPath
@@ -448,9 +1095,55 @@ function Move-ValidatedStageOutput {
         matlab_exit_code = [int]$Context.MatlabExitCode
         startup_smoke_marker = $script:StartupMarker
     }
+    if ($ExecutionMode -eq 'GPU_STAGE2_QUALIFIED') {
+        $attemptPath = Join-Path $FinalPath 'gpu_execution_attempt.json'
+        if (-not (Test-Path -LiteralPath $attemptPath -PathType Leaf)) {
+            throw "GPU_EXECUTION_PROVENANCE_MISSING path=$attemptPath"
+        }
+        $provenancePath = Join-Path $FinalPath 'gpu_execution_provenance.json'
+        if (-not (Test-Path -LiteralPath $provenancePath -PathType Leaf)) {
+            throw "GPU_EXECUTION_PROVENANCE_MISSING path=$provenancePath"
+        }
+        $receipt['execution_mode'] = $ExecutionMode
+        $receipt['gpu_execution_attempt_path'] = $attemptPath
+        $receipt['gpu_execution_attempt_sha256'] = (Get-FileHash -LiteralPath $attemptPath -Algorithm SHA256).Hash.ToLowerInvariant()
+        $receipt['gpu_execution_provenance_path'] = $provenancePath
+        $receipt['gpu_execution_provenance_sha256'] = (Get-FileHash -LiteralPath $provenancePath -Algorithm SHA256).Hash.ToLowerInvariant()
+        $gpuLockReceiptPath = Join-Path $FinalPath 'gpu_stage2_global_lock_receipt.json'
+        if (Test-Path -LiteralPath $gpuLockReceiptPath -PathType Leaf) {
+            $receipt['gpu_global_lock_receipt_path'] = $gpuLockReceiptPath
+            $receipt['gpu_global_lock_receipt_sha256'] = (Get-FileHash -LiteralPath $gpuLockReceiptPath -Algorithm SHA256).Hash.ToLowerInvariant()
+        }
+    } elseif ($ExecutionMode -cne 'CPU_FROZEN') {
+        throw "EXECUTION_MODE_UNSUPPORTED mode=$ExecutionMode"
+    }
     $receiptPath = Join-Path $FinalPath 'relocation_receipt.json'
     $receiptJson = $receipt | ConvertTo-Json -Depth 6
     [System.IO.File]::WriteAllText($receiptPath, $receiptJson + [Environment]::NewLine, [System.Text.UTF8Encoding]::new($false))
+    return [pscustomobject]$receipt
+}
+
+function Add-FrozenSageGpuLockReferenceToRelocationReceipt {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$FinalPath,
+        [Parameter(Mandatory)][string]$GpuGlobalLockReceiptPath
+    )
+
+    $receiptPath = Join-Path $FinalPath 'relocation_receipt.json'
+    $expectedGpuLockPath = Join-Path $FinalPath 'gpu_stage2_global_lock_receipt.json'
+    if (-not [string]::Equals([System.IO.Path]::GetFullPath($GpuGlobalLockReceiptPath),
+            [System.IO.Path]::GetFullPath($expectedGpuLockPath), [System.StringComparison]::OrdinalIgnoreCase) -or
+        -not (Test-Path -LiteralPath $receiptPath -PathType Leaf) -or
+        -not (Test-Path -LiteralPath $GpuGlobalLockReceiptPath -PathType Leaf)) {
+        throw 'GPU_GLOBAL_LOCK_RELOCATION_REFERENCE_INPUT_INVALID'
+    }
+    $receipt = Get-Content -Raw -LiteralPath $receiptPath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+    $receipt | Add-Member -NotePropertyName gpu_global_lock_receipt_path -NotePropertyValue $GpuGlobalLockReceiptPath -Force
+    $receipt | Add-Member -NotePropertyName gpu_global_lock_receipt_sha256 -NotePropertyValue (
+        (Get-FileHash -LiteralPath $GpuGlobalLockReceiptPath -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()) -Force
+    $json = $receipt | ConvertTo-Json -Depth 8
+    [System.IO.File]::WriteAllText($receiptPath, $json + [Environment]::NewLine, [System.Text.UTF8Encoding]::new($false))
     return [pscustomobject]$receipt
 }
 
@@ -467,7 +1160,12 @@ function Resolve-ManifestInputPath {
 }
 
 function Get-FrozenSagePreflight {
-    param([Parameter(Mandatory)][string]$RunId)
+    param(
+        [Parameter(Mandatory)][string]$RunId,
+        [object]$ExecutionPlan = $null
+    )
+
+    $executionMode = if ($null -eq $ExecutionPlan) { 'CPU_FROZEN' } else { [string]$ExecutionPlan.ExecutionMode }
 
     $identity = [System.Security.Principal.WindowsIdentity]::GetCurrent()
     $principal = [System.Security.Principal.WindowsPrincipal]::new($identity)
@@ -565,6 +1263,10 @@ function Get-FrozenSagePreflight {
         RawIqSha256 = $rawMetadata.RawIqSha256
         RawIqSha256Status = $rawMetadata.RawIqSha256Status
         MatlabPath = $matlab.Source
+        ExecutionMode = $executionMode
+        ExecutionPlan = $ExecutionPlan
+        GpuSourceIdentity = $null
+        GpuIdentity = ''
         StagingPath = $stagingPath
         FinalPath = $finalPath
         ManifestRow = $row
@@ -574,13 +1276,21 @@ function Get-FrozenSagePreflight {
 function Invoke-FrozenSageRerunSingle {
     param(
         [Parameter(Mandatory)][string]$RunId,
-        [Parameter(Mandatory)][bool]$ShouldExecute
+        [Parameter(Mandatory)][bool]$ShouldExecute,
+        [AllowNull()][string]$PlanPath
     )
 
-    $preflight = Get-FrozenSagePreflight -RunId $RunId
-    Write-Output "PREFLIGHT_PASS run_id=$($preflight.RunId) scene=$($preflight.SceneId) prn=$($preflight.PrnLabel) channel=$($preflight.TrackingChannel) sample_rate_hz=$($preflight.SampleRateHz) mapping_warning=$($preflight.MappingWarning) resume=false"
+    $manifestPath = Join-Path $script:FrozenProjectRoot $script:FrozenManifestRelativePath
+    $gpuPaths = Get-FrozenSageGpuSourcePaths
+    $executionPlan = Resolve-FrozenSageExecutionPlan `
+        -ExecutionPlanPath $PlanPath `
+        -RunId $RunId `
+        -ManifestPath $manifestPath `
+        -SourceContractPath $gpuPaths.SourceContract
+    $preflight = Get-FrozenSagePreflight -RunId $RunId -ExecutionPlan $executionPlan
+    Write-Output "PREFLIGHT_PASS run_id=$($preflight.RunId) scene=$($preflight.SceneId) prn=$($preflight.PrnLabel) channel=$($preflight.TrackingChannel) sample_rate_hz=$($preflight.SampleRateHz) mapping_warning=$($preflight.MappingWarning) execution_mode=$($preflight.ExecutionMode) resume=false"
     if (-not $ShouldExecute) {
-        Write-Output 'VALIDATION_ONLY matlab_invoked=false raw_iq_content_read=false'
+        Write-Output "VALIDATION_ONLY matlab_invoked=false raw_iq_content_read=false execution_mode=$($preflight.ExecutionMode)"
         return
     }
 
@@ -589,9 +1299,15 @@ function Invoke-FrozenSageRerunSingle {
         throw "EXECUTION_LOG_PARENT_MISSING path=$executionLogParent"
     }
     $globalLockPath = Get-FrozenSageTaskRunnerLockPath -ExecutionLogParent $executionLogParent -RunId $preflight.RunId
+    $gpuGlobalLockPath = Get-FrozenSageGpuGlobalLockPath -ExecutionLogParent $executionLogParent
     $failureReceiptRoot = Join-Path $executionLogParent 'windows_runner_receipts'
     $lockStream = $null
     $lockOwned = $false
+    $gpuLockStream = $null
+    $gpuLockAcquired = $false
+    $gpuLockPayload = $null
+    $gpuLockReceiptPath = $null
+    $gpuLockReceiptOwned = $false
     $lockPayload = $null
     $matlabProcessState = [ordered]@{
         Started = $false
@@ -611,44 +1327,104 @@ function Invoke-FrozenSageRerunSingle {
         } catch [System.IO.IOException] {
             throw "GLOBAL_SAGE_RUNNER_LOCK_PRESENT path=$globalLockPath"
         }
-        $lockPayload = [ordered]@{
-            run_id = $preflight.RunId
-            scene_id = $preflight.SceneId
-            prn = $preflight.Prn
-            tracking_channel = $preflight.TrackingChannel
-            mapping_warning = $preflight.MappingWarning
-            resume = $false
-            windows_identity = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
-            powershell_version = $PSVersionTable.PSVersion.ToString()
-            process_id = $PID
-            started_utc = [System.DateTimeOffset]::UtcNow.ToString('o')
-        }
+        $lockPayload = New-FrozenSageRunnerLockPayload -Preflight $preflight -ExecutionPlan $executionPlan
         $lockWriter = [System.IO.StreamWriter]::new($lockStream, [System.Text.UTF8Encoding]::new($false), 1024, $true)
         $lockWriter.Write(($lockPayload | ConvertTo-Json -Depth 4))
         $lockWriter.Flush()
         $lockWriter.Dispose()
 
+        if ($preflight.ExecutionMode -eq 'GPU_STAGE2_QUALIFIED') {
+            $gpuLockPayload = [pscustomobject]$lockPayload
+            $gpuLock = New-FrozenSageGpuGlobalLock -ExecutionMode $preflight.ExecutionMode -LockPath $gpuGlobalLockPath -Payload $gpuLockPayload
+            $gpuLockStream = $gpuLock.Stream
+            $gpuLockAcquired = $true
+            $currentPlan = Resolve-FrozenSageExecutionPlan -ExecutionPlanPath $PlanPath -RunId $preflight.RunId -ManifestPath $manifestPath -SourceContractPath $gpuPaths.SourceContract
+            if ($currentPlan.ExecutionPlanSha256 -cne $executionPlan.ExecutionPlanSha256) {
+                throw 'GPU_SOURCE_IDENTITY_MISMATCH execution plan changed after task authorization.'
+            }
+            $gpuSourceIdentity = Assert-FrozenSageGpuSourceIdentity `
+                -ExecutionPlan $currentPlan `
+                -FrozenAuthorityPath (Join-Path $script:FrozenProjectRoot $script:FrozenSourceRelativePath) `
+                -QualifiedCandidatePath $gpuPaths.Candidate `
+                -QualifiedProbePath $gpuPaths.Probe `
+                -QualifiedSelectorPath $gpuPaths.Selector `
+                -ProductionEntryPath $gpuPaths.ProductionEntry `
+                -SourceContractPath $gpuPaths.SourceContract
+            $preflight.GpuSourceIdentity = $gpuSourceIdentity
+            $gpuSmoke = Invoke-FrozenMatlabBatch -MatlabPath $preflight.MatlabPath -Expression (Get-GpuMatlabAvailabilityExpression)
+            $matlabProcessState = [ordered]@{
+                Started = $true
+                ProcessId = [int]$gpuSmoke.ProcessId
+                ExitCode = [int]$gpuSmoke.ExitCode
+                ProcessEnded = [bool]$gpuSmoke.ProcessEnded
+                StartedUtc = [string]$gpuSmoke.StartedUtc
+                EndedUtc = [string]$gpuSmoke.EndedUtc
+            }
+            $preflight.GpuIdentity = Assert-GpuMatlabAvailabilitySmoke -ExitCode $gpuSmoke.ExitCode -Stdout $gpuSmoke.Stdout
+            Write-Output "GPU_PREFLIGHT_PASS identity=$($preflight.GpuIdentity) execution_mode=$($preflight.ExecutionMode)"
+        }
+
         $smoke = Invoke-FrozenMatlabBatch -MatlabPath $preflight.MatlabPath -Expression "disp('$script:StartupMarker')"
+        if ($preflight.ExecutionMode -eq 'GPU_STAGE2_QUALIFIED') {
+            $matlabProcessState = [ordered]@{
+                Started = $true; ProcessId = [int]$smoke.ProcessId; ExitCode = [int]$smoke.ExitCode
+                ProcessEnded = [bool]$smoke.ProcessEnded; StartedUtc = [string]$smoke.StartedUtc; EndedUtc = [string]$smoke.EndedUtc
+            }
+        }
         [void](Assert-MatlabStartupSmoke -ExitCode $smoke.ExitCode -Output $smoke.Output)
         Write-Output "MATLAB_STARTUP_SMOKE_PASS marker=$script:StartupMarker exit_code=$($smoke.ExitCode)"
 
         $transportExpression = "a='F1023_V70_D0117_P2';b='TrackingChannel';c='E:/GNSS_Multipath_Project';assert(strcmp(a,'F1023_V70_D0117_P2'));assert(strcmp(b,'TrackingChannel'));assert(strcmp(c,'E:/GNSS_Multipath_Project'));disp('MATLAB_ARGUMENT_TRANSPORT_OK')"
         $transportSmoke = Invoke-FrozenMatlabBatch -MatlabPath $preflight.MatlabPath -Expression $transportExpression
+        if ($preflight.ExecutionMode -eq 'GPU_STAGE2_QUALIFIED') {
+            $matlabProcessState = [ordered]@{
+                Started = $true; ProcessId = [int]$transportSmoke.ProcessId; ExitCode = [int]$transportSmoke.ExitCode
+                ProcessEnded = [bool]$transportSmoke.ProcessEnded; StartedUtc = [string]$transportSmoke.StartedUtc; EndedUtc = [string]$transportSmoke.EndedUtc
+            }
+        }
         [void](Assert-MatlabArgumentTransportSmoke -ExitCode $transportSmoke.ExitCode -Stdout $transportSmoke.Stdout)
         Write-Output "MATLAB_ARGUMENT_TRANSPORT_SMOKE_PASS marker=$script:TransportMarker exit_code=$($transportSmoke.ExitCode)"
 
         $currentSourceHash = (Get-FileHash -LiteralPath (Join-Path $preflight.ProjectRoot $script:FrozenSourceRelativePath) -Algorithm SHA256).Hash.ToLowerInvariant()
         [void](Assert-FrozenSageHash -ActualHash $currentSourceHash -ExpectedHash $script:FrozenSourceSha256)
         [void](Assert-OutputNamespacesAbsent -StagingPath $preflight.StagingPath -FinalPath $preflight.FinalPath)
-        Write-Output "EXECUTION_GATES_REVERIFIED frozen_sage_sha256=$currentSourceHash output_namespaces_absent=true"
-        $expression = Get-FrozenSageMatlabExpression `
-            -SceneId $preflight.SceneId `
-            -Prn $preflight.Prn `
-            -TrackingChannel $preflight.TrackingChannel `
-            -ProjectRoot $preflight.ProjectRoot
+        Write-Output "EXECUTION_GATES_REVERIFIED frozen_sage_sha256=$currentSourceHash output_namespaces_absent=true execution_mode=$($preflight.ExecutionMode)"
+        if ($preflight.ExecutionMode -eq 'GPU_STAGE2_QUALIFIED') {
+            $currentPlan = Resolve-FrozenSageExecutionPlan `
+                -ExecutionPlanPath $PlanPath `
+                -RunId $preflight.RunId `
+                -ManifestPath $manifestPath `
+                -SourceContractPath $preflight.GpuSourceIdentity.SourceContractPath
+            if ($currentPlan.ExecutionPlanSha256 -cne $preflight.ExecutionPlan.ExecutionPlanSha256) {
+                throw 'GPU_SOURCE_IDENTITY_MISMATCH execution plan changed after preflight.'
+            }
+            $currentGpuIdentity = Assert-FrozenSageGpuSourceIdentity `
+                -ExecutionPlan $currentPlan `
+                -FrozenAuthorityPath (Join-Path $script:FrozenProjectRoot $script:FrozenSourceRelativePath) `
+                -QualifiedCandidatePath $gpuPaths.Candidate `
+                -QualifiedProbePath $gpuPaths.Probe `
+                -QualifiedSelectorPath $gpuPaths.Selector `
+                -ProductionEntryPath $gpuPaths.ProductionEntry `
+                -SourceContractPath $gpuPaths.SourceContract
+            $expression = Get-GpuSageMatlabExpression `
+                -SceneId $preflight.SceneId `
+                -Prn $preflight.Prn `
+                -TrackingChannel $preflight.TrackingChannel `
+                -ProjectRoot $preflight.ProjectRoot `
+                -RunId $preflight.RunId `
+                -ExecutionPlanPath $PlanPath `
+                -ProductionEntryPath $currentGpuIdentity.ProductionEntryPath `
+                -SelectorPath $currentGpuIdentity.SelectorPath
+        } else {
+            $expression = Get-FrozenSageMatlabExpression `
+                -SceneId $preflight.SceneId `
+                -Prn $preflight.Prn `
+                -TrackingChannel $preflight.TrackingChannel `
+                -ProjectRoot $preflight.ProjectRoot
+        }
         $rootForMatlab = $preflight.ProjectRoot.Replace('\', '/')
         $batchExpression = "cd('$rootForMatlab/scripts/sage_pipeline'); $expression"
-        Write-Output "SAGE_EXECUTION_BEGIN run_id=$($preflight.RunId) scene=$($preflight.SceneId) prn=$($preflight.PrnLabel) channel=$($preflight.TrackingChannel) mapping_warning=$($preflight.MappingWarning) resume=false"
+        Write-Output "SAGE_EXECUTION_BEGIN run_id=$($preflight.RunId) scene=$($preflight.SceneId) prn=$($preflight.PrnLabel) channel=$($preflight.TrackingChannel) mapping_warning=$($preflight.MappingWarning) execution_mode=$($preflight.ExecutionMode) resume=false"
         $sageRun = Invoke-FrozenMatlabBatch -MatlabPath $preflight.MatlabPath -Expression $batchExpression
         $matlabProcessState = [ordered]@{
             Started = $true
@@ -659,6 +1435,14 @@ function Invoke-FrozenSageRerunSingle {
             EndedUtc = [string]$sageRun.EndedUtc
         }
         if ($sageRun.ExitCode -ne 0) {
+            $matlabFailureText = [string]$sageRun.Stdout + [string]$sageRun.Stderr
+            $gpuFailure = [regex]::Match($matlabFailureText, 'GPU_(?:SOURCE_IDENTITY_MISMATCH|NOT_AVAILABLE|INITIALIZATION_FAILED|STAGE2_MATLAB_FAILURE)')
+            if ($preflight.ExecutionMode -eq 'GPU_STAGE2_QUALIFIED' -and $gpuFailure.Success) {
+                throw "$($gpuFailure.Value) exit_code=$($sageRun.ExitCode); staging output, if any, is preserved."
+            }
+            if ($preflight.ExecutionMode -eq 'GPU_STAGE2_QUALIFIED') {
+                throw "GPU_STAGE2_MATLAB_FAILURE exit_code=$($sageRun.ExitCode); staging output, if any, is preserved."
+            }
             throw "SAGE_MATLAB_EXIT_NONZERO exit_code=$($sageRun.ExitCode); staging output, if any, is preserved."
         }
         [void](Assert-StageOutputsComplete -OutputPath $preflight.StagingPath)
@@ -670,6 +1454,8 @@ function Invoke-FrozenSageRerunSingle {
             SceneId = $preflight.SceneId
             Prn = $preflight.Prn
             TrackingChannel = $preflight.TrackingChannel
+            RunId = $preflight.RunId
+            ExecutionPlanSha256 = if ($preflight.ExecutionMode -eq 'GPU_STAGE2_QUALIFIED') { [string]$preflight.ExecutionPlan.ExecutionPlanSha256 } else { '' }
             FrozenSageSha256 = $postRunHash
             RawIqSizeBytes = $preflight.RawIqSizeBytes
             RawIqSha256 = $preflight.RawIqSha256
@@ -679,12 +1465,22 @@ function Invoke-FrozenSageRerunSingle {
             MatlabEndUtc = $sageRun.EndedUtc
             MatlabExitCode = $sageRun.ExitCode
         }
-        $receipt = Move-ValidatedStageOutput -StagingPath $preflight.StagingPath -FinalPath $preflight.FinalPath -Context $context
+        $receipt = Move-ValidatedStageOutput -StagingPath $preflight.StagingPath -FinalPath $preflight.FinalPath -Context $context -ExecutionMode $preflight.ExecutionMode
+        if ($preflight.ExecutionMode -eq 'GPU_STAGE2_QUALIFIED') {
+            $gpuLockReceiptPath = Join-Path $preflight.FinalPath 'gpu_stage2_global_lock_receipt.json'
+            $gpuLockStream.Dispose()
+            $gpuLockStream = $null
+            [void](Move-FrozenSageGpuGlobalLockToArchive -LockPath $gpuGlobalLockPath -DestinationPath $gpuLockReceiptPath -ExpectedPayload $gpuLockPayload)
+            $gpuLockAcquired = $false
+            $gpuLockReceiptOwned = $true
+            $receipt = Add-FrozenSageGpuLockReferenceToRelocationReceipt -FinalPath $preflight.FinalPath -GpuGlobalLockReceiptPath $gpuLockReceiptPath
+        }
 
         $lockStream.Dispose()
         $lockStream = $null
         Move-Item -LiteralPath $globalLockPath -Destination (Join-Path $preflight.FinalPath 'windows_runner_lock_receipt.json') -ErrorAction Stop
         $lockOwned = $false
+        $gpuLockReceiptOwned = $false
         Write-Output "RELOCATION_VERIFIED final_path=$($preflight.FinalPath) files=$($receipt.destination_file_count_after_move) bytes=$($receipt.destination_bytes_after_move)"
         Write-Output "FROZEN_SAGE_SHA_AFTER=$postRunHash"
     } catch {
@@ -697,6 +1493,8 @@ function Invoke-FrozenSageRerunSingle {
                 $stage0FailureReason = Get-FrozenSageStage0FailureReason -StagingPath $preflight.StagingPath
                 if ($null -ne $stage0FailureReason) {
                     $failureReason = $stage0FailureReason
+                } elseif ($failureMessage -match '^GPU_GLOBAL_LOCK_PRESENT') {
+                    $failureReason = 'GPU_GLOBAL_LOCK_PRESENT'
                 } elseif ($failureMessage -match '^MATLAB_ARGUMENT_TRANSPORT_FAILED') {
                     $failureReason = 'MATLAB_ARGUMENT_TRANSPORT_FAILURE'
                 } elseif ($failureMessage -match '^MATLAB_STARTUP_SMOKE_FAILED') {
@@ -705,6 +1503,14 @@ function Invoke-FrozenSageRerunSingle {
                     $failureReason = 'FROZEN_SAGE_SOURCE_HASH_MISMATCH'
                 } elseif ($failureMessage -match '^SAGE_MATLAB_EXIT_NONZERO') {
                     $failureReason = 'SAGE_MATLAB_FAILURE'
+                } elseif ($failureMessage -match '^GPU_(?:SOURCE_IDENTITY_MISMATCH|EXECUTION_PLAN_SHA_MISMATCH|EXECUTION_PLAN_SOURCE_CONTRACT_SHA_MISMATCH)') {
+                    $failureReason = 'GPU_SOURCE_IDENTITY_MISMATCH'
+                } elseif ($failureMessage -match '^GPU_NOT_AVAILABLE') {
+                    $failureReason = 'GPU_NOT_AVAILABLE'
+                } elseif ($failureMessage -match '^GPU_INITIALIZATION_FAILED') {
+                    $failureReason = 'GPU_INITIALIZATION_FAILED'
+                } elseif ($failureMessage -match '^GPU_STAGE2_MATLAB_FAILURE') {
+                    $failureReason = 'GPU_STAGE2_MATLAB_FAILURE'
                 } elseif ($failureMessage -match '^STAGE0_STAGE4_OUTPUT_INCOMPLETE') {
                     $failureReason = 'STAGE_OUTPUT_VALIDATION_FAILURE'
                 }
@@ -716,16 +1522,47 @@ function Invoke-FrozenSageRerunSingle {
             $lockStream.Dispose()
             $lockStream = $null
         }
-        if ($lockOwned -and $controlledFailure -and $null -ne $lockPayload) {
-            $failureReceipt = Move-FrozenRunnerLockToFailureReceipt `
-                -GlobalLockPath $globalLockPath `
-                -ReceiptRoot $failureReceiptRoot `
-                -LockPayload ([pscustomobject]$lockPayload) `
-                -FailureReason $failureReason `
-                -ErrorMessage $failureMessage `
-                -MatlabProcessState ([pscustomobject]$matlabProcessState)
+        if ($null -ne $gpuLockStream) {
+            $gpuLockStream.Dispose()
+            $gpuLockStream = $null
+        }
+        if ($lockOwned -and $controlledFailure -and $null -ne $lockPayload -and
+            (-not $matlabProcessState.Started -or $matlabProcessState.ProcessEnded)) {
+            $ownedGpuLockSource = $null
+            if ($gpuLockAcquired -and (Test-Path -LiteralPath $gpuGlobalLockPath -PathType Leaf)) {
+                $ownedGpuLockSource = $gpuGlobalLockPath
+            } elseif ($gpuLockReceiptOwned) {
+                $candidateGpuLockPaths = @(
+                    $gpuLockReceiptPath,
+                    (Join-Path $preflight.StagingPath 'gpu_stage2_global_lock_receipt.json'),
+                    (Join-Path $preflight.FinalPath 'gpu_stage2_global_lock_receipt.json')
+                )
+                foreach ($possiblePath in $candidateGpuLockPaths) {
+                    if (-not [string]::IsNullOrWhiteSpace([string]$possiblePath) -and (Test-Path -LiteralPath $possiblePath -PathType Leaf)) {
+                        $ownedGpuLockSource = $possiblePath
+                        break
+                    }
+                }
+            }
+            $failureArguments = @{
+                GlobalLockPath = $globalLockPath
+                ReceiptRoot = $failureReceiptRoot
+                LockPayload = [pscustomobject]$lockPayload
+                FailureReason = $failureReason
+                ErrorMessage = $failureMessage
+                MatlabProcessState = [pscustomobject]$matlabProcessState
+            }
+            if ($null -ne $ownedGpuLockSource) {
+                $failureArguments.GpuGlobalLockPath = $ownedGpuLockSource
+                $failureArguments.GpuGlobalLockPayload = $gpuLockPayload
+            }
+            $failureReceipt = Move-FrozenRunnerLockToFailureReceipt @failureArguments
             $lockOwned = $false
+            $gpuLockAcquired = $false
+            $gpuLockReceiptOwned = $false
             Write-Output "CONTROLLED_FAILURE_LOCK_ARCHIVED reason=$failureReason run_id=$($preflight.RunId) lock=$($failureReceipt.LockPath) receipt=$($failureReceipt.ReceiptPath) matlab_started=$($matlabProcessState.Started) matlab_process_id=$($matlabProcessState.ProcessId) matlab_exit_code=$($matlabProcessState.ExitCode) matlab_process_ended=$($matlabProcessState.ProcessEnded)"
+        } elseif ($lockOwned -and $controlledFailure -and $matlabProcessState.Started -and -not $matlabProcessState.ProcessEnded) {
+            Write-Output "CONTROLLED_FAILURE_LOCK_RETAINED reason=RUNNER_PROCESS_END_UNCONFIRMED run_id=$($preflight.RunId) runner_lock=$globalLockPath gpu_lock=$gpuGlobalLockPath"
         }
     }
 }
@@ -775,5 +1612,5 @@ if ($MyInvocation.InvocationName -ne '.') {
     if ([string]::IsNullOrWhiteSpace($RunId)) {
         throw 'RUN_ID_REQUIRED: pass one manifest run_id; no task is inferred.'
     }
-    Invoke-FrozenSageRerunSingle -RunId $RunId -ShouldExecute:$Execute.IsPresent
+    Invoke-FrozenSageRerunSingle -RunId $RunId -ShouldExecute:$Execute.IsPresent -PlanPath $ExecutionPlanPath
 }
