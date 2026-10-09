@@ -3,6 +3,7 @@ $batchRunnerPath = Join-Path $PSScriptRoot '..\Invoke-FrozenSageRerunBatch.ps1'
 if (Test-Path -LiteralPath $singleRunnerPath -PathType Leaf) {
     . $singleRunnerPath
 }
+
 if (Test-Path -LiteralPath $batchRunnerPath -PathType Leaf) {
     . $batchRunnerPath
 }
@@ -1160,6 +1161,108 @@ Describe 'Invoke-FrozenSageRerunBatch safety contract' {
         $diagnosticCollision.Available | Should Be $true
         [string]::IsNullOrWhiteSpace($diagnosticCollision.Error) | Should Be $false
         (Test-Path -LiteralPath (Join-Path $staging2 'partial.bin')) | Should Be $true
+    }
+}
+
+Describe 'serial batch lock receipt normalization' {
+    It 'archives the serial successful plan-scope lock with NONE stop reason' {
+        $fixture = New-BatchFixtureExistingSummaryState
+        $projectRoot = $fixture.Root
+        $executionLogParent = Join-Path $projectRoot 'dataset_generation_logs\batch_sage_execution'
+        [void](New-Item -ItemType Directory -Path $executionLogParent -Force)
+        $sourceDirectory = Join-Path $projectRoot 'scripts\sage_pipeline'
+        [void](New-Item -ItemType Directory -Path $sourceDirectory -Force)
+        [System.IO.File]::WriteAllText((Join-Path $sourceDirectory 'run_nav_sage_pipeline.m'), 'fixture frozen source')
+        $baselineRow = @($fixture.ManifestRows | Where-Object { [string]$_.run_id -ceq $script:FrozenBatchBaselineRunId })[0]
+        $script:batchLockReceiptFixture = $fixture
+        $script:batchLockReceiptContext = [pscustomobject]@{
+            Rows = $fixture.ManifestRows
+            Baseline = $baselineRow
+            ManifestPath = Join-Path $projectRoot 'fixture_manifest.csv'
+            AuditPath = Join-Path $projectRoot 'fixture_audit.csv'
+        }
+        $script:batchLockReceiptPlanResolution = [pscustomobject]@{
+            ExecutionPlan = [pscustomobject]@{ ExecutionMode = 'GPU_STAGE2_QUALIFIED' }
+            AuthorizedRunIds = @($fixture.PilotRunId)
+        }
+        $script:batchLockReceiptMetrics = [pscustomobject]@{
+            stage0_valid_nav_symbols = 10; stage0_valid_40ms_windows = 9
+            stage1_scanned_windows = 9; stage2_evaluated_windows = 1
+            stage2_selected_path_count = 2; direct_path_count = 1; stage2_mpc_count = 1
+            stage3_persistence_row_count = 1; stage3_persistent_mpc_count = 0
+            stage4_joint_result_count = 0; stage4_confirmed_mpc_count = 0
+        }
+        $previousProjectRoot = $script:FrozenBatchProjectRoot
+        $script:FrozenBatchProjectRoot = $projectRoot
+        Push-Location -LiteralPath $projectRoot
+        try {
+            Mock Assert-FrozenSageNoActiveRunnerLocks { $true }
+            Mock Assert-FrozenSageNoMatlabProcess { $true }
+            Mock Assert-FrozenSageHash { $true }
+            Mock Assert-FrozenSageManifestRow { $true }
+            Mock Get-FrozenSageBatchManifestContext { $script:batchLockReceiptContext }
+            Mock Resolve-FrozenSageBatchExecutionPlan { $script:batchLockReceiptPlanResolution }
+            Mock Get-FrozenSageBaselineSummaryRow { $script:batchLockReceiptFixture.BaselineSummaryRow }
+            Mock Get-FrozenSagePreflight { [pscustomobject]@{ MappingWarning = 'NONE' } }
+            Mock Start-FrozenSageSingleTaskProcess {
+                [pscustomobject]@{ ProcessEnded = $true; ExitCode = 0; RunId = $script:batchLockReceiptFixture.PilotRunId; CombinedOutput = 'TASK_COMPLETE' }
+            }
+            Mock Assert-FrozenSageSuccessfulTask {
+                [pscustomobject]@{ Metrics = $script:batchLockReceiptMetrics }
+            }
+
+            $result = Invoke-BatchProductionFunctionSafely -Name 'Invoke-FrozenSageRerunBatch' -Arguments @{
+                ShouldExecute = $true
+                PlanPath = 'fixture-approved-plan.json'
+            }
+
+            $result.Error | Should Be $null
+            $lockPath = Join-Path $executionLogParent '.frozen_sage_batch_active.lock'
+            (Test-Path -LiteralPath $lockPath) | Should Be $false
+            $receiptRoot = Join-Path $executionLogParent 'frozen_sage_batch_receipts'
+            $receiptFiles = @(Get-ChildItem -LiteralPath $receiptRoot -Filter 'batch_receipt.json' -Recurse -File)
+            $receiptFiles.Count | Should Be 1
+            $receipt = Get-Content -Raw -LiteralPath $receiptFiles[0].FullName | ConvertFrom-Json
+            $receipt.final_status | Should Be 'PLAN_SCOPE_COMPLETED'
+            $receipt.stop_reason | Should Be 'NONE'
+            $receipt.authorized_task_count | Should Be 1
+            $receipt.authorized_complete_count | Should Be 1
+            $receipt.global_complete_count | Should Be 5
+            $receipt.global_pending_count | Should Be 84
+            (Test-Path -LiteralPath $receipt.archived_lock_path) | Should Be $true
+        } finally {
+            Pop-Location
+            $script:FrozenBatchProjectRoot = $previousProjectRoot
+            $script:batchLockReceiptFixture = $null
+            $script:batchLockReceiptContext = $null
+            $script:batchLockReceiptPlanResolution = $null
+            $script:batchLockReceiptMetrics = $null
+        }
+    }
+
+    It 'preserves a real failure stop reason when archiving the batch lock' {
+        $lockPath = Join-Path $TestDrive 'failure-stop-reason.batch.lock'
+        $receiptRoot = Join-Path $TestDrive 'failure-stop-reason-receipts'
+        [void](New-Item -ItemType Directory -Path $receiptRoot -Force)
+        [System.IO.File]::WriteAllText($lockPath, '{"process_id":4567}')
+        $expectedLockHash = (Get-FileHash -LiteralPath $lockPath -Algorithm SHA256).Hash.ToLowerInvariant()
+        $stopReason = 'PREFLIGHT_STOP:run_fixture:GPU_NOT_AVAILABLE'
+
+        $result = Invoke-BatchProductionFunctionSafely -Name 'Move-FrozenSageBatchLockToReceipt' -Arguments @{
+            LockPath = $lockPath
+            ReceiptRoot = $receiptRoot
+            FinalStatus = 'STOPPED'
+            StopReason = $stopReason
+            Aggregates = [pscustomobject]@{ TOTAL_COMPLETE = 4; PENDING = 85 }
+        }
+
+        $result.Error | Should Be $null
+        (Test-Path -LiteralPath $lockPath) | Should Be $false
+        $receiptPath = Get-ChildItem -LiteralPath $receiptRoot -Filter 'batch_receipt.json' -Recurse -File | Select-Object -ExpandProperty FullName
+        $receipt = Get-Content -Raw -LiteralPath $receiptPath | ConvertFrom-Json
+        $receipt.stop_reason | Should Be $stopReason
+        (Test-Path -LiteralPath $receipt.archived_lock_path) | Should Be $true
+        (Get-FileHash -LiteralPath $receipt.archived_lock_path -Algorithm SHA256).Hash.ToLowerInvariant() | Should Be $expectedLockHash
     }
 }
 

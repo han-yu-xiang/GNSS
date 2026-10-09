@@ -2062,9 +2062,10 @@ function Invoke-FrozenSageRerunBatch {
                 $receipts = Join-Path $executionLogParent 'frozen_sage_batch_receipts'
                 if (-not (Test-Path -LiteralPath $receipts -PathType Container)) { [void](New-Item -ItemType Directory -Path $receipts -ErrorAction Stop) }
                 if (Test-Path -LiteralPath $activeLockPath -PathType Leaf) {
+                    $receiptStopReason = if ([string]::IsNullOrWhiteSpace([string]$stopReason)) { 'NONE' } else { [string]$stopReason }
                     $receipt = Move-FrozenSageBatchLockToReceipt `
                         -LockPath $activeLockPath -ReceiptRoot $receipts -FinalStatus $batchStatus `
-                        -StopReason $stopReason -Aggregates $aggregates -PlanScopeSummary $scopeCompletion
+                        -StopReason $receiptStopReason -Aggregates $aggregates -PlanScopeSummary $scopeCompletion
                     $script:FrozenBatchOwnedLockPath = ''
                     Write-Output "BATCH_LOCK_MOVED_TO_RECEIPT path=$receipt"
                 }
