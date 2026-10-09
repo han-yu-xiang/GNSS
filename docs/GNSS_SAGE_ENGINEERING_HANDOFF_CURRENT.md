@@ -2668,3 +2668,29 @@ REMAINING_85_TASK_BATCH_RESUMED=NO
 FROZEN_PRODUCTION_MODIFIED=NO
 NEXT_DECISION_REQUIRED=PREPARE_CONTROLLED_DEPLOYMENT_AND_SINGLE_TASK_GPU_PILOT_RELEASE
 ```
+
+## 112. G12 production GPU pilot passed; successful batch lock receipt recovered (2026-10-09)
+
+- The single authorized pilot `run_20261003_F1023_V120_D0121_P2_G12_ch11` completed in `GPU_STAGE2_QUALIFIED` mode with `mapping_warning=NONE`, `Resume=false`, MATLAB exit code 0, and verified same-volume relocation to `scenes/F1023_V120_D0121_P2/sage_results/rerun_20261003_frozen_v3/G12_ch11`. The Frozen authority SHA remained `bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c`.
+- G12 outputs record Stage0 26,198 valid NAV symbols / 26,188 valid 40 ms windows; Stage1 26,188 scanned windows; Stage2 50 evaluated windows / 52 selected paths (50 direct paths, 2 MPC); Stage3 2 persistence rows / 0 persistent MPC; Stage4 0 joint results / 0 confirmed MPC. Zero Stage4 confirmations is the observed result under the current confirmation criterion, not a claim that the scene contains no multipath.
+- The relocation receipt records MATLAB start `2026-10-08 22:59:12.939 +08:00`, end `2026-10-09 06:14:01.507 +08:00` (about 7 h 14 min 49 s). Stage1 was the dominant interval (approximately `22:59:44`–`06:09:48`); GPU Stage2 was approximately `06:09:55`–`06:13:20`. Persisted artifact timestamps show Stage0 outputs at `22:59:44`, Stage1 progress/scan artifacts at `06:09:18`–`06:09:20`, and Stage2–Stage4 outputs at `06:13:20` local time; stage boundaries are approximate.
+- Provenance SHA-256: `gpu_execution_attempt.json` `f9b0a90292c9f796ef3095b6fefc7445ffc36624f70a156cf1228835648de1f3`; `gpu_execution_provenance.json` `0edf852c0a920b63bc776cfbc9d0be58fe0750b42898915795b50bae1506409c`; `relocation_receipt.json` `4d80accad953d6e5fe2468a5159aacb72989ebed588232a9268c51a6a443e77f`.
+- The pilot succeeded, but serial plan-scope cleanup could not bind an empty successful `StopReason` to the receipt helper's mandatory string parameter. The batch coordinator now normalizes only that successful receipt call-site value to `NONE`; nonempty failure reasons remain unchanged. Fix commit `857c420979af88ce84fdd58755e787c34d286d85` was deployed as the batch runner only (SHA-256 `d7052c9292768ee005c7d5c26fd49370e1900e303a0f9f8bad06e8a35b355508`). The stale lock owned by ended PID 4908 was archived through the existing helper, preserving its original SHA in `dataset_generation_logs/batch_sage_execution/frozen_sage_batch_receipts/frozen_sage_batch_plan_scope_completed_20261009T042136386Z/`; receipt SHA-256 is `ed8c4033596b0be0a9d5d1368b32b4f23600d5abf9eaf0773c42a9c730d3a929` and records `PLAN_SCOPE_COMPLETED`, `stop_reason=NONE`, one authorized task complete, five globally complete, and 84 pending.
+- No CPU fallback or retry was used, and no other task was started. The 89-row summary remains unchanged at one `ALREADY_COMPLETE`, four `COMPLETE`, 84 `PENDING`, zero `FAILED`, and zero `IN_PROGRESS` (SHA-256 `8d4f52d9ad5059134d41a93d015da8edadedbe88b0474d76e9ee244cdcd3a1c5`). The pilot is complete, but the remaining 84-task batch is not released or resumed. Paper Handoff was not changed.
+
+```ini
+GPU_PRODUCTION_PILOT=PASS
+GPU_PILOT_RUN_ID=run_20261003_F1023_V120_D0121_P2_G12_ch11
+GPU_PILOT_RELOCATION=VERIFIED_SAME_VOLUME_MOVE
+GPU_PILOT_SCIENTIFIC_INTEGRATION_BLOCKER=NONE
+GPU_PILOT_CPU_FALLBACK=NO
+GPU_PILOT_RETRY=NO
+OTHER_TASKS_STARTED=NO
+TOTAL_COMPLETE=5
+PENDING=84
+BATCH_SUMMARY_UNCHANGED=YES
+REMAINING_BATCH_RELEASED=NO
+REMAINING_BATCH_RESUMED=NO
+PAPER_HANDOFF_UPDATED=NO
+NEXT_DECISION_REQUIRED=REVIEW_SINGLE_PILOT_THROUGHPUT_AND_AUTHORIZE_OR_DEFER_REMAINING_BATCH
+```
