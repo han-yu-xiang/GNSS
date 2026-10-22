@@ -2146,3 +2146,28 @@ RAIN_EFFECT_LAYER_MATLAB_EXECUTED=NO
 RAIN_EFFECT_LAYER_SAGE_EXECUTED=NO
 NEXT_DECISION_REQUIRED=INDEPENDENT_REVIEW_OR_DARKROOM_INTEGRATION_APPROVAL
 ```
+
+## 92. Mainline 10.23 MHz cohort freeze and CIR/model checkpoint (2026-10-22)
+
+This addendum records only the independently rechecked state carried on the public review branch `review/gnss-mainline-cir-model-20261022`, based on `origin/main` `03f169b0e9a52bb1c271b98155dbfab72f7d418b`. It does not import the root checkout's unrelated, pre-existing local changes.
+
+- The live Summary remains `ALREADY_COMPLETE=1, COMPLETE=82, PENDING=4, FAILED=2, IN_PROGRESS=0` (83/89 complete/accounted). Manifest SHA-256 is `52edba87ee8c6726ea905a3f79879c5351131f9f78fd9120c0881e9473731ac5`; Summary SHA-256 is `9e0d3845b463e98cae96f23a05b6d12eb72a0e42ad3bc71e06a72dd9a9e4cffc`. No current MATLAB, SAGE Coordinator/Runner, or CIR process was found in the process snapshot; the SAGE production batch is complete, not currently running.
+- Gate A remains PASS: 83/83 eligible task audits; Stage0 285,752 valid windows; Stage2 16,761 selected paths = 7,847 direct + 8,914 MPC; Stage3 persistent 2,228; Stage4 strict confirmed 120. Nine scene+PRN elevation summaries remain missing and are not imputed.
+- **Task 2 / Gate B is now PASS.** Cohort `mainline_1023_model_v1` freezes exactly 83 eligible identities and six status-only exclusions; `cir_tasks.json` has one `EXISTING_VALIDATED` G28/ch1 pilot and 82 `NEW_REQUIRED`. Artifact directory on E: is `dataset_generation_logs/channel_modeling/mainline_1023_cohort_v1_20261022T082520Z/`; cohort SHA-256 `287e891fae0cd294a85c073080611a19b7389ece46240b89cb1d5dab4df90229`, task-list SHA-256 `2acbf20f64e961d9391550e3fcef3f3ee66d602f01c456e30c0a47a3c4c10d41`. Targeted cohort tests passed 7/7 and a fresh read-only `--validate-only` passed.
+- The six omitted identities remain in their original status and outputs: `run_20261003_F1023_V120_D0121_P2_G06_ch6` (PENDING); `run_20261003_F1023_V120_D0121_P2_G12_ch5` (PENDING); `run_20261003_F1023_V70_D0120_P9_G23_ch10` (PENDING); `run_20261003_F1023_V80_D0117_P8_G29_ch9` (PENDING); `run_20261003_F1023_V70_D0120_P1_G26_ch3` (FAILED); `run_20261003_F1023_V70_D0120_P1_G27_ch8` (FAILED). This list gives status only, not speculative failure causes.
+- CIR production has **not** expanded beyond the pre-existing single G28/ch1 pilot. Its prior audit records a 253,946,914-byte HDF5 with 35,920 × 451 CIR values (898 windows × 40 snapshots) and exact PDP read-back (`MAX_PDP_DIFF=0`); the existing artifact was not rewritten. The pilot's receiver gain/AGC remains `UNKNOWN`, so amplitudes are not absolute RF power. E: currently reports 439,874,486,272 bytes free; the historical Dirty/Warning condition remains an accepted, unverified storage risk.
+- No new 83-run Stage2 ledger or Mainline model/figures have been produced. Gate A's 8,914 Stage2 MPCs remain the candidate population; the historical 77-row pilot ledger is Stage3-gated and is not reused as the new population.
+- This checkpoint used Python tests and metadata/text-only validation: no raw IQ content/hash, MAT/HDF5 payload, MATLAB, SAGE, or CIR execution. The detailed review report and frozen metadata snapshot are under `reports/channel_modeling/`; cohort generator/test and Gate A evidence are included for independent review. Next is Task 3's minimal exporter/validator parameterization; new CIR pilots remain gated on the later Task 4 controlled launcher and QA.
+
+```text
+MAINLINE_1023_COHORT=FROZEN_83
+GATE_B=PASS
+CIR_EXISTING_VALIDATED=1
+CIR_NEW_REQUIRED=82
+CIR_NEW_EXPORTED=0
+STAGE2_MAINLINE_LEDGER=NOT_STARTED
+MAINLINE_MODEL=NOT_STARTED
+RAW_IQ_CONTENT_READ=NO
+MATLAB_SAGE_CIR_EXECUTED_THIS_CHECK=NO
+NEXT=TASK_3_CIR_EXPORTER_VALIDATOR_PARAMETERIZATION
+```
