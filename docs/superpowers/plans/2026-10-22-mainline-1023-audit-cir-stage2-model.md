@@ -70,14 +70,16 @@
 - Extend: `scripts/channel_modeling/tests/test_code_domain_cir_snapshot.m`
 - Add targeted test: `scripts/channel_modeling/tests/test_mainline_cir_multi_identity.m`
 
-**Interfaces:** 从冻结 `cir_tasks.json` 的单项读取准确 PRN/channel、scene metadata、Stage0窗口 CSV、Stage2 paths CSV、doppler-sign 证据和 raw IQ 路径/大小；保持当前 10.23 MHz 配置、40×1ms/Stage0窗口、451延迟 bin、PDP 算法与 pilot 标定限制。按实际窗口数推导 `40 × N` 快照，不硬编码898/35,920；分块写/读 HDF5，内存上限由先导任务验证。
+**Interfaces:** 冻结 `cohort.json` → `cir_tasks.json` SHA 链绑定唯一任务身份、PRN/channel 与输出 namespace；cohort 行的 Stage0/Stage2 路径及 SHA 必须与调用者输入完全相同且位于该任务 namespace。只接受项目根下已批准的 `scene_metadata_10MHz.csv`，由精确 scene 行解析 raw 路径、10.23 MHz 采样率与字节数；scene metadata 本身也须有 SHA pin。期望 raw 字节数仍须绑定 Gate A `task_audit.csv` 中同一 `run_id` 的 `raw_iq_size_bytes`（这些值不声称存放在 `cir_tasks.json` 中），Task 4 `ValidateOnly` 必须验证 scene metadata SHA 和 raw-size pin 与冻结文件/精确 Gate A 行一致。Exporter 对实际 `run_nav_sage_pipeline.m` 与 `default_sage_configuration.m` 校验部署 SHA，并确认 MATLAB 从该 project root 解析配置文件。三个 CIR 输出必须是不同的规范化路径。保持当前 10.23 MHz 配置、40×1ms/Stage0窗口、451延迟 bin、PDP 算法与 pilot 标定限制。按实际窗口数推导 `40 × N` 快照，不硬编码898/35,920；分块写/读 HDF5，内存上限由先导任务验证。
 
-- [ ] 先用现有 pilot 测试和合成多身份样本建立 RED：当前硬编码拒绝非 pilot、validator 拒绝非898窗口。测试覆盖错误身份/采样率、原始大小变化、缺 Stage0 行、重复窗口、输出碰撞、截断 HDF5、PDP 复算、末块不足等 fail-closed 情况。
-- [ ] 最小改动解除 pilot 身份和 PRN 常量；所有身份从不可变清单绑定，仍验证 frozen source SHA、scene/raw 元数据和实际输入路径。不得修改 frozen SAGE 核心、相关器数学、归一化选择、Stage2–Stage4 门禁。
-- [ ] 改 validator 为基于窗口数与按块读取的结构/有限值/PDP逐窗重算；提供一致的零容忍结构门禁与可记录的浮点容差策略。大任务不得将完整 CIR 一次性载入内存。
-- [ ] 先跑原 pilot 定向回归与合成多身份测试，后在**全新临时输出目录**计算 pilot 对照（只在 Task 4 获得执行门禁后），核对延迟网格、维度、PDP、比较 CSV 与关键数值语义；既有 pilot 文件绝不改写。
+- [x] TDD RED/GREEN 与合成多身份覆盖完成：非 pilot 身份/两窗口重叠导出、身份与采样率错误、raw 大小变化、Stage0/2 source path 与 SHA 授权、scene metadata SHA、部署源码/config pin、输出路径别名、缺失 Stage0 映射、重复窗口、输出碰撞、截断 HDF5、PDP 不匹配、Stage0 对齐错误及末块不足均有定向用例。multi-identity suite 19/19 PASS；snapshot 数学 suite 2/2 PASS；合计21/21 PASS。
+- [x] 最小解除 pilot 身份与 PRN 常量：同时校验冻结 `cohort.json`/`cir_tasks.json` 哈希链与准确 run_id 行；Stage0/Stage2 路径和 SHA 精确绑定 cohort 行。校验项目根中的 frozen SAGE entry (`BFFC123C…`) 与默认配置 (`AC06AD31…`) 实际 SHA，并确认 MATLAB 解析路径正确。raw 路径与字节数必须与 `scene_metadata_10MHz.csv` 的唯一 scene 行一致，runner 提供的字节数还须经 Task 4 与同一 `run_id` 的 Gate A `task_audit.csv` 行绑定。未改 frozen SAGE core、snapshot 数学 helper、归一化选择或 Stage2–Stage4 门禁。
+- [x] Validator 已按实际窗口数和 64 行 HDF5 chunk 验证结构、有限值、顺序、Stage0 对齐并逐窗重算 PDP；每个窗口最多保留40×451数值用于严格零容差比较，不整体载入完整 CIR。
+- [x] 部署配置根目录专项验证完成：显式指向 `E:\GNSS_Multipath_Project` 的合成测试通过。实际既有 pilot 文件未被打开/重写；新旧 pilot 数值对照仍须在 Task 4 获得执行门禁后，于全新临时输出目录运行。
 
 **Gate C:** 定向测试通过；跨身份、跨窗口数无错误硬编码；pilot 语义未回归；否则不批量放行。
+
+**当前门禁状态：** `IMPLEMENTATION_AND_SYNTHETIC_TESTS=PASS`；`DEPLOYED_CONFIG_TEST=PASS`；`EXISTING_PILOT_NUMERICAL_COMPARISON=NOT_RUN_TASK4_GATE_REQUIRED`；因此不得宣称 Gate C 全部通过或放行批量 CIR。
 
 ### Task 4: 完成先导 CIR、发布顺序运行配置
 
@@ -86,7 +88,7 @@
 - Add: `scripts/channel_modeling/tests/Invoke-Mainline1023CIRSingle.Tests.ps1`
 - Generate, new-only: `dataset_generation_logs/channel_modeling/mainline_1023_cir_v1_<UTC>/release_request.json`、`runs/<run_id>/...`、`pilot_audit.json`
 
-- [ ] `-ValidateOnly` 检查 cohort/cir_tasks SHA、代码及科学来源 SHA、83项现存状态、准确 run_id、所有输入存在与尺寸、目标全不存在、无并行 MATLAB/CIR writer、真实锁 owner、新增 E: I/O 事件、空间预算；不读 raw 内容。发布/执行身份绑定到精确任务，不接受仅凭路径推断。
+- [ ] `-ValidateOnly` 检查 cohort/cir_tasks SHA、代码及科学来源 SHA、项目根 `scene_metadata_10MHz.csv` 精确 SHA、83项现存状态、准确 run_id、Stage0/Stage2 cohort path+SHA 与尺寸；raw 路径必须解析自该文件唯一 scene 行，raw 字节数必须匹配 Gate A `task_audit.csv` 中同一 `run_id` 的 `raw_iq_size_bytes`，且 exporter 收到的 pin 与 metadata/当前文件长度一致。再检查目标全不存在、无并行 MATLAB/CIR writer、真实锁 owner、新增 E: I/O 事件、空间预算；不读 raw 内容。发布/执行身份绑定到精确任务，不接受仅凭路径推断。
 - [ ] 选择冻结名单中两个**不同 Urban 场景、不同可用仰角档**的任务作为新先导（若支持度不足则记录真实限制，改为两个不同 Urban 场景而不伪造档位）；名单及选择依据写入 `pilot_audit.json`。既有 G28/ch1 pilot 只验收现有证据，不重新导出或覆盖。
 - [ ] 正常 Windows 用户的唯一串行 launcher 对两个新先导各启动一次；先写独立 attempt 目录，MATLAB 退出0、分块 HDF5 QA、Stage0↔snapshot/PDP 一一映射、比较 CSV 和 receipt 全通过后才在同卷发布。任何失败保留部分 attempt、退出码和日志，不自动重试或进入下一项。
 - [ ] 以两个先导的实测 bytes/window、速度与内存峰值更新82项空间/时长预测；确定分批检查点及最低空闲空间保留值。校验 receiver gain/AGC 未知仍以 `UNKNOWN` 报告，不称绝对功率。审阅 Gate C pilot 对照与这两项跨场景结果，再放行剩余80项。
@@ -147,4 +149,4 @@
 
 ## 本次交付边界
 
-Task 1 / Gate A 与 Task 2 / Gate B 已完成；Task 3–8 仍为 Planned。83项 cohort 已冻结，含1项已验证 pilot 与82项 NEW_REQUIRED；但尚未开始新 CIR 导出，当前没有跨场景先导、83项 CIR 批量、Mainline Stage2 ledger 或新模型。下一步按 Task 3 对 exporter/validator 做定向 TDD 参数化；Task 4 的新先导仍须通过单独执行门禁，不在代码修改阶段启动科学生产。
+Task 1 / Gate A 与 Task 2 / Gate B 已完成。Task 3 exporter/validator 实现及定向 synthetic MATLAB 单测已完成（21/21 PASS）；Gate C 仍部分开放，待 Task 4 获得执行门禁后完成既有 pilot 新旧数值对照。Task 4–8 仍为 Planned。83项 cohort 已冻结，含1项已验证 pilot 与82项 NEW_REQUIRED；尚未开始新 CIR 导出，当前没有跨场景先导、83项 CIR 批量、Mainline Stage2 ledger 或新模型。不得因单测通过放行生产；下一步是审阅 Task 4 no-raw ValidateOnly 与 pilot 执行门禁。
