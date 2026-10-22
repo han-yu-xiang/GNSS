@@ -1,0 +1,244 @@
+{
+  "audit_status": "PASS",
+  "audit_time_utc": "2026-10-22T07:43:42.629286+00:00",
+  "auditor": {
+    "path": "E:\\GNSS_Multipath_Project\\reports\\data_consolidation_20261003\\mainline_1023_model_v1\\audit_20261022T071844Z\\audit_mainline_1023_stage2_cohort.py",
+    "sha256": "a1e0925841844aec393ad138354624b324be2d6a86da3fa53d95559e780bc8f0"
+  },
+  "disk_space_metadata": {
+    "free_bytes": 439912235008,
+    "total_bytes": 2000379969536,
+    "used_bytes": 1560467734528
+  },
+  "elevation_join_scope": "scene+PRN summary metadata; not event-time or path-level geometry",
+  "elevation_join_task_counts": {
+    "High": 20,
+    "Low": 21,
+    "MISSING": 9,
+    "Mid": 33
+  },
+  "elevation_summary_files": {
+    "F1023_V120_D0121_P2": {
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V120_D0121_P2\\satellite\\F1023_V120_D0121_P2_satellite_elevation_summary.csv",
+      "rows": "8",
+      "sha256": "0c4dbc04f37df233c475f9312090dbc436e37d4523aa5c6a764d1b538004ddcb",
+      "status": "READ"
+    },
+    "F1023_V70_D0117_P2": {
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0117_P2\\satellite\\F1023_V70_D0117_P2_satellite_elevation_summary.csv",
+      "rows": "7",
+      "sha256": "932868a9c91a92c17e7edcf1b6edbb98a384914c58f49d5a78d45ac016d22cfc",
+      "status": "READ"
+    },
+    "F1023_V70_D0117_P4": {
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0117_P4\\satellite\\F1023_V70_D0117_P4_satellite_elevation_summary.csv",
+      "rows": "6",
+      "sha256": "45f50292bfd7738a0f4cf8f7d4243c8ab65155fe97d1081a7c26c24300cdf1af",
+      "status": "READ"
+    },
+    "F1023_V70_D0120_P1": {
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0120_P1\\satellite\\F1023_V70_D0120_P1_satellite_elevation_summary.csv",
+      "rows": "5",
+      "sha256": "0ee87da27eba7346c3753c5d54cfdf8d8f43300d096aa2d9e2111256042f702a",
+      "status": "READ"
+    },
+    "F1023_V70_D0120_P5": {
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0120_P5\\satellite\\F1023_V70_D0120_P5_satellite_elevation_summary.csv",
+      "rows": "5",
+      "sha256": "6eb6fa5bbf5870df4a601ef633919d11c541a73d503b80bcd7a2e20f635f0a10",
+      "status": "READ"
+    },
+    "F1023_V70_D0120_P7": {
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0120_P7\\satellite\\F1023_V70_D0120_P7_satellite_elevation_summary.csv",
+      "rows": "4",
+      "sha256": "7bb7a2c0ec84e7c6a89167332794c94ff9d68636a80d131969fdf4a1beea7d7f",
+      "status": "READ"
+    },
+    "F1023_V70_D0120_P8": {
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0120_P8\\satellite\\F1023_V70_D0120_P8_satellite_elevation_summary.csv",
+      "rows": "4",
+      "sha256": "49d0a233a3adf726bfe14d443e67a86f3b43bef5a029df599324337e7963c599",
+      "status": "READ"
+    },
+    "F1023_V70_D0120_P9": {
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0120_P9\\satellite\\F1023_V70_D0120_P9_satellite_elevation_summary.csv",
+      "rows": "8",
+      "sha256": "8938ee0130112c61cbb4eb21b8a391d7bf98032364174d4d093094291f85ba28",
+      "status": "READ"
+    },
+    "F1023_V70_D0122_P1": {
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0122_P1\\satellite\\F1023_V70_D0122_P1_satellite_elevation_summary.csv",
+      "rows": "9",
+      "sha256": "58bf95d594283951fea1aa3e0e86b31bfbbf18eb092826dc9968bb36d3ed3507",
+      "status": "READ"
+    },
+    "F1023_V70_D0122_P2": {
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V70_D0122_P2\\satellite\\F1023_V70_D0122_P2_satellite_elevation_summary.csv",
+      "rows": "4",
+      "sha256": "f6ff9e5c9acd64aadea26c134e5dc8f3ce92672af6cd065cd50efb429d836098",
+      "status": "READ"
+    },
+    "F1023_V80_D0117_P8": {
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_V80_D0117_P8\\satellite\\F1023_V80_D0117_P8_satellite_elevation_summary.csv",
+      "rows": "6",
+      "sha256": "e0584a2149e7855e25ea6330849cfd569617812d41836057a7e8985ef8a6ea51",
+      "status": "READ"
+    },
+    "F1023_v50_D0127_P1": {
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_v50_D0127_P1\\satellite\\F1023_v50_D0127_P1_satellite_elevation_summary.csv",
+      "rows": "5",
+      "sha256": "4653279fa365e4f10e9772fc283a684d6aba80ca681a301b5c595063593a3a68",
+      "status": "READ"
+    },
+    "F1023_v90_D0117_P7": {
+      "path": "E:\\GNSS_Multipath_Project\\scenes\\F1023_v90_D0117_P7\\satellite\\F1023_v90_D0117_P7_satellite_elevation_summary.csv",
+      "rows": "6",
+      "sha256": "55b39262d080f02505368229866fba5852ef68a5fa4563f092992f4c2ec490e7",
+      "status": "READ"
+    }
+  },
+  "eligible_count": 83,
+  "environment_task_counts": {
+    "Highway/Open": 18,
+    "Mountain/Valley": 20,
+    "Special Reflective": 16,
+    "Urban": 29
+  },
+  "errors": [],
+  "excluded_count": 6,
+  "execution_layout_note": "Auditor and targeted tests are stored with the audit package to avoid modifying the pre-existing untracked scripts/channel_modeling tree.",
+  "final_batch_receipt": {
+    "final_status": "PLAN_SCOPE_COMPLETED",
+    "path": "E:\\GNSS_Multipath_Project\\dataset_generation_logs\\batch_sage_execution\\frozen_sage_batch_receipts\\frozen_sage_batch_plan_scope_completed_20261020T182206380Z\\batch_receipt.json",
+    "sha256": "a77a601bdebe2dbfac9b782e9ed644221ce3bb9a7d2d13957f114bc76db6a293"
+  },
+  "hdf5_payload_opened": false,
+  "known_existing_pilot_cir": {
+    "counted_as_reexport": false,
+    "output_present_in_inventory": true,
+    "run_id": "run_20261003_F1023_V70_D0117_P2_G28_ch1"
+  },
+  "manifest": {
+    "path": "E:\\GNSS_Multipath_Project\\reports\\data_consolidation_20261003\\MAINLINE_SAGE_1023_RERUN_MANIFEST.csv",
+    "rows": 89,
+    "sha256": "52edba87ee8c6726ea905a3f79879c5351131f9f78fd9120c0881e9473731ac5"
+  },
+  "mat_payload_opened": false,
+  "matlab_or_sage_run": false,
+  "project_root": "E:\\GNSS_Multipath_Project",
+  "raw_iq_content_read": false,
+  "raw_iq_hash_recomputed": false,
+  "scene_count": 13,
+  "scene_task_counts": {
+    "F1023_V120_D0121_P2": 13,
+    "F1023_V70_D0117_P2": 7,
+    "F1023_V70_D0117_P4": 7,
+    "F1023_V70_D0120_P1": 3,
+    "F1023_V70_D0120_P5": 5,
+    "F1023_V70_D0120_P7": 4,
+    "F1023_V70_D0120_P8": 4,
+    "F1023_V70_D0120_P9": 9,
+    "F1023_V70_D0122_P1": 8,
+    "F1023_V70_D0122_P2": 7,
+    "F1023_V80_D0117_P8": 5,
+    "F1023_v50_D0127_P1": 5,
+    "F1023_v90_D0117_P7": 6
+  },
+  "scope": "83 rows with execution_status ALREADY_COMPLETE or COMPLETE; other 6 identities listed by ID and status only",
+  "stage_aggregate_counts": {
+    "direct_path_count": 7847,
+    "stage0_valid_40ms_windows": 285752,
+    "stage0_valid_nav_symbols": 286037,
+    "stage1_scanned_windows": 285752,
+    "stage2_evaluated_windows": 7847,
+    "stage2_mpc_count": 8914,
+    "stage2_selected_path_count": 16761,
+    "stage3_persistence_row_count": 8914,
+    "stage3_persistent_mpc_count": 2228,
+    "stage4_confirmed_mpc_count": 120,
+    "stage4_joint_result_count": 382
+  },
+  "storage_event_review": "Refreshed 2026-10-22 UTC: no matching System disk/USB storage-fault events found in the preceding 48 hours; existing accepted E: Dirty/Warning risk is unchanged and not re-alerted.",
+  "summary": {
+    "path": "E:\\GNSS_Multipath_Project\\reports\\data_consolidation_20261003\\MAINLINE_SAGE_1023_BATCH_RERUN_SUMMARY.csv",
+    "rows": 89,
+    "sha256": "9e0d3845b463e98cae96f23a05b6d12eb72a0e42ad3bc71e06a72dd9a9e4cffc",
+    "status_counts": {
+      "ALREADY_COMPLETE": 1,
+      "COMPLETE": 82,
+      "FAILED": 2,
+      "PENDING": 4
+    }
+  },
+  "summary_baseline_counts": {
+    "direct_path_count": 7847,
+    "stage0_valid_40ms_windows": 285752,
+    "stage2_mpc_count": 8914,
+    "stage2_selected_path_count": 16761,
+    "stage3_persistent_mpc_count": 2228,
+    "stage4_confirmed_mpc_count": 120
+  },
+  "targeted_tests": {
+    "path": "E:\\GNSS_Multipath_Project\\reports\\data_consolidation_20261003\\mainline_1023_model_v1\\audit_20261022T071844Z\\test_audit_mainline_1023_stage2_cohort.py",
+    "result": "15/15 passed",
+    "sha256": "f2a3a272d0d5850689a063809ee1ad4cce163e91b6eac23dd9cea7f7b4d1ff15"
+  },
+  "task_audit_rows": 83,
+  "unique_prn_count": 23,
+  "warnings": [
+    {
+      "code": "scene_prn_elevation_join_missing",
+      "detail": "F1023_V120_D0121_P2",
+      "run_id": "run_20261003_F1023_V120_D0121_P2_G03_ch2",
+      "severity": "WARNING"
+    },
+    {
+      "code": "scene_prn_elevation_join_missing",
+      "detail": "F1023_V120_D0121_P2",
+      "run_id": "run_20261003_F1023_V120_D0121_P2_G19_ch0",
+      "severity": "WARNING"
+    },
+    {
+      "code": "scene_prn_elevation_join_missing",
+      "detail": "F1023_V120_D0121_P2",
+      "run_id": "run_20261003_F1023_V120_D0121_P2_G19_ch1",
+      "severity": "WARNING"
+    },
+    {
+      "code": "scene_prn_elevation_join_missing",
+      "detail": "F1023_V120_D0121_P2",
+      "run_id": "run_20261003_F1023_V120_D0121_P2_G19_ch3",
+      "severity": "WARNING"
+    },
+    {
+      "code": "scene_prn_elevation_join_missing",
+      "detail": "F1023_V70_D0117_P4",
+      "run_id": "run_20261003_F1023_V70_D0117_P4_G31_ch1",
+      "severity": "WARNING"
+    },
+    {
+      "code": "scene_prn_elevation_join_missing",
+      "detail": "F1023_V70_D0120_P9",
+      "run_id": "run_20261003_F1023_V70_D0120_P9_G28_ch11",
+      "severity": "WARNING"
+    },
+    {
+      "code": "scene_prn_elevation_join_missing",
+      "detail": "F1023_V70_D0122_P2",
+      "run_id": "run_20261003_F1023_V70_D0122_P2_G10_ch6",
+      "severity": "WARNING"
+    },
+    {
+      "code": "scene_prn_elevation_join_missing",
+      "detail": "F1023_V70_D0122_P2",
+      "run_id": "run_20261003_F1023_V70_D0122_P2_G12_ch2",
+      "severity": "WARNING"
+    },
+    {
+      "code": "scene_prn_elevation_join_missing",
+      "detail": "F1023_V70_D0122_P2",
+      "run_id": "run_20261003_F1023_V70_D0122_P2_G13_ch5",
+      "severity": "WARNING"
+    }
+  ]
+}
