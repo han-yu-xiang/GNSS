@@ -117,7 +117,12 @@ try {
     $coordinatorTasks = @($scheduled | Where-Object { $_.TaskName -in $coordinatorNames })
     $snapshot.coordinator_state = if ($coordinatorTasks.Count -eq 0) { 'NOT_REGISTERED' } else { [string]$coordinatorTasks[-1].State }
     $workerTasks = @($scheduled | Where-Object {
-        @($_.Actions | Where-Object { [string]$_.Arguments -like "*$actualRequestHash*" -and [string]$_.Arguments -match '(?i)-ExecuteBatchWorker' }).Count -gt 0
+        @($_.Actions | Where-Object {
+            $argumentProperty = $_.PSObject.Properties['Arguments']
+            $null -ne $argumentProperty -and
+            [string]$argumentProperty.Value -like "*$actualRequestHash*" -and
+            [string]$argumentProperty.Value -match '(?i)-ExecuteBatchWorker(?:\s|$)'
+        }).Count -gt 0
     })
     $snapshot.worker_states = @($workerTasks | ForEach-Object { [pscustomobject]@{ task_name = $_.TaskName; state = [string]$_.State } })
     $processes = @(Get-CimInstance -ClassName Win32_Process -ErrorAction Stop)
