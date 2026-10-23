@@ -7,10 +7,12 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from scripts.channel_modeling.mainline_stage2_trajectory import (
+    aggregate_stage2_metrics_by_fix,
     build_route_segment_rows,
     build_trajectory_window_overlay,
     parse_valid_rmc_fixes,
     split_trajectory_components,
+    summarize_spatial_dependence,
 )
 
 
@@ -88,6 +90,33 @@ def stage2_window(run_id: str, window_id: str, scene: str, prn: str = "G03"):
         "scene_id": scene,
         "prn": prn,
         "tracking_channel": "2",
+    }
+
+
+def stage2_path(
+    run_id: str,
+    window_id: str,
+    scene: str,
+    prn: str,
+    path_id: str,
+    *,
+    multipath: bool,
+    excess_delay_chips: str = "",
+    doppler_offset_hz: str = "",
+    relative_power_db: str = "",
+):
+    return {
+        "run_id": run_id,
+        "window_id": window_id,
+        "scene_id": scene,
+        "prn": prn,
+        "tracking_channel": "2",
+        "path_id": path_id,
+        "is_multipath": "1" if multipath else "0",
+        "modeling_role": "MPC_CANDIDATE" if multipath else "DIRECT_REFERENCE",
+        "excess_delay_chips": excess_delay_chips,
+        "doppler_offset_hz": doppler_offset_hz,
+        "relative_power_db": relative_power_db,
     }
 
 
@@ -443,6 +472,161 @@ class MainlineStage2RouteBinTests(unittest.TestCase):
         }
         with self.assertRaisesRegex(ValueError, "duplicate trajectory window identity"):
             build_route_segment_rows([window, dict(window)], [fix], lengths_m=(50,))
+
+
+class MainlineStage2SpatialAggregationTests(unittest.TestCase):
+    def test_aggregates_only_selected_windows_and_collapses_windows_at_one_fix(self):
+        overlay = [
+            {
+                "run_id": "run-a", "window_id": "1", "scene_id": "scene-a", "prn": "G03",
+                "tracking_channel": "2",
+                "position_status": "POSITION_MATCHED", "position_utc": "2024-04-23T12:00:00.000Z",
+                "position_source_record_id": "scene-a.nmea:1", "route_component_id": "component_0001",
+                "route_cumulative_distance_m": "5",
+            },
+            {
+                "run_id": "run-a", "window_id": "2", "scene_id": "scene-a", "prn": "G03",
+                "tracking_channel": "2",
+                "position_status": "POSITION_MATCHED", "position_utc": "2024-04-23T12:00:00.000Z",
+                "position_source_record_id": "scene-a.nmea:1", "route_component_id": "component_0001",
+                "route_cumulative_distance_m": "5",
+            },
+            {
+                "run_id": "run-a", "window_id": "3", "scene_id": "scene-a", "prn": "G03",
+                "tracking_channel": "2",
+                "position_status": "POSITION_MISSING", "position_utc": "", "missing_reason": "OUTSIDE_POSITION_TOLERANCE",
+            },
+        ]
+        paths = [
+            stage2_path("run-a", "1", "scene-a", "G03", "1", multipath=False),
+            stage2_path("run-a", "1", "scene-a", "G03", "2", multipath=True,
+                        excess_delay_chips="0.2", doppler_offset_hz="-40", relative_power_db="-3"),
+            stage2_path("run-a", "2", "scene-a", "G03", "1", multipath=False),
+            stage2_path("run-a", "3", "scene-a", "G03", "1", multipath=True,
+                        excess_delay_chips="0.4", doppler_offset_hz="-20", relative_power_db="-6"),
+        ]
+
+        metrics = aggregate_stage2_metrics_by_fix(paths, overlay)
+
+        located = next(row for row in metrics if row["fix_utc"])
+        unlocated = next(row for row in metrics if not row["fix_utc"])
+        self.assertEqual(located["window_count"], 2)
+        self.assertEqual(located["stage2_path_row_count"], 3)
+        self.assertEqual(located["mean_mpc_count_per_window"], 0.5)
+        self.assertEqual(located["total_mpc_count_across_windows"], 1)
+        self.assertEqual(located["direct_reference_path_count"], 2)
+        self.assertAlmostEqual(located["median_excess_delay_chips"], 0.2)
+        self.assertAlmostEqual(located["median_doppler_offset_hz"], -40.0)
+        self.assertAlmostEqual(located["median_relative_power_db"], -3.0)
+        self.assertEqual(unlocated["window_count"], 1)
+        self.assertEqual(unlocated["mean_mpc_count_per_window"], 1.0)
+        self.assertEqual(unlocated["location_status"], "POSITION_MISSING")
+
+    def test_rejects_path_identity_or_direct_role_conflicts(self):
+        overlay = [{
+            "run_id": "run-a", "window_id": "1", "scene_id": "scene-a", "prn": "G03",
+            "tracking_channel": "2",
+            "position_status": "POSITION_MISSING", "position_utc": "",
+        }]
+        path = stage2_path("run-a", "1", "scene-a", "G03", "1", multipath=True)
+        path["modeling_role"] = "DIRECT_REFERENCE"
+
+        with self.assertRaisesRegex(ValueError, "modeling_role conflicts"):
+            aggregate_stage2_metrics_by_fix([path], overlay)
+
+        with self.assertRaisesRegex(ValueError, "no trajectory overlay identity"):
+            aggregate_stage2_metrics_by_fix(
+                [stage2_path("run-b", "1", "scene-a", "G03", "1", multipath=False)], overlay
+            )
+
+        with self.assertRaisesRegex(ValueError, "has no Stage2 path rows"):
+            aggregate_stage2_metrics_by_fix([], overlay)
+
+        wrong_channel = dict(overlay[0], tracking_channel="3")
+        with self.assertRaisesRegex(ValueError, "channel conflicts"):
+            aggregate_stage2_metrics_by_fix(
+                [stage2_path("run-a", "1", "scene-a", "G03", "1", multipath=False)],
+                [wrong_channel],
+            )
+
+    def test_same_fix_cross_prn_support_is_reported_separately(self):
+        overlay = [
+            {
+                "run_id": "run-a", "window_id": "1", "scene_id": "scene-a", "prn": "G03",
+                "tracking_channel": "2",
+                "position_status": "POSITION_MATCHED", "position_utc": "2024-04-23T12:00:00.000Z",
+                "position_source_record_id": "scene-a.nmea:1", "route_component_id": "component_0001",
+                "route_cumulative_distance_m": "5",
+            },
+            {
+                "run_id": "run-b", "window_id": "1", "scene_id": "scene-a", "prn": "G28",
+                "tracking_channel": "2",
+                "position_status": "POSITION_MATCHED", "position_utc": "2024-04-23T12:00:00.000Z",
+                "position_source_record_id": "scene-a.nmea:1", "route_component_id": "component_0001",
+                "route_cumulative_distance_m": "5",
+            },
+        ]
+        paths = [
+            stage2_path("run-a", "1", "scene-a", "G03", "1", multipath=False),
+            stage2_path("run-b", "1", "scene-a", "G28", "1", multipath=False),
+        ]
+        metrics = aggregate_stage2_metrics_by_fix(paths, overlay)
+
+        self.assertEqual(len(metrics), 2)
+        summary = summarize_spatial_dependence(metrics, lag_edges_m=(0, 50, 100))
+        self.assertTrue(all(row["cross_prn_colocated_group_count"] == 1 for row in summary))
+        self.assertTrue(all(row["estimate_status"] == "INSUFFICIENT_SPATIAL_SUPPORT" for row in summary))
+
+    def test_sparse_lag_bands_keep_zero_pair_rows_and_null_estimates(self):
+        metrics = [
+            {
+                "scene_id": "scene-a", "run_id": "run-a", "prn": "G03", "location_status": "POSITION_MATCHED",
+                "fix_utc": f"2024-04-23T12:00:0{i}.000Z", "route_component_id": "component_0001",
+                "route_cumulative_distance_m": float(i), "position_source_record_id": f"fix:{i}",
+                "mean_mpc_count_per_window": i, "median_excess_delay_chips": None,
+                "median_doppler_offset_hz": None, "median_relative_power_db": None,
+            }
+            for i in range(2)
+        ]
+
+        summary = summarize_spatial_dependence(metrics, lag_edges_m=(0, 2, 10, 100))
+
+        mpc = [row for row in summary if row["metric_name"] == "mean_mpc_count_per_window"]
+        self.assertEqual(len(mpc), 3)
+        self.assertEqual(mpc[-1]["pair_count"], 0)
+        self.assertEqual(mpc[-1]["scene_count"], 0)
+        self.assertTrue(all(row["correlation_range_candidate_m"] is None for row in mpc))
+        self.assertTrue(all(row["effective_local_unit_count_candidate"] is None for row in mpc))
+
+    def test_scene_block_stable_decay_can_yield_a_candidate_range(self):
+        metrics = []
+        for scene_number in range(10):
+            scene = f"scene-{scene_number:02d}"
+            for position in range(100):
+                metrics.append(
+                    {
+                        "scene_id": scene,
+                        "run_id": f"{scene}-run",
+                        "prn": "G03",
+                        "location_status": "POSITION_MATCHED",
+                        "fix_utc": f"2024-04-23T12:{position // 60:02d}:{position % 60:02d}.000Z",
+                        "route_component_id": "component_0001",
+                        "route_cumulative_distance_m": float(position),
+                        "position_source_record_id": f"{scene}:fix:{position}",
+                        "mean_mpc_count_per_window": float(position),
+                        "median_excess_delay_chips": None,
+                        "median_doppler_offset_hz": None,
+                        "median_relative_power_db": None,
+                    }
+                )
+
+        summary = summarize_spatial_dependence(metrics, lag_edges_m=(0, 10, 20, 30, 40, 50, 60))
+
+        mpc = [row for row in summary if row["metric_name"] == "mean_mpc_count_per_window"]
+        self.assertTrue(all(row["estimate_status"] == "STABLE_SCENE_BLOCK_CANDIDATE" for row in mpc))
+        self.assertTrue(all(row["correlation_range_candidate_m"] is not None for row in mpc))
+        self.assertTrue(all(row["effective_local_unit_count_candidate"] is not None for row in mpc))
+        self.assertTrue(all(row["scene_count"] == 10 for row in mpc))
 
 
 if __name__ == "__main__":

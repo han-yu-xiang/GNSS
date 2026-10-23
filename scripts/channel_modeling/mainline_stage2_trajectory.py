@@ -9,9 +9,10 @@ from __future__ import annotations
 
 import math
 import re
+from bisect import bisect_right
 from datetime import datetime, timezone
 from pathlib import Path
-from statistics import median
+from statistics import median, pvariance
 from typing import Any, Mapping, Sequence
 
 from scripts.preprocessing.satellite_geometry import nmea_payload, parse_nmea_datetime
@@ -26,6 +27,17 @@ _SUSTAINED_SPEED_STABILITY_MPS = 2.5
 _STATIONARY_SPEED_LIMIT_MPS = 1.0
 _SUSTAINED_COURSE_DELTA_DEGREES = 30.0
 _SUSTAINED_COURSE_STABILITY_DEGREES = 15.0
+_SPATIAL_METRICS = (
+    "mean_mpc_count_per_window",
+    "median_excess_delay_chips",
+    "median_doppler_offset_hz",
+    "median_relative_power_db",
+)
+_MIN_SCENES_FOR_RANGE = 8
+_MIN_SUPPORTED_LAG_BANDS_FOR_RANGE = 3
+_RANGE_DECORRELATION_THRESHOLD = math.exp(-1.0)
+_RANGE_MONOTONICITY_TOLERANCE = 0.05
+_RANGE_MAX_SCENE_BLOCK_CV = 0.25
 
 
 def _checksum_valid_rmc_line(line: str) -> list[str] | None:
@@ -766,4 +778,546 @@ def build_route_segment_rows(
                 "analysis_unit_role": "DESCRIPTIVE_CANDIDATE_BIN_NOT_INDEPENDENT_SAMPLE",
             }
         )
+    return output
+
+
+def _optional_metric_value(row: Mapping[str, Any], field: str) -> float | None:
+    value = row.get(field)
+    if value is None or str(value).strip() == "":
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number if math.isfinite(number) else None
+
+
+def _parse_iso_utc(value: Any, *, field: str) -> datetime:
+    text = str(value or "").strip()
+    if not text:
+        raise ValueError(f"{field} is required")
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError as error:
+        raise ValueError(f"{field} must be ISO-8601 UTC") from error
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise ValueError(f"{field} must include a timezone")
+    return parsed.astimezone(timezone.utc)
+
+
+def aggregate_stage2_metrics_by_fix(
+    path_rows: Sequence[Mapping[str, Any]],
+    trajectory_overlay: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    """Collapse selected-window MPC measures to their exact receiver fix.
+
+    Multiple Stage2 windows from one run that resolve to the same checksum-
+    valid RMC fix are combined before spatial analysis. Unlocated selected
+    windows remain as individual rows with an explicit missing status and are
+    excluded only from spatial-lag calculations, not silently discarded.
+    Direct/reference paths contribute zero to ``mpc_count``. A zero is thus
+    defined only inside the represented Stage2-selected-window frame.
+    """
+
+    windows: dict[tuple[str, str], dict[str, Any]] = {}
+    for index, overlay in enumerate(trajectory_overlay):
+        run_id = str(overlay.get("run_id", "")).strip()
+        window_id = str(overlay.get("window_id", "")).strip()
+        scene_id = str(overlay.get("scene_id", "")).strip()
+        prn = str(overlay.get("prn", "")).strip()
+        tracking_channel = str(overlay.get("tracking_channel", "")).strip()
+        if not run_id or not window_id or not scene_id or not prn or not tracking_channel:
+            raise ValueError(
+                f"trajectory overlay row {index} requires run_id, window_id, scene_id, prn and tracking_channel"
+            )
+        identity = (run_id, window_id)
+        if identity in windows:
+            raise ValueError(f"duplicate trajectory overlay identity {identity}")
+        location_status = str(overlay.get("position_status", "")).strip()
+        if location_status not in {"POSITION_MATCHED", "POSITION_MISSING"}:
+            raise ValueError(f"trajectory overlay row {index} has invalid position_status")
+
+        fix_utc: datetime | None = None
+        component_id = ""
+        distance: float | None = None
+        source_record_id = ""
+        if location_status == "POSITION_MATCHED":
+            fix_utc = _parse_iso_utc(overlay.get("position_utc"), field="position_utc")
+            component_id = str(overlay.get("route_component_id", "")).strip()
+            if not component_id:
+                raise ValueError(f"matched overlay window {identity} lacks route_component_id")
+            distance = _as_finite_number(
+                overlay.get("route_cumulative_distance_m"),
+                field="route_cumulative_distance_m",
+                minimum=0.0,
+            )
+            source_record_id = str(overlay.get("position_source_record_id", "")).strip()
+        windows[identity] = {
+            "run_id": run_id,
+            "window_id": window_id,
+            "scene_id": scene_id,
+            "prn": prn,
+            "tracking_channel": tracking_channel,
+            "location_status": location_status,
+            "fix_utc": fix_utc,
+            "component_id": component_id,
+            "distance": distance,
+            "source_record_id": source_record_id,
+            "paths": [],
+        }
+
+    path_identities: set[tuple[str, str, str]] = set()
+    for index, path in enumerate(path_rows):
+        run_id = str(path.get("run_id", "")).strip()
+        window_id = str(path.get("window_id", "")).strip()
+        scene_id = str(path.get("scene_id", "")).strip()
+        prn = str(path.get("prn", "")).strip()
+        path_id = str(path.get("path_id", "")).strip()
+        identity = (run_id, window_id)
+        if not all((run_id, window_id, scene_id, prn, path_id)):
+            raise ValueError(f"Stage2 path row {index} requires run_id/window_id/scene_id/prn/path_id")
+        if identity not in windows:
+            raise ValueError(f"Stage2 path {identity}/{path_id} has no trajectory overlay identity")
+        overlay = windows[identity]
+        if scene_id != overlay["scene_id"] or prn != overlay["prn"]:
+            raise ValueError(f"Stage2 path identity conflicts with trajectory overlay for {identity}")
+        path_channel = str(path.get("tracking_channel", "")).strip()
+        if not path_channel or path_channel != overlay["tracking_channel"]:
+            raise ValueError(f"Stage2 path channel conflicts with trajectory overlay for {identity}")
+        path_identity = (run_id, window_id, path_id)
+        if path_identity in path_identities:
+            raise ValueError(f"duplicate Stage2 path identity {path_identity}")
+        path_identities.add(path_identity)
+
+        multipath_text = str(path.get("is_multipath", "")).strip()
+        if multipath_text not in {"0", "1"}:
+            raise ValueError(f"Stage2 path {path_identity} has invalid is_multipath")
+        is_multipath = multipath_text == "1"
+        modeling_role = str(path.get("modeling_role", "")).strip()
+        expected_role = "MPC_CANDIDATE" if is_multipath else "DIRECT_REFERENCE"
+        if modeling_role != expected_role:
+            raise ValueError(f"modeling_role conflicts with is_multipath for {path_identity}")
+        overlay["paths"].append({**dict(path), "_is_multipath": is_multipath})
+
+    for identity, window in windows.items():
+        if not window["paths"]:
+            raise ValueError(f"selected Stage2 window {identity} has no Stage2 path rows")
+
+    aggregates: dict[tuple[str, str, str, str], dict[str, Any]] = {}
+    for identity, window in windows.items():
+        if window["location_status"] == "POSITION_MATCHED":
+            fix_utc: datetime = window["fix_utc"]
+            key = (window["scene_id"], window["run_id"], _iso_utc(fix_utc), "")
+        else:
+            key = (window["scene_id"], window["run_id"], "", window["window_id"])
+        aggregate = aggregates.setdefault(
+            key,
+            {
+                "scene_id": window["scene_id"],
+                "run_id": window["run_id"],
+                "prn": window["prn"],
+                "tracking_channel": window["tracking_channel"],
+                "fix_utc": key[2],
+                "location_status": window["location_status"],
+                "position_source_record_id": window["source_record_id"],
+                "route_component_id": window["component_id"],
+                "route_cumulative_distance_m": window["distance"],
+                "window_ids": set(),
+                "path_rows": [],
+                "mpc_rows": [],
+                "window_summaries": [],
+            },
+        )
+        if aggregate["prn"] != window["prn"] or aggregate["tracking_channel"] != window["tracking_channel"]:
+            raise ValueError(f"one run maps to conflicting PRN/channel identities: {window['run_id']}")
+        for output_field, window_field in (
+            ("position_source_record_id", "source_record_id"),
+            ("route_component_id", "component_id"),
+            ("route_cumulative_distance_m", "distance"),
+        ):
+            if aggregate[output_field] != window[window_field]:
+                raise ValueError(f"windows mapped to one fix disagree on {output_field}: {identity}")
+        aggregate["window_ids"].add(identity)
+        aggregate["path_rows"].extend(window["paths"])
+        window_mpc_rows = [path for path in window["paths"] if path["_is_multipath"]]
+        aggregate["mpc_rows"].extend(window_mpc_rows)
+        metric_fields = (
+            "excess_delay_chips",
+            "doppler_offset_hz",
+            "relative_power_db",
+        )
+        window_summary = {"mpc_count": len(window_mpc_rows)}
+        for field in metric_fields:
+            values = [
+                parsed
+                for path in window_mpc_rows
+                if (parsed := _optional_metric_value(path, field)) is not None
+            ]
+            window_summary[field] = median(values) if values else None
+            window_summary[f"{field}_path_count"] = len(values)
+        aggregate["window_summaries"].append(window_summary)
+
+    output: list[dict[str, Any]] = []
+    for _, aggregate in sorted(aggregates.items()):
+        window_summaries = aggregate["window_summaries"]
+        mpc_counts = [summary["mpc_count"] for summary in window_summaries]
+        summary_values = {
+            field: [summary[field] for summary in window_summaries if summary[field] is not None]
+            for field in ("excess_delay_chips", "doppler_offset_hz", "relative_power_db")
+        }
+        output.append(
+            {
+                "scene_id": aggregate["scene_id"],
+                "run_id": aggregate["run_id"],
+                "prn": aggregate["prn"],
+                "tracking_channel": aggregate["tracking_channel"],
+                "fix_utc": aggregate["fix_utc"],
+                "location_status": aggregate["location_status"],
+                "position_source_record_id": aggregate["position_source_record_id"],
+                "route_component_id": aggregate["route_component_id"],
+                "route_cumulative_distance_m": aggregate["route_cumulative_distance_m"],
+                "window_count": len(aggregate["window_ids"]),
+                "window_ids": sorted(window_id for _, window_id in aggregate["window_ids"]),
+                "stage2_path_row_count": len(aggregate["path_rows"]),
+                "direct_reference_path_count": sum(
+                    not path["_is_multipath"] for path in aggregate["path_rows"]
+                ),
+                "mean_mpc_count_per_window": sum(mpc_counts) / len(mpc_counts) if mpc_counts else 0.0,
+                "total_mpc_count_across_windows": sum(mpc_counts),
+                "median_excess_delay_chips": median(summary_values["excess_delay_chips"])
+                if summary_values["excess_delay_chips"] else None,
+                "excess_delay_window_count": len(summary_values["excess_delay_chips"]),
+                "excess_delay_path_count": sum(
+                    summary["excess_delay_chips_path_count"] for summary in window_summaries
+                ),
+                "median_doppler_offset_hz": median(summary_values["doppler_offset_hz"])
+                if summary_values["doppler_offset_hz"] else None,
+                "doppler_offset_window_count": len(summary_values["doppler_offset_hz"]),
+                "doppler_offset_path_count": sum(
+                    summary["doppler_offset_hz_path_count"] for summary in window_summaries
+                ),
+                "median_relative_power_db": median(summary_values["relative_power_db"])
+                if summary_values["relative_power_db"] else None,
+                "relative_power_window_count": len(summary_values["relative_power_db"]),
+                "relative_power_path_count": sum(
+                    summary["relative_power_db_path_count"] for summary in window_summaries
+                ),
+            }
+        )
+    return output
+
+
+def _correlation_range_candidate(
+    scene_correlations_by_lag: Mapping[int, Mapping[str, float]],
+    lag_edges: Sequence[float],
+    *,
+    min_scenes: int,
+) -> float | None:
+    if not scene_correlations_by_lag:
+        return None
+    supported = [
+        index
+        for index, values in sorted(scene_correlations_by_lag.items())
+        if len(values) >= min_scenes
+    ]
+    run: list[int] = []
+    runs: list[list[int]] = []
+    for index in supported:
+        if run and index != run[-1] + 1:
+            runs.append(run)
+            run = []
+        run.append(index)
+    if run:
+        runs.append(run)
+    candidate_bands = max(runs, key=len, default=[])
+    if len(candidate_bands) < _MIN_SUPPORTED_LAG_BANDS_FOR_RANGE:
+        return None
+
+    correlations = [
+        sum(scene_correlations_by_lag[index].values())
+        / len(scene_correlations_by_lag[index])
+        for index in candidate_bands
+    ]
+    if any(
+        right > left + _RANGE_MONOTONICITY_TOLERANCE
+        for left, right in zip(correlations, correlations[1:])
+    ):
+        return None
+    threshold = _RANGE_DECORRELATION_THRESHOLD
+    for position in range(1, len(candidate_bands)):
+        if correlations[position - 1] > threshold >= correlations[position]:
+            lag_index = candidate_bands[position]
+            return (lag_edges[lag_index] + lag_edges[lag_index + 1]) / 2.0
+    return None
+
+
+def _metric_fix_value(row: Mapping[str, Any], metric: str) -> float | None:
+    value = row.get(metric)
+    if value is None or str(value).strip() == "":
+        return None
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return None
+    return parsed if math.isfinite(parsed) else None
+
+
+def summarize_spatial_dependence(
+    fix_metrics: Sequence[Mapping[str, Any]],
+    *,
+    lag_edges_m: Sequence[float],
+) -> list[dict[str, Any]]:
+    """Summarize descriptive within-run spatial dependence by fixed lag bands.
+
+    Pair calculations stay within one scene, run and continuity component.
+    The per-run normalized semivariance is collapsed to run and then scene
+    summaries before the cross-scene profile is considered. Correlation-range
+    and effective-local-unit values are only emitted when at least eight
+    scenes support at least three consecutive lag bands, the decorrelation
+    profile is monotone within tolerance, and leave-one-scene-out range
+    sensitivity has coefficient of variation no greater than 0.25. These are
+    descriptive candidates, not model fits or independent-sample claims.
+    """
+
+    if len(lag_edges_m) < 2:
+        raise ValueError("lag_edges_m requires at least two increasing edges")
+    edges = [_as_finite_number(edge, field="lag edge", minimum=0.0) for edge in lag_edges_m]
+    if any(right <= left for left, right in zip(edges, edges[1:])):
+        raise ValueError("lag_edges_m must be strictly increasing")
+
+    groups: dict[tuple[str, str, str], list[dict[str, Any]]] = {}
+    seen_fix: set[tuple[str, str, str]] = set()
+    component_distances: dict[tuple[str, str], list[float]] = {}
+    colocated: dict[tuple[str, str, str], dict[str, set[str]]] = {}
+    for index, row in enumerate(fix_metrics):
+        if str(row.get("location_status", "POSITION_MATCHED")) != "POSITION_MATCHED":
+            continue
+        scene_id = str(row.get("scene_id", "")).strip()
+        run_id = str(row.get("run_id", "")).strip()
+        component_id = str(row.get("route_component_id", "")).strip()
+        fix_utc = str(row.get("fix_utc", "")).strip()
+        prn = str(row.get("prn", "")).strip()
+        if not all((scene_id, run_id, component_id, fix_utc, prn)):
+            raise ValueError(f"located fix metric row {index} requires scene/run/component/fix_utc/prn")
+        _parse_iso_utc(fix_utc, field="fix_utc")
+        identity = (scene_id, run_id, fix_utc)
+        if identity in seen_fix:
+            raise ValueError(f"duplicate scene/run/fix metric identity {identity}")
+        seen_fix.add(identity)
+        distance = _as_finite_number(
+            row.get("route_cumulative_distance_m"),
+            field="route_cumulative_distance_m",
+            minimum=0.0,
+        )
+        normalized = {**dict(row), "route_cumulative_distance_m": distance}
+        groups.setdefault((scene_id, run_id, component_id), []).append(normalized)
+        component_distances.setdefault((scene_id, component_id), []).append(distance)
+        location_id = str(row.get("position_source_record_id", "")).strip() or fix_utc
+        loc_key = (scene_id, component_id, location_id)
+        support = colocated.setdefault(loc_key, {"prns": set(), "runs": set()})
+        support["prns"].add(prn)
+        support["runs"].add(run_id)
+
+    cross_prn_groups = [support for support in colocated.values() if len(support["prns"]) > 1]
+    cross_prn_group_count = len(cross_prn_groups)
+    cross_prn_run_pair_count = sum(
+        len(support["runs"]) * (len(support["runs"]) - 1) // 2
+        for support in cross_prn_groups
+    )
+
+    accumulators: dict[tuple[str, int], dict[tuple[str, str], dict[str, float]]] = {}
+    for (scene_id, run_id, component_id), rows in groups.items():
+        rows.sort(
+            key=lambda row: (
+                row["route_cumulative_distance_m"],
+                str(row["fix_utc"]),
+            )
+        )
+        values_by_metric = {
+            metric: [value for row in rows if (value := _metric_fix_value(row, metric)) is not None]
+            for metric in _SPATIAL_METRICS
+        }
+        variance_by_metric = {
+            metric: pvariance(values) if len(values) >= 2 else 0.0
+            for metric, values in values_by_metric.items()
+        }
+        for left_index, left in enumerate(rows):
+            left_distance = left["route_cumulative_distance_m"]
+            for right in rows[left_index + 1 :]:
+                lag = abs(right["route_cumulative_distance_m"] - left_distance)
+                if lag < edges[0] or lag >= edges[-1]:
+                    continue
+                lag_index = bisect_right(edges, lag) - 1
+                for metric in _SPATIAL_METRICS:
+                    left_value = _metric_fix_value(left, metric)
+                    right_value = _metric_fix_value(right, metric)
+                    if left_value is None or right_value is None:
+                        continue
+                    metric_runs = accumulators.setdefault((metric, lag_index), {})
+                    run_key = (scene_id, run_id)
+                    accumulator = metric_runs.setdefault(
+                        run_key,
+                        {"pair_count": 0.0, "semivariance_sum": 0.0, "variance": variance_by_metric[metric]},
+                    )
+                    accumulator["pair_count"] += 1
+                    accumulator["semivariance_sum"] += 0.5 * (left_value - right_value) ** 2
+
+    scene_correlations: dict[tuple[str, int], dict[str, float]] = {}
+    scene_semivariances: dict[tuple[str, int], dict[str, float]] = {}
+    band_support: dict[tuple[str, int], dict[str, int]] = {}
+    for (metric, lag_index), run_values in accumulators.items():
+        per_scene_corr: dict[str, list[float]] = {}
+        per_scene_gamma: dict[str, list[float]] = {}
+        supported_pair_count = 0
+        supported_runs: set[str] = set()
+        for (scene_id, run_id), values in run_values.items():
+            supported_pair_count += int(values["pair_count"])
+            if values["pair_count"] and values["variance"] > 0:
+                gamma = values["semivariance_sum"] / values["pair_count"]
+                normalized_gamma = gamma / values["variance"]
+                per_scene_gamma.setdefault(scene_id, []).append(normalized_gamma)
+                per_scene_corr.setdefault(scene_id, []).append(1.0 - normalized_gamma)
+                supported_runs.add(run_id)
+        scene_gamma_mean = {
+            scene: sum(values) / len(values)
+            for scene, values in per_scene_gamma.items()
+        }
+        scene_corr_mean = {
+            scene: sum(values) / len(values)
+            for scene, values in per_scene_corr.items()
+        }
+        scene_semivariances[(metric, lag_index)] = scene_gamma_mean
+        scene_correlations[(metric, lag_index)] = scene_corr_mean
+        band_support[(metric, lag_index)] = {
+            "pair_count": supported_pair_count,
+            "run_count": len(supported_runs),
+            "scene_count": len(scene_corr_mean),
+        }
+
+    output: list[dict[str, Any]] = []
+    for metric in _SPATIAL_METRICS:
+        correlations_by_lag = {
+            lag_index: values
+            for (metric_name, lag_index), values in scene_correlations.items()
+            if metric_name == metric
+        }
+        supported_lags = [
+            lag_index
+            for lag_index, values in correlations_by_lag.items()
+            if len(values) >= _MIN_SCENES_FOR_RANGE
+        ]
+        candidate_range: float | None = None
+        estimate_status = "INSUFFICIENT_SPATIAL_SUPPORT"
+        range_scene_block_count = 0
+        range_lag_band_count = 0
+        leave_one_scene_out_range_count = 0
+        leave_one_scene_out_range_cv: float | None = None
+        if supported_lags:
+            contiguous: list[int] = []
+            contiguous_groups: list[list[int]] = []
+            for lag_index in sorted(supported_lags):
+                if contiguous and lag_index != contiguous[-1] + 1:
+                    contiguous_groups.append(contiguous)
+                    contiguous = []
+                contiguous.append(lag_index)
+            if contiguous:
+                contiguous_groups.append(contiguous)
+            longest = max(contiguous_groups, key=len, default=[])
+            if len(longest) >= _MIN_SUPPORTED_LAG_BANDS_FOR_RANGE:
+                range_lag_band_count = len(longest)
+                all_scenes = set.intersection(
+                    *(set(correlations_by_lag[index]) for index in longest)
+                )
+                range_scene_block_count = len(all_scenes)
+                if len(all_scenes) >= _MIN_SCENES_FOR_RANGE:
+                    full_values = {
+                        index: correlations_by_lag[index]
+                        for index in longest
+                    }
+                    candidate_range = _correlation_range_candidate(
+                        full_values,
+                        edges,
+                        min_scenes=_MIN_SCENES_FOR_RANGE,
+                    )
+                    loo_ranges: list[float] = []
+                    if candidate_range is not None:
+                        for omitted_scene in sorted(all_scenes):
+                            loo = {
+                                index: {
+                                    scene: value
+                                    for scene, value in correlations_by_lag[index].items()
+                                    if scene != omitted_scene
+                                }
+                                for index in longest
+                            }
+                            loo_range = _correlation_range_candidate(
+                                loo,
+                                edges,
+                                min_scenes=max(2, _MIN_SCENES_FOR_RANGE - 1),
+                            )
+                            if loo_range is not None:
+                                loo_ranges.append(loo_range)
+                    leave_one_scene_out_range_count = len(loo_ranges)
+                    if candidate_range is not None and len(loo_ranges) == len(all_scenes):
+                        center = median(loo_ranges)
+                        leave_one_scene_out_range_cv = (
+                            math.sqrt(sum((value - center) ** 2 for value in loo_ranges) / len(loo_ranges))
+                            / center
+                            if center > 0
+                            else math.inf
+                        )
+                        if leave_one_scene_out_range_cv <= _RANGE_MAX_SCENE_BLOCK_CV:
+                            candidate_range = center
+                            estimate_status = "STABLE_SCENE_BLOCK_CANDIDATE"
+                        else:
+                            candidate_range = None
+
+        effective_units: float | None = None
+        if estimate_status == "STABLE_SCENE_BLOCK_CANDIDATE" and candidate_range:
+            effective_units = sum(
+                max(1.0, (max(distances) - min(distances)) / candidate_range)
+                for distances in component_distances.values()
+            )
+
+        for lag_index in range(len(edges) - 1):
+            support = band_support.get(
+                (metric, lag_index),
+                {"pair_count": 0, "run_count": 0, "scene_count": 0},
+            )
+            gamma_by_scene = scene_semivariances.get((metric, lag_index), {})
+            corr_by_scene = scene_correlations.get((metric, lag_index), {})
+            normalized_semivariance = (
+                sum(gamma_by_scene.values()) / len(gamma_by_scene)
+                if gamma_by_scene
+                else None
+            )
+            correlation_proxy = 1.0 - normalized_semivariance if normalized_semivariance is not None else None
+            output.append(
+                {
+                    "metric_name": metric,
+                    "lag_lower_m": edges[lag_index],
+                    "lag_upper_m": edges[lag_index + 1],
+                    "pair_count": support["pair_count"],
+                    "run_count": support["run_count"],
+                    "scene_count": support["scene_count"],
+                    "mean_scene_normalized_semivariance": normalized_semivariance,
+                    "mean_scene_correlation_proxy": correlation_proxy,
+                    "decorrelation_threshold": _RANGE_DECORRELATION_THRESHOLD,
+                    "correlation_range_candidate_m": candidate_range
+                    if estimate_status == "STABLE_SCENE_BLOCK_CANDIDATE"
+                    else None,
+                    "effective_local_unit_count_candidate": effective_units,
+                    "estimate_status": estimate_status,
+                    "range_scene_block_count": range_scene_block_count,
+                    "range_lag_band_count": range_lag_band_count,
+                    "leave_one_scene_out_range_count": leave_one_scene_out_range_count,
+                    "leave_one_scene_out_range_cv": leave_one_scene_out_range_cv,
+                    "minimum_scene_count_for_range": _MIN_SCENES_FOR_RANGE,
+                    "minimum_lag_bands_for_range": _MIN_SUPPORTED_LAG_BANDS_FOR_RANGE,
+                    "maximum_scene_block_cv_for_range": _RANGE_MAX_SCENE_BLOCK_CV,
+                    "cross_prn_colocated_group_count": cross_prn_group_count,
+                    "cross_prn_colocated_run_pair_count": cross_prn_run_pair_count,
+                    "interpretation": "DESCRIPTIVE_ONLY_NOT_AN_INDEPENDENCE_CLAIM",
+                }
+            )
     return output
