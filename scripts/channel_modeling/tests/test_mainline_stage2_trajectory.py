@@ -7,6 +7,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from scripts.channel_modeling.mainline_stage2_trajectory import (
+    build_route_segment_rows,
+    build_trajectory_window_overlay,
     parse_valid_rmc_fixes,
     split_trajectory_components,
 )
@@ -49,6 +51,43 @@ def trajectory_fix(seconds: float, latitude_deg: float, longitude_deg: float = 0
         + timedelta(seconds=seconds),
         "latitude_deg": latitude_deg,
         "longitude_deg": longitude_deg,
+    }
+
+
+def route_fix(
+    scene: str,
+    component: str,
+    seconds: float,
+    cumulative_distance_m: float,
+    *,
+    latitude_deg: float = 0.0,
+    longitude_deg: float = 0.0,
+    speed_mps: float | None = 5.0,
+    course_deg: float | None = 90.0,
+    source_record_id: str | None = None,
+):
+    return {
+        "scene_id": scene,
+        "component_id": component,
+        "utc_time": datetime(2024, 4, 23, tzinfo=timezone.utc)
+        + timedelta(seconds=seconds),
+        "latitude_deg": latitude_deg,
+        "longitude_deg": longitude_deg,
+        "cumulative_distance_m": cumulative_distance_m,
+        "receiver_speed_mps": speed_mps,
+        "receiver_course_deg": course_deg,
+        "source_path": f"{scene}.nmea",
+        "source_record_id": source_record_id or f"{scene}.nmea:{seconds}",
+    }
+
+
+def stage2_window(run_id: str, window_id: str, scene: str, prn: str = "G03"):
+    return {
+        "run_id": run_id,
+        "window_id": window_id,
+        "scene_id": scene,
+        "prn": prn,
+        "tracking_channel": "2",
     }
 
 
@@ -222,6 +261,188 @@ class MainlineStage2TrajectoryComponentTests(unittest.TestCase):
             split_trajectory_components([trajectory_fix(0, 91)])
         with self.assertRaisesRegex(ValueError, "timezone-aware"):
             split_trajectory_components([{"utc_time": datetime(2024, 1, 1), "latitude_deg": 0, "longitude_deg": 0}])
+
+
+class MainlineStage2TrajectoryOverlayTests(unittest.TestCase):
+    def test_preserves_all_keys_uses_same_scene_and_breaks_ties_by_earlier_fix(self):
+        t0 = datetime(2024, 4, 23, tzinfo=timezone.utc)
+        windows = [stage2_window("run-a", "1", "scene-a"), stage2_window("run-b", "1", "scene-b")]
+        utc = {("run-a", "1"): t0 + timedelta(seconds=1), ("run-b", "1"): t0 + timedelta(seconds=1)}
+        fixes = {
+            "scene-a": [
+                route_fix("scene-a", "component_0001", 0, 0, source_record_id="a:1"),
+                route_fix("scene-a", "component_0001", 2, 10, source_record_id="a:2"),
+            ]
+        }
+
+        overlay = build_trajectory_window_overlay(windows, utc, fixes)
+
+        self.assertEqual([(row["run_id"], row["window_id"]) for row in overlay], [("run-a", "1"), ("run-b", "1")])
+        self.assertEqual(overlay[0]["position_status"], "POSITION_MATCHED")
+        self.assertEqual(overlay[0]["position_source_record_id"], "a:1")
+        self.assertEqual(overlay[0]["position_delta_seconds"], "-1")
+        self.assertEqual(overlay[1]["position_status"], "POSITION_MISSING")
+        self.assertEqual(overlay[1]["missing_reason"], "NO_VALID_SCENE_FIX")
+
+    def test_position_tolerance_boundary_is_inclusive_and_overrun_is_missing(self):
+        t0 = datetime(2024, 4, 23, tzinfo=timezone.utc)
+        windows = [stage2_window("run-a", "1", "scene-a"), stage2_window("run-a", "2", "scene-a")]
+        utc = {
+            ("run-a", "1"): t0 + timedelta(seconds=2.5),
+            ("run-a", "2"): t0 + timedelta(seconds=2.500001),
+        }
+        fixes = {"scene-a": [route_fix("scene-a", "component_0001", 0, 12.5)]}
+
+        overlay = build_trajectory_window_overlay(windows, utc, fixes)
+
+        self.assertEqual(overlay[0]["position_status"], "POSITION_MATCHED")
+        self.assertEqual(overlay[0]["position_delta_seconds_abs"], "2.5")
+        self.assertEqual(overlay[1]["missing_reason"], "OUTSIDE_POSITION_TOLERANCE")
+
+    def test_windows_inside_component_break_gap_are_not_carried_to_either_fix(self):
+        t0 = datetime(2024, 4, 23, tzinfo=timezone.utc)
+        windows = [
+            stage2_window("run-a", "before", "scene-a"),
+            stage2_window("run-a", "gap", "scene-a"),
+            stage2_window("run-a", "after", "scene-a"),
+        ]
+        utc = {
+            ("run-a", "before"): t0 - timedelta(seconds=0.5),
+            ("run-a", "gap"): t0 + timedelta(seconds=2),
+            ("run-a", "after"): t0 + timedelta(seconds=4.5),
+        }
+        fixes = {
+            "scene-a": [
+                route_fix("scene-a", "component_0001", -1, 0, source_record_id="a:0"),
+                route_fix("scene-a", "component_0001", 0, 20, source_record_id="a:1"),
+                route_fix("scene-a", "component_0002", 4, 0, source_record_id="a:2"),
+                route_fix("scene-a", "component_0002", 5, 20, source_record_id="a:3"),
+            ]
+        }
+
+        overlay = build_trajectory_window_overlay(windows, utc, fixes)
+
+        self.assertEqual([row["position_status"] for row in overlay], ["POSITION_MATCHED", "POSITION_MISSING", "POSITION_MATCHED"])
+        self.assertEqual(overlay[1]["missing_reason"], "WITHIN_ROUTE_DISCONTINUITY_GAP")
+        self.assertEqual(overlay[0]["route_component_id"], "component_0001")
+        self.assertEqual(overlay[2]["route_component_id"], "component_0002")
+
+    def test_missing_utc_and_duplicate_window_identity_fail_or_remain_explicit(self):
+        window = stage2_window("run-a", "1", "scene-a")
+        missing_time = build_trajectory_window_overlay([window], {}, {})
+        self.assertEqual(missing_time[0]["missing_reason"], "MISSING_STAGE0_UTC")
+
+        with self.assertRaisesRegex(ValueError, "duplicate Stage2 window identity"):
+            build_trajectory_window_overlay([window, dict(window)], {}, {})
+
+
+class MainlineStage2RouteBinTests(unittest.TestCase):
+    def test_fixed_distance_boundaries_and_ids_are_deterministic(self):
+        fixes = [
+            route_fix("scene-a", "component_0001", 0, 0),
+            route_fix("scene-a", "component_0001", 1, 49.999),
+            route_fix("scene-a", "component_0001", 2, 50),
+            route_fix("scene-a", "component_0001", 3, 100),
+        ]
+
+        first = build_route_segment_rows([], fixes)
+        second = build_route_segment_rows([], fixes)
+        bins_50 = [row for row in first if row["bin_length_m"] == "50"]
+        bins_100 = [row for row in first if row["bin_length_m"] == "100"]
+
+        self.assertEqual([row["bin_index"] for row in bins_50], ["0", "1", "2"])
+        self.assertEqual([row["bin_index"] for row in bins_100], ["0", "1"])
+        self.assertEqual(first, second)
+        self.assertEqual([row["route_segment_id"] for row in bins_50], [
+            "scene-a__component_0001__L50__B000000",
+            "scene-a__component_0001__L50__B000001",
+            "scene-a__component_0001__L50__B000002",
+        ])
+
+    def test_component_boundaries_never_merge_equal_distance_bins(self):
+        fixes = [
+            route_fix("scene-a", "component_0001", 0, 0),
+            route_fix("scene-a", "component_0002", 10, 0),
+        ]
+
+        bins = [row for row in build_route_segment_rows([], fixes, lengths_m=(100,))]
+
+        self.assertEqual(len(bins), 2)
+        self.assertEqual({row["component_id"] for row in bins}, {"component_0001", "component_0002"})
+        self.assertEqual({row["bin_index"] for row in bins}, {"0"})
+
+    def test_co_located_prns_are_retained_as_shared_descriptive_support(self):
+        fixes = [route_fix("scene-a", "component_0001", 0, 25)]
+        overlay = [
+            {
+                "run_id": "run-a",
+                "window_id": "1",
+                "scene_id": "scene-a",
+                "prn": "G03",
+                "position_status": "POSITION_MATCHED",
+                "route_component_id": "component_0001",
+                "route_cumulative_distance_m": "25",
+                "position_source_record_id": "scene-a.nmea:000001",
+            },
+            {
+                "run_id": "run-b",
+                "window_id": "1",
+                "scene_id": "scene-a",
+                "prn": "G28",
+                "position_status": "POSITION_MATCHED",
+                "route_component_id": "component_0001",
+                "route_cumulative_distance_m": "25",
+                "position_source_record_id": "scene-a.nmea:000001",
+            },
+        ]
+
+        bins = build_route_segment_rows(overlay, fixes, lengths_m=(50,))
+
+        self.assertEqual(len(bins), 1)
+        self.assertEqual(bins[0]["stage2_window_count"], "2")
+        self.assertEqual(bins[0]["run_count"], "2")
+        self.assertEqual(bins[0]["prn_count"], "2")
+        self.assertEqual(bins[0]["co_located_cross_prn_fix_count"], "1")
+        self.assertEqual(bins[0]["analysis_unit_role"], "DESCRIPTIVE_CANDIDATE_BIN_NOT_INDEPENDENT_SAMPLE")
+
+    def test_sustained_speed_and_course_changes_are_annotations_not_new_components(self):
+        fixes = []
+        for bin_index in range(6):
+            speed = 0.5 if bin_index < 3 else 10.0
+            course = 2.0 if bin_index < 3 else 92.0
+            for offset in (5, 15, 25):
+                distance = bin_index * 50 + offset
+                fixes.append(
+                    route_fix(
+                        "scene-a",
+                        "component_0001",
+                        distance,
+                        distance,
+                        speed_mps=speed,
+                        course_deg=course,
+                    )
+                )
+
+        rows = [row for row in build_route_segment_rows([], fixes, lengths_m=(50,))]
+
+        candidate = next(row for row in rows if row["bin_index"] == "3")
+        self.assertEqual(candidate["sustained_drive_state_change_candidate"], "YES")
+        self.assertEqual(candidate["sustained_course_change_candidate"], "YES")
+        self.assertTrue(all(row["component_id"] == "component_0001" for row in rows))
+
+    def test_duplicate_overlay_identity_is_rejected(self):
+        fix = route_fix("scene-a", "component_0001", 0, 0)
+        window = {
+            "run_id": "run-a",
+            "window_id": "1",
+            "scene_id": "scene-a",
+            "prn": "G03",
+            "position_status": "POSITION_MATCHED",
+            "route_component_id": "component_0001",
+            "route_cumulative_distance_m": "0",
+        }
+        with self.assertRaisesRegex(ValueError, "duplicate trajectory window identity"):
+            build_route_segment_rows([window, dict(window)], [fix], lengths_m=(50,))
 
 
 if __name__ == "__main__":
