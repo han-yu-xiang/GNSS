@@ -28,6 +28,7 @@ from scripts.preprocessing.satellite_geometry import (
 
 
 _CANONICAL_POSITIVE_INTEGER = re.compile(r"^[1-9][0-9]*$")
+_CANONICAL_NONNEGATIVE_INTEGER = re.compile(r"^(?:0|[1-9][0-9]*)$")
 _MAX_GSV_GAP_SECONDS = 5.0
 
 
@@ -69,8 +70,8 @@ def _channel_text(row: Mapping[str, object]) -> str:
     value = tracking_text or channel_text
     if not value:
         raise ValueError("missing tracking_channel")
-    if not _CANONICAL_POSITIVE_INTEGER.fullmatch(value):
-        raise ValueError("invalid tracking_channel: expected positive canonical decimal ID")
+    if not _CANONICAL_NONNEGATIVE_INTEGER.fullmatch(value):
+        raise ValueError("invalid tracking_channel: expected nonnegative canonical decimal ID")
     return value
 
 
@@ -252,7 +253,7 @@ def parse_checksum_valid_gps_gsv_files(
     nmea_files: Sequence[Path],
     *,
     source_root: Path,
-) -> tuple[list[ElevationRecord], Counter[str], dict[str, int]]:
+) -> tuple[list[ElevationRecord], Counter[str], dict[str, int | str]]:
     """Read checksum-verified GPS GSV observations with valid RMC timestamps.
 
     The shared ``parse_nmea_files`` helper accepts any ``*GSV`` talker and
@@ -281,6 +282,7 @@ def parse_checksum_valid_gps_gsv_files(
             "duplicate_gsv_observation_count": 0,
         }
     )
+    first_rmc_utc: datetime | None = None
 
     for path in nmea_files:
         resolved = path.resolve()
@@ -316,6 +318,8 @@ def parse_checksum_valid_gps_gsv_files(
                     except (IndexError, TypeError, ValueError):
                         current_time = None
                         continue
+                    if first_rmc_utc is None or current_time < first_rmc_utc:
+                        first_rmc_utc = current_time
                     diagnostics["valid_rmc_count"] += 1
                     continue
 
@@ -368,7 +372,9 @@ def parse_checksum_valid_gps_gsv_files(
         observations.values(),
         key=lambda record: (record.utc_time, int(record.prn[1:])),
     )
-    return records, prn_counts, dict(diagnostics)
+    diagnostic_values: dict[str, int | str] = dict(diagnostics)
+    diagnostic_values["first_valid_rmc_utc"] = _iso_utc(first_rmc_utc) if first_rmc_utc else ""
+    return records, prn_counts, diagnostic_values
 
 
 def _prepare_gsv_cells(
