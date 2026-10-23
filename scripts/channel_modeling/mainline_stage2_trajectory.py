@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import math
 import re
+from collections import Counter
 from bisect import bisect_right
 from datetime import datetime, timezone
 from pathlib import Path
@@ -107,6 +108,33 @@ def parse_valid_rmc_fixes(nmea_paths: Sequence[Path]) -> list[dict[str, Any]]:
     with the first input source winning deterministically.
     """
 
+    fixes, _ = parse_valid_rmc_fixes_with_diagnostics(nmea_paths)
+    return fixes
+
+
+def parse_valid_rmc_fixes_with_diagnostics(
+    nmea_paths: Sequence[Path],
+) -> tuple[list[dict[str, Any]], dict[str, int]]:
+    """Return accepted RMC fixes and aggregate rejection counters.
+
+    Diagnostic output contains counts only; it deliberately omits coordinates,
+    sentence text, source paths and raw NMEA content.
+    """
+
+    diagnostics = Counter(
+        {
+            "rmc_sentence_count": 0,
+            "checksum_valid_rmc_count": 0,
+            "checksum_invalid_rmc_count": 0,
+            "inactive_rmc_count": 0,
+            "malformed_rmc_count": 0,
+            "invalid_datetime_count": 0,
+            "invalid_coordinate_count": 0,
+            "duplicate_timestamp_count": 0,
+            "out_of_order_timestamp_count": 0,
+            "valid_rmc_count": 0,
+        }
+    )
     fixes: list[dict[str, Any]] = []
     seen_utc: set[datetime] = set()
 
@@ -117,13 +145,27 @@ def parse_valid_rmc_fixes(nmea_paths: Sequence[Path]) -> list[dict[str, Any]]:
         last_file_utc: datetime | None = None
         with path.open("r", encoding="ascii", errors="replace") as handle:
             for line_number, raw_line in enumerate(handle, start=1):
+                text = raw_line.strip().lstrip("\ufeff")
+                if not re.match(r"^\$(?:GP|GN)RMC(?:,|\*)", text, flags=re.IGNORECASE):
+                    continue
+                diagnostics["rmc_sentence_count"] += 1
                 fields = _checksum_valid_rmc_line(raw_line)
                 if fields is None or not fields or fields[0].upper() not in {"GPRMC", "GNRMC"}:
+                    diagnostics["checksum_invalid_rmc_count"] += 1
                     continue
-                if len(fields) < 10 or fields[2].strip().upper() != "A":
+                diagnostics["checksum_valid_rmc_count"] += 1
+                if len(fields) < 10:
+                    diagnostics["malformed_rmc_count"] += 1
+                    continue
+                if fields[2].strip().upper() != "A":
+                    diagnostics["inactive_rmc_count"] += 1
                     continue
                 try:
                     utc_time = parse_nmea_datetime(fields[1].strip(), fields[9].strip())
+                except (IndexError, TypeError, ValueError, OverflowError):
+                    diagnostics["invalid_datetime_count"] += 1
+                    continue
+                try:
                     latitude_deg = _parse_coordinate(
                         fields[3].strip(), fields[4].strip(), latitude=True
                     )
@@ -131,12 +173,18 @@ def parse_valid_rmc_fixes(nmea_paths: Sequence[Path]) -> list[dict[str, Any]]:
                         fields[5].strip(), fields[6].strip(), latitude=False
                     )
                 except (IndexError, TypeError, ValueError, OverflowError):
+                    diagnostics["invalid_coordinate_count"] += 1
                     continue
 
                 if last_file_utc is not None and utc_time <= last_file_utc:
+                    if utc_time == last_file_utc:
+                        diagnostics["duplicate_timestamp_count"] += 1
+                    else:
+                        diagnostics["out_of_order_timestamp_count"] += 1
                     continue
                 last_file_utc = utc_time
                 if utc_time in seen_utc:
+                    diagnostics["duplicate_timestamp_count"] += 1
                     continue
                 seen_utc.add(utc_time)
 
@@ -160,6 +208,7 @@ def parse_valid_rmc_fixes(nmea_paths: Sequence[Path]) -> list[dict[str, Any]]:
                     }
                 )
 
+    diagnostics["valid_rmc_count"] = len(fixes)
     fixes.sort(
         key=lambda fix: (
             fix["utc_time"],
@@ -167,7 +216,7 @@ def parse_valid_rmc_fixes(nmea_paths: Sequence[Path]) -> list[dict[str, Any]]:
             fix["source_line_number"],
         )
     )
-    return fixes
+    return fixes, dict(diagnostics)
 
 
 def _validated_fix(fix: Mapping[str, Any], index: int) -> tuple[datetime, float, float]:

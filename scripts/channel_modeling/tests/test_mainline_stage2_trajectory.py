@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import hashlib
 import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
@@ -11,8 +12,15 @@ from scripts.channel_modeling.mainline_stage2_trajectory import (
     build_route_segment_rows,
     build_trajectory_window_overlay,
     parse_valid_rmc_fixes,
+    parse_valid_rmc_fixes_with_diagnostics,
     split_trajectory_components,
     summarize_spatial_dependence,
+)
+from scripts.channel_modeling.run_mainline_stage2_trajectory_audit import (
+    _audit,
+    _render_sanitized_report,
+    _verify_geometry_input_pins,
+    _validate_window_overlay_reconciliation,
 )
 
 
@@ -214,6 +222,39 @@ class MainlineStage2TrajectoryRmcTests(unittest.TestCase):
         self.assertEqual(fix["receiver_speed_knots"], 10.0)
         self.assertAlmostEqual(fix["receiver_speed_mps"], 10.0 * 0.5144444444444445)
         self.assertEqual(fix["receiver_course_deg"], 359.5)
+
+    def test_diagnostics_count_rejected_rmc_records_without_payload_fields(self):
+        path = self.root / "diagnostic.nmea"
+        path.write_text(
+            "\n".join(
+                [
+                    rmc("120000.00"),
+                    rmc("120000.00"),
+                    rmc("115959.00"),
+                    rmc("120001.00", status="V"),
+                    rmc("120002.00", corrupt=True),
+                    rmc("120003.00", latitude="9960.000"),
+                    rmc("250000.00"),
+                ]
+            )
+            + "\n",
+            encoding="ascii",
+        )
+
+        fixes, diagnostics = parse_valid_rmc_fixes_with_diagnostics([path])
+
+        self.assertEqual(len(fixes), 1)
+        self.assertEqual(diagnostics["rmc_sentence_count"], 7)
+        self.assertEqual(diagnostics["checksum_valid_rmc_count"], 6)
+        self.assertEqual(diagnostics["checksum_invalid_rmc_count"], 1)
+        self.assertEqual(diagnostics["inactive_rmc_count"], 1)
+        self.assertEqual(diagnostics["invalid_coordinate_count"], 1)
+        self.assertEqual(diagnostics["invalid_datetime_count"], 1)
+        self.assertEqual(diagnostics["duplicate_timestamp_count"], 1)
+        self.assertEqual(diagnostics["out_of_order_timestamp_count"], 1)
+        self.assertEqual(diagnostics["valid_rmc_count"], 1)
+        self.assertNotIn("latitude", diagnostics)
+        self.assertNotIn("longitude", diagnostics)
 
 
 class MainlineStage2TrajectoryComponentTests(unittest.TestCase):
@@ -627,6 +668,185 @@ class MainlineStage2SpatialAggregationTests(unittest.TestCase):
         self.assertTrue(all(row["correlation_range_candidate_m"] is not None for row in mpc))
         self.assertTrue(all(row["effective_local_unit_count_candidate"] is not None for row in mpc))
         self.assertTrue(all(row["scene_count"] == 10 for row in mpc))
+
+
+class MainlineStage2TrajectoryAuditRunnerTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.code_root = self.root / "code"
+        self.code_root.mkdir()
+        self.output_dir = self.root / "geometry"
+        self.output_dir.mkdir()
+
+    def test_audit_rejects_missing_geometry_audit(self):
+        with self.assertRaisesRegex(ValueError, "geometry alignment audit is missing"):
+            _audit(self.root, self.code_root, self.output_dir)
+
+    def test_audit_rejects_invalid_geometry_audit_schema(self):
+        (self.output_dir / "geometry_alignment_audit.json").write_text(
+            '{"audit_status":"PASS","schema_version":"wrong"}', encoding="utf-8"
+        )
+        with self.assertRaisesRegex(ValueError, "unsupported geometry audit schema"):
+            _audit(self.root, self.code_root, self.output_dir)
+
+    def test_audit_refuses_to_overwrite_any_route_output(self):
+        route_output = self.output_dir / "route_segments.csv"
+        route_output.write_text("preserve me", encoding="utf-8")
+        with self.assertRaisesRegex(FileExistsError, "route output already exists"):
+            _audit(self.root, self.code_root, self.output_dir)
+        self.assertEqual(route_output.read_text(encoding="utf-8"), "preserve me")
+
+    def test_geometry_input_hashes_and_declared_roots_are_enforced(self):
+        code_dir = self.code_root / "scripts" / "channel_modeling"
+        code_dir.mkdir(parents=True)
+        audit_runner = code_dir / "run_mainline_stage2_geometry_audit.py"
+        geometry_helper = code_dir / "mainline_stage2_geometry.py"
+        audit_runner.write_bytes(b"runner")
+        geometry_helper.write_bytes(b"helper")
+        project_inputs = [self.root / f"fixture-{index}.csv" for index in range(3)]
+        for index, path in enumerate(project_inputs):
+            path.write_text(f"fixture-{index}\n", encoding="utf-8")
+
+        def entry(path: Path, role: str):
+            data = path.read_bytes()
+            return {
+                "sha256": hashlib.sha256(data).hexdigest(),
+                "size_bytes": len(data),
+                "role": role,
+            }
+
+        pins = {
+            "code_worktree/scripts/channel_modeling/run_mainline_stage2_geometry_audit.py": entry(
+                audit_runner, "audit_software:audit_runner"
+            ),
+            "code_worktree/scripts/channel_modeling/mainline_stage2_geometry.py": entry(
+                geometry_helper, "audit_software:geometry_identity_helper"
+            ),
+            **{
+                f"project_root/{path.name}": entry(path, "fixture")
+                for path in project_inputs
+            },
+        }
+        audit = {
+            "input_files": pins,
+            "audit_software": {
+                "audit_runner": {
+                    "root": "code_worktree",
+                    "path": "scripts/channel_modeling/run_mainline_stage2_geometry_audit.py",
+                    "sha256": pins[
+                        "code_worktree/scripts/channel_modeling/run_mainline_stage2_geometry_audit.py"
+                    ]["sha256"],
+                },
+                "geometry_identity_helper": {
+                    "root": "code_worktree",
+                    "path": "scripts/channel_modeling/mainline_stage2_geometry.py",
+                    "sha256": pins[
+                        "code_worktree/scripts/channel_modeling/mainline_stage2_geometry.py"
+                    ]["sha256"],
+                },
+            },
+        }
+
+        verified = _verify_geometry_input_pins(self.root, self.code_root, audit)
+        self.assertEqual(len(verified), 5)
+        project_inputs[0].write_text("changed-0\n", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "SHA-256 mismatch"):
+            _verify_geometry_input_pins(self.root, self.code_root, audit)
+
+    def test_all_stage2_window_keys_must_reconcile_exactly(self):
+        windows = [
+            stage2_window("run-a", "1", "scene-a"),
+            stage2_window("run-a", "2", "scene-a"),
+        ]
+        overlay = [
+            {
+                **window,
+                "status": "MISSING",
+                "elevation_deg": "",
+                "position_status": "POSITION_MISSING",
+                "missing_reason": "OUTSIDE_POSITION_TOLERANCE",
+            }
+            for window in windows
+        ]
+
+        self.assertEqual(_validate_window_overlay_reconciliation(windows, overlay), 2)
+        with self.assertRaisesRegex(ValueError, "window identities do not reconcile"):
+            _validate_window_overlay_reconciliation(windows, overlay[:1])
+
+    def test_sanitized_report_omits_coordinates_and_private_source_paths(self):
+        report = _render_sanitized_report(
+            {
+                "audit_status": "PASS",
+                "input_counts": {
+                    "stage0_window_count": 6,
+                    "stage2_window_count": 2,
+                    "stage2_path_row_count": 4,
+                    "position_matched_count": 1,
+                },
+                "gsv_geometry_counts": {"matched_count": 3, "missing_count": 3},
+                "environment_summary": [
+                    {"environment_class": "Urban", "scene_count": 1, "task_count": 2,
+                     "stage2_window_count": 2, "position_matched_window_count": 1,
+                     "position_unlocated_window_count": 1, "valid_rmc_fix_count": 3,
+                     "route_distance_km": 1.25},
+                    {"environment_class": "Highway/Open", "scene_count": 2, "task_count": 3,
+                     "stage2_window_count": 4, "position_matched_window_count": 3,
+                     "position_unlocated_window_count": 1, "valid_rmc_fix_count": 5,
+                     "route_distance_km": 2.5},
+                ],
+                "route_counts": {
+                    "position_matched_window_count": 4,
+                    "position_unlocated_window_count": 2,
+                    "valid_rmc_fix_count": 8,
+                    "route_component_count": 3,
+                    "route_distance_km": 3.75,
+                    "candidate_bin_count_by_length_m": {"50": 4, "100": 3, "250": 2},
+                    "candidate_bin_count_with_stage2_window_support_by_length_m": {
+                        "50": 2, "100": 2, "250": 1,
+                    },
+                    "position_missing_reason_counts": {
+                        "OUTSIDE_POSITION_TOLERANCE": 1,
+                        "WITHIN_ROUTE_DISCONTINUITY_GAP": 1,
+                    },
+                    "rmc_diagnostics_total": {
+                        "checksum_invalid_rmc_count": 0,
+                        "inactive_rmc_count": 0,
+                        "invalid_datetime_count": 0,
+                        "invalid_coordinate_count": 0,
+                        "duplicate_timestamp_count": 0,
+                        "out_of_order_timestamp_count": 0,
+                    },
+                },
+                "route_thresholds": {
+                    "sensitivity": {
+                        "GAP_2_5S": {"component_count": 3},
+                    },
+                },
+                "spatial_dependence": {
+                    "estimate_status_counts": {"INSUFFICIENT_SPATIAL_SUPPORT": 36},
+                    "stable_range_candidate_count": 0,
+                },
+                "private": {
+                    "latitude_deg": "47.123456",
+                    "longitude_deg": "-122.123456",
+                    "nmea_path": "E:/private/track.nmea",
+                },
+            }
+        )
+
+        self.assertIn("2", report)
+        self.assertNotIn("47.123456", report)
+        self.assertNotIn("-122.123456", report)
+        self.assertNotIn("track.nmea", report)
+        self.assertNotIn("private", report)
+        self.assertIn("Highway/Open", report)
+        self.assertNotIn("OTHER", report)
+        self.assertIn("GAP_2_5S", report)
+        self.assertIn("OUTSIDE_POSITION_TOLERANCE", report)
+        self.assertIn("stable_range_candidates=0", report)
+        self.assertIn("Measured GSV elevation matches: 3; explicit missing: 3", report)
 
 
 if __name__ == "__main__":

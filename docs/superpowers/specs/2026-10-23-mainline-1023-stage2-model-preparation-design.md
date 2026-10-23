@@ -128,3 +128,42 @@ A validated index must bind the expected run_id to the task-receipt run_id and H
 ## Implementation choice
 
 Add a pure-stdlib Python preparation module with three tested behaviors: derive MPC counts only for represented Stage2 windows, build scene-level LOSO folds without scene leakage, and attach the three CIR association states without dropping or changing Stage2 rows. The helper consumes validated window-index evidence; it does not read HDF5. Add a synthetic-only test module. No production fitter or large-data command is introduced.
+
+### 2026-10-24 Task 7 measured-elevation and route audit addendum
+
+The GSV-only overlay and route analysis were run as separate, read-only audits
+against the same frozen 83-task cohort and Stage2 window identities. The GSV
+audit matched 5,295/7,847 selected windows to measured same-scene GPS GSV
+elevation; 2,552 remain explicitly missing. The nine frozen missing-elevation
+task classifications remain missing: their 728 selected windows had no
+matching target-PRN GSV observation, and no elevation was imputed.
+
+The route audit verified all 205 file pins from the GSV audit, rebuilt the
+Stage0 GPS-time index, and preserved all 7,847 `(run_id, window_id)` keys.
+Checksum-valid active RMC supplied 862 observed fixes across 13 scenes. The
+nearest same-scene fix was within the predeclared 2.5-second limit for 6,690
+windows (85.26%); 1,157 were retained as unlocated: 753 fell inside a route
+continuity break and 404 were outside the temporal tolerance. No interpolation
+or cross-gap position assignment was used. Base segmentation produced 21
+scene-local components and 20.865 km of within-component distance. Gap and
+jump-threshold sensitivity was descriptive only: component counts ranged from
+20 to 30 over the specified alternatives; thresholds were not tuned to SAGE
+outcomes.
+
+The 50/100/250 m candidate grids contained 430/220/95 route bins, of which
+123/76/45 had at least one selected Stage2 window. These bins are descriptive
+aggregation candidates, not independent samples. The spatial summary contains
+36 metric-by-lag rows; all remain `INSUFFICIENT_SPATIAL_SUPPORT` for a stable
+correlation-range/effective-unit result, so no such estimate or independence
+claim is made. Per-environment route coverage is in the dated sanitized audit
+report and the local audit JSON; precise coordinates and source-record paths
+remain only in the ignored local namespace.
+
+The Stage2 ledger SHA-256 remains
+`bbb8cac8338194b5527e00812a6547129a58466cc5fdd7db36b8c44bba01e551`.
+No CIR/HDF5, MAT, raw IQ, or RINEX contents were opened; RINEX was hash-pinned
+only. Task 5 production, release, outputs, and monitor were not changed. Gate F
+remains pending, CIR feature association remains future work, and no formal
+model fit or model-validation result is claimed. See
+`docs/MAINLINE_STAGE2_TRAJECTORY_ROUTE_AUDIT_20261024.md` for sanitized
+aggregate evidence.
