@@ -21,7 +21,8 @@ param(
     [string]$ExpectedRequestSha256,
     [string]$RunId,
     [string]$TaskName,
-    [string]$CoordinatorTaskName
+    [string]$CoordinatorTaskName,
+    [string]$SupersedePriorBatchRequestPath
 )
 
 Set-StrictMode -Version Latest
@@ -838,6 +839,28 @@ function Get-ValidatedSnapshot {
         if ($auditHasFailure) { throw 'A prior pilot failure is recorded; no later task may continue.' }
     } else {
         Assert-BatchRequestIdentities $request $cohort $cirTasks
+        $reservationRoot = Join-Path $script:BatchLogRoot 'cir_batch_reservations'
+        $legacyReservationPath = Join-Path $reservationRoot "$(([string]$request.inputs.cohort_sha256).ToLowerInvariant()).json"
+        $successorReservationPath = Join-Path $reservationRoot "successor.$($actualHash.ToLowerInvariant()).json"
+        if ($null -ne $request.batch_reservation_supersession) {
+            if (Test-Path -LiteralPath $successorReservationPath -PathType Leaf) {
+                Assert-CirBatchLaunchReservation -Request $request -RequestSha256 $actualHash -Path $successorReservationPath | Out-Null
+            } else {
+                if (-not [string]::IsNullOrWhiteSpace($AllowedTaskName)) {
+                    throw 'A scheduled batch coordinator/worker cannot proceed without its durable successor reservation.'
+                }
+                $null = Get-CirBatchReservationSupersessionEvidence -Request $request
+            }
+        } elseif (Test-Path -LiteralPath $legacyReservationPath -PathType Leaf) {
+            $legacy = Get-JsonDocument $legacyReservationPath
+            if ([string]$legacy.request_sha256 -cne $actualHash -or
+                [IO.Path]::GetFullPath([string]$legacy.release_root) -ine [IO.Path]::GetFullPath([string]$request.release_root)) {
+                throw 'A different immutable batch release already owns the frozen cohort reservation.'
+            }
+            Assert-CirBatchLaunchReservation -Request $request -RequestSha256 $actualHash -Path $legacyReservationPath | Out-Null
+        } elseif (-not [string]::IsNullOrWhiteSpace($AllowedTaskName)) {
+            throw 'A scheduled batch coordinator/worker cannot proceed without its durable cohort reservation.'
+        }
         Get-BaselineInputs $request | Out-Null
         foreach ($skip in $request.skipped_existing_pass) {
             $expectedPin = $null
@@ -1046,6 +1069,367 @@ function New-CirBatchAuditDocument {
     }
 }
 
+function Get-CirBatchExistingRunNamespaces {
+    param([Parameter(Mandatory)]$PriorRequest, [Parameter(Mandatory)][string]$PriorReleaseRoot)
+    $runsRoot = [IO.Path]::GetFullPath((Join-Path $PriorReleaseRoot 'runs')).TrimEnd('\') + '\'
+    $existing = [System.Collections.Generic.List[string]]::new()
+    $runIds = @($PriorRequest.tasks | ForEach-Object { [string]$_.run_id } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
+    foreach ($runId in $runIds) {
+        if ($runId -notmatch '^[A-Za-z0-9][A-Za-z0-9_.-]{0,199}$') {
+            throw "Pinned prior request contains a non-canonical run_id; refusing to inspect outside its run namespace: $runId"
+        }
+        $path = [IO.Path]::GetFullPath((Join-Path $runsRoot $runId))
+        if (-not $path.StartsWith($runsRoot, [StringComparison]::OrdinalIgnoreCase)) {
+            throw "Pinned prior run_id escapes its immutable release namespace: $runId"
+        }
+        if (Test-Path -LiteralPath $path) { $existing.Add($path) }
+    }
+    $existing.ToArray()
+}
+
+function Assert-CirBatchReservationSupersessionEvidence {
+    param([Parameter(Mandatory)]$Request, [Parameter(Mandatory)]$Evidence)
+    $proof = $Request.batch_reservation_supersession
+    if ($null -eq $proof -or [string]$proof.authorization -cne 'COMMANDER_APPROVED_EMPTY_SCIENCE_TAKEOVER' -or
+        [string]$Request.execution_mode -cne 'SERIAL_BATCH') {
+        throw 'An explicit Commander-authorized SERIAL_BATCH reservation takeover is required.'
+    }
+    $cohortHash = [string]$Request.inputs.cohort_sha256
+    if ($cohortHash -notmatch '^[a-fA-F0-9]{64}$' -or
+        [string]$Evidence.reservation_sha256 -cne [string]$proof.prior_reservation_sha256 -or
+        [string]$Evidence.request_sha256 -cne [string]$proof.prior_request_sha256 -or
+        [string]$Evidence.stop_receipt_sha256 -cne [string]$proof.prior_stop_receipt_sha256 -or
+        [string]$Evidence.audit_sha256 -cne [string]$proof.prior_audit_sha256 -or
+        [string]$Evidence.execution_started_sha256 -cne [string]$proof.prior_execution_started_sha256 -or
+        [string]$Evidence.launch_record_sha256 -cne [string]$proof.prior_launch_record_sha256) {
+        throw 'The preserved prior reservation/release/stop/audit/launch evidence no longer matches the takeover pins.'
+    }
+    $priorReservation = $Evidence.reservation
+    $priorRequest = $Evidence.prior_request
+    $stop = $Evidence.stop_receipt
+    $audit = $Evidence.audit
+    $started = $Evidence.execution_started
+    $launch = $Evidence.launch_record
+    $priorRequestSha = [string]$proof.prior_request_sha256
+    $taskName = [string]$proof.prior_coordinator_task_name
+    if ([string]$priorRequest.execution_mode -cne 'SERIAL_BATCH' -or
+        [string]$priorReservation.cohort_sha256 -cne $cohortHash -or
+        [string]$priorReservation.request_sha256 -cne $priorRequestSha -or
+        [IO.Path]::GetFullPath([string]$priorReservation.release_root) -cne [IO.Path]::GetFullPath([string]$priorRequest.release_root) -or
+        [string]$priorRequest.inputs.cohort_sha256 -cne $cohortHash -or
+        [string]$stop.status -cne 'FAILED_NO_RETRY' -or [string]$stop.request_sha256 -cne $priorRequestSha -or
+        [string]$stop.coordinator_task_name -cne $taskName -or [string]$stop.current_worker_task_name -ne '' -or
+        [int]$stop.completed_count -ne 0 -or @($stop.completed_run_ids).Count -ne 0 -or $stop.automatic_retry -ne $false -or
+        [string]$audit.release_request_sha256 -cne $priorRequestSha -or
+        [string]$audit.status -notin @('CREATED_NOT_STARTED','FAILED_NO_RETRY') -or
+        @($audit.completed_tasks).Count -ne 0 -or
+        [string]$started.status -cne 'RUNNING' -or
+        [string]$started.request_sha256 -cne $priorRequestSha -or
+        [string]$started.coordinator_task_name -cne $taskName -or
+        [int]$stop.coordinator_pid -ne [int]$started.coordinator_pid -or
+        [string]$launch.request_sha256 -cne $priorRequestSha -or [string]$launch.task_name -cne $taskName -or
+        [int]$started.coordinator_pid -le 0 -or
+        @($priorRequest.tasks | Where-Object { [string]$_.run_id -ceq [string]$stop.current_run_id }).Count -ne 1) {
+        throw 'Prior batch receipts do not prove one terminal, untouched, zero-completion attempt for this exact cohort.'
+    }
+    if ([string]$Evidence.coordinator_task_state -in @('Running','Queued') -or
+        [long]$Evidence.coordinator_last_task_result -eq 0 -or
+        [bool]$Evidence.coordinator_process_identity_alive) {
+        throw 'The prior CIR coordinator is still active or lacks a verified nonzero terminal task result.'
+    }
+    if ([int]$Evidence.worker_launch_record_count -gt 0 -or [int]$Evidence.worker_scheduled_task_count -gt 0) {
+        throw 'Prior worker launch evidence exists; a fresh reservation takeover is not permitted.'
+    }
+    if ([bool]$Evidence.run_namespace_exists -or [bool]$Evidence.completion_receipt_exists) {
+        throw 'Prior scientific output namespace or completion receipt exists; a fresh reservation takeover is not permitted.'
+    }
+    if ([int]$Evidence.matlab_process_count -gt 0) {
+        throw 'A MATLAB process is active; a fresh reservation takeover is not permitted.'
+    }
+    if (-not [bool]$Evidence.coordinator_lock_unowned) {
+        throw 'A prior coordinator still owns the cohort OS lock; a fresh reservation takeover is not permitted.'
+    }
+    return $true
+}
+
+function New-CirBatchReservationRecord {
+    param([Parameter(Mandatory)][string]$Path, [Parameter(Mandatory)]$Record)
+    $stream = $null
+    try {
+        $stream = [IO.File]::Open($Path, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
+        $json = ConvertTo-Json -InputObject $Record -Depth 12
+        $bytes = [Text.UTF8Encoding]::new($false).GetBytes($json + [Environment]::NewLine)
+        $stream.Write($bytes, 0, $bytes.Length)
+        $stream.Flush($true)
+    } catch [IO.IOException] {
+        throw "A durable CIR batch reservation/claim already exists; refusing duplicate start or retry: $Path. $($_.Exception.Message)"
+    } finally {
+        if ($null -ne $stream) { $stream.Dispose() }
+    }
+    $Path
+}
+
+function Assert-CirBatchLaunchReservation {
+    param([Parameter(Mandatory)]$Request, [Parameter(Mandatory)][string]$RequestSha256, [Parameter(Mandatory)][string]$Path)
+    $cohortHash = ([string]$Request.inputs.cohort_sha256).ToLowerInvariant()
+    $requestHash = $RequestSha256.ToLowerInvariant()
+    $reservationRoot = [IO.Path]::GetFullPath((Join-Path $script:BatchLogRoot 'cir_batch_reservations')).TrimEnd('\') + '\'
+    $fullPath = [IO.Path]::GetFullPath($Path)
+    if (-not $fullPath.StartsWith($reservationRoot, [StringComparison]::OrdinalIgnoreCase) -or
+        -not (Test-Path -LiteralPath $fullPath -PathType Leaf)) {
+        throw 'Coordinator launch record does not point to an existing reservation within the approved reservation directory.'
+    }
+    $proof = $Request.batch_reservation_supersession
+    $expectedPath = if ($null -eq $proof) {
+        Join-Path $reservationRoot "$cohortHash.json"
+    } else {
+        Join-Path $reservationRoot "successor.$requestHash.json"
+    }
+    if ([IO.Path]::GetFullPath($expectedPath) -ine $fullPath) {
+        throw 'Coordinator launch reservation path is not the unique path authorized by this immutable request.'
+    }
+    $record = Get-JsonDocument $fullPath
+    if ([string]$record.cohort_sha256 -cne $cohortHash -or
+        [string]$record.request_sha256 -cne $requestHash -or
+        [IO.Path]::GetFullPath([string]$record.release_root) -ine [IO.Path]::GetFullPath([string]$Request.release_root) -or
+        $record.automatic_retry -ne $false) {
+        throw 'Durable coordinator reservation does not match its immutable release, cohort, or no-retry policy.'
+    }
+    if ($null -ne $proof) {
+        $legacyPath = Join-Path $reservationRoot "$cohortHash.json"
+        $claimPath = Join-Path $reservationRoot "takeover.$([string]$proof.prior_request_sha256).json"
+        if ([IO.Path]::GetFullPath((Resolve-ProjectPath ([string]$proof.prior_reservation_path))) -ine [IO.Path]::GetFullPath($legacyPath) -or
+            -not (Test-Path -LiteralPath $legacyPath -PathType Leaf) -or
+            (Get-Sha256 $legacyPath) -cne [string]$proof.prior_reservation_sha256 -or
+            -not (Test-Path -LiteralPath $claimPath -PathType Leaf)) {
+            throw 'The legacy reservation or one-time supersession claim no longer matches its pinned evidence.'
+        }
+        $claim = Get-JsonDocument $claimPath
+        if ([string]$claim.authorization -cne 'COMMANDER_APPROVED_EMPTY_SCIENCE_TAKEOVER' -or
+            [string]$claim.cohort_sha256 -cne $cohortHash -or
+            [string]$claim.prior_request_sha256 -cne [string]$proof.prior_request_sha256 -or
+            [string]$claim.prior_reservation_path -cne [string]$proof.prior_reservation_path -or
+            [string]$claim.prior_reservation_sha256 -cne [string]$proof.prior_reservation_sha256 -or
+            [string]$claim.new_request_sha256 -cne $requestHash -or
+            [string]$claim.new_reservation_path -cne (Get-RelativeProjectPath $fullPath) -or
+            [IO.Path]::GetFullPath([string]$claim.new_release_root) -ine [IO.Path]::GetFullPath([string]$Request.release_root) -or
+            [string]$record.supersedes_reservation_path -cne [string]$proof.prior_reservation_path -or
+            [string]$record.supersedes_reservation_sha256 -cne [string]$proof.prior_reservation_sha256 -or
+            [string]$record.supersedes_request_sha256 -cne [string]$proof.prior_request_sha256 -or
+            [string]$record.supersession_claim_path -cne (Get-RelativeProjectPath $claimPath) -or
+            [string]$record.supersession_claim_sha256 -cne (Get-Sha256 $claimPath)) {
+            throw 'One-time supersession claim and successor reservation are inconsistent.'
+        }
+    }
+    $true
+}
+
+function Get-CirBatchReservationSupersessionEvidence {
+    param([Parameter(Mandatory)]$Request)
+    $proof = $Request.batch_reservation_supersession
+    if ($null -eq $proof) { throw 'No explicit prior batch reservation supersession proof is pinned.' }
+    $reservationRoot = [IO.Path]::GetFullPath((Join-Path $script:BatchLogRoot 'cir_batch_reservations')).TrimEnd('\') + '\'
+    $releaseBase = [IO.Path]::GetFullPath($script:ReleaseBase).TrimEnd('\') + '\'
+    $paths = [ordered]@{
+        reservation = Resolve-ProjectPath ([string]$proof.prior_reservation_path)
+        request = Resolve-ProjectPath ([string]$proof.prior_release_request_path)
+        stop = Resolve-ProjectPath ([string]$proof.prior_stop_receipt_path)
+        audit = Resolve-ProjectPath ([string]$proof.prior_audit_path)
+        execution_started = Resolve-ProjectPath ([string]$proof.prior_execution_started_path)
+        launch = Resolve-ProjectPath ([string]$proof.prior_launch_record_path)
+    }
+    if (-not $paths.reservation.StartsWith($reservationRoot, [StringComparison]::OrdinalIgnoreCase) -or
+        -not $paths.request.StartsWith($releaseBase, [StringComparison]::OrdinalIgnoreCase) -or
+        (Split-Path -Leaf $paths.request) -cne 'release_request.json') {
+        throw 'Prior reservation and request paths must remain within the CIR reservation and release trees.'
+    }
+    $priorRequest = Get-JsonDocument $paths.request
+    $priorReleaseRoot = [IO.Path]::GetFullPath([string]$priorRequest.release_root)
+    if (-not $priorReleaseRoot.StartsWith($releaseBase, [StringComparison]::OrdinalIgnoreCase) -or
+        [IO.Path]::GetFullPath((Join-Path $priorReleaseRoot 'release_request.json')) -ine $paths.request) {
+        throw 'Pinned prior request does not resolve to its own immutable release root.'
+    }
+    $expectedPaths = @{
+        stop = Join-Path $priorReleaseRoot 'cir_batch_stop_receipt.json'
+        audit = Join-Path $priorReleaseRoot 'cir_batch_audit.json'
+        execution_started = Join-Path $priorReleaseRoot 'batch_execution_started.json'
+        launch = Join-Path (Join-Path $priorReleaseRoot 'batch_launch_records') ($proof.prior_coordinator_task_name + '.json')
+    }
+    foreach ($key in $expectedPaths.Keys) {
+        if ([IO.Path]::GetFullPath($expectedPaths[$key]) -ine [IO.Path]::GetFullPath($paths[$key])) {
+            throw "Prior $key path is not the exact evidence path for the immutable release."
+        }
+    }
+    $hashes = [ordered]@{}
+    foreach ($key in @('reservation','request','stop','audit','execution_started','launch')) {
+        if (-not (Test-Path -LiteralPath $paths[$key] -PathType Leaf)) { throw "Pinned prior takeover evidence is missing: $($paths[$key])" }
+        $hashes[$key] = Get-Sha256 $paths[$key]
+    }
+    $reservation = Get-JsonDocument $paths.reservation
+    $stop = Get-JsonDocument $paths.stop
+    $audit = Get-JsonDocument $paths.audit
+    $started = Get-JsonDocument $paths.execution_started
+    $launch = Get-JsonDocument $paths.launch
+    $task = Get-ScheduledTask -TaskName ([string]$proof.prior_coordinator_task_name) -ErrorAction Stop
+    $taskInfo = Get-ScheduledTaskInfo -TaskName ([string]$proof.prior_coordinator_task_name) -ErrorAction Stop
+    $processIdentityAlive = $false
+    $priorPid = [int]$started.coordinator_pid
+    $priorProcess = Get-CimInstance -ClassName Win32_Process -Filter "ProcessId = $priorPid" -ErrorAction Stop
+    if ($null -ne $priorProcess) {
+        $createdUtc = [Management.ManagementDateTimeConverter]::ToDateTime([string]$priorProcess.CreationDate).ToUniversalTime()
+        $startedUtc = (ConvertTo-UtcDateTimeOffset ([string]$started.started_utc)).UtcDateTime
+        $processIdentityAlive = [Math]::Abs(($createdUtc - $startedUtc).TotalSeconds) -le 5
+    }
+    $workerLaunchRoot = Join-Path $priorReleaseRoot 'task_launch_records'
+    $workerLaunchCount = if (Test-Path -LiteralPath $workerLaunchRoot -PathType Container) {
+        @(Get-ChildItem -LiteralPath $workerLaunchRoot -Filter '*.json' -File).Count
+    } else { 0 }
+    $workerScheduledTasks = @(Get-ScheduledTask -ErrorAction Stop | Where-Object {
+        @($_.Actions | Where-Object {
+            $argumentProperty = $_.PSObject.Properties['Arguments']
+            $null -ne $argumentProperty -and
+            [string]$argumentProperty.Value -like "*$($proof.prior_request_sha256)*" -and
+            [string]$argumentProperty.Value -match '(?i)-ExecuteBatchWorker(?:\s|$)'
+        }).Count -gt 0
+    })
+    $coordinatorLockUnowned = $true
+    $activeLockPath = Join-Path $reservationRoot "$($priorRequest.inputs.cohort_sha256).active.lock"
+    if (Test-Path -LiteralPath $activeLockPath -PathType Leaf) {
+        $lockProbe = $null
+        try {
+            $lockProbe = [IO.File]::Open($activeLockPath, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::None)
+        } catch {
+            $coordinatorLockUnowned = $false
+        } finally {
+            if ($null -ne $lockProbe) { $lockProbe.Dispose() }
+        }
+    }
+    $priorRunNamespaces = @(Get-CirBatchExistingRunNamespaces -PriorRequest $priorRequest -PriorReleaseRoot $priorReleaseRoot)
+    $matlabCount = @(Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -match '(?i)^matlab' }).Count
+    $evidence = [pscustomobject]@{
+        reservation_path = Get-RelativeProjectPath $paths.reservation
+        request_path = Get-RelativeProjectPath $paths.request
+        stop_receipt_path = Get-RelativeProjectPath $paths.stop
+        audit_path = Get-RelativeProjectPath $paths.audit
+        execution_started_path = Get-RelativeProjectPath $paths.execution_started
+        launch_record_path = Get-RelativeProjectPath $paths.launch
+        reservation_sha256 = $hashes.reservation
+        reservation = $reservation
+        request_sha256 = $hashes.request
+        prior_request = $priorRequest
+        stop_receipt_sha256 = $hashes.stop
+        stop_receipt = $stop
+        audit_sha256 = $hashes.audit
+        audit = $audit
+        execution_started_sha256 = $hashes.execution_started
+        execution_started = $started
+        launch_record_sha256 = $hashes.launch
+        launch_record = $launch
+        coordinator_task_state = [string]$task.State
+        coordinator_last_task_result = [long]$taskInfo.LastTaskResult
+        coordinator_process_identity_alive = $processIdentityAlive
+        worker_launch_record_count = $workerLaunchCount
+        worker_scheduled_task_count = $workerScheduledTasks.Count
+        coordinator_lock_unowned = $coordinatorLockUnowned
+        run_namespace_exists = ($priorRunNamespaces.Count -gt 0)
+        completion_receipt_exists = Test-Path -LiteralPath (Join-Path $priorReleaseRoot 'cir_batch_completion_receipt.json')
+        matlab_process_count = $matlabCount
+    }
+    $null = Assert-CirBatchReservationSupersessionEvidence -Request $Request -Evidence $evidence
+    $evidence
+}
+
+function New-CirBatchReservationSupersessionPin {
+    param([Parameter(Mandatory)][string]$PriorRequestPath, [Parameter(Mandatory)][string]$CohortSha256)
+    $fullPriorRequest = [IO.Path]::GetFullPath($PriorRequestPath)
+    $releaseBase = [IO.Path]::GetFullPath($script:ReleaseBase).TrimEnd('\') + '\'
+    if (-not $fullPriorRequest.StartsWith($releaseBase, [StringComparison]::OrdinalIgnoreCase) -or
+        (Split-Path -Leaf $fullPriorRequest) -cne 'release_request.json') {
+        throw 'Superseded request must be release_request.json under the approved CIR release tree.'
+    }
+    $priorRequest = Get-JsonDocument $fullPriorRequest
+    if ([string]$priorRequest.inputs.cohort_sha256 -cne $CohortSha256) {
+        throw 'The explicitly selected prior batch release does not bind the current frozen cohort.'
+    }
+    $reservationRoot = Join-Path $script:BatchLogRoot 'cir_batch_reservations'
+    $priorReservationPath = Join-Path $reservationRoot "$CohortSha256.json"
+    if (-not (Test-Path -LiteralPath $priorReservationPath -PathType Leaf)) {
+        throw "The requested prior batch has no preserved cohort reservation to supersede: $priorReservationPath"
+    }
+    $priorReleaseRoot = [IO.Path]::GetFullPath([string]$priorRequest.release_root)
+    $priorRequestHash = Get-Sha256 $fullPriorRequest
+    $stopPath = Join-Path $priorReleaseRoot 'cir_batch_stop_receipt.json'
+    $auditPath = Join-Path $priorReleaseRoot 'cir_batch_audit.json'
+    $executionStartedPath = Join-Path $priorReleaseRoot 'batch_execution_started.json'
+    $stop = Get-JsonDocument $stopPath
+    $launchPath = Join-Path (Join-Path $priorReleaseRoot 'batch_launch_records') ([string]$stop.coordinator_task_name + '.json')
+    $proof = [ordered]@{
+        authorization = 'COMMANDER_APPROVED_EMPTY_SCIENCE_TAKEOVER'
+        prior_reservation_path = Get-RelativeProjectPath $priorReservationPath
+        prior_reservation_sha256 = Get-Sha256 $priorReservationPath
+        prior_release_request_path = Get-RelativeProjectPath $fullPriorRequest
+        prior_request_sha256 = $priorRequestHash
+        prior_stop_receipt_path = Get-RelativeProjectPath $stopPath
+        prior_stop_receipt_sha256 = Get-Sha256 $stopPath
+        prior_audit_path = Get-RelativeProjectPath $auditPath
+        prior_audit_sha256 = Get-Sha256 $auditPath
+        prior_execution_started_path = Get-RelativeProjectPath $executionStartedPath
+        prior_execution_started_sha256 = Get-Sha256 $executionStartedPath
+        prior_launch_record_path = Get-RelativeProjectPath $launchPath
+        prior_launch_record_sha256 = Get-Sha256 $launchPath
+        prior_coordinator_task_name = [string]$stop.coordinator_task_name
+    }
+    $candidate = [pscustomobject]@{
+        execution_mode = 'SERIAL_BATCH'
+        inputs = [pscustomobject]@{ cohort_sha256 = $CohortSha256 }
+        batch_reservation_supersession = [pscustomobject]$proof
+    }
+    $null = Get-CirBatchReservationSupersessionEvidence -Request $candidate
+    $proof
+}
+
+function Acquire-CirBatchCoordinatorLock {
+    param(
+        [Parameter(Mandatory)][string]$CohortSha256,
+        [Parameter(Mandatory)][string]$RequestSha256,
+        [Parameter(Mandatory)][string]$TaskName
+    )
+    if ($CohortSha256 -notmatch '^[a-fA-F0-9]{64}$' -or $RequestSha256 -notmatch '^[a-fA-F0-9]{64}$') {
+        throw 'CIR coordinator OS lock requires pinned cohort and request SHA256 values.'
+    }
+    $reservationRoot = Join-Path $script:BatchLogRoot 'cir_batch_reservations'
+    [IO.Directory]::CreateDirectory($reservationRoot) | Out-Null
+    $path = Join-Path $reservationRoot "$($CohortSha256.ToLowerInvariant()).active.lock"
+    $stream = $null
+    try {
+        $stream = [IO.File]::Open($path, [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
+        $stream.SetLength(0)
+        $record = [ordered]@{
+            schema_version = 1
+            cohort_sha256 = $CohortSha256.ToLowerInvariant()
+            request_sha256 = $RequestSha256.ToLowerInvariant()
+            task_name = $TaskName
+            process_id = $PID
+            acquired_utc = [DateTimeOffset]::UtcNow.ToString('o')
+        }
+        $bytes = [Text.UTF8Encoding]::new($false).GetBytes((ConvertTo-Json -InputObject $record -Compress))
+        $stream.Write($bytes, 0, $bytes.Length)
+        $stream.Flush($true)
+    } catch [IO.IOException] {
+        if ($null -ne $stream) { $stream.Dispose(); $stream = $null }
+        throw "Another CIR coordinator currently owns the cohort OS lock; refusing concurrent production: $path. $($_.Exception.Message)"
+    } catch {
+        if ($null -ne $stream) { $stream.Dispose(); $stream = $null }
+        throw
+    }
+    [pscustomobject]@{ path = $path; stream = $stream; cohort_sha256 = $CohortSha256.ToLowerInvariant(); request_sha256 = $RequestSha256.ToLowerInvariant(); task_name = $TaskName; pid = $PID }
+}
+
+function Release-CirBatchCoordinatorLock {
+    param([Parameter(Mandatory)]$Lock)
+    if ($null -ne $Lock.stream) { $Lock.stream.Dispose() }
+}
+
 function New-BatchReleaseRequest {
     if (-not $ReleaseRoot) { throw '-ReleaseRoot is required with -CreateBatchReleaseRequest.' }
     if (@($PassReceiptPaths).Count -ne 3) { throw 'Exactly three verified existing PASS receipt paths are required for this frozen 83-task cohort.' }
@@ -1057,6 +1441,18 @@ function New-BatchReleaseRequest {
     }
     if (Test-Path -LiteralPath $fullRoot) { throw "ReleaseRoot already exists; preserving it and refusing overwrite: $fullRoot" }
     $cohort = Get-JsonDocument $script:CohortPath
+    $cohortSha256 = Get-Sha256 $script:CohortPath
+    $legacyReservationPath = Join-Path (Join-Path $script:BatchLogRoot 'cir_batch_reservations') "$cohortSha256.json"
+    $supersessionPin = $null
+    if ($SupersedePriorBatchRequestPath) {
+        if (-not (Test-Path -LiteralPath $legacyReservationPath -PathType Leaf)) {
+            throw "Explicit supersession was requested, but no preserved legacy cohort reservation exists: $legacyReservationPath"
+        }
+        $supersessionPin = New-CirBatchReservationSupersessionPin `
+            -PriorRequestPath $SupersedePriorBatchRequestPath -CohortSha256 $cohortSha256
+    } elseif (Test-Path -LiteralPath $legacyReservationPath -PathType Leaf) {
+        throw "A prior durable cohort reservation exists; a separately authorized and evidenced supersession is required: $legacyReservationPath"
+    }
     $cirTasks = Get-JsonDocument $script:CirTasksPath
     $cohortValidation = Get-JsonDocument $script:CohortValidationPath
     if ($cohortValidation.validation_status -ne 'PASS' -or $cohortValidation.gate_b_pass -ne $true -or
@@ -1182,6 +1578,7 @@ function New-BatchReleaseRequest {
         frozen_cohort_run_ids = @($cirTasks.tasks | ForEach-Object { [string]$_.run_id })
         excluded_run_ids = @($cohort.excluded | ForEach-Object { [string]$_.run_id })
         skipped_existing_pass = $skipped
+        batch_reservation_supersession = $supersessionPin
         baseline_existing_pilot = [ordered]@{
             run_id = $baselineId
             scene_id = [string]$baselineTask.scene_id
@@ -1383,30 +1780,67 @@ function New-CirBatchLaunchReservation {
     $reservationRoot = Join-Path $script:BatchLogRoot 'cir_batch_reservations'
     [IO.Directory]::CreateDirectory($reservationRoot) | Out-Null
     $cohortHash = [string]$Request.inputs.cohort_sha256
-    if ($cohortHash -notmatch '^[a-fA-F0-9]{64}$') { throw 'Batch reservation requires a pinned cohort SHA256.' }
-    $path = Join-Path $reservationRoot "$($cohortHash.ToLowerInvariant()).json"
-    $stream = $null
-    try {
-        $stream = [IO.File]::Open($path, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
+    if ($cohortHash -notmatch '^[a-fA-F0-9]{64}$' -or $RequestSha256 -notmatch '^[a-fA-F0-9]{64}$') {
+        throw 'Batch reservation requires pinned cohort and request SHA256 values.'
+    }
+    $cohortHash = $cohortHash.ToLowerInvariant()
+    $requestHash = $RequestSha256.ToLowerInvariant()
+    $legacyPath = Join-Path $reservationRoot "$cohortHash.json"
+    $proof = $Request.batch_reservation_supersession
+    if (-not (Test-Path -LiteralPath $legacyPath -PathType Leaf)) {
+        if ($null -ne $proof) { throw 'Supersession proof is pinned but its preserved legacy reservation is missing.' }
         $record = [ordered]@{
             schema_version = 1
-            cohort_sha256 = $cohortHash.ToLowerInvariant()
+            cohort_sha256 = $cohortHash
             release_root = [IO.Path]::GetFullPath([string]$Request.release_root)
-            request_sha256 = $RequestSha256.ToLowerInvariant()
+            request_sha256 = $requestHash
             reserved_utc = [DateTimeOffset]::UtcNow.ToString('o')
             reservation_process_id = $PID
             automatic_retry = $false
         }
-        $json = ConvertTo-Json -InputObject $record -Depth 8
-        $bytes = [Text.UTF8Encoding]::new($false).GetBytes($json + [Environment]::NewLine)
-        $stream.Write($bytes, 0, $bytes.Length)
-        $stream.Flush($true)
-    } catch [IO.IOException] {
-        throw "The frozen cohort already has a durable batch reservation; refusing a cross-release duplicate or retry: $path. $($_.Exception.Message)"
-    } finally {
-        if ($null -ne $stream) { $stream.Dispose() }
+        return New-CirBatchReservationRecord -Path $legacyPath -Record $record
     }
-    $path
+    if ($null -eq $proof) {
+        throw "The frozen cohort already has a durable batch reservation; refusing a cross-release duplicate or retry: $legacyPath"
+    }
+
+    $evidence = Get-CirBatchReservationSupersessionEvidence -Request $Request
+    $priorRequestHash = [string]$proof.prior_request_sha256
+    if ($priorRequestHash -notmatch '^[a-fA-F0-9]{64}$') { throw 'Supersession proof has an invalid prior request SHA256.' }
+    $priorRequestHash = $priorRequestHash.ToLowerInvariant()
+    $claimPath = Join-Path $reservationRoot "takeover.$priorRequestHash.json"
+    $reservationPath = Join-Path $reservationRoot "successor.$requestHash.json"
+    $claim = [ordered]@{
+        schema_version = 1
+        cohort_sha256 = $cohortHash
+        authorization = 'COMMANDER_APPROVED_EMPTY_SCIENCE_TAKEOVER'
+        prior_request_sha256 = $priorRequestHash
+        prior_reservation_path = [string]$proof.prior_reservation_path
+        prior_reservation_sha256 = [string]$proof.prior_reservation_sha256
+        new_request_sha256 = $requestHash
+        new_release_root = [IO.Path]::GetFullPath([string]$Request.release_root)
+        new_reservation_path = Get-RelativeProjectPath $reservationPath
+        claimed_utc = [DateTimeOffset]::UtcNow.ToString('o')
+        claim_process_id = $PID
+    }
+    $null = New-CirBatchReservationRecord -Path $claimPath -Record $claim
+    $claimHash = Get-Sha256 $claimPath
+    $record = [ordered]@{
+        schema_version = 2
+        cohort_sha256 = $cohortHash
+        release_root = [IO.Path]::GetFullPath([string]$Request.release_root)
+        request_sha256 = $requestHash
+        reserved_utc = [DateTimeOffset]::UtcNow.ToString('o')
+        reservation_process_id = $PID
+        automatic_retry = $false
+        supersedes_reservation_path = [string]$proof.prior_reservation_path
+        supersedes_reservation_sha256 = [string]$proof.prior_reservation_sha256
+        supersedes_request_sha256 = $priorRequestHash
+        supersession_claim_path = Get-RelativeProjectPath $claimPath
+        supersession_claim_sha256 = $claimHash
+    }
+    $null = $evidence
+    New-CirBatchReservationRecord -Path $reservationPath -Record $record
 }
 
 function Invoke-ValidateBatchOnly {
@@ -1555,11 +1989,24 @@ function Invoke-RunBatchCoordinator {
     if ($launch.request_sha256 -ne $validated.request_sha256 -or $launch.task_name -ne $TaskName) {
         throw 'Coordinator launch record does not match the immutable release request.'
     }
+    $reservationPath = Resolve-ProjectPath ([string]$launch.batch_reservation_path)
+    Assert-CirBatchLaunchReservation -Request $validated.request -RequestSha256 $validated.request_sha256 -Path $reservationPath | Out-Null
+    if ($null -ne $validated.request.batch_reservation_supersession) {
+        $null = Get-CirBatchReservationSupersessionEvidence -Request $validated.request
+    }
+    $batchLock = Acquire-CirBatchCoordinatorLock `
+        -CohortSha256 ([string]$validated.request.inputs.cohort_sha256) `
+        -RequestSha256 $validated.request_sha256 -TaskName $TaskName
     $auditPath = Join-Path $releaseRoot 'cir_batch_audit.json'
-    $audit = Get-JsonDocument $auditPath
-    if ($audit.release_request_sha256 -ne $validated.request_sha256 -or $audit.status -ne 'CREATED_NOT_STARTED' -or
-        @($audit.completed_tasks).Count -ne 0) {
-        throw 'Batch audit is not in its untouched pre-production state; refusing resume or retry.'
+    try {
+        $audit = Get-JsonDocument $auditPath
+        if ($audit.release_request_sha256 -ne $validated.request_sha256 -or $audit.status -ne 'CREATED_NOT_STARTED' -or
+            @($audit.completed_tasks).Count -ne 0) {
+            throw 'Batch audit is not in its untouched pre-production state; refusing resume or retry.'
+        }
+    } catch {
+        Release-CirBatchCoordinatorLock -Lock $batchLock
+        throw
     }
     $powerRequestHeld = $false
     try {
@@ -1700,6 +2147,7 @@ function Invoke-RunBatchCoordinator {
             try { Set-CirBatchSystemRequired -Enable $false | Out-Null }
             catch { Write-Warning "CIR coordinator could not clear its idle-sleep prevention request: $($_.Exception.Message)" }
         }
+        Release-CirBatchCoordinatorLock -Lock $batchLock
     }
 }
 

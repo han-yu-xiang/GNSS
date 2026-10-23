@@ -5,13 +5,14 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $projectRoot = 'E:\GNSS_Multipath_Project'
+$originalProjectRoot = $projectRoot
 $scriptPath = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) '..\Invoke-Mainline1023CIRSingle.ps1'
 $scriptPath = [System.IO.Path]::GetFullPath($scriptPath)
 $runnerText = Get-Content -LiteralPath $scriptPath -Raw -Encoding UTF8
 $releaseBase = Join-Path $projectRoot 'dataset_generation_logs\channel_modeling'
 $stamp = [DateTimeOffset]::UtcNow.ToString('yyyyMMddTHHmmssfffZ')
 $fixtureRoot = Join-Path $releaseBase ("mainline_1023_cir_v1_${stamp}_TEST_" + [Guid]::NewGuid().ToString('N'))
-$batchFixtureRoot = $fixtureRoot + '_BATCH'
+$batchFixtureRoot = Join-Path $releaseBase ("mainline_1023_cir_v1_${stamp}_BATCH")
 $temporaryRequest = Join-Path ([System.IO.Path]::GetTempPath()) ("cir-request-" + [Guid]::NewGuid().ToString('N') + '.json')
 $pilotRunIds = @(
     'run_20261003_F1023_V70_D0120_P1_G18_ch2',
@@ -106,8 +107,10 @@ try {
         (Join-Path $projectRoot 'dataset_generation_logs\channel_modeling\mainline_1023_cir_v1_20261023T060236191Z\runs\run_20261003_F1023_V70_D0120_P1_G18_ch2\pilot_receipt.json'),
         (Join-Path $projectRoot 'dataset_generation_logs\channel_modeling\mainline_1023_cir_v1_20261023T060236191Z\runs\run_20261003_F1023_V70_D0120_P5_G23_ch0\pilot_receipt.json')
     )
+    $priorFailedBatchRequest = Join-Path $projectRoot 'dataset_generation_logs\channel_modeling\mainline_1023_cir_v1_20261023T102159053Z_task5batch\release_request.json'
     $batchPrepare = Invoke-Captured {
-        & $scriptPath -CreateBatchReleaseRequest -ReleaseRoot $batchFixtureRoot -PassReceiptPaths $passReceiptPaths
+        & $scriptPath -CreateBatchReleaseRequest -ReleaseRoot $batchFixtureRoot -PassReceiptPaths $passReceiptPaths `
+            -SupersedePriorBatchRequestPath $priorFailedBatchRequest
     }
     Assert-True $batchPrepare.Succeeded "Batch release creation must accept the frozen cohort and three PASS skips: $($batchPrepare.Error)"
     $batchRequestPath = Join-Path $batchFixtureRoot 'release_request.json'
@@ -132,6 +135,7 @@ try {
         @($batchRequest.tasks | Where-Object { $_.run_id -in @($batchRequest.excluded_run_ids) }).Count -eq 0) 'All six frozen exclusions must remain out of the queue.'
     Assert-True ($batchRequest.execution_mode -eq 'SERIAL_BATCH' -and $batchRequest.resume -eq $false -and
         $batchRequest.max_parallel_matlab -eq 1 -and
+        $batchRequest.batch_reservation_supersession.authorization -eq 'COMMANDER_APPROVED_EMPTY_SCIENCE_TAKEOVER' -and
         $batchRequest.source_sha256.'scripts/channel_modeling/Invoke-Mainline1023CIRSingle.ps1' -eq
         (Get-FileHash -LiteralPath $scriptPath -Algorithm SHA256).Hash.ToLowerInvariant()) 'Batch release must bind the current source SHA and fresh serial policy.'
     foreach ($sourcePath in @(
@@ -188,7 +192,9 @@ try {
     foreach ($functionName in @(
         'Resolve-ProjectPath', 'Get-RelativeProjectPath', 'Get-Sha256', 'Get-JsonDocument', 'ConvertTo-UtcDateTimeOffset', 'Test-TaskPinPropertyMatch',
         'Assert-NewCIROutputNamespace', 'Assert-BatchRequestIdentities', 'Assert-MatlabExitReceiptMatches', 'Invoke-SerialCirBatchTasks',
-        'Assert-WorkerTaskReceiptPass', 'Assert-NoNewStorageFailures', 'New-CirBatchAuditDocument'
+        'Assert-WorkerTaskReceiptPass', 'Assert-NoNewStorageFailures', 'New-CirBatchAuditDocument',
+        'Get-CirBatchExistingRunNamespaces', 'Assert-CirBatchReservationSupersessionEvidence', 'New-CirBatchReservationRecord',
+        'Acquire-CirBatchCoordinatorLock', 'Release-CirBatchCoordinatorLock'
     )) {
         $functionAst = @($testAst.FindAll({
             param($node)
@@ -213,6 +219,153 @@ try {
     Assert-True ($batchAudit.release_request_sha256 -eq $batchHash -and
         @('current_task_started_utc','last_completed_utc','completion_receipt_path','completed_utc','stop_receipt_path','stopped_utc' |
             Where-Object { $null -eq $batchAudit.PSObject.Properties[$_] }).Count -eq 0) 'A newly created batch audit must declare every strict-mode field the coordinator may later update.'
+    $roundTripAudit = ($batchAudit | ConvertTo-Json -Depth 12) | ConvertFrom-Json
+    $roundTripAudit.current_task_started_utc = '2026-10-23T00:00:00.0000000+00:00'
+    $roundTripAudit.last_completed_utc = '2026-10-23T00:01:00.0000000+00:00'
+    $roundTripAudit.completion_receipt_path = 'cir_batch_completion_receipt.json'
+    $roundTripAudit.completed_utc = '2026-10-23T00:02:00.0000000+00:00'
+    $roundTripAudit.stop_receipt_path = 'cir_batch_stop_receipt.json'
+    $roundTripAudit.stopped_utc = '2026-10-23T00:03:00.0000000+00:00'
+    Assert-True ($roundTripAudit.current_task_started_utc -eq '2026-10-23T00:00:00.0000000+00:00' -and
+        $roundTripAudit.last_completed_utc -eq '2026-10-23T00:01:00.0000000+00:00' -and
+        $roundTripAudit.completion_receipt_path -eq 'cir_batch_completion_receipt.json' -and
+        $roundTripAudit.completed_utc -eq '2026-10-23T00:02:00.0000000+00:00' -and
+        $roundTripAudit.stop_receipt_path -eq 'cir_batch_stop_receipt.json' -and
+        $roundTripAudit.stopped_utc -eq '2026-10-23T00:03:00.0000000+00:00') 'JSON-round-tripped batch audit must accept every real coordinator update field under StrictMode.'
+
+    $cohortFixtureSha = 'c' * 64
+    $oldRequestFixtureSha = 'd' * 64
+    $oldReservationFixtureSha = 'e' * 64
+    $oldStopFixtureSha = 'f' * 64
+    $oldAuditFixtureSha = '1' * 64
+    $oldStartedFixtureSha = '2' * 64
+    $oldLaunchFixtureSha = '3' * 64
+    $oldReleaseFixture = Join-Path $batchFixtureRoot 'prior_failed_release'
+    $oldCoordinatorFixtureTask = 'GNSS-CIR-BatchFixture-Old'
+    $takeoverRequest = [pscustomobject]@{
+        execution_mode = 'SERIAL_BATCH'
+        release_root = Join-Path $batchFixtureRoot 'new_takeover_release'
+        inputs = [pscustomobject]@{ cohort_sha256 = $cohortFixtureSha }
+        batch_reservation_supersession = [pscustomobject]@{
+            authorization = 'COMMANDER_APPROVED_EMPTY_SCIENCE_TAKEOVER'
+            prior_reservation_path = 'dataset_generation_logs/batch_sage_execution/cir_batch_reservations/fixture.json'
+            prior_reservation_sha256 = $oldReservationFixtureSha
+            prior_release_request_path = 'dataset_generation_logs/channel_modeling/prior_failed_release/release_request.json'
+            prior_request_sha256 = $oldRequestFixtureSha
+            prior_stop_receipt_path = 'dataset_generation_logs/channel_modeling/prior_failed_release/cir_batch_stop_receipt.json'
+            prior_stop_receipt_sha256 = $oldStopFixtureSha
+            prior_audit_path = 'dataset_generation_logs/channel_modeling/prior_failed_release/cir_batch_audit.json'
+            prior_audit_sha256 = $oldAuditFixtureSha
+            prior_execution_started_path = 'dataset_generation_logs/channel_modeling/prior_failed_release/batch_execution_started.json'
+            prior_execution_started_sha256 = $oldStartedFixtureSha
+            prior_launch_record_path = 'dataset_generation_logs/channel_modeling/prior_failed_release/batch_launch_records/GNSS-CIR-BatchFixture-Old.json'
+            prior_launch_record_sha256 = $oldLaunchFixtureSha
+            prior_coordinator_task_name = $oldCoordinatorFixtureTask
+        }
+    }
+    $takeoverEvidence = [pscustomobject]@{
+        reservation_sha256 = $oldReservationFixtureSha
+        reservation = [pscustomobject]@{ schema_version = 1; cohort_sha256 = $cohortFixtureSha; release_root = $oldReleaseFixture; request_sha256 = $oldRequestFixtureSha }
+        request_sha256 = $oldRequestFixtureSha
+        prior_request = [pscustomobject]@{ execution_mode = 'SERIAL_BATCH'; release_root = $oldReleaseFixture; inputs = [pscustomobject]@{ cohort_sha256 = $cohortFixtureSha }; tasks = @([pscustomobject]@{ run_id = 'run_fixture_g03_ch2' },[pscustomobject]@{ run_id = 'run_fixture_second' }) }
+        stop_receipt_sha256 = $oldStopFixtureSha
+        stop_receipt = [pscustomobject]@{ status = 'FAILED_NO_RETRY'; request_sha256 = $oldRequestFixtureSha; coordinator_task_name = $oldCoordinatorFixtureTask; coordinator_pid = 12345; current_run_id = 'run_fixture_g03_ch2'; current_worker_task_name = ''; completed_count = 0; completed_run_ids = @(); automatic_retry = $false }
+        audit_sha256 = $oldAuditFixtureSha
+        audit = [pscustomobject]@{ release_request_sha256 = $oldRequestFixtureSha; status = 'CREATED_NOT_STARTED'; completed_tasks = @(); current_run_id = '' }
+        execution_started_sha256 = $oldStartedFixtureSha
+        execution_started = [pscustomobject]@{ status = 'RUNNING'; request_sha256 = $oldRequestFixtureSha; coordinator_task_name = $oldCoordinatorFixtureTask; coordinator_pid = 12345; started_utc = '2026-10-23T00:00:00.0000000+00:00' }
+        launch_record_sha256 = $oldLaunchFixtureSha
+        launch_record = [pscustomobject]@{ request_sha256 = $oldRequestFixtureSha; task_name = $oldCoordinatorFixtureTask }
+        coordinator_task_state = 'Ready'
+        coordinator_last_task_result = 1
+        coordinator_process_identity_alive = $false
+        worker_launch_record_count = 0
+        worker_scheduled_task_count = 0
+        coordinator_lock_unowned = $true
+        run_namespace_exists = $false
+        completion_receipt_exists = $false
+        matlab_process_count = 0
+    }
+    Assert-True (Assert-CirBatchReservationSupersessionEvidence -Request $takeoverRequest -Evidence $takeoverEvidence) 'An independently evidenced terminal batch with zero worker/science artifacts may be superseded once.'
+    $runningEvidence = $takeoverEvidence | ConvertTo-Json -Depth 12 | ConvertFrom-Json
+    $runningEvidence.coordinator_task_state = 'Running'
+    $runningEvidence.coordinator_last_task_result = 0
+    $runningEvidenceError = Invoke-Captured { Assert-CirBatchReservationSupersessionEvidence -Request $takeoverRequest -Evidence $runningEvidence }
+    Assert-True (-not $runningEvidenceError.Succeeded -and $runningEvidenceError.Error -match 'still active|terminal') 'A running old coordinator must block reservation takeover.'
+    $mismatchedPidEvidence = $takeoverEvidence | ConvertTo-Json -Depth 12 | ConvertFrom-Json
+    $mismatchedPidEvidence.stop_receipt.coordinator_pid = 54321
+    $mismatchedPidError = Invoke-Captured { Assert-CirBatchReservationSupersessionEvidence -Request $takeoverRequest -Evidence $mismatchedPidEvidence }
+    Assert-True (-not $mismatchedPidError.Succeeded -and $mismatchedPidError.Error -match 'zero-completion|terminal|coordinator') 'The stopped process identity must match the process identity recorded at launch.'
+    $scienceEvidence = $takeoverEvidence | ConvertTo-Json -Depth 12 | ConvertFrom-Json
+    $scienceEvidence.worker_launch_record_count = 1
+    $scienceError = Invoke-Captured { Assert-CirBatchReservationSupersessionEvidence -Request $takeoverRequest -Evidence $scienceEvidence }
+    Assert-True (-not $scienceError.Succeeded -and $scienceError.Error -match 'science|worker') 'Any old worker launch/scientific attempt must block reservation takeover.'
+    $scheduledWorkerEvidence = $takeoverEvidence | ConvertTo-Json -Depth 12 | ConvertFrom-Json
+    $scheduledWorkerEvidence.worker_scheduled_task_count = 1
+    $scheduledWorkerError = Invoke-Captured { Assert-CirBatchReservationSupersessionEvidence -Request $takeoverRequest -Evidence $scheduledWorkerEvidence }
+    Assert-True (-not $scheduledWorkerError.Succeeded -and $scheduledWorkerError.Error -match 'science|worker') 'Any old worker task still registered with the request pin must block reservation takeover.'
+    $namespaceEvidence = $takeoverEvidence | ConvertTo-Json -Depth 12 | ConvertFrom-Json
+    $namespaceEvidence.run_namespace_exists = $true
+    $namespaceError = Invoke-Captured { Assert-CirBatchReservationSupersessionEvidence -Request $takeoverRequest -Evidence $namespaceEvidence }
+    Assert-True (-not $namespaceError.Succeeded -and $namespaceError.Error -match 'science|namespace') 'An old run namespace must block reservation takeover even if the stop receipt reports zero completions.'
+    $matlabEvidence = $takeoverEvidence | ConvertTo-Json -Depth 12 | ConvertFrom-Json
+    $matlabEvidence.matlab_process_count = 1
+    $matlabError = Invoke-Captured { Assert-CirBatchReservationSupersessionEvidence -Request $takeoverRequest -Evidence $matlabEvidence }
+    Assert-True (-not $matlabError.Succeeded -and $matlabError.Error -match 'MATLAB|active') 'A live MATLAB process must block reservation takeover.'
+
+    $priorRunsFixtureRoot = Join-Path $oldReleaseFixture 'runs'
+    New-Item -ItemType Directory -Path $priorRunsFixtureRoot -Force | Out-Null
+    $noPriorRunNamespaces = @(Get-CirBatchExistingRunNamespaces -PriorRequest $takeoverEvidence.prior_request -PriorReleaseRoot $oldReleaseFixture)
+    Assert-True ($noPriorRunNamespaces.Count -eq 0) 'A zero-science release must have no run namespace for any task in its immutable request.'
+    $unexpectedPriorRun = Join-Path $priorRunsFixtureRoot 'run_fixture_second'
+    New-Item -ItemType Directory -Path $unexpectedPriorRun -Force | Out-Null
+    $priorRunNamespaces = @(Get-CirBatchExistingRunNamespaces -PriorRequest $takeoverEvidence.prior_request -PriorReleaseRoot $oldReleaseFixture)
+    Assert-True ($priorRunNamespaces.Count -eq 1 -and $priorRunNamespaces[0] -eq $unexpectedPriorRun) 'Any previous task output namespace, not only the first failed task, must block takeover.'
+
+    $reservationRootFixture = Join-Path $batchFixtureRoot 'cir_batch_reservations'
+    New-Item -ItemType Directory -Path $reservationRootFixture -Force | Out-Null
+    $script:BatchLogRoot = Join-Path $batchFixtureRoot 'batch_log_root'
+    New-Item -ItemType Directory -Path $script:BatchLogRoot -Force | Out-Null
+    $script:ProjectRoot = $batchFixtureRoot
+    $cohortReservationRoot = Join-Path $script:BatchLogRoot 'cir_batch_reservations'
+    New-Item -ItemType Directory -Path $cohortReservationRoot -Force | Out-Null
+    $priorReservationPathFixture = Join-Path $cohortReservationRoot "$cohortFixtureSha.json"
+    [IO.File]::WriteAllText($priorReservationPathFixture, '{"schema_version":1,"cohort_sha256":"' + $cohortFixtureSha + '","release_root":"' + $oldReleaseFixture.Replace('\','\\') + '","request_sha256":"' + $oldRequestFixtureSha + '"}', [Text.UTF8Encoding]::new($false))
+    $priorReservationHashBefore = (Get-FileHash -LiteralPath $priorReservationPathFixture -Algorithm SHA256).Hash.ToLowerInvariant()
+    $takeoverEvidence.reservation_sha256 = $priorReservationHashBefore
+    $takeoverRequest.batch_reservation_supersession.prior_reservation_path = Get-RelativeProjectPath $priorReservationPathFixture
+    $takeoverRequest.batch_reservation_supersession.prior_reservation_sha256 = $priorReservationHashBefore
+    $takeoverRequestSha = '4' * 64
+    $script:takeoverEvidence = $takeoverEvidence
+    function Get-CirBatchReservationSupersessionEvidence { param($Request) return $script:takeoverEvidence }
+    $batchReservationAst = @($testAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'New-CirBatchLaunchReservation' }, $true))
+    Assert-True ($batchReservationAst.Count -eq 1) 'The batch coordinator must use one testable atomic cohort reservation helper.'
+    . ([scriptblock]::Create($batchReservationAst[0].Extent.Text))
+    $newReservationPath = New-CirBatchLaunchReservation -Request $takeoverRequest -RequestSha256 $takeoverRequestSha
+    Assert-True ((Test-Path -LiteralPath $newReservationPath -PathType Leaf) -and
+        ([IO.Path]::GetFullPath($newReservationPath) -ne [IO.Path]::GetFullPath($priorReservationPathFixture))) 'An authorized takeover must create independent reservation evidence without replacing the prior file.'
+    $newReservation = Get-Content -LiteralPath $newReservationPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    Assert-True ($newReservation.request_sha256 -eq $takeoverRequestSha -and
+        $newReservation.supersedes_reservation_path -eq $takeoverRequest.batch_reservation_supersession.prior_reservation_path -and
+        $newReservation.supersedes_reservation_sha256 -eq $priorReservationHashBefore) 'The new reservation must pin and point to the exact preserved prior reservation.'
+    $priorReservationHashAfter = (Get-FileHash -LiteralPath $priorReservationPathFixture -Algorithm SHA256).Hash.ToLowerInvariant()
+    Assert-True ($priorReservationHashAfter -eq $priorReservationHashBefore) 'Reservation takeover must leave the historical reservation bytes unchanged.'
+    $sameReleaseReservationError = Invoke-Captured { New-CirBatchLaunchReservation -Request $takeoverRequest -RequestSha256 $takeoverRequestSha }
+    Assert-True (-not $sameReleaseReservationError.Succeeded -and $sameReleaseReservationError.Error -match 'already|successor|reserved') 'The same immutable release may not reserve twice.'
+    $competingReleaseRequest = $takeoverRequest | ConvertTo-Json -Depth 12 | ConvertFrom-Json
+    $competingReleaseRequestSha = '5' * 64
+    $competingReleaseError = Invoke-Captured { New-CirBatchLaunchReservation -Request $competingReleaseRequest -RequestSha256 $competingReleaseRequestSha }
+    Assert-True (-not $competingReleaseError.Succeeded -and $competingReleaseError.Error -match 'already|successor|reserved') 'Two distinct releases attempting to supersede the same failed batch must not both reserve successfully.'
+
+    $coordinatorLock = Acquire-CirBatchCoordinatorLock -CohortSha256 $cohortFixtureSha -RequestSha256 $takeoverRequestSha -TaskName 'GNSS-CIR-BatchFixture-New'
+    $secondCoordinatorLock = Invoke-Captured { Acquire-CirBatchCoordinatorLock -CohortSha256 $cohortFixtureSha -RequestSha256 $competingReleaseRequestSha -TaskName 'GNSS-CIR-BatchFixture-Competing' }
+    Assert-True (-not $secondCoordinatorLock.Succeeded -and $secondCoordinatorLock.Error -match 'active|owned|lock') 'A second coordinator for the same cohort must not acquire the live OS lock.'
+    Release-CirBatchCoordinatorLock -Lock $coordinatorLock
+    $afterReleaseLock = Acquire-CirBatchCoordinatorLock -CohortSha256 $cohortFixtureSha -RequestSha256 $competingReleaseRequestSha -TaskName 'GNSS-CIR-BatchFixture-AfterRelease'
+    Assert-True ($afterReleaseLock -and (Test-Path -LiteralPath $afterReleaseLock.path -PathType Leaf)) 'Disposing a completed coordinator must release the OS lock without deleting its file.'
+    Release-CirBatchCoordinatorLock -Lock $afterReleaseLock
+    $script:ProjectRoot = $originalProjectRoot
+    $script:BatchLogRoot = Join-Path $originalProjectRoot 'dataset_generation_logs\batch_sage_execution'
 
     $wrongSkipIds = @([string]$expectedSkipIds[0], [string]$batchRequest.tasks[0].run_id, [string]$expectedSkipIds[2])
     $wrongSkipRequest = [pscustomobject]@{
@@ -226,7 +379,7 @@ try {
         tasks = @($frozenTasks | Where-Object { $_.task_status -eq 'NEW_REQUIRED' -and $_.run_id -notin $wrongSkipIds } |
             ForEach-Object { [pscustomobject]@{ run_id = [string]$_.run_id; task_status = 'NEW_REQUIRED' } })
     }
-    $cohortPath = Join-Path $projectRoot 'dataset_generation_logs\channel_modeling\mainline_1023_cohort_v1_20261022T082520Z\cohort.json'
+    $cohortPath = Join-Path $originalProjectRoot 'dataset_generation_logs\channel_modeling\mainline_1023_cohort_v1_20261022T082520Z\cohort.json'
     $cirTasksForSkipTest = Get-Content -LiteralPath $frozenTaskPath -Raw -Encoding UTF8 | ConvertFrom-Json
     $cohortForSkipTest = Get-Content -LiteralPath $cohortPath -Raw -Encoding UTF8 | ConvertFrom-Json
     $wrongPilotSkip = Invoke-Captured {
@@ -501,7 +654,7 @@ try {
 
     "CIR_SINGLE_RUNNER_TESTS=$passes/$passes`nTASK4_RUNNER_TESTS=PASS"
 } catch {
-    Write-Error $_.Exception.Message
+    Write-Error ("{0}`n{1}" -f $_.Exception.Message, $_.ScriptStackTrace)
     if ($failures.Count -eq 0) {
         Write-Output 'CIR_SINGLE_RUNNER_TESTS=0/1'
     } else {
