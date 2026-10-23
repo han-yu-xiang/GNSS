@@ -281,6 +281,38 @@ function Get-SourcePins {
     $pins
 }
 
+function Assert-ReleaseRequestContract {
+    param(
+        [Parameter(Mandatory)]$Request,
+        [Parameter(Mandatory)][System.Collections.IDictionary]$CurrentSourcePins
+    )
+    if ([string]$Request.execution_policy -cne 'MANUAL_ONLY_SERIAL_ONE_TASK_PER_INVOCATION_NO_RETRY') {
+        throw 'Release execution policy must remain manual-only, serial, one-task-per-invocation, and no-retry.'
+    }
+    if ($Request.resume -isnot [bool] -or $Request.resume -ne $false) {
+        throw 'Release resume policy must remain false.'
+    }
+    if (($Request.max_parallel_matlab -isnot [int] -and
+         $Request.max_parallel_matlab -isnot [long]) -or
+        [long]$Request.max_parallel_matlab -ne 1) {
+        throw 'Release max_parallel_matlab policy must remain exactly 1.'
+    }
+    if ($null -eq $Request.source_sha256) {
+        throw 'Release source pin set is missing.'
+    }
+    $expectedPaths = @($CurrentSourcePins.Keys | ForEach-Object { [string]$_ } | Sort-Object -CaseSensitive)
+    $providedPaths = @($Request.source_sha256.PSObject.Properties.Name | Sort-Object -CaseSensitive)
+    if ($expectedPaths.Count -ne $providedPaths.Count -or
+        ($expectedPaths -join "`n") -cne ($providedPaths -join "`n")) {
+        throw 'Release source pin set is incomplete or contains unexpected keys.'
+    }
+    foreach ($sourcePath in $expectedPaths) {
+        if ([string]$CurrentSourcePins[$sourcePath] -cne [string]$Request.source_sha256.$sourcePath) {
+            throw "Source SHA pin changed: $sourcePath"
+        }
+    }
+}
+
 function Get-StorageEventsSince {
     param([Parameter(Mandatory)][DateTimeOffset]$SinceUtc)
     $events = @(Get-WinEvent -FilterHashtable @{ LogName = 'System'; StartTime = $SinceUtc.UtcDateTime } -ErrorAction Stop)
@@ -304,7 +336,7 @@ function Get-LiveExecutionState {
         throw "MATLAB process already active; refusing concurrent CIR execution/validation: $($matlab.Id -join ',')."
     }
     $tasks = @(Get-ScheduledTask -ErrorAction Stop | Where-Object {
-        $_.State -eq 'Running' -and $_.TaskName -match '(?i)(SAGE|CIR)'
+        $_.State -in @('Running','Queued') -and $_.TaskName -match '(?i)(SAGE|CIR)'
     })
     $unexpectedTasks = @($tasks | Where-Object { $_.TaskName -ne $AllowedTaskName })
     if ($unexpectedTasks.Count -gt 0) {
@@ -321,7 +353,7 @@ function Assert-NoOtherExecutionProcess {
     $matlab = @(Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -match '(?i)^matlab' })
     if ($matlab.Count -gt 0) { throw "MATLAB process became active before the worker acquired its execution slot: $($matlab.Id -join ',')." }
     $tasks = @(Get-ScheduledTask -ErrorAction Stop | Where-Object {
-        $_.State -eq 'Running' -and $_.TaskName -match '(?i)(SAGE|CIR)' -and $_.TaskName -ne $AllowedTaskName
+        $_.State -in @('Running','Queued') -and $_.TaskName -match '(?i)(SAGE|CIR)' -and $_.TaskName -ne $AllowedTaskName
     })
     if ($tasks.Count -gt 0) { throw "Another SAGE/CIR task became active before execution: $($tasks.TaskName -join ',')." }
 }
@@ -453,11 +485,7 @@ function Get-ValidatedSnapshot {
         throw 'One or more pinned cohort, manifest, summary, scene-metadata, or Gate-A inputs changed.'
     }
     $currentSources = Get-SourcePins
-    foreach ($sourcePath in $request.source_sha256.psobject.Properties.Name) {
-        if (-not $currentSources.Contains($sourcePath) -or $currentSources[$sourcePath] -ne [string]$request.source_sha256.$sourcePath) {
-            throw "Source SHA pin changed: $sourcePath"
-        }
-    }
+    Assert-ReleaseRequestContract -Request $request -CurrentSourcePins $currentSources
     $cohort = Get-JsonDocument $script:CohortPath
     $cirTasks = Get-JsonDocument $script:CirTasksPath
     $cohortValidation = Get-JsonDocument $script:CohortValidationPath
@@ -748,6 +776,42 @@ function Release-GlobalLock {
     }
 }
 
+function New-CirLaunchReservation {
+    param(
+        [Parameter(Mandatory)][string]$ReleaseRoot,
+        [Parameter(Mandatory)][string]$RunId,
+        [Parameter(Mandatory)][string]$RequestSha256
+    )
+    if ($RunId -notmatch '^run_[A-Za-z0-9_]+$' -or $RequestSha256 -notmatch '^[a-fA-F0-9]{64}$') {
+        throw 'Launch reservation requires a canonical run_id and 64-character request SHA256.'
+    }
+    $launchRoot = Join-Path ([IO.Path]::GetFullPath($ReleaseRoot)) 'launch_records'
+    [IO.Directory]::CreateDirectory($launchRoot) | Out-Null
+    $reservationPath = Join-Path $launchRoot "$RunId.launch_reservation.json"
+    $stream = $null
+    try {
+        $stream = [IO.File]::Open($reservationPath, [IO.FileMode]::CreateNew,
+            [IO.FileAccess]::Write, [IO.FileShare]::None)
+        $record = [ordered]@{
+            schema_version = 1
+            run_id = $RunId
+            request_sha256 = $RequestSha256.ToLowerInvariant()
+            reserved_utc = [DateTimeOffset]::UtcNow.ToString('o')
+            reservation_process_id = $PID
+            automatic_retry = $false
+        }
+        $json = ConvertTo-Json -InputObject $record -Depth 4
+        $bytes = [System.Text.UTF8Encoding]::new($false).GetBytes($json + [Environment]::NewLine)
+        $stream.Write($bytes, 0, $bytes.Length)
+        $stream.Flush($true)
+    } catch [IO.IOException] {
+        throw "CIR launch already reserved or reservation could not be created; refusing duplicate/retry: $reservationPath. $($_.Exception.Message)"
+    } finally {
+        if ($null -ne $stream) { $stream.Dispose() }
+    }
+    $reservationPath
+}
+
 function Register-WorkerTask {
     param([Parameter(Mandatory)][string]$WorkerMode, [Parameter(Mandatory)][string]$RequestPath, [Parameter(Mandatory)][string]$RequestHash, [Parameter(Mandatory)][string]$TargetRunId)
     $currentUser = [Security.Principal.WindowsIdentity]::GetCurrent().Name
@@ -785,8 +849,13 @@ function Invoke-ExecuteRequest {
         throw 'The latest validation report does not authorize this exact request/run.'
     }
     Assert-PilotSequenceReady $validated.request $RunId
-    if (@(Get-ScheduledTask -ErrorAction Stop | Where-Object { $_.State -eq 'Running' -and $_.TaskName -match '(?i)(SAGE|CIR)' }).Count -gt 0) {
+    if (@(Get-ScheduledTask -ErrorAction Stop | Where-Object { $_.State -in @('Running','Queued') -and $_.TaskName -match '(?i)(SAGE|CIR)' }).Count -gt 0) {
         throw 'Another SAGE/CIR scheduled task is active; refusing to queue a pilot.'
+    }
+    $null = New-CirLaunchReservation -ReleaseRoot $validated.request.release_root `
+        -RunId $RunId -RequestSha256 $validated.request_sha256
+    if (@(Get-ScheduledTask -ErrorAction Stop | Where-Object { $_.State -in @('Running','Queued') -and $_.TaskName -match '(?i)(SAGE|CIR)' }).Count -gt 0) {
+        throw 'Another SAGE/CIR scheduled task became active after launch reservation; reservation is preserved and the pilot will not be retried.'
     }
     $task = Register-WorkerTask 'ExecuteWorker' ([IO.Path]::GetFullPath($RequestManifest)) $validated.request_sha256 $RunId
     $record = [ordered]@{

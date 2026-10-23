@@ -89,6 +89,40 @@ try {
     Assert-True ($request.resume -eq $false -and $request.max_parallel_matlab -eq 1) 'Release policy must be fresh, serial, and non-resuming.'
     Assert-True ($request.baseline_existing_pilot.run_id -eq 'run_20261003_F1023_V70_D0117_P2_G28_ch1') 'The frozen G28/ch1 pilot must be bound as read-only baseline evidence.'
     Assert-True ($request.baseline_existing_pilot.psobject.Properties.Name -notcontains 'raw_iq_sha256') 'The existing baseline must not introduce a raw-IQ content hash.'
+
+    $missingSourcePinRequest = $request | ConvertTo-Json -Depth 16 | ConvertFrom-Json
+    $missingSourcePinRequest.source_sha256.PSObject.Properties.Remove('scripts/channel_modeling/validate_gnss_code_domain_cir.m')
+    [System.IO.File]::WriteAllText($temporaryRequest,
+        ($missingSourcePinRequest | ConvertTo-Json -Depth 16) + [Environment]::NewLine,
+        [System.Text.UTF8Encoding]::new($false))
+    $missingSourcePinHash = (Get-FileHash -LiteralPath $temporaryRequest -Algorithm SHA256).Hash.ToLowerInvariant()
+    $missingSourcePin = Invoke-Captured {
+        & $scriptPath -ValidateOnly -RequestManifest $temporaryRequest `
+            -ExpectedRequestSha256 $missingSourcePinHash -RunId $pilotRunIds[0]
+    }
+    Assert-True (-not $missingSourcePin.Succeeded) 'ValidateOnly must reject a request that omits one required source SHA pin even when its request hash is recomputed.'
+    Assert-True ($missingSourcePin.Error -match 'source.*pin|pin.*set') 'An incomplete source-pin set must report the provenance-contract failure.'
+
+    foreach ($policyMutation in @(
+        [pscustomobject]@{ Name = 'execution_policy'; Value = 'AUTOMATIC_RETRY_ALLOWED'; ErrorPattern = 'execution policy' },
+        [pscustomobject]@{ Name = 'resume'; Value = $true; ErrorPattern = 'resume' },
+        [pscustomobject]@{ Name = 'max_parallel_matlab'; Value = 2; ErrorPattern = 'parallel' },
+        [pscustomobject]@{ Name = 'max_parallel_matlab'; Value = $true; ErrorPattern = 'parallel' }
+    )) {
+        $mutatedPolicyRequest = $request | ConvertTo-Json -Depth 16 | ConvertFrom-Json
+        $mutatedPolicyRequest.($policyMutation.Name) = $policyMutation.Value
+        [System.IO.File]::WriteAllText($temporaryRequest,
+            ($mutatedPolicyRequest | ConvertTo-Json -Depth 16) + [Environment]::NewLine,
+            [System.Text.UTF8Encoding]::new($false))
+        $mutatedPolicyHash = (Get-FileHash -LiteralPath $temporaryRequest -Algorithm SHA256).Hash.ToLowerInvariant()
+        $mutatedPolicy = Invoke-Captured {
+            & $scriptPath -ValidateOnly -RequestManifest $temporaryRequest `
+                -ExpectedRequestSha256 $mutatedPolicyHash -RunId $pilotRunIds[0]
+        }
+        Assert-True (-not $mutatedPolicy.Succeeded) "ValidateOnly must reject altered immutable release policy '$($policyMutation.Name)'."
+        Assert-True ($mutatedPolicy.Error -match $policyMutation.ErrorPattern) "The '$($policyMutation.Name)' policy rejection must identify the violated contract."
+    }
+
     $request.tasks[0].raw_iq_size_bytes = [long]$request.tasks[0].raw_iq_size_bytes + 4
     $tamperedJson = $request | ConvertTo-Json -Depth 16
     [System.IO.File]::WriteAllText($temporaryRequest, $tamperedJson, [System.Text.UTF8Encoding]::new($false))
@@ -158,6 +192,26 @@ try {
     Assert-True ($updatedAudit.schema_version -eq 1 -and
         $updatedAudit.release_request_sha256 -eq ('a' * 64) -and
         $updatedAudit.baseline_readback.status -eq 'PASS') 'Adding final acceptance must preserve preexisting audit fields.'
+
+    $reservationAsts = @($runnerAst.FindAll({
+        param($node)
+        $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+            $node.Name -eq 'New-CirLaunchReservation'
+    }, $true))
+    Assert-True ($reservationAsts.Count -eq 1) 'Each exact run_id must have one atomic durable launch reservation helper.'
+    . ([scriptblock]::Create($reservationAsts[0].Extent.Text))
+    $reservationPath = New-CirLaunchReservation -ReleaseRoot $fixtureRoot `
+        -RunId $pilotRunIds[0] -RequestSha256 $requestHash
+    Assert-True (Test-Path -LiteralPath $reservationPath -PathType Leaf) 'The first launch reservation must create a durable one-shot marker.'
+    $reservation = Get-Content -LiteralPath $reservationPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    Assert-True ($reservation.run_id -eq $pilotRunIds[0] -and
+        $reservation.request_sha256 -eq $requestHash) 'A launch reservation must bind the exact run identity and immutable request hash.'
+    $duplicateReservation = Invoke-Captured {
+        New-CirLaunchReservation -ReleaseRoot $fixtureRoot `
+            -RunId $pilotRunIds[0] -RequestSha256 $requestHash
+    }
+    Assert-True (-not $duplicateReservation.Succeeded -and
+        $duplicateReservation.Error -match 'reserved|duplicate') 'A duplicate or concurrent same-run launch must fail closed without replacing the reservation.'
 
     "CIR_SINGLE_RUNNER_TESTS=$passes/$passes`nTASK4_RUNNER_TESTS=PASS"
 } catch {
