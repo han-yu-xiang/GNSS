@@ -106,7 +106,7 @@ The global Stage2 baseline is evaluated first. An Urban subset model follows. Ur
 
 ## CIR/PDP association contract
 
-The Stage2 path ledger remains keyed by (run_id, window_id, path_id). CIR/PDP features are window-level and use the exact pair (run_id, window_id); window_id alone can collide across runs. Preserve a separate CIR-window feature table and link it to every Stage2 path row by the exact pair. Do not treat replicated window features as independent per-path measurements.
+The Stage2 path ledger remains keyed by (run_id, window_id, path_id). Its window_id values are positive canonical decimal IDs; reject noncanonical aliases such as `01` rather than splitting or coalescing their counts silently. CIR/PDP features are window-level and use the exact pair (run_id, window_id); window_id alone can collide across runs. Preserve a separate CIR-window feature table and link it to every Stage2 path row by the exact pair. Do not treat replicated window features as independent per-path measurements.
 
 Every Stage2 row is retained and receives one explicit state:
 
@@ -116,7 +116,7 @@ Every Stage2 row is retained and receives one explicit state:
 | NO_CIR_CORRESPONDENCE | The exact pair is absent from a run whose task receipt and complete Stage0↔PDP window index both passed; retain the Stage2 row and expose the coverage mismatch |
 | ASSOCIATED_VALIDATED | Exact run_id/window_id exists in the validated Stage0/PDP index for a PASS Task5 run |
 
-A validated index must bind the expected run_id to the task-receipt run_id and HDF5 run_id, require PASS receipt and HDF5 read-back, and have an exact complete Stage0 window_id ↔ PDP window_id sequence/count. A claimed PASS with mismatched identity, duplicates, or an incomplete sequence fails closed. A failed or incomplete run remains UNASSOCIATED; it cannot manufacture NO_CIR_CORRESPONDENCE. Task5 production failures remain visible and cannot be repaired by this helper. No CIR payload is read in Task7 preparation.
+A validated index must bind the expected run_id to the task-receipt run_id and HDF5 run_id, require PASS receipt and HDF5 read-back, and have an exact complete Stage0 window_id ↔ PDP window_id sequence/count. Window IDs must be positive canonical decimal values. A claimed PASS with mismatched identity, aliases/duplicates, or an incomplete sequence fails closed. A failed or incomplete run remains UNASSOCIATED; it cannot manufacture NO_CIR_CORRESPONDENCE. Task5 production failures remain visible and cannot be repaired by this helper. No CIR payload is read in Task7 preparation.
 
 ## Non-goals and gates
 

@@ -46,6 +46,13 @@ class MainlineStage2ModelPrepTests(unittest.TestCase):
                 ]
             )
 
+    def test_mpc_counts_reject_nonpositive_or_noncanonical_window_ids(self):
+        for window_id in (0, "0", -1, "-1", "NaN", "1.5", "abc", "01"):
+            with self.subTest(window_id=window_id), self.assertRaisesRegex(ValueError, "window_id"):
+                mpc_counts_by_selected_window(
+                    [{"run_id": "run-a", "window_id": window_id, "path_id": "1", "is_multipath": "0"}]
+                )
+
     def test_loso_keeps_every_scene_wholly_in_one_fold(self):
         rows = [
             {"scene_id": "scene-b", "run_id": "b1", "window_id": "1"},
@@ -68,9 +75,20 @@ class MainlineStage2ModelPrepTests(unittest.TestCase):
 
     def test_loso_requires_two_scenes_and_nonempty_scene_ids(self):
         with self.assertRaisesRegex(ValueError, "two"):
-            leave_one_scene_out_folds([{"scene_id": "only"}])
+            leave_one_scene_out_folds([{"run_id": "run-a", "scene_id": "only"}])
         with self.assertRaisesRegex(ValueError, "scene_id"):
-            leave_one_scene_out_folds([{"scene_id": "a"}, {"scene_id": ""}])
+            leave_one_scene_out_folds(
+                [{"run_id": "run-a", "scene_id": "a"}, {"run_id": "run-b", "scene_id": ""}]
+            )
+
+    def test_loso_rejects_conflicting_scene_labels_for_one_run(self):
+        rows = [
+            {"scene_id": "scene-a", "run_id": "run-1"},
+            {"scene_id": "scene-b", "run_id": "run-1"},
+            {"scene_id": "scene-b", "run_id": "run-2"},
+        ]
+        with self.assertRaisesRegex(ValueError, "multiple scene_id"):
+            leave_one_scene_out_folds(rows)
 
     def test_only_fully_validated_matching_window_index_is_trusted(self):
         evidence = [
@@ -118,6 +136,20 @@ class MainlineStage2ModelPrepTests(unittest.TestCase):
         duplicated = dict(base, stage0_window_ids=["1", "1"], pdp_window_ids=["1", "1"])
         with self.assertRaisesRegex(ValueError, "duplicate"):
             build_validated_cir_window_index([duplicated])
+
+    def test_pass_index_rejects_noncanonical_window_id_alias(self):
+        record = {
+            "run_id": "run-a",
+            "expected_run_id": "run-a",
+            "task_receipt_run_id": "run-a",
+            "hdf5_run_id": "run-a",
+            "task_receipt_status": "PASS",
+            "hdf5_readback_status": "PASS",
+            "stage0_window_ids": ["1", "01"],
+            "pdp_window_ids": ["1", "01"],
+        }
+        with self.assertRaisesRegex(ValueError, "window_id"):
+            build_validated_cir_window_index([record])
 
     def test_duplicate_run_evidence_is_rejected(self):
         record = {
@@ -174,6 +206,11 @@ class MainlineStage2ModelPrepTests(unittest.TestCase):
             annotate_cir_association([row], set(), {("run-a", "1")})
         with self.assertRaisesRegex(ValueError, "duplicate"):
             annotate_cir_association([row, dict(row)], {"run-a"}, {("run-a", "1")})
+
+    def test_association_rejects_noncanonical_window_id(self):
+        row = {"run_id": "run-a", "window_id": "01", "path_id": "2"}
+        with self.assertRaisesRegex(ValueError, "window_id"):
+            annotate_cir_association([row], {"run-a"}, {("run-a", "1")})
 
 
 if __name__ == "__main__":

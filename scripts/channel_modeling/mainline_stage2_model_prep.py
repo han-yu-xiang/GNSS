@@ -23,6 +23,17 @@ def _required_identity(value: Any, label: str, *, allow_integer: bool = False) -
     return value
 
 
+def _window_identity(value: Any, label: str) -> str:
+    if isinstance(value, int) and not isinstance(value, bool):
+        if value > 0:
+            return str(value)
+    elif isinstance(value, str) and value.isascii() and value.isdecimal():
+        numeric_value = int(value)
+        if numeric_value > 0 and str(numeric_value) == value:
+            return value
+    raise ValueError(f"{label} must be a positive canonical decimal window_id")
+
+
 def _positive_integer(value: Any, label: str) -> int:
     if isinstance(value, bool):
         raise ValueError(f"{label} must be a positive integer")
@@ -51,7 +62,7 @@ def _row_identity(row: Mapping[str, Any], label: str) -> tuple[str, str, int]:
     if not isinstance(row, Mapping):
         raise ValueError(f"{label} must be a mapping row")
     run_id = _required_identity(row.get("run_id"), f"{label}.run_id")
-    window_id = _required_identity(row.get("window_id"), f"{label}.window_id", allow_integer=True)
+    window_id = _window_identity(row.get("window_id"), f"{label}.window_id")
     path_id = _positive_integer(row.get("path_id"), f"{label}.path_id")
     return run_id, window_id, path_id
 
@@ -96,10 +107,15 @@ def leave_one_scene_out_folds(rows: Sequence[Mapping[str, Any]]) -> list[dict[st
     """Build deterministic LOSO folds, keeping all rows from a scene together."""
 
     indices_by_scene: dict[str, list[int]] = defaultdict(list)
+    scene_by_run: dict[str, str] = {}
     for index, row in enumerate(rows):
         if not isinstance(row, Mapping):
             raise ValueError(f"row {index + 1} must be a mapping row")
+        run_id = _required_identity(row.get("run_id"), f"row {index + 1}.run_id")
         scene_id = _required_identity(row.get("scene_id"), f"row {index + 1}.scene_id")
+        prior_scene = scene_by_run.setdefault(run_id, scene_id)
+        if prior_scene != scene_id:
+            raise ValueError(f"run_id {run_id!r} has multiple scene_id labels")
         indices_by_scene[scene_id].append(index)
 
     ordered_scenes = sorted(indices_by_scene)
@@ -125,7 +141,7 @@ def _window_id_sequence(value: Any, label: str) -> tuple[str, ...]:
     if isinstance(value, (str, bytes)) or not isinstance(value, Sequence):
         raise ValueError(f"{label} must be an ordered window-ID sequence")
     result = tuple(
-        _required_identity(item, f"{label}[{index}]", allow_integer=True)
+        _window_identity(item, f"{label}[{index}]")
         for index, item in enumerate(value)
     )
     if not result:
@@ -197,7 +213,7 @@ def annotate_cir_association(
         if not isinstance(key, tuple) or len(key) != 2:
             raise ValueError("validated window keys must be (run_id, window_id) tuples")
         run_id = _required_identity(key[0], "validated window key run_id")
-        window_id = _required_identity(key[1], "validated window key window_id", allow_integer=True)
+        window_id = _window_identity(key[1], "validated window key window_id")
         if run_id not in trusted_runs:
             raise ValueError(f"window key references a not validated run: {run_id!r}")
         trusted_window_keys.add((run_id, window_id))

@@ -39,12 +39,12 @@
 - Modify: `docs/GNSS_SAGE_ENGINEERING_HANDOFF_CURRENT.md` (append one dated Task 7 preparation status only)
 
 **Interfaces:**
-- `mpc_counts_by_selected_window(rows) -> dict[tuple[str, str], int]`: count `is_multipath` rows only for unique represented `(run_id, window_id)` pairs; reject duplicate path identities and malformed rows.
-- `leave_one_scene_out_folds(rows) -> list[dict]`: return deterministic scene-keyed train/test row-index lists; every row in the held scene is test-only; require at least two nonempty scenes.
+- `mpc_counts_by_selected_window(rows) -> dict[tuple[str, str], int]`: count `is_multipath` rows only for unique represented `(run_id, window_id)` pairs; require positive canonical decimal window IDs; reject duplicate path identities and malformed rows.
+- `leave_one_scene_out_folds(rows) -> list[dict]`: return deterministic scene-keyed train/test row-index lists; every row in the held scene is test-only; require at least two nonempty scenes and one consistent scene label per run_id.
 - `build_validated_cir_window_index(run_evidence) -> tuple[set[str], set[tuple[str, str]]]`: trust a run only when expected, receipt, and HDF5 run IDs agree; task receipt and HDF5 read-back are PASS; and Stage0/PDP window ID sequences match exactly with unique IDs. A purported PASS with mismatched identity or sequences raises an error.
 - `annotate_cir_association(rows, validated_runs, validated_window_keys) -> list[dict]`: return a copy of every row, preserving order, with `UNASSOCIATED`, `NO_CIR_CORRESPONDENCE`, or `ASSOCIATED_VALIDATED` based only on exact run/window identity.
 
-- [ ] **Step 1: Write synthetic tests first** for selected-window-only counts (including represented zero-MPC window), duplicate/malformed identity rejection, scene-atomic LOSO, exact cross-run window-key isolation, all three CIR states, invalid PASS index rejection, and row/order preservation.
+- [ ] **Step 1: Write synthetic tests first** for selected-window-only counts (including represented zero-MPC window), duplicate/malformed/noncanonical identity rejection, scene-atomic LOSO and conflicting run/scene labels, exact cross-run window-key isolation, all three CIR states, invalid PASS index rejection, and row/order preservation.
 - [ ] **Step 2: Run the focused test module** and confirm it fails because the new functions do not exist.
 - [ ] **Step 3: Implement the minimal pure-standard-library helpers** with explicit input validation and no filesystem or HDF5 access.
 - [ ] **Step 4: Run the focused test module** and confirm all synthetic tests pass.
