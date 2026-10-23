@@ -286,7 +286,8 @@ function Assert-ReleaseRequestContract {
         [Parameter(Mandatory)]$Request,
         [Parameter(Mandatory)][System.Collections.IDictionary]$CurrentSourcePins
     )
-    if ([string]$Request.execution_policy -cne 'MANUAL_ONLY_SERIAL_ONE_TASK_PER_INVOCATION_NO_RETRY') {
+    if ($Request.execution_policy -isnot [string] -or
+        $Request.execution_policy -cne 'MANUAL_ONLY_SERIAL_ONE_TASK_PER_INVOCATION_NO_RETRY') {
         throw 'Release execution policy must remain manual-only, serial, one-task-per-invocation, and no-retry.'
     }
     if ($Request.resume -isnot [bool] -or $Request.resume -ne $false) {
@@ -307,7 +308,10 @@ function Assert-ReleaseRequestContract {
         throw 'Release source pin set is incomplete or contains unexpected keys.'
     }
     foreach ($sourcePath in $expectedPaths) {
-        if ([string]$CurrentSourcePins[$sourcePath] -cne [string]$Request.source_sha256.$sourcePath) {
+        $requestedPin = $Request.source_sha256.$sourcePath
+        if ($requestedPin -isnot [string] -or
+            $CurrentSourcePins[$sourcePath] -isnot [string] -or
+            $CurrentSourcePins[$sourcePath] -cne $requestedPin) {
             throw "Source SHA pin changed: $sourcePath"
         }
     }
@@ -779,13 +783,14 @@ function Release-GlobalLock {
 function New-CirLaunchReservation {
     param(
         [Parameter(Mandatory)][string]$ReleaseRoot,
+        [Parameter(Mandatory)][string]$ReservationRoot,
         [Parameter(Mandatory)][string]$RunId,
         [Parameter(Mandatory)][string]$RequestSha256
     )
     if ($RunId -notmatch '^run_[A-Za-z0-9_]+$' -or $RequestSha256 -notmatch '^[a-fA-F0-9]{64}$') {
         throw 'Launch reservation requires a canonical run_id and 64-character request SHA256.'
     }
-    $launchRoot = Join-Path ([IO.Path]::GetFullPath($ReleaseRoot)) 'launch_records'
+    $launchRoot = [IO.Path]::GetFullPath($ReservationRoot)
     [IO.Directory]::CreateDirectory($launchRoot) | Out-Null
     $reservationPath = Join-Path $launchRoot "$RunId.launch_reservation.json"
     $stream = $null
@@ -795,6 +800,7 @@ function New-CirLaunchReservation {
         $record = [ordered]@{
             schema_version = 1
             run_id = $RunId
+            release_root = [IO.Path]::GetFullPath($ReleaseRoot)
             request_sha256 = $RequestSha256.ToLowerInvariant()
             reserved_utc = [DateTimeOffset]::UtcNow.ToString('o')
             reservation_process_id = $PID
@@ -853,6 +859,7 @@ function Invoke-ExecuteRequest {
         throw 'Another SAGE/CIR scheduled task is active; refusing to queue a pilot.'
     }
     $null = New-CirLaunchReservation -ReleaseRoot $validated.request.release_root `
+        -ReservationRoot (Join-Path $script:BatchLogRoot 'cir_launch_reservations') `
         -RunId $RunId -RequestSha256 $validated.request_sha256
     if (@(Get-ScheduledTask -ErrorAction Stop | Where-Object { $_.State -in @('Running','Queued') -and $_.TaskName -match '(?i)(SAGE|CIR)' }).Count -gt 0) {
         throw 'Another SAGE/CIR scheduled task became active after launch reservation; reservation is preserved and the pilot will not be retried.'

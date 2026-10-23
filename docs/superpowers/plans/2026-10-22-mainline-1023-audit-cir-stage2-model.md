@@ -90,7 +90,7 @@
 
 - [x] 两个精确 run_id 的 `-ValidateOnly` 均通过，`MATLAB_INVOKED=false`、`RAW_CONTENT_READ=false`；G28/ch1 read-back PASS，旧 HDF5 size/mtime unchanged。详细 report/release evidence 保存于 immutable release root。
 - [x] 冻结名单内选择不同 Urban 场景、不同可用仰角档的 G18/ch2（P1/High）及 G23/ch0（P5/Low）；既有 G28/ch1 只读验收，未重导出或覆盖。
-- [x] 正常 Windows 用户的串行 launcher 分别只执行一次 G18、G23，G23 仅在 G18 所有验收通过后启动。两项均 MATLAB exit0、HDF5/PDP/轴与身份 QA、比较 CSV、独立输出哈希和 per-run receipt 全 PASS；G18 40m32.46s，G23 6m39.49s。没有自动重试。Post-pilot code review 发现的重复启动竞态及请求策略校验缺口已在 runner 中做最小 fail-closed 修复，并新增 red/green regressions；修复版 runner 测试50/50通过。原 pilot release/request/source SHA 和计算结果均未改动；未来新生产必须由新 immutable request 绑定新 runner SHA。
+- [x] 正常 Windows 用户的串行 launcher 分别只执行一次 G18、G23，G23 仅在 G18 所有验收通过后启动。两项均 MATLAB exit0、HDF5/PDP/轴与身份 QA、比较 CSV、独立输出哈希和 per-run receipt 全 PASS；G18 40m32.46s，G23 6m39.49s。没有自动重试。Post-pilot code review 发现的跨 release 重复启动风险及请求策略/JSON 类型校验缺口已在 runner 中做最小 fail-closed 修复：使用 batch 级 run_id 原子 reservation，并严格检查 source pin 键和值类型及固定执行策略；修复版 runner 测试55/55通过。原 pilot release/request/source SHA 和计算结果均未改动；未来新生产必须由新 immutable request 绑定新 runner SHA。
 - [x] 以两项 pilot 的实测 bytes/window 与运行吞吐更新80项剩余预测；含25% margin 的 HDF5 上界149.17 GiB、运行估算94.03h（慢 pilot 情景115.35h），E: 当时408.35 GiB free，可保留100 GiB余量。AGC未知按 relative/un-calibrated 幅度处理。预测和 G23 grid-edge 限制见 pilot acceptance report；此 Gate 不放行批量生产。
 
 **Gate D: PILOTS PASS / BULK HELD (2026-10-23 UTC).** Pilot 验收及当时空间预算通过；E: 的既存 Dirty/Warning 风险仍未验证，且用户明确要求先独立审查 Task 3/4，不启动其余80项。此处只记录样例阶段通过，不表示批量 CIR 生产获准。

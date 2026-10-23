@@ -103,8 +103,23 @@ try {
     Assert-True (-not $missingSourcePin.Succeeded) 'ValidateOnly must reject a request that omits one required source SHA pin even when its request hash is recomputed.'
     Assert-True ($missingSourcePin.Error -match 'source.*pin|pin.*set') 'An incomplete source-pin set must report the provenance-contract failure.'
 
+    $arraySourcePinRequest = $request | ConvertTo-Json -Depth 16 | ConvertFrom-Json
+    $sourcePinKey = 'scripts/channel_modeling/validate_gnss_code_domain_cir.m'
+    $arraySourcePinRequest.source_sha256.$sourcePinKey = @([string]$arraySourcePinRequest.source_sha256.$sourcePinKey)
+    [System.IO.File]::WriteAllText($temporaryRequest,
+        ($arraySourcePinRequest | ConvertTo-Json -Depth 16) + [Environment]::NewLine,
+        [System.Text.UTF8Encoding]::new($false))
+    $arraySourcePinHash = (Get-FileHash -LiteralPath $temporaryRequest -Algorithm SHA256).Hash.ToLowerInvariant()
+    $arraySourcePin = Invoke-Captured {
+        & $scriptPath -ValidateOnly -RequestManifest $temporaryRequest `
+            -ExpectedRequestSha256 $arraySourcePinHash -RunId $pilotRunIds[0]
+    }
+    Assert-True (-not $arraySourcePin.Succeeded) 'ValidateOnly must reject a one-element array where a scalar source SHA is required.'
+    Assert-True ($arraySourcePin.Error -match 'source.*pin|SHA') 'A malformed source-pin value must report its provenance failure.'
+
     foreach ($policyMutation in @(
         [pscustomobject]@{ Name = 'execution_policy'; Value = 'AUTOMATIC_RETRY_ALLOWED'; ErrorPattern = 'execution policy' },
+        [pscustomobject]@{ Name = 'execution_policy'; Value = @('MANUAL_ONLY_SERIAL_ONE_TASK_PER_INVOCATION_NO_RETRY'); ErrorPattern = 'execution policy' },
         [pscustomobject]@{ Name = 'resume'; Value = $true; ErrorPattern = 'resume' },
         [pscustomobject]@{ Name = 'max_parallel_matlab'; Value = 2; ErrorPattern = 'parallel' },
         [pscustomobject]@{ Name = 'max_parallel_matlab'; Value = $true; ErrorPattern = 'parallel' }
@@ -200,18 +215,28 @@ try {
     }, $true))
     Assert-True ($reservationAsts.Count -eq 1) 'Each exact run_id must have one atomic durable launch reservation helper.'
     . ([scriptblock]::Create($reservationAsts[0].Extent.Text))
+    $sharedReservationRoot = Join-Path $fixtureRoot 'global_launch_reservations'
     $reservationPath = New-CirLaunchReservation -ReleaseRoot $fixtureRoot `
-        -RunId $pilotRunIds[0] -RequestSha256 $requestHash
+        -ReservationRoot $sharedReservationRoot -RunId $pilotRunIds[0] -RequestSha256 $requestHash
     Assert-True (Test-Path -LiteralPath $reservationPath -PathType Leaf) 'The first launch reservation must create a durable one-shot marker.'
     $reservation = Get-Content -LiteralPath $reservationPath -Raw -Encoding UTF8 | ConvertFrom-Json
     Assert-True ($reservation.run_id -eq $pilotRunIds[0] -and
-        $reservation.request_sha256 -eq $requestHash) 'A launch reservation must bind the exact run identity and immutable request hash.'
+        $reservation.request_sha256 -eq $requestHash -and
+        $reservation.release_root -eq [IO.Path]::GetFullPath($fixtureRoot)) 'A global launch reservation must bind exact run identity, request hash, and originating release.'
     $duplicateReservation = Invoke-Captured {
         New-CirLaunchReservation -ReleaseRoot $fixtureRoot `
-            -RunId $pilotRunIds[0] -RequestSha256 $requestHash
+            -ReservationRoot $sharedReservationRoot -RunId $pilotRunIds[0] -RequestSha256 $requestHash
     }
     Assert-True (-not $duplicateReservation.Succeeded -and
         $duplicateReservation.Error -match 'reserved|duplicate') 'A duplicate or concurrent same-run launch must fail closed without replacing the reservation.'
+    $secondReleaseRoot = Join-Path $fixtureRoot 'second_release_root'
+    New-Item -ItemType Directory -Path $secondReleaseRoot -Force | Out-Null
+    $crossReleaseReservation = Invoke-Captured {
+        New-CirLaunchReservation -ReleaseRoot $secondReleaseRoot `
+            -ReservationRoot $sharedReservationRoot -RunId $pilotRunIds[0] -RequestSha256 $requestHash
+    }
+    Assert-True (-not $crossReleaseReservation.Succeeded -and
+        $crossReleaseReservation.Error -match 'reserved|duplicate') 'The same run_id must not be launched concurrently from a second immutable release root.'
 
     "CIR_SINGLE_RUNNER_TESTS=$passes/$passes`nTASK4_RUNNER_TESTS=PASS"
 } catch {
