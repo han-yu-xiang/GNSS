@@ -14,6 +14,7 @@ import hashlib
 import json
 import math
 import re
+import subprocess
 import sys
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
@@ -33,6 +34,8 @@ from scripts.channel_modeling.mainline_stage2_geometry import (  # noqa: E402
     parse_checksum_valid_gps_gsv_files,
     summarize_geometry_coverage,
 )
+from scripts.channel_modeling import mainline_stage2_geometry as geometry_module  # noqa: E402
+from scripts.event_database import align_modeling_context as time_alignment_module  # noqa: E402
 from scripts.event_database.align_modeling_context import (  # noqa: E402
     GPS_UTC_LEAP_SECONDS,
     first_rinex_record_date,
@@ -41,6 +44,7 @@ from scripts.event_database.align_modeling_context import (  # noqa: E402
     sha256_file,
 )
 from scripts.preprocessing.satellite_geometry import parse_rinex_nav_prns  # noqa: E402
+from scripts.preprocessing import satellite_geometry as satellite_geometry_module  # noqa: E402
 
 
 COHORT_REL = Path(
@@ -58,6 +62,9 @@ RUN_INDEX_REL = Path(
 MAINLINE_COHORT_ID = "mainline_1023_model_v1"
 MAINLINE_COHORT_TASK_COUNT = 83
 MAINLINE_STAGE2_LEDGER_SHA256 = "bbb8cac8338194b5527e00812a6547129a58466cc5fdd7db36b8c44bba01e551"
+MAX_TIME_ORIGIN_RESIDUAL_SECONDS = 0.5
+OUTPUT_NAMESPACE_PARENT = Path("dataset_generation_logs/channel_modeling")
+OUTPUT_NAMESPACE_PATTERN = re.compile(r"^mainline_1023_geometry_route_[0-9]{8}T[0-9]{6}Z$")
 OUTPUT_FILES = (
     "geometry_window_overlay.csv",
     "geometry_coverage_summary.csv",
@@ -153,6 +160,46 @@ def _relative_file(root: Path, value: Any, *, label: str) -> Path:
 
 def _project_rel(root: Path, path: Path) -> str:
     return path.resolve().relative_to(root.resolve()).as_posix()
+
+
+def _validate_runtime_code_root(code_root: Path) -> None:
+    resolved_root = code_root.resolve(strict=True)
+    if resolved_root != REPO_ROOT.resolve(strict=True):
+        raise ValueError("code_root must match the code worktree executing this audit")
+    loaded_modules = {
+        "geometry helper": geometry_module,
+        "GPS time helper": time_alignment_module,
+        "NMEA/RINEX parser": satellite_geometry_module,
+    }
+    for label, module in loaded_modules.items():
+        module_path = Path(module.__file__).resolve(strict=True)
+        try:
+            module_path.relative_to(resolved_root)
+        except ValueError as error:
+            raise ValueError(f"loaded {label} is outside the declared code worktree") from error
+
+
+def _validate_private_output_namespace(project_root: Path, output_dir: Path) -> Path:
+    root = project_root.resolve(strict=True)
+    output = output_dir.resolve(strict=False)
+    try:
+        relative = output.relative_to(root)
+    except ValueError as error:
+        raise ValueError("output namespace must be inside project root") from error
+    if (
+        relative.parent != OUTPUT_NAMESPACE_PARENT
+        or not OUTPUT_NAMESPACE_PATTERN.fullmatch(relative.name)
+    ):
+        raise ValueError("output must use a timestamped mainline_1023_geometry_route private namespace")
+    ignored = subprocess.run(
+        ["git", "-C", str(root), "check-ignore", "--no-index", "--quiet", "--", relative.as_posix()],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if ignored.returncode != 0:
+        raise ValueError("output namespace is not ignored by Git")
+    return output
 
 
 def _audit_path(project_root: Path, code_root: Path, path: Path) -> tuple[str, str]:
@@ -341,9 +388,16 @@ def _timestamp_origin_audit(
         center = datetime.fromtimestamp(
             median(value.timestamp() for value in origins), tz=timezone.utc
         )
+        max_residual = max_time_origin_error_seconds(origins, center)
+        if max_residual > MAX_TIME_ORIGIN_RESIDUAL_SECONDS:
+            raise ValueError(
+                f"GPS time-origin residual exceeds {MAX_TIME_ORIGIN_RESIDUAL_SECONDS}s for {scene_id}"
+            )
         result[scene_id] = {
             "recording_time_origin_utc_median": center.isoformat(timespec="milliseconds").replace("+00:00", "Z"),
-            "max_time_origin_residual_seconds": max_time_origin_error_seconds(origins, center),
+            "max_time_origin_residual_seconds": max_residual,
+            "maximum_allowed_time_origin_residual_seconds": MAX_TIME_ORIGIN_RESIDUAL_SECONDS,
+            "gps_time_alignment_status": "VERIFIED",
             "time_origin_sample_count": len(origins),
         }
     return result
@@ -360,12 +414,9 @@ def _write_csv(path: Path, fields: Sequence[str], rows: Iterable[Mapping[str, An
 def _audit(root: Path, code_root: Path, output_dir: Path) -> dict[str, Any]:
     root = root.resolve(strict=True)
     code_root = code_root.resolve(strict=True)
-    output_resolved = output_dir.resolve(strict=False)
-    try:
-        output_resolved.relative_to(root)
-    except ValueError as error:
-        raise ValueError("output directory must be inside project root") from error
-    if output_resolved == root or output_resolved.exists():
+    _validate_runtime_code_root(code_root)
+    output_resolved = _validate_private_output_namespace(root, output_dir)
+    if output_resolved.exists():
         raise FileExistsError("output directory must not exist before the audit")
 
     cohort_path = _relative_file(root, COHORT_REL.as_posix(), label="frozen cohort")
@@ -433,11 +484,12 @@ def _audit(root: Path, code_root: Path, output_dir: Path) -> dict[str, Any]:
             "role": f"cohort_source_pin:{name}",
         }
     runner_path = Path(__file__).resolve(strict=True)
-    geometry_module_path = runner_path.with_name("mainline_stage2_geometry.py").resolve(strict=True)
     software_pins: dict[str, dict[str, Any]] = {}
     for name, path in (
         ("audit_runner", runner_path),
-        ("geometry_identity_helper", geometry_module_path),
+        ("geometry_identity_helper", Path(geometry_module.__file__).resolve(strict=True)),
+        ("gps_time_helper", Path(time_alignment_module.__file__).resolve(strict=True)),
+        ("nmea_rinex_parser", Path(satellite_geometry_module.__file__).resolve(strict=True)),
     ):
         root_label, relative = _audit_path(root, code_root, path)
         digest = sha256_file(path)
@@ -618,6 +670,8 @@ def _audit(root: Path, code_root: Path, output_dir: Path) -> dict[str, Any]:
             "elevation_source": "checksum-valid active-RMC-timestamped GPS GPGSV only",
             "identity": "same scene_id and exact GPS PRN; run_id/window_id retained for output identity",
             "timestamp": "Stage0 GPS TOW converted with existing project GPS week/leap-second helper",
+            "time_origin_max_residual_seconds": MAX_TIME_ORIGIN_RESIDUAL_SECONDS,
+            "time_origin_residual_exceeding_limit": "audit fails closed before output creation",
             "missing_windows_preserved": True,
             "rinex_use": "GPS PRN inventory cross-check only; no ephemeris geometry recomputation",
             "coordinate_or_raw_nmea_exported": False,

@@ -18,6 +18,11 @@ from scripts.channel_modeling.mainline_stage2_geometry import (
     parse_checksum_valid_gps_gsv_files,
     summarize_geometry_coverage,
 )
+from scripts.channel_modeling.run_mainline_stage2_geometry_audit import (
+    MAX_TIME_ORIGIN_RESIDUAL_SECONDS,
+    REPO_ROOT,
+    _timestamp_origin_audit,
+)
 
 
 def path_row(
@@ -252,6 +257,45 @@ class MainlineStage2GeometryOverlayTests(unittest.TestCase):
         self.assertEqual(diagnostics["first_valid_rmc_utc"], "2024-04-23T12:00:00.000Z")
         self.assertEqual(counts["G03"], 1)
 
+    def test_conflicting_duplicate_gsv_epoch_fails_closed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "conflict.nmea"
+            path.write_text(
+                "\n".join(
+                    (
+                        checksummed("GPRMC,120000.00,A,4807.038,N,01131.000,E,0.0,0.0,230424,,,A"),
+                        checksummed("GPGSV,1,1,1,03,10,120,40"),
+                        checksummed("GPGSV,1,1,1,03,80,120,40"),
+                    )
+                ) + "\n",
+                encoding="ascii",
+            )
+            with self.assertRaisesRegex(ValueError, "conflicting duplicate.*GSV"):
+                parse_checksum_valid_gps_gsv_files([path], source_root=root)
+
+    def test_identical_duplicate_gsv_epoch_chooses_source_deterministically(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name in ("z_track.nmea", "a_track.nmea"):
+                (root / name).write_text(
+                    "\n".join(
+                        (
+                            checksummed("GPRMC,120000.00,A,4807.038,N,01131.000,E,0.0,0.0,230424,,,A"),
+                            checksummed("GPGSV,1,1,1,03,45,120,40"),
+                        )
+                    ) + "\n",
+                    encoding="ascii",
+                )
+            first, _, _ = parse_checksum_valid_gps_gsv_files(
+                [root / "z_track.nmea", root / "a_track.nmea"], source_root=root
+            )
+            second, _, _ = parse_checksum_valid_gps_gsv_files(
+                [root / "a_track.nmea", root / "z_track.nmea"], source_root=root
+            )
+        self.assertEqual(first[0].nmea_file, "a_track.nmea")
+        self.assertEqual(second[0].nmea_file, "a_track.nmea")
+
     def test_overlay_matches_only_same_scene_and_prn_and_preserves_all_windows(self):
         target = datetime(2024, 4, 23, tzinfo=timezone.utc)
         windows = [
@@ -321,12 +365,53 @@ class MainlineStage2GeometryOverlayTests(unittest.TestCase):
             elevation_record(20), elevation_record(21),
         ]
         gap_overlay = build_gsv_window_overlay(
-            [path_row("run-gap", "1", "1")],
-            {("run-gap", "1"): origin + timedelta(seconds=10)},
+            [path_row("run-gap", "1", "1"), path_row("run-gap", "2", "1")],
+            {
+                ("run-gap", "1"): origin + timedelta(seconds=1.25),
+                ("run-gap", "2"): origin + timedelta(seconds=19.75),
+            },
             {("scene-a", "G03"): gap_records},
         )
-        self.assertEqual(gap_overlay[0]["status"], "MISSING")
-        self.assertEqual(gap_overlay[0]["missing_reason"], "GSV_GAP_OR_CADENCE_LIMIT")
+        self.assertTrue(all(row["status"] == "MISSING" for row in gap_overlay))
+        self.assertTrue(all(row["missing_reason"] == "GSV_GAP_OR_CADENCE_LIMIT" for row in gap_overlay))
+
+
+class MainlineStage2TimeOriginAuditTests(unittest.TestCase):
+    def test_time_origin_residual_over_limit_fails_closed(self):
+        scene_tasks = {"scene-a": [{"run_id": "run-a"}]}
+        stage0 = {
+            "run-a": [
+                {"window_id": "1", "recording_time_s": "0"},
+                {"window_id": "2", "recording_time_s": "1"},
+            ]
+        }
+        t0 = datetime(2024, 4, 23, tzinfo=timezone.utc)
+        utc = {
+            ("run-a", "1"): t0,
+            ("run-a", "2"): t0 + timedelta(seconds=19),
+        }
+        with self.assertRaisesRegex(ValueError, "time-origin residual.*scene-a"):
+            _timestamp_origin_audit(scene_tasks, stage0, utc)
+
+    def test_measured_subsecond_origin_residual_is_verified(self):
+        scene_tasks = {"scene-a": [{"run_id": "run-a"}]}
+        stage0 = {
+            "run-a": [
+                {"window_id": "1", "recording_time_s": "0"},
+                {"window_id": "2", "recording_time_s": "1"},
+            ]
+        }
+        t0 = datetime(2024, 4, 23, tzinfo=timezone.utc)
+        utc = {
+            ("run-a", "1"): t0,
+            ("run-a", "2"): t0 + timedelta(seconds=1.02304),
+        }
+        audit = _timestamp_origin_audit(scene_tasks, stage0, utc)
+        self.assertEqual(audit["scene-a"]["gps_time_alignment_status"], "VERIFIED")
+        self.assertLessEqual(
+            audit["scene-a"]["max_time_origin_residual_seconds"],
+            MAX_TIME_ORIGIN_RESIDUAL_SECONDS,
+        )
 
     def test_overlay_marks_missing_time_anchor_and_rejects_duplicate_window_identity(self):
         row = path_row("run-a", "1", "1")
@@ -396,14 +481,20 @@ def _write_csv(path: Path, fields: list[str], rows: list[dict[str, object]]) -> 
         writer.writerows(rows)
 
 
+def _initialize_ignored_test_project(root: Path) -> None:
+    subprocess.run(["git", "-C", str(root), "init", "--quiet"], check=True)
+    (root / ".gitignore").write_text("dataset_generation_logs/\n", encoding="utf-8")
+
+
 class MainlineStage2GeometryAuditCliTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name) / "project"
         self.root.mkdir()
+        _initialize_ignored_test_project(self.root)
         self.code_root = Path(__file__).resolve().parents[3]
-        self.output = self.root / "dataset_generation_logs/channel_modeling/geometry_test"
+        self.output = self.root / "dataset_generation_logs/channel_modeling/mainline_1023_geometry_route_20261024T000000Z"
         self.script = Path(__file__).resolve().parents[1] / "run_mainline_stage2_geometry_audit.py"
         self._build_fixture()
 
@@ -572,6 +663,27 @@ class MainlineStage2GeometryAuditCliTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertFalse(self.output.exists())
 
+    def test_output_must_use_timestamped_private_namespace_and_be_git_ignored(self):
+        self.output = self.root / "docs/review-output"
+        result = self._run()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("timestamped mainline_1023_geometry_route", result.stderr)
+        self.assertFalse(self.output.exists())
+
+        self.output = self.root / "dataset_generation_logs/channel_modeling/mainline_1023_geometry_route_20261024T000000Z"
+        (self.root / ".gitignore").write_text("reports/\n", encoding="utf-8")
+        result = self._run()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("not ignored by Git", result.stderr)
+        self.assertFalse(self.output.exists())
+
+    def test_code_root_must_be_the_executing_worktree(self):
+        self.code_root = self.root
+        result = self._run()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("code_root must match", result.stderr)
+        self.assertFalse(self.output.exists())
+
     def test_noncanonical_channel_value_fails_closed_before_output(self):
         cohort_path = self.root / "dataset_generation_logs/channel_modeling/mainline_1023_cohort_v1_20261022T082520Z/cohort.json"
         cohort = json.loads(cohort_path.read_text(encoding="utf-8"))
@@ -668,6 +780,9 @@ class MainlineStage2GeometryAuditCliTests(unittest.TestCase):
             audit["audit_software"]["audit_runner"]["sha256"],
             _sha256(self.script),
         )
+        for name in ("geometry_identity_helper", "gps_time_helper", "nmea_rinex_parser"):
+            self.assertEqual(audit["audit_software"][name]["root"], "code_worktree")
+            self.assertEqual(len(audit["audit_software"][name]["sha256"]), 64)
 
 
 if __name__ == "__main__":

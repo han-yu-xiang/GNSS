@@ -265,6 +265,7 @@ def parse_checksum_valid_gps_gsv_files(
 
     root = source_root.resolve()
     observations: dict[tuple[datetime, str], ElevationRecord] = {}
+    conflicting_observations: set[tuple[datetime, str]] = set()
     prn_counts: Counter[str] = Counter()
     diagnostics = Counter(
         {
@@ -280,6 +281,7 @@ def parse_checksum_valid_gps_gsv_files(
             "ignored_non_gps_gsv_count": 0,
             "gps_gsv_untimestamped_count": 0,
             "duplicate_gsv_observation_count": 0,
+            "conflicting_gsv_observation_count": 0,
         }
     )
     first_rmc_utc: datetime | None = None
@@ -352,9 +354,7 @@ def parse_checksum_valid_gps_gsv_files(
                     except ValueError:
                         continue
                     observation_key = (current_time, prn)
-                    if observation_key in observations:
-                        diagnostics["duplicate_gsv_observation_count"] += 1
-                    observations[observation_key] = ElevationRecord(
+                    record = ElevationRecord(
                         utc_time=current_time,
                         prn=prn,
                         elevation_deg=elevation,
@@ -367,6 +367,36 @@ def parse_checksum_valid_gps_gsv_files(
                         nmea_file=source_identity,
                         raw_gsv_sentence=raw_line.strip(),
                     )
+                    if observation_key in conflicting_observations:
+                        continue
+                    existing = observations.get(observation_key)
+                    if existing is not None:
+                        diagnostics["duplicate_gsv_observation_count"] += 1
+                        if (
+                            existing.elevation_deg != record.elevation_deg
+                            or existing.azimuth_deg != record.azimuth_deg
+                        ):
+                            diagnostics["conflicting_gsv_observation_count"] += 1
+                            conflicting_observations.add(observation_key)
+                            observations.pop(observation_key, None)
+                            continue
+                        existing_order = (
+                            existing.nmea_file.casefold(),
+                            existing.gsv_message_number,
+                            existing.raw_gsv_sentence,
+                        )
+                        record_order = (
+                            record.nmea_file.casefold(),
+                            record.gsv_message_number,
+                            record.raw_gsv_sentence,
+                        )
+                        if record_order < existing_order:
+                            observations[observation_key] = record
+                        continue
+                    observations[observation_key] = record
+
+    if conflicting_observations:
+        raise ValueError("conflicting duplicate GPS GSV observation epochs detected")
 
     records = sorted(
         observations.values(),
@@ -485,8 +515,9 @@ def build_gsv_window_overlay(
     """Match Stage2 windows to actual same-scene, same-PRN GSV observations.
 
     Matching uses a nearest-observation Voronoi cell. Cells are split at gaps
-    over five seconds; endpoint extension is limited to half the median cadence
-    within that component. The caller's tolerance is a further ceiling.
+    over five seconds; no endpoint padding is allowed into such a gap. Outside
+    gaps, endpoint extension is limited to half the median component cadence
+    and the caller's tolerance.
     """
 
     if (
@@ -547,6 +578,10 @@ def build_gsv_window_overlay(
             base["missing_reason"] = "NO_TARGET_PRN_GSV"
             output.append(base)
             continue
+        if _inside_long_gsv_gap(target, cells):
+            base["missing_reason"] = "GSV_GAP_OR_CADENCE_LIMIT"
+            output.append(base)
+            continue
 
         candidate = min(
             cells,
@@ -587,8 +622,6 @@ def build_gsv_window_overlay(
                     "status": "GSV_MATCHED",
                 }
             )
-        elif _inside_long_gsv_gap(target, cells):
-            base["missing_reason"] = "GSV_GAP_OR_CADENCE_LIMIT"
         elif not in_cell:
             base["missing_reason"] = "NO_TEMPORAL_OVERLAP"
         elif absolute_delta > cadence_limit:

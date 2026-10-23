@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 import hashlib
+import subprocess
 import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
@@ -17,6 +18,8 @@ from scripts.channel_modeling.mainline_stage2_trajectory import (
     summarize_spatial_dependence,
 )
 from scripts.channel_modeling.run_mainline_stage2_trajectory_audit import (
+    REPO_ROOT,
+    _current_route_software_pins,
     _audit,
     _render_sanitized_report,
     _verify_geometry_input_pins,
@@ -216,6 +219,41 @@ class MainlineStage2TrajectoryRmcTests(unittest.TestCase):
             "ordered.nmea:000001", "ordered.nmea:000002", "ordered.nmea:000005"
         ])
 
+    def test_rejected_rmc_records_break_route_and_window_matching(self):
+        rejected_records = (
+            rmc("120001.00", status="V"),
+            rmc("120001.00", corrupt=True),
+            rmc("120001.00", latitude="9960.000"),
+        )
+        for rejected in rejected_records:
+            with self.subTest(rejected=rejected[:12]):
+                fixes = self.parse_lines(
+                    "barrier.nmea",
+                    [rmc("120000.00"), rejected, rmc("120002.00")],
+                )
+                segmented = split_trajectory_components(fixes)
+                overlay = build_trajectory_window_overlay(
+                    [stage2_window("run-a", "1", "scene-a")],
+                    {("run-a", "1"): datetime(2024, 4, 23, 12, 0, 1, tzinfo=timezone.utc)},
+                    {"scene-a": segmented},
+                )
+                self.assertEqual(overlay[0]["position_status"], "POSITION_MISSING")
+                self.assertEqual(overlay[0]["missing_reason"], "WITHIN_ROUTE_DISCONTINUITY_GAP")
+
+    def test_rejected_rmc_after_last_fix_blocks_endpoint_extension(self):
+        fixes = self.parse_lines(
+            "terminal-barrier.nmea",
+            [rmc("120000.00"), rmc("120001.00", status="V")],
+        )
+        segmented = split_trajectory_components(fixes)
+        overlay = build_trajectory_window_overlay(
+            [stage2_window("run-a", "1", "scene-a")],
+            {("run-a", "1"): datetime(2024, 4, 23, 12, 0, 1, tzinfo=timezone.utc)},
+            {"scene-a": segmented},
+        )
+        self.assertEqual(overlay[0]["position_status"], "POSITION_MISSING")
+        self.assertEqual(overlay[0]["missing_reason"], "REJECTED_RMC_BARRIER")
+
     def test_returns_receiver_speed_in_knots_and_metres_per_second(self):
         (fix,) = self.parse_lines("speed.nmea", [rmc("120000.00", speed_knots="10.0", course_degrees="359.5")])
 
@@ -358,16 +396,34 @@ class MainlineStage2TrajectoryOverlayTests(unittest.TestCase):
         t0 = datetime(2024, 4, 23, tzinfo=timezone.utc)
         windows = [stage2_window("run-a", "1", "scene-a"), stage2_window("run-a", "2", "scene-a")]
         utc = {
-            ("run-a", "1"): t0 + timedelta(seconds=2.5),
-            ("run-a", "2"): t0 + timedelta(seconds=2.500001),
+            ("run-a", "1"): t0 + timedelta(seconds=0.5),
+            ("run-a", "2"): t0 + timedelta(seconds=0.500001),
         }
-        fixes = {"scene-a": [route_fix("scene-a", "component_0001", 0, 12.5)]}
+        fixes = {
+            "scene-a": [
+                route_fix("scene-a", "component_0001", 0, 12.5),
+                route_fix("scene-a", "component_0001", 5, 37.5),
+            ]
+        }
 
-        overlay = build_trajectory_window_overlay(windows, utc, fixes)
+        overlay = build_trajectory_window_overlay(
+            windows, utc, fixes, max_position_delta_seconds=0.5
+        )
 
         self.assertEqual(overlay[0]["position_status"], "POSITION_MATCHED")
-        self.assertEqual(overlay[0]["position_delta_seconds_abs"], "2.5")
+        self.assertEqual(overlay[0]["position_delta_seconds_abs"], "0.5")
         self.assertEqual(overlay[1]["missing_reason"], "OUTSIDE_POSITION_TOLERANCE")
+
+    def test_position_never_extrapolates_beyond_observed_fix_range(self):
+        t0 = datetime(2024, 4, 23, tzinfo=timezone.utc)
+        windows = [stage2_window("run-a", "1", "scene-a"), stage2_window("run-a", "2", "scene-a")]
+        overlay = build_trajectory_window_overlay(
+            windows,
+            {("run-a", "1"): t0 - timedelta(seconds=2.5), ("run-a", "2"): t0 + timedelta(seconds=2.5)},
+            {"scene-a": [route_fix("scene-a", "component_0001", 0, 0)]},
+        )
+        self.assertTrue(all(row["position_status"] == "POSITION_MISSING" for row in overlay))
+        self.assertTrue(all(row["missing_reason"] == "OUTSIDE_OBSERVED_ROUTE_COVERAGE" for row in overlay))
 
     def test_windows_inside_component_break_gap_are_not_carried_to_either_fix(self):
         t0 = datetime(2024, 4, 23, tzinfo=timezone.utc)
@@ -639,6 +695,46 @@ class MainlineStage2SpatialAggregationTests(unittest.TestCase):
         self.assertTrue(all(row["correlation_range_candidate_m"] is None for row in mpc))
         self.assertTrue(all(row["effective_local_unit_count_candidate"] is None for row in mpc))
 
+    def test_component_normalization_is_order_invariant_and_zero_variance_component_is_ignored(self):
+        metrics = []
+        for component, values, minute in (
+            ("component_0001", [0.0, 0.0, 0.0, 0.0], 0),
+            ("component_0002", [0.0, 1.0, 2.0, 3.0], 1),
+        ):
+            for index, value in enumerate(values):
+                metrics.append(
+                    {
+                        "scene_id": "scene-a",
+                        "run_id": "run-a",
+                        "prn": "G03",
+                        "location_status": "POSITION_MATCHED",
+                        "fix_utc": f"2024-04-23T12:{minute:02d}:0{index}.000Z",
+                        "route_component_id": component,
+                        "route_cumulative_distance_m": float(index),
+                        "position_source_record_id": f"{component}:{index}",
+                        "mean_mpc_count_per_window": value,
+                        "median_excess_delay_chips": None,
+                        "median_doppler_offset_hz": None,
+                        "median_relative_power_db": None,
+                    }
+                )
+
+        forward = summarize_spatial_dependence(metrics, lag_edges_m=(0, 1.5, 3))
+        reversed_order = summarize_spatial_dependence(list(reversed(metrics)), lag_edges_m=(0, 1.5, 3))
+        forward_row = next(
+            row for row in forward
+            if row["metric_name"] == "mean_mpc_count_per_window" and row["lag_lower_m"] == 0
+        )
+        reverse_row = next(
+            row for row in reversed_order
+            if row["metric_name"] == "mean_mpc_count_per_window" and row["lag_lower_m"] == 0
+        )
+        self.assertAlmostEqual(forward_row["mean_scene_normalized_semivariance"], 0.4)
+        self.assertAlmostEqual(
+            forward_row["mean_scene_normalized_semivariance"],
+            reverse_row["mean_scene_normalized_semivariance"],
+        )
+
     def test_scene_block_stable_decay_can_yield_a_candidate_range(self):
         metrics = []
         for scene_number in range(10):
@@ -675,10 +771,11 @@ class MainlineStage2TrajectoryAuditRunnerTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        self.code_root = self.root / "code"
-        self.code_root.mkdir()
-        self.output_dir = self.root / "geometry"
-        self.output_dir.mkdir()
+        subprocess.run(["git", "-C", str(self.root), "init", "--quiet"], check=True)
+        (self.root / ".gitignore").write_text("dataset_generation_logs/\n", encoding="utf-8")
+        self.code_root = REPO_ROOT
+        self.output_dir = self.root / "dataset_generation_logs/channel_modeling/mainline_1023_geometry_route_20261024T000000Z"
+        self.output_dir.mkdir(parents=True)
 
     def test_audit_rejects_missing_geometry_audit(self):
         with self.assertRaisesRegex(ValueError, "geometry alignment audit is missing"):
@@ -698,13 +795,52 @@ class MainlineStage2TrajectoryAuditRunnerTests(unittest.TestCase):
             _audit(self.root, self.code_root, self.output_dir)
         self.assertEqual(route_output.read_text(encoding="utf-8"), "preserve me")
 
+    def test_output_namespace_must_be_timestamped_private_and_git_ignored(self):
+        unsafe = self.root / "docs/review-output"
+        unsafe.mkdir(parents=True)
+        with self.assertRaisesRegex(ValueError, "timestamped mainline_1023_geometry_route"):
+            _audit(self.root, self.code_root, unsafe)
+
+        (self.root / ".gitignore").write_text("reports/\n", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "not ignored by Git"):
+            _audit(self.root, self.code_root, self.output_dir)
+
+    def test_declared_code_root_must_match_loaded_modules(self):
+        other_root = self.root / "other-code"
+        other_root.mkdir()
+        with self.assertRaisesRegex(ValueError, "code_root must match"):
+            _audit(self.root, other_root, self.output_dir)
+
+    def test_route_audit_pins_actual_runner_and_loaded_helpers(self):
+        pins = _current_route_software_pins(REPO_ROOT)
+        expected = {
+            "route_audit_runner": "scripts/channel_modeling/run_mainline_stage2_trajectory_audit.py",
+            "trajectory_helper": "scripts/channel_modeling/mainline_stage2_trajectory.py",
+            "geometry_audit_runner": "scripts/channel_modeling/run_mainline_stage2_geometry_audit.py",
+            "geometry_identity_helper": "scripts/channel_modeling/mainline_stage2_geometry.py",
+            "gps_time_helper": "scripts/event_database/align_modeling_context.py",
+            "nmea_rinex_parser": "scripts/preprocessing/satellite_geometry.py",
+        }
+        self.assertEqual(set(pins), set(expected))
+        for name, path in expected.items():
+            self.assertEqual(pins[name]["root"], "code_worktree")
+            self.assertEqual(pins[name]["path"], path)
+            self.assertEqual(pins[name]["sha256"], hashlib.sha256((REPO_ROOT / path).read_bytes()).hexdigest())
+
     def test_geometry_input_hashes_and_declared_roots_are_enforced(self):
-        code_dir = self.code_root / "scripts" / "channel_modeling"
+        test_code_root = self.root / "code"
+        code_dir = test_code_root / "scripts" / "channel_modeling"
         code_dir.mkdir(parents=True)
         audit_runner = code_dir / "run_mainline_stage2_geometry_audit.py"
         geometry_helper = code_dir / "mainline_stage2_geometry.py"
+        time_helper = test_code_root / "scripts" / "event_database" / "align_modeling_context.py"
+        nmea_parser = test_code_root / "scripts" / "preprocessing" / "satellite_geometry.py"
+        time_helper.parent.mkdir(parents=True)
+        nmea_parser.parent.mkdir(parents=True)
         audit_runner.write_bytes(b"runner")
         geometry_helper.write_bytes(b"helper")
+        time_helper.write_bytes(b"time")
+        nmea_parser.write_bytes(b"nmea")
         project_inputs = [self.root / f"fixture-{index}.csv" for index in range(3)]
         for index, path in enumerate(project_inputs):
             path.write_text(f"fixture-{index}\n", encoding="utf-8")
@@ -723,6 +859,12 @@ class MainlineStage2TrajectoryAuditRunnerTests(unittest.TestCase):
             ),
             "code_worktree/scripts/channel_modeling/mainline_stage2_geometry.py": entry(
                 geometry_helper, "audit_software:geometry_identity_helper"
+            ),
+            "code_worktree/scripts/event_database/align_modeling_context.py": entry(
+                time_helper, "audit_software:gps_time_helper"
+            ),
+            "code_worktree/scripts/preprocessing/satellite_geometry.py": entry(
+                nmea_parser, "audit_software:nmea_rinex_parser"
             ),
             **{
                 f"project_root/{path.name}": entry(path, "fixture")
@@ -746,14 +888,28 @@ class MainlineStage2TrajectoryAuditRunnerTests(unittest.TestCase):
                         "code_worktree/scripts/channel_modeling/mainline_stage2_geometry.py"
                     ]["sha256"],
                 },
+                "gps_time_helper": {
+                    "root": "code_worktree",
+                    "path": "scripts/event_database/align_modeling_context.py",
+                    "sha256": pins[
+                        "code_worktree/scripts/event_database/align_modeling_context.py"
+                    ]["sha256"],
+                },
+                "nmea_rinex_parser": {
+                    "root": "code_worktree",
+                    "path": "scripts/preprocessing/satellite_geometry.py",
+                    "sha256": pins[
+                        "code_worktree/scripts/preprocessing/satellite_geometry.py"
+                    ]["sha256"],
+                },
             },
         }
 
-        verified = _verify_geometry_input_pins(self.root, self.code_root, audit)
-        self.assertEqual(len(verified), 5)
+        verified = _verify_geometry_input_pins(self.root, test_code_root, audit)
+        self.assertEqual(len(verified), 7)
         project_inputs[0].write_text("changed-0\n", encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "SHA-256 mismatch"):
-            _verify_geometry_input_pins(self.root, self.code_root, audit)
+            _verify_geometry_input_pins(self.root, test_code_root, audit)
 
     def test_all_stage2_window_keys_must_reconcile_exactly(self):
         windows = [

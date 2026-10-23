@@ -131,27 +131,31 @@ Add a pure-stdlib Python preparation module with three tested behaviors: derive 
 
 ### 2026-10-24 Task 7 measured-elevation and route audit addendum
 
-The GSV-only overlay and route analysis were run as separate, read-only audits
-against the same frozen 83-task cohort and Stage2 window identities. The GSV
-audit matched 5,295/7,847 selected windows to measured same-scene GPS GSV
-elevation; 2,552 remain explicitly missing. The nine frozen missing-elevation
+The corrected GSV-only overlay and route analysis were run as separate,
+read-only audits against the same frozen 83-task cohort and Stage2 window
+identities. The GSV audit matched 5,128/7,847 selected windows to measured
+same-scene GPS GSV elevation; 2,719 remain explicitly missing. The nine frozen missing-elevation
 task classifications remain missing: their 728 selected windows had no
 matching target-PRN GSV observation, and no elevation was imputed.
 
-The route audit verified all 205 file pins from the GSV audit, rebuilt the
-Stage0 GPS-time index, and preserved all 7,847 `(run_id, window_id)` keys.
-Checksum-valid active RMC supplied 862 observed fixes across 13 scenes. The
-nearest same-scene fix was within the predeclared 2.5-second limit for 6,690
-windows (85.26%); 1,157 were retained as unlocated: 753 fell inside a route
-continuity break and 404 were outside the temporal tolerance. No interpolation
-or cross-gap position assignment was used. Base segmentation produced 21
-scene-local components and 20.865 km of within-component distance. Gap and
-jump-threshold sensitivity was descriptive only: component counts ranged from
-20 to 30 over the specified alternatives; thresholds were not tuned to SAGE
-outcomes.
+The corrected route audit verified all 205 input pins plus the actual loaded
+runner/helper/parser/time-helper code pins, rebuilt the Stage0 GPS-time index,
+and preserved all 7,847 `(run_id, window_id)` keys. Checksum-valid active RMC
+supplied 862 observed fixes across 13 scenes. GPS recording-time origin was
+fail-closed at a maximum 0.5 s residual; all 13 scenes passed and the largest
+observed residual was 0.01152 s. The nearest same-scene fix was within the
+predeclared 2.5-second limit and observed component coverage for 5,540 windows
+(70.60%); 2,307 were retained as unlocated: 753 fell inside a route continuity
+break and 1,554 were outside observed route coverage. No endpoint extrapolation,
+interpolation or cross-gap position assignment was used. Rejected RMC records
+create continuity barriers; this cohort contained none. Base segmentation
+produced 21 scene-local components and 20.865 km of within-component distance.
+Gap and jump-threshold sensitivity was descriptive only: component counts
+ranged from 20 to 30 over the specified alternatives; thresholds were not
+tuned to SAGE outcomes.
 
 The 50/100/250 m candidate grids contained 430/220/95 route bins, of which
-123/76/45 had at least one selected Stage2 window. These bins are descriptive
+121/75/44 had at least one located Stage2 window. These bins are descriptive
 aggregation candidates, not independent samples. The spatial summary contains
 36 metric-by-lag rows; all remain `INSUFFICIENT_SPATIAL_SUPPORT` for a stable
 correlation-range/effective-unit result, so no such estimate or independence
@@ -159,11 +163,19 @@ claim is made. Per-environment route coverage is in the dated sanitized audit
 report and the local audit JSON; precise coordinates and source-record paths
 remain only in the ignored local namespace.
 
+Spatial semivariance is now calculated per continuity component using that
+component's own metric variance, weighted by valid pair count within run; runs
+are equally weighted within scene and scenes equally weighted across scenes.
 The Stage2 ledger SHA-256 remains
 `bbb8cac8338194b5527e00812a6547129a58466cc5fdd7db36b8c44bba01e551`.
-No CIR/HDF5, MAT, raw IQ, or RINEX contents were opened; RINEX was hash-pinned
-only. Task 5 production, release, outputs, and monitor were not changed. Gate F
-remains pending, CIR feature association remains future work, and no formal
-model fit or model-validation result is claimed. See
+No CIR/HDF5, MAT, or raw-IQ payloads were opened. The GSV audit read only RINEX
+header date and GPS PRN inventory, not navigation ephemerides or computed
+elevation; the route phase re-verified RINEX by size/hash only. Conflicting
+same-epoch GSV observations fail closed, while exact duplicates are selected
+deterministically; none occurred in this cohort. Both audit runners now pin
+the actual loaded implementation code and require a timestamped Git-ignored
+output namespace. Task 5 production, release, outputs, and monitor were not
+changed. Gate F remains pending, CIR feature association remains future work,
+and no formal model fit or model-validation result is claimed. See
 `docs/MAINLINE_STAGE2_TRAJECTORY_ROUTE_AUDIT_20261024.md` for sanitized
 aggregate evidence.

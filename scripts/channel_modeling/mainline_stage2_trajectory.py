@@ -137,12 +137,22 @@ def parse_valid_rmc_fixes_with_diagnostics(
     )
     fixes: list[dict[str, Any]] = []
     seen_utc: set[datetime] = set()
+    fix_by_utc: dict[datetime, dict[str, Any]] = {}
 
     for path_value in nmea_paths:
         path = Path(path_value).resolve(strict=True)
         if not path.is_file():
             raise ValueError(f"NMEA source is not a regular file: {path}")
         last_file_utc: datetime | None = None
+        last_valid_fix: dict[str, Any] | None = None
+        barrier_pending = False
+
+        def mark_rejected_rmc() -> None:
+            nonlocal barrier_pending
+            barrier_pending = True
+            if last_valid_fix is not None:
+                last_valid_fix["break_after"] = True
+
         with path.open("r", encoding="ascii", errors="replace") as handle:
             for line_number, raw_line in enumerate(handle, start=1):
                 text = raw_line.strip().lstrip("\ufeff")
@@ -152,18 +162,22 @@ def parse_valid_rmc_fixes_with_diagnostics(
                 fields = _checksum_valid_rmc_line(raw_line)
                 if fields is None or not fields or fields[0].upper() not in {"GPRMC", "GNRMC"}:
                     diagnostics["checksum_invalid_rmc_count"] += 1
+                    mark_rejected_rmc()
                     continue
                 diagnostics["checksum_valid_rmc_count"] += 1
                 if len(fields) < 10:
                     diagnostics["malformed_rmc_count"] += 1
+                    mark_rejected_rmc()
                     continue
                 if fields[2].strip().upper() != "A":
                     diagnostics["inactive_rmc_count"] += 1
+                    mark_rejected_rmc()
                     continue
                 try:
                     utc_time = parse_nmea_datetime(fields[1].strip(), fields[9].strip())
                 except (IndexError, TypeError, ValueError, OverflowError):
                     diagnostics["invalid_datetime_count"] += 1
+                    mark_rejected_rmc()
                     continue
                 try:
                     latitude_deg = _parse_coordinate(
@@ -174,6 +188,7 @@ def parse_valid_rmc_fixes_with_diagnostics(
                     )
                 except (IndexError, TypeError, ValueError, OverflowError):
                     diagnostics["invalid_coordinate_count"] += 1
+                    mark_rejected_rmc()
                     continue
 
                 if last_file_utc is not None and utc_time <= last_file_utc:
@@ -181,17 +196,20 @@ def parse_valid_rmc_fixes_with_diagnostics(
                         diagnostics["duplicate_timestamp_count"] += 1
                     else:
                         diagnostics["out_of_order_timestamp_count"] += 1
+                    mark_rejected_rmc()
                     continue
                 last_file_utc = utc_time
                 if utc_time in seen_utc:
                     diagnostics["duplicate_timestamp_count"] += 1
+                    if utc_time in fix_by_utc:
+                        fix_by_utc[utc_time]["break_after"] = True
+                    mark_rejected_rmc()
                     continue
                 seen_utc.add(utc_time)
 
                 speed_knots = _optional_float(fields[7], minimum=0.0, maximum=1_000.0)
                 course_deg = _optional_float(fields[8], minimum=0.0, maximum=360.0)
-                fixes.append(
-                    {
+                fix = {
                         "utc_time": utc_time.astimezone(timezone.utc),
                         "latitude_deg": latitude_deg,
                         "longitude_deg": longitude_deg,
@@ -205,8 +223,13 @@ def parse_valid_rmc_fixes_with_diagnostics(
                         "source_path": str(path),
                         "source_record_id": f"{path.name}:{line_number:06d}",
                         "source_line_number": line_number,
+                        "break_before": barrier_pending,
+                        "break_after": False,
                     }
-                )
+                fixes.append(fix)
+                fix_by_utc[utc_time] = fix
+                last_valid_fix = fix
+                barrier_pending = False
 
     diagnostics["valid_rmc_count"] = len(fixes)
     fixes.sort(
@@ -261,10 +284,10 @@ def split_trajectory_components(
 ) -> list[dict[str, Any]]:
     """Assign deterministic continuity components and within-component distance.
 
-    A duplicate/out-of-order timestamp, gap above ``max_gap_seconds`` or
-    implied speed above ``jump_speed_mps`` begins a fresh component. Rejected
-    edges are recorded as candidates/reasons but are excluded from cumulative
-    distance. Cumulative distance resets to zero at every component break.
+    A rejected RMC record, duplicate/out-of-order timestamp, gap above
+    ``max_gap_seconds`` or implied speed above ``jump_speed_mps`` begins a
+    fresh component. Rejected edges are recorded as candidates/reasons but are
+    excluded from cumulative distance. Cumulative distance resets at breaks.
     """
 
     if not math.isfinite(max_gap_seconds) or max_gap_seconds <= 0:
@@ -288,6 +311,8 @@ def split_trajectory_components(
 
         if previous is None:
             break_reason = "TRACE_START"
+        elif bool(fix.get("break_before")):
+            break_reason = "REJECTED_RMC_BARRIER"
         else:
             previous_time, previous_latitude, previous_longitude = previous
             elapsed = (utc_time - previous_time).total_seconds()
@@ -409,7 +434,8 @@ def build_trajectory_window_overlay(
 ) -> list[dict[str, str]]:
     """Attach each Stage2-selected window to a nearest validated same-scene fix.
 
-    Position is assigned only by nearest-neighbor. No interpolation is used.
+    Position is assigned only by nearest-neighbor inside observed component
+    coverage. No endpoint extrapolation or interpolation is used.
     A window strictly inside an interval whose endpoints belong to different
     trajectory components is left unlocated rather than carried across that
     discontinuity. Signed delta is ``fix UTC - Stage0 window UTC``.
@@ -487,6 +513,13 @@ def build_trajectory_window_overlay(
             continue
 
         fix_times = [fix["utc_time"] for fix in scene_fixes]
+        if target_utc < fix_times[0] or target_utc > fix_times[-1]:
+            if target_utc > fix_times[-1] and bool(scene_fixes[-1].get("break_after")):
+                row["missing_reason"] = "REJECTED_RMC_BARRIER"
+            else:
+                row["missing_reason"] = "OUTSIDE_OBSERVED_ROUTE_COVERAGE"
+            output.append(row)
+            continue
         insertion = _bisect_left(fix_times, target_utc)
         previous_fix = scene_fixes[insertion - 1] if insertion > 0 else None
         next_fix = scene_fixes[insertion] if insertion < len(scene_fixes) else None
@@ -1119,8 +1152,10 @@ def summarize_spatial_dependence(
     """Summarize descriptive within-run spatial dependence by fixed lag bands.
 
     Pair calculations stay within one scene, run and continuity component.
-    The per-run normalized semivariance is collapsed to run and then scene
-    summaries before the cross-scene profile is considered. Correlation-range
+    Each component is normalized by its own metric variance; normalized lag
+    estimates are weighted by valid pair count within run. Runs are equally
+    weighted within scene, and scenes are equally weighted in the cross-scene
+    profile. Correlation-range
     and effective-local-unit values are only emitted when at least eight
     scenes support at least three consecutive lag bands, the decorrelation
     profile is monotone within tolerance, and leave-one-scene-out range
@@ -1136,7 +1171,7 @@ def summarize_spatial_dependence(
 
     groups: dict[tuple[str, str, str], list[dict[str, Any]]] = {}
     seen_fix: set[tuple[str, str, str]] = set()
-    component_distances: dict[tuple[str, str], list[float]] = {}
+    component_distances: dict[tuple[str, str, str], list[float]] = {}
     colocated: dict[tuple[str, str, str], dict[str, set[str]]] = {}
     for index, row in enumerate(fix_metrics):
         if str(row.get("location_status", "POSITION_MATCHED")) != "POSITION_MATCHED":
@@ -1160,7 +1195,7 @@ def summarize_spatial_dependence(
         )
         normalized = {**dict(row), "route_cumulative_distance_m": distance}
         groups.setdefault((scene_id, run_id, component_id), []).append(normalized)
-        component_distances.setdefault((scene_id, component_id), []).append(distance)
+        component_distances.setdefault((scene_id, run_id, component_id), []).append(distance)
         location_id = str(row.get("position_source_record_id", "")).strip() or fix_utc
         loc_key = (scene_id, component_id, location_id)
         support = colocated.setdefault(loc_key, {"prns": set(), "runs": set()})
@@ -1174,7 +1209,7 @@ def summarize_spatial_dependence(
         for support in cross_prn_groups
     )
 
-    accumulators: dict[tuple[str, int], dict[tuple[str, str], dict[str, float]]] = {}
+    accumulators: dict[tuple[str, int], dict[tuple[str, str, str], dict[str, float]]] = {}
     for (scene_id, run_id, component_id), rows in groups.items():
         rows.sort(
             key=lambda row: (
@@ -1203,9 +1238,9 @@ def summarize_spatial_dependence(
                     if left_value is None or right_value is None:
                         continue
                     metric_runs = accumulators.setdefault((metric, lag_index), {})
-                    run_key = (scene_id, run_id)
+                    component_key = (scene_id, run_id, component_id)
                     accumulator = metric_runs.setdefault(
-                        run_key,
+                        component_key,
                         {"pair_count": 0.0, "semivariance_sum": 0.0, "variance": variance_by_metric[metric]},
                     )
                     accumulator["pair_count"] += 1
@@ -1219,14 +1254,24 @@ def summarize_spatial_dependence(
         per_scene_gamma: dict[str, list[float]] = {}
         supported_pair_count = 0
         supported_runs: set[str] = set()
-        for (scene_id, run_id), values in run_values.items():
+        run_component_gamma: dict[tuple[str, str], list[tuple[float, float]]] = {}
+        for (scene_id, run_id, _component_id), values in run_values.items():
             supported_pair_count += int(values["pair_count"])
             if values["pair_count"] and values["variance"] > 0:
                 gamma = values["semivariance_sum"] / values["pair_count"]
                 normalized_gamma = gamma / values["variance"]
-                per_scene_gamma.setdefault(scene_id, []).append(normalized_gamma)
-                per_scene_corr.setdefault(scene_id, []).append(1.0 - normalized_gamma)
-                supported_runs.add(run_id)
+                run_component_gamma.setdefault((scene_id, run_id), []).append(
+                    (values["pair_count"], normalized_gamma)
+                )
+        for (scene_id, run_id), component_values in run_component_gamma.items():
+            pair_weight = sum(pair_count for pair_count, _ in component_values)
+            run_gamma = sum(
+                pair_count * normalized_gamma
+                for pair_count, normalized_gamma in component_values
+            ) / pair_weight
+            per_scene_gamma.setdefault(scene_id, []).append(run_gamma)
+            per_scene_corr.setdefault(scene_id, []).append(1.0 - run_gamma)
+            supported_runs.add(run_id)
         scene_gamma_mean = {
             scene: sum(values) / len(values)
             for scene, values in per_scene_gamma.items()

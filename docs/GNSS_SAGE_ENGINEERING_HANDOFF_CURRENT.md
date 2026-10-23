@@ -2294,62 +2294,67 @@ NEXT=CONTINUE_TASK5_UNINTERRUPTED; AFTER_GATE_EF_REVIEW_FIT_AND_VALIDATE_STAGE2_
 
 ## 97. Task 7 measured-elevation overlay and route/spatial audit (2026-10-24)
 
-- Completed the approved GSV-only elevation overlay and route/spatial analysis
-  plans. The GSV audit covers the frozen 83-task cohort: 285,752 Stage0-valid
-  windows, 7,847 Stage2-selected windows, 16,761 Stage2 paths, 5,295 measured
-  elevation matches and 2,552 explicit missing matches. The nine frozen
-  missing-elevation task classifications remain missing; their 728 Stage2
-  windows had no matching target-PRN GSV observation. No elevation was
-  imputed.
-- The route audit verified all 205 hashes pinned by the GSV audit, rebuilt the
-  shared Stage0 UTC mapping, and reconciled all 7,847 unique `(run_id,
-  window_id)` keys with zero missing or extra identities. It parsed 862
-  checksum-valid active RMC fixes across 13 scenes; aggregate diagnostics
-  report zero checksum-invalid, inactive, malformed, invalid-coordinate,
-  invalid-date, duplicate-timestamp or out-of-order RMC records.
-- Nearest same-scene RMC position was assigned to 6,690/7,847 Stage2 windows
-  (85.26%). The remaining 1,157 stay present and unlocated: 753 fall within a
-  trajectory discontinuity and 404 exceed the 2.5-second match tolerance.
-  No interpolation or gap bridging was used. Base segmentation produced 21
-  continuity components and 20.865 km of within-component distance. The
-  specified gap/jump sensitivity produced 20–30 components; thresholds were
-  not outcome-tuned.
-- Candidate 50/100/250 m route bins number 430/220/95, with 123/76/45 bins,
-  respectively, containing Stage2 windows. These are aggregation candidates,
-  not independent observations. All 36 spatial metric/lag summaries remain
-  `INSUFFICIENT_SPATIAL_SUPPORT` for a stable correlation-range/effective-unit
-  estimate; no independence claim or formal fit is made.
-- The Stage2 ledger remains unchanged at SHA-256
-  `bbb8cac8338194b5527e00812a6547129a58466cc5fdd7db36b8c44bba01e551`.
-  Coordinate-bearing route output is confined to the ignored local namespace
-  `E:/GNSS_Multipath_Project/dataset_generation_logs/channel_modeling/mainline_1023_geometry_route_20261023T165856Z/`;
-  the committed report contains aggregate values only. No raw NMEA text,
-  coordinates, CIR/HDF5, MAT, raw IQ or RINEX content was added/read by the
-  route audit (RINEX was hash-pinned only).
-- Focused trajectory verification passed 31/31 synthetic tests; Python compile
-  and `git diff --check` passed. Task 5 was left untouched. Read-only sample
-  at 2026-10-24 01:39:59 +08 showed its monitor Ready (last result 0; next
-  run 02:05). Its latest 01:35 report still described RUNNING at G06/ch9 but
-  had no stage or valid-progress timestamp. Coordinator PID 34916, worker PID
-  34240, MATLAB PIDs 22304/15280, and the RTX 4060 (23% utilization) were
-  present. E: had 429,108,756,480 bytes free; no matching System disk/USB
-  event appeared in the preceding two hours. Progress timing after the report
-  timestamp remains unverified; this is not evidence of a later completion or
-  progress delta.
-- Gate F remains pending. CIR feature association, Task 5 completion and
-  formal model fitting remain future gates; no SAGE/CIR algorithm or Task 5
-  monitor change was made. Sanitized results are in
+- The approved GSV-only elevation overlay and route/spatial audits were
+  corrected after the single independent review identified fail-closed
+  boundary gaps. A fresh audit in a new namespace confirms the frozen cohort
+  totals: 83 tasks / 13 scenes, 285,752 Stage0-valid windows, 7,847 Stage2
+  windows and 16,761 paths. GSV matched 5,128 windows; 2,719 remain explicitly
+  missing. The nine frozen missing-elevation task classifications remain
+  missing; their 728 selected windows still have no matching target-PRN GSV.
+  No elevation was imputed.
+- The corrected route audit verifies all 205 GSV input pins, loaded software
+  pins and all 7,847 `(run_id, window_id)` keys. All 13 GPS time origins pass a
+  0.5-second maximum residual gate; the observed maximum was 0.01152 seconds.
+  The route has 862 checksum-valid active RMC fixes. Rejected RMC records now
+  create continuity barriers, but none occurred in this cohort. Endpoint
+  extrapolation is prohibited; 5,540/7,847 windows are located (70.60%). The
+  other 2,307 remain in the overlay: 753 fall within route discontinuities and
+  1,554 are outside observed route coverage. This is lower coverage than the
+  preliminary audit by design, because unsupported endpoint assignments were
+  removed.
+- Base segmentation remains 21 components and 20.864866 km. Gap/jump
+  sensitivity remains 20–30 components. The 50/100/250 m grids contain
+  430/220/95 bins, with 121/75/44 respectively containing located Stage2
+  windows. Spatial semivariance is normalized by each continuity component's
+  own metric variance, pair-count weighted within run, equal-run weighted
+  within scene and equal-scene weighted across scenes. All 36 metric/lag rows
+  remain `INSUFFICIENT_SPATIAL_SUPPORT`; no independence claim or formal fit is
+  made.
+- Conflicting duplicate GSV epochs now fail closed; exact duplicates are
+  selected deterministically. No duplicate/conflicting GSV epochs occurred in
+  this cohort. Both audit runners bind the actual loaded implementation
+  hashes and only accept a timestamped, Git-ignored private output namespace.
+  Precise route coordinates remain local-only. The corrected outputs are under
+  `E:/GNSS_Multipath_Project/dataset_generation_logs/channel_modeling/mainline_1023_geometry_route_20261023T180857Z/`;
+  the sanitized aggregate report is
   `docs/MAINLINE_STAGE2_TRAJECTORY_ROUTE_AUDIT_20261024.md`.
+- Combined focused geometry/route tests passed 67/67; compile and diff checks
+  passed. No CIR/HDF5, MAT, or raw-IQ payload was opened. The GSV phase read
+  only RINEX first-record dates and GPS PRN inventory (no ephemeris or orbit
+  geometry); the route phase reverified RINEX by size/hash only. The Stage2
+  ledger is unchanged at SHA-256
+  `bbb8cac8338194b5527e00812a6547129a58466cc5fdd7db36b8c44bba01e551`.
+- Task 5 was not changed. At the 2026-10-24 02:07 +08 read-only sample, its
+  monitor task was Ready and the latest report (02:05) said RUNNING at G06/ch9,
+  1/80 complete; Coordinator/worker PIDs 34916/34240 and MATLAB PIDs 22304/
+  15280 were present. The report's latest valid progress remained
+  2026-10-23 12:39:17 UTC; no newer stage/progress delta was verified. E: had
+  428,242,108,416 bytes free and no matching System disk/USB event appeared in
+  the preceding two hours. This is not a diagnosis of a stall; Task 5 was left
+  untouched and its progress remains unverified after the monitor sample.
+- Gate F, CIR feature association, Task 5 completion and formal model fitting
+  remain pending. No Task 5, SAGE or CIR production algorithm/release/monitor
+  change was made.
 
 ```text
-TASK7_GSV_MATCHES=5295_OF_7847
-TASK7_GSV_MISSING=2552; NINE_FROZEN_TASKS_STILL_MISSING
-TASK7_ROUTE_MATCHED=6690_OF_7847
-TASK7_ROUTE_UNLOCATED=1157 (753_DISCONTINUITY, 404_OUTSIDE_TOLERANCE)
-TASK7_RMC_FIXES=862; RMC_DIAGNOSTIC_REJECTIONS=0
+TASK7_GSV_MATCHES=5128_OF_7847
+TASK7_GSV_MISSING=2719; NINE_FROZEN_TASKS_STILL_MISSING
+TASK7_ROUTE_MATCHED=5540_OF_7847
+TASK7_ROUTE_UNLOCATED=2307 (753_DISCONTINUITY, 1554_OUTSIDE_OBSERVED_COVERAGE)
+TASK7_RMC_FIXES=862; RMC_DIAGNOSTIC_REJECTIONS=0; MAX_TIME_ORIGIN_RESIDUAL=0.01152S
 TASK7_ROUTE_COMPONENTS=21; WITHIN_COMPONENT_DISTANCE_KM=20.865
 TASK7_SPATIAL_RANGE_ESTIMATE=INSUFFICIENT_SPATIAL_SUPPORT
-TASK7_SYNTHETIC_TESTS=31/31_PASS
+TASK7_SYNTHETIC_TESTS=67/67_PASS
 TASK5_MODIFIED=NO
 GATE_F=PENDING
 FORMAL_MODEL_FIT=NOT_RUN

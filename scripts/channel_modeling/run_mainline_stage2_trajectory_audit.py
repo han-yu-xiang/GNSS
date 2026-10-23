@@ -23,6 +23,9 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from scripts.channel_modeling import mainline_stage2_geometry as geometry_module  # noqa: E402
+from scripts.channel_modeling import mainline_stage2_trajectory as trajectory_module  # noqa: E402
+from scripts.channel_modeling import run_mainline_stage2_geometry_audit as geometry_audit_module  # noqa: E402
 from scripts.channel_modeling.mainline_stage2_geometry import (  # noqa: E402
     build_stage0_utc_index,
     build_stage2_window_index,
@@ -46,9 +49,12 @@ from scripts.channel_modeling.run_mainline_stage2_geometry_audit import (  # noq
     _project_rel,
     _read_csv,
     _required_text,
+    _validate_private_output_namespace,
     _write_csv,
 )
 from scripts.event_database.align_modeling_context import sha256_file  # noqa: E402
+from scripts.event_database import align_modeling_context as time_alignment_module  # noqa: E402
+from scripts.preprocessing import satellite_geometry as satellite_geometry_module  # noqa: E402
 
 
 GEOMETRY_AUDIT_NAME = "geometry_alignment_audit.json"
@@ -69,6 +75,45 @@ ROUTE_BIN_LENGTHS_M = (50, 100, 250)
 LAG_EDGES_M = (0, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 20000)
 BASE_MAX_GAP_SECONDS = 2.5
 BASE_JUMP_SPEED_MPS = 80.0
+
+
+def _validate_runtime_code_root(code_root: Path) -> None:
+    resolved_root = code_root.resolve(strict=True)
+    if resolved_root != REPO_ROOT.resolve(strict=True):
+        raise ValueError("code_root must match the code worktree executing this audit")
+    loaded_modules = {
+        "geometry helper": geometry_module,
+        "trajectory helper": trajectory_module,
+        "geometry audit runner": geometry_audit_module,
+        "GPS time helper": time_alignment_module,
+        "NMEA/RINEX parser": satellite_geometry_module,
+    }
+    for label, module in loaded_modules.items():
+        module_path = Path(module.__file__).resolve(strict=True)
+        try:
+            module_path.relative_to(resolved_root)
+        except ValueError as error:
+            raise ValueError(f"loaded {label} is outside the declared code worktree") from error
+
+
+def _current_route_software_pins(code_root: Path) -> dict[str, dict[str, Any]]:
+    modules = {
+        "route_audit_runner": Path(__file__).resolve(strict=True),
+        "trajectory_helper": Path(trajectory_module.__file__).resolve(strict=True),
+        "geometry_audit_runner": Path(geometry_audit_module.__file__).resolve(strict=True),
+        "geometry_identity_helper": Path(geometry_module.__file__).resolve(strict=True),
+        "gps_time_helper": Path(time_alignment_module.__file__).resolve(strict=True),
+        "nmea_rinex_parser": Path(satellite_geometry_module.__file__).resolve(strict=True),
+    }
+    pins: dict[str, dict[str, Any]] = {}
+    resolved_root = code_root.resolve(strict=True)
+    for name, path in modules.items():
+        try:
+            relative = path.relative_to(resolved_root).as_posix()
+        except ValueError as error:
+            raise ValueError(f"loaded software source is outside code_root: {name}") from error
+        pins[name] = {"root": "code_worktree", "path": relative, "sha256": sha256_file(path)}
+    return pins
 
 TRAJECTORY_OVERLAY_FIELDS = (
     "run_id", "window_id", "scene_id", "prn", "tracking_channel",
@@ -165,6 +210,8 @@ def _verify_geometry_input_pins(
     expected_software = {
         "audit_runner": ("scripts/channel_modeling/run_mainline_stage2_geometry_audit.py", "audit_software:audit_runner"),
         "geometry_identity_helper": ("scripts/channel_modeling/mainline_stage2_geometry.py", "audit_software:geometry_identity_helper"),
+        "gps_time_helper": ("scripts/event_database/align_modeling_context.py", "audit_software:gps_time_helper"),
+        "nmea_rinex_parser": ("scripts/preprocessing/satellite_geometry.py", "audit_software:nmea_rinex_parser"),
     }
     for name, (expected_relative, expected_role) in expected_software.items():
         pin = software.get(name)
@@ -702,11 +749,9 @@ def _write_exclusive_csv(path: Path, fields: Sequence[str], rows: Iterable[Mappi
 def _audit(project_root: Path, code_root: Path, output_dir: Path) -> dict[str, Any]:
     project_root = project_root.resolve(strict=True)
     code_root = code_root.resolve(strict=True)
+    _validate_runtime_code_root(code_root)
+    output_dir = _validate_private_output_namespace(project_root, output_dir)
     output_dir = output_dir.resolve(strict=True)
-    try:
-        output_dir.relative_to(project_root)
-    except ValueError as error:
-        raise ValueError("output namespace must be inside project root") from error
     if not output_dir.is_dir():
         raise ValueError("existing geometry output namespace is required")
     collisions = [name for name in ROUTE_OUTPUT_NAMES if (output_dir / name).exists()]
@@ -858,6 +903,7 @@ def _audit(project_root: Path, code_root: Path, output_dir: Path) -> dict[str, A
         "scene_source_index_sha256": source_index_sha,
         "stage2_ledger_sha256_before": ledger_sha_before,
         "stage2_ledger_sha256_after": sha256_file(project_root / STAGE2_LEDGER_REL),
+        "audit_software": _current_route_software_pins(code_root),
         "input_counts": {
             "stage0_window_count": sum(len(rows) for rows in stage0_by_run.values()),
             "stage2_path_row_count": len(stage2_paths),
