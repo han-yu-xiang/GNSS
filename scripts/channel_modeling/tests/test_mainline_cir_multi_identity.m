@@ -42,6 +42,41 @@ testCase.verifyError(@() exportFixture(fixture), ...
     'GNSS:SAGE:CIRIdentityAuthorizationMismatch');
 end
 
+function testHeterogeneousCohortRowsSelectExactTask(testCase)
+fixture = makeExporterFixture(testCase, 10230000);
+newTask = fixture.cohortDocument.tasks;
+existingPilotTask = newTask;
+existingPilotTask.run_id = 'run_20261003_F1023_V70_D0117_P2_G28_ch1';
+existingPilotTask.scene_id = 'F1023_V70_D0117_P2';
+existingPilotTask.prn = 'G28';
+existingPilotTask.tracking_channel = 1;
+existingPilotTask.output_namespace = ...
+    'scenes/F1023_V70_D0117_P2/sage_results/rerun_20261003_frozen_v3/G28_ch1';
+existingPilotTask.source_summary_status = 'ALREADY_COMPLETE';
+existingPilotTask.existing_cir_pilot = struct( ...
+    'status', 'EXISTING_VALIDATED');
+fixture.cohortDocument.eligible_count = 2;
+fixture.cohortDocument.tasks = {newTask, existingPilotTask};
+writeJsonFile(fixture.cohortPath, fixture.cohortDocument, testCase);
+fixture.cohortSha256 = sha256File(fixture.cohortPath);
+fixture.taskDocument.source_cohort_sha256 = fixture.cohortSha256;
+writeJsonFile(fixture.cirTasksPath, fixture.taskDocument, testCase);
+fixture.provenance.cohort_sha256 = fixture.cohortSha256;
+fixture.provenance.cir_tasks_sha256 = sha256File(fixture.cirTasksPath);
+
+decodedCohort = jsondecode(fileread(fixture.cohortPath));
+testCase.verifyTrue(iscell(decodedCohort.tasks), ...
+    'Different per-task metadata must preserve heterogeneous JSON rows.');
+summary = exportFixture(fixture);
+
+testCase.verifyEqual(summary.scene_id, fixture.provenance.scene_id);
+testCase.verifyEqual(summary.prn, fixture.provenance.prn);
+testCase.verifyEqual(summary.tracking_channel, ...
+    fixture.provenance.tracking_channel);
+testCase.verifyEqual(summary.stage0_window_count, 2);
+testCase.verifyTrue(isfile(fixture.hdf5Path));
+end
+
 function testTamperedCirTasksFailsPinnedHash(testCase)
 fixture = makeExporterFixture(testCase, 10230000);
 fileId = fopen(fixture.cirTasksPath, 'wt', 'n', 'UTF-8');
@@ -96,6 +131,41 @@ hdf5Path = writeSyntheticHdf5(fullfile(temporaryRoot, 'bad_start.h5'), 0);
 storedStart = h5read(hdf5Path, '/pdp_start_sample_zero_based', [1, 1], [1, 1]);
 h5write(hdf5Path, '/pdp_start_sample_zero_based', ...
     storedStart + 10230, [1, 1], [1, 1]);
+
+testCase.verifyError(@() validate_gnss_code_domain_cir(hdf5Path, 2), ...
+    'GNSS:SAGE:CIRValidationStage0AlignmentMismatch');
+end
+
+function testValidatorAcceptsStage0DecimalTimeRoundTrip(testCase)
+temporaryRoot = tempname;
+mkdir(temporaryRoot);
+testCase.addTeardown(@() removeTemporaryDirectory(temporaryRoot));
+hdf5Path = writeSyntheticHdf5( ...
+    fullfile(temporaryRoot, 'rounded_stage0_times.h5'), 0);
+
+windowStarts = [386888977; 387298177];
+snapshotStarts = [windowStarts(1) + (0:39).' * 10230; ...
+    windowStarts(2) + (0:39).' * 10230];
+snapshotTimes = snapshotStarts / 10230000;
+serializedStage0Times = round(windowStarts / 10230000, 13);
+h5write(hdf5Path, '/sample_start_zero_based', snapshotStarts);
+h5write(hdf5Path, '/time_s', snapshotTimes);
+h5write(hdf5Path, '/pdp_start_sample_zero_based', windowStarts);
+h5write(hdf5Path, '/pdp_time_s', serializedStage0Times);
+
+validation = validate_gnss_code_domain_cir(hdf5Path, 2);
+testCase.verifyEqual(validation.pdp_window_count, 2);
+testCase.verifyTrue(validation.pdp_mean_exactly_recomputed);
+end
+
+function testValidatorRejectsPdpTimeOutsideSerializationTolerance(testCase)
+temporaryRoot = tempname;
+mkdir(temporaryRoot);
+testCase.addTeardown(@() removeTemporaryDirectory(temporaryRoot));
+hdf5Path = writeSyntheticHdf5( ...
+    fullfile(temporaryRoot, 'bad_pdp_time.h5'), 0);
+pdpTime = h5read(hdf5Path, '/pdp_time_s');
+h5write(hdf5Path, '/pdp_time_s', pdpTime + 1e-9);
 
 testCase.verifyError(@() validate_gnss_code_domain_cir(hdf5Path, 2), ...
     'GNSS:SAGE:CIRValidationStage0AlignmentMismatch');
