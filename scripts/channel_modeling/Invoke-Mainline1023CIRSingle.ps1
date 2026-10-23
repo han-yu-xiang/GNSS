@@ -1,19 +1,27 @@
 [CmdletBinding()]
 param(
     [switch]$CreateReleaseRequest,
+    [switch]$CreateBatchReleaseRequest,
     [switch]$ValidateOnly,
+    [switch]$ValidateBatchOnly,
     [switch]$Execute,
+    [switch]$ExecuteBatch,
     [switch]$ExecuteWorker,
+    [switch]$ExecuteBatchWorker,
+    [switch]$RunBatchCoordinator,
     [switch]$ReadBackExistingPilot,
     [switch]$ReadBackWorker,
     [switch]$FinalizePilotAudit,
     [switch]$ConfirmPilot,
+    [switch]$ConfirmBatch,
     [string]$ReleaseRoot,
     [string[]]$PilotRunIds,
+    [string[]]$PassReceiptPaths,
     [string]$RequestManifest,
     [string]$ExpectedRequestSha256,
     [string]$RunId,
-    [string]$TaskName
+    [string]$TaskName,
+    [string]$CoordinatorTaskName
 )
 
 Set-StrictMode -Version Latest
@@ -281,14 +289,293 @@ function Get-SourcePins {
     $pins
 }
 
+function Get-RequestExecutionMode {
+    param([Parameter(Mandatory)]$Request)
+    if ($null -eq $Request.PSObject.Properties['execution_mode']) { return 'PILOT' }
+    $mode = [string]$Request.execution_mode
+    if ($mode -notin @('PILOT','SERIAL_BATCH')) { throw "Unsupported CIR execution_mode: '$mode'." }
+    $mode
+}
+
+function Get-ReceiptSourceRequestPath {
+    param([Parameter(Mandatory)][string]$ReceiptPath)
+    $basePrefix = [IO.Path]::GetFullPath($script:ReleaseBase).TrimEnd('\') + '\'
+    $directory = [IO.DirectoryInfo]::new([IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($ReceiptPath)))
+    for ($depth = 0; $depth -lt 5 -and $null -ne $directory; $depth++) {
+        $candidate = Join-Path $directory.FullName 'release_request.json'
+        if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+            if (-not ([IO.Path]::GetFullPath($candidate)).StartsWith($basePrefix, [StringComparison]::OrdinalIgnoreCase)) {
+                throw "Receipt source release is outside the approved CIR release tree: $candidate"
+            }
+            return [IO.Path]::GetFullPath($candidate)
+        }
+        $directory = $directory.Parent
+    }
+    throw "PASS receipt has no nearby immutable CIR release request: $ReceiptPath"
+}
+
+function Get-VerifiedPassReceiptReference {
+    param(
+        [Parameter(Mandatory)][string]$ReceiptPath,
+        [Parameter(Mandatory)]$ExpectedIdentity,
+        [Parameter(Mandatory)][string]$ExpectedReceiptType,
+        [Parameter(Mandatory)][string]$ExpectedCohortSha256,
+        [Parameter(Mandatory)][string]$ExpectedCirTasksSha256
+    )
+    $fullReceipt = [IO.Path]::GetFullPath($ReceiptPath)
+    if (-not $fullReceipt.StartsWith([IO.Path]::GetFullPath($script:ReleaseBase).TrimEnd('\') + '\', [StringComparison]::OrdinalIgnoreCase)) {
+        throw "PASS receipt is outside the approved CIR release tree: $fullReceipt"
+    }
+    if (-not (Test-Path -LiteralPath $fullReceipt -PathType Leaf)) { throw "PASS receipt is missing: $fullReceipt" }
+    $receipt = Get-JsonDocument $fullReceipt
+    $sourceRequestPath = Get-ReceiptSourceRequestPath $fullReceipt
+    $sourceRequest = Get-JsonDocument $sourceRequestPath
+    $sourceRequestHash = Get-Sha256 $sourceRequestPath
+    if ($receipt.status -ne 'PASS' -or [string]$receipt.run_id -ne [string]$ExpectedIdentity.run_id -or
+        [string]$receipt.request_sha256 -ne $sourceRequestHash -or
+        [string]$sourceRequest.inputs.cohort_sha256 -ne $ExpectedCohortSha256 -or
+        [string]$sourceRequest.inputs.cir_tasks_sha256 -ne $ExpectedCirTasksSha256) {
+        throw "PASS receipt request/cohort/task identity is not valid for $($ExpectedIdentity.run_id)."
+    }
+    if ($ExpectedReceiptType -eq 'EXISTING_BASELINE_READBACK') {
+        if ($receipt.matlab_exit_code -ne 0 -or $receipt.raw_iq_read -ne $false -or
+            $receipt.existing_outputs_modified -ne $false -or
+            [double]$receipt.metrics.pdp_max_abs_diff_from_validator -ne 0 -or
+            [string]$sourceRequest.baseline_existing_pilot.run_id -ne [string]$ExpectedIdentity.run_id) {
+            throw 'Existing G28/ch1 read-back receipt does not prove a clean read-only PASS.'
+        }
+    } elseif ($ExpectedReceiptType -eq 'CIR_PILOT') {
+        if ($receipt.attempt -ne 1 -or $receipt.resume -ne $false -or $receipt.exit_code -ne 0 -or
+            $receipt.scientific_algorithm_modified -ne $false) {
+            throw "Pilot receipt is not a first-attempt, non-resuming scientific PASS for $($ExpectedIdentity.run_id)."
+        }
+        foreach ($property in @('scene_id','prn','tracking_channel','output_namespace','raw_iq_path','raw_iq_size_bytes','stage0_window_count','stage2_selected_path_count')) {
+            if (-not (Test-TaskPinPropertyMatch $property $ExpectedIdentity.$property $receipt.identity.$property)) {
+                throw "Existing PASS receipt identity mismatch for $($ExpectedIdentity.run_id): $property"
+            }
+        }
+        foreach ($stageName in @('stage0_valid_windows','stage2_selected_paths')) {
+            if ([string]$ExpectedIdentity.stage_csvs.$stageName.path -ne [string]$receipt.identity.stage_csvs.$stageName.path -or
+                [string]$ExpectedIdentity.stage_csvs.$stageName.sha256 -ne [string]$receipt.identity.stage_csvs.$stageName.sha256 -or
+                [long]$ExpectedIdentity.stage_csvs.$stageName.size_bytes -ne [long]$receipt.identity.stage_csvs.$stageName.size_bytes) {
+                throw "Existing PASS receipt stage-input pin mismatch for $($ExpectedIdentity.run_id): $stageName"
+            }
+        }
+        $runPrefix = [IO.Path]::GetFullPath((Join-Path (Join-Path ([string]$sourceRequest.release_root) 'runs') ([string]$ExpectedIdentity.run_id))).TrimEnd('\') + '\attempt_01\'
+        if (@($receipt.outputs).Count -ne 3) { throw "PASS receipt must contain exactly three output records for $($ExpectedIdentity.run_id)." }
+        foreach ($output in $receipt.outputs) {
+            $outputPath = Resolve-ProjectPath ([string]$output.path)
+            if (-not $outputPath.StartsWith($runPrefix, [StringComparison]::OrdinalIgnoreCase) -or
+                -not (Test-Path -LiteralPath $outputPath -PathType Leaf) -or
+                [long](Get-Item -LiteralPath $outputPath).Length -ne [long]$output.size_bytes -or
+                [string]$output.sha256 -notmatch '^[a-fA-F0-9]{64}$') {
+                throw "PASS receipt output path/size/SHA metadata is not valid for $($ExpectedIdentity.run_id)."
+            }
+        }
+    } else {
+        throw "Unsupported PASS receipt type: $ExpectedReceiptType"
+    }
+    [ordered]@{
+        run_id = [string]$ExpectedIdentity.run_id
+        receipt_type = $ExpectedReceiptType
+        receipt_path = Get-RelativeProjectPath $fullReceipt
+        receipt_sha256 = Get-Sha256 $fullReceipt
+        source_release_request_path = Get-RelativeProjectPath $sourceRequestPath
+        source_release_request_sha256 = $sourceRequestHash
+        status = 'PASS'
+    }
+}
+
+function Assert-VerifiedPassReceiptReference {
+    param(
+        [Parameter(Mandatory)]$Reference,
+        [Parameter(Mandatory)]$ExpectedIdentity,
+        [Parameter(Mandatory)][string]$ExpectedCohortSha256,
+        [Parameter(Mandatory)][string]$ExpectedCirTasksSha256
+    )
+    $receiptPath = Resolve-ProjectPath ([string]$Reference.receipt_path)
+    if ((Get-Sha256 $receiptPath) -ne [string]$Reference.receipt_sha256) {
+        throw "PASS receipt changed since batch release creation: $receiptPath"
+    }
+    $sourceRequestPath = Resolve-ProjectPath ([string]$Reference.source_release_request_path)
+    if ((Get-Sha256 $sourceRequestPath) -ne [string]$Reference.source_release_request_sha256) {
+        throw "Source release request changed since batch release creation: $sourceRequestPath"
+    }
+    $verified = Get-VerifiedPassReceiptReference $receiptPath $ExpectedIdentity ([string]$Reference.receipt_type) `
+        $ExpectedCohortSha256 $ExpectedCirTasksSha256
+    foreach ($property in @('run_id','receipt_type','receipt_path','receipt_sha256','source_release_request_path','source_release_request_sha256','status')) {
+        if ([string]$verified[$property] -ne [string]$Reference.$property) {
+            throw "PASS receipt pin mismatch for $($Reference.run_id): $property"
+        }
+    }
+}
+
+function Assert-BatchRequestIdentities {
+    param([Parameter(Mandatory)]$Request, [Parameter(Mandatory)]$Cohort, [Parameter(Mandatory)]$CirTasks)
+    $frozenIds = @($CirTasks.tasks | ForEach-Object { [string]$_.run_id })
+    $cohortIds = @($Cohort.tasks | ForEach-Object { [string]$_.run_id })
+    $excludedIds = @($Cohort.excluded | ForEach-Object { [string]$_.run_id })
+    if ($frozenIds.Count -ne 83 -or $cohortIds.Count -ne 83 -or $excludedIds.Count -ne 6 -or
+        ($frozenIds -join "`n") -cne ($cohortIds -join "`n") -or
+        @((Compare-Object -ReferenceObject $frozenIds -DifferenceObject @($Request.frozen_cohort_run_ids))).Count -ne 0 -or
+        (@($Request.frozen_cohort_run_ids) -join "`n") -cne ($frozenIds -join "`n")) {
+        throw 'Batch request does not bind the exact ordered 83-task Gate-B identity list and six exclusions.'
+    }
+    if (@((Compare-Object -ReferenceObject $excludedIds -DifferenceObject @($Request.excluded_run_ids))).Count -ne 0 -or
+        (@($Request.excluded_run_ids) -join "`n") -cne ($excludedIds -join "`n")) {
+        throw 'Batch request exclusion identities differ from the frozen six-item Gate-B exclusion list.'
+    }
+    $skips = @($Request.skipped_existing_pass)
+    $skipIds = @($skips | ForEach-Object { [string]$_.run_id })
+    $approvedSkipIds = @(
+        $script:ExistingPilotRunId,
+        'run_20261003_F1023_V70_D0120_P1_G18_ch2',
+        'run_20261003_F1023_V70_D0120_P5_G23_ch0'
+    )
+    if ($skips.Count -ne 3 -or $skipIds.Count -ne @($skipIds | Sort-Object -Unique).Count -or
+        @((Compare-Object -ReferenceObject $approvedSkipIds -DifferenceObject $skipIds)).Count -ne 0 -or
+        @($skipIds | Where-Object { $_ -notin $frozenIds }).Count -gt 0 -or
+        @($excludedIds | Where-Object { $_ -in $skipIds }).Count -gt 0) {
+        throw 'Batch request must skip exactly the three approved G28/G18/G23 PASS identities within the frozen cohort.'
+    }
+    $baselineRows = @($CirTasks.tasks | Where-Object { $_.task_status -eq 'EXISTING_VALIDATED' })
+    if ($baselineRows.Count -ne 1) { throw 'Frozen Gate-B task list must contain exactly one EXISTING_VALIDATED baseline identity.' }
+    $baselineId = [string]$baselineRows[0].run_id
+    if ($baselineId -ne $script:ExistingPilotRunId -or $baselineId -notin $skipIds -or
+        @($skips | Where-Object { $_.run_id -eq $baselineId -and $_.receipt_type -eq 'EXISTING_BASELINE_READBACK' }).Count -ne 1 -or
+        @($skips | Where-Object { $_.run_id -eq 'run_20261003_F1023_V70_D0120_P1_G18_ch2' -and $_.receipt_type -eq 'CIR_PILOT' }).Count -ne 1 -or
+        @($skips | Where-Object { $_.run_id -eq 'run_20261003_F1023_V70_D0120_P5_G23_ch0' -and $_.receipt_type -eq 'CIR_PILOT' }).Count -ne 1) {
+        throw 'Batch request must preserve and skip the exact validated G28/ch1 existing pilot.'
+    }
+    $expectedQueue = @($CirTasks.tasks | Where-Object { $_.task_status -eq 'NEW_REQUIRED' -and $_.run_id -notin $skipIds })
+    $expectedQueueIds = @($expectedQueue | ForEach-Object { [string]$_.run_id })
+    $queueIds = @($Request.tasks | ForEach-Object { [string]$_.run_id })
+    if ($expectedQueue.Count -ne 80 -or $queueIds.Count -ne 80 -or
+        ($queueIds -join "`n") -cne ($expectedQueueIds -join "`n") -or
+        @($Request.tasks | Where-Object { $_.task_status -ne 'NEW_REQUIRED' }).Count -ne 0) {
+        throw 'Batch executable queue must contain exactly the frozen-order 80 NEW_REQUIRED tasks after PASS skips.'
+    }
+    if (@($Request.tasks | Where-Object { $_.run_id -in $excludedIds }).Count -gt 0) {
+        throw 'An excluded Gate-B identity entered the batch queue.'
+    }
+}
+
+function Assert-MatlabExitReceiptMatches {
+    param([Parameter(Mandatory)]$CirReceipt, [Parameter(Mandatory)]$MatlabExitReceipt)
+    $cirStartedUtc = ConvertTo-UtcDateTimeOffset $CirReceipt.started_utc
+    $matlabStartedUtc = ConvertTo-UtcDateTimeOffset $MatlabExitReceipt.started_utc
+    $matlabEndedUtc = ConvertTo-UtcDateTimeOffset $MatlabExitReceipt.ended_utc
+    if ([int]$MatlabExitReceipt.exit_code -ne [int]$CirReceipt.exit_code -or
+        [int]$MatlabExitReceipt.pid -ne [int]$CirReceipt.matlab_pid -or
+        $matlabStartedUtc.UtcDateTime.Ticks -ne $cirStartedUtc.UtcDateTime.Ticks -or
+        [double]$MatlabExitReceipt.elapsed_seconds -ne [double]$CirReceipt.elapsed_seconds -or
+        [long]$MatlabExitReceipt.peak_working_set_bytes_observed -ne [long]$CirReceipt.peak_working_set_bytes_observed -or
+        $matlabEndedUtc.UtcDateTime.Ticks -lt $matlabStartedUtc.UtcDateTime.Ticks) {
+        throw "CIR PASS receipt disagrees with the recorded MATLAB exit receipt for $($CirReceipt.run_id)."
+    }
+    $true
+}
+
+function Assert-WorkerTaskReceiptPass {
+    param(
+        [Parameter(Mandatory)]$TaskInfo,
+        [Parameter(Mandatory)]$Receipt,
+        [Parameter(Mandatory)][string]$RunId,
+        [Parameter(Mandatory)][string]$RequestSha256,
+        [Parameter(Mandatory)]$TaskPin,
+        [Parameter(Mandatory)][string]$ReleaseRoot
+    )
+    if ([long]$TaskInfo.LastTaskResult -ne 0) {
+        throw "Windows worker task did not exit successfully for $RunId (LastTaskResult=$($TaskInfo.LastTaskResult))."
+    }
+    if ($Receipt.status -ne 'PASS' -or [string]$Receipt.run_id -ne $RunId -or
+        [string]$Receipt.request_sha256 -ne $RequestSha256 -or $Receipt.attempt -ne 1 -or
+        $Receipt.resume -ne $false -or $Receipt.exit_code -ne 0 -or
+        $Receipt.scientific_algorithm_modified -ne $false) {
+        throw "Windows task exit 0 lacks a matching first-attempt CIR PASS receipt for $RunId."
+    }
+    foreach ($property in @('scene_id','prn','tracking_channel','output_namespace','raw_iq_path','raw_iq_size_bytes','stage0_window_count','stage2_selected_path_count')) {
+        if (-not (Test-TaskPinPropertyMatch $property $TaskPin.$property $Receipt.identity.$property)) {
+            throw "Worker receipt identity mismatch for $RunId ($property)."
+        }
+    }
+    foreach ($stageName in @('stage0_valid_windows','stage2_selected_paths')) {
+        if ([string]$Receipt.identity.stage_csvs.$stageName.path -ne [string]$TaskPin.stage_csvs.$stageName.path -or
+            [string]$Receipt.identity.stage_csvs.$stageName.sha256 -ne [string]$TaskPin.stage_csvs.$stageName.sha256 -or
+            [long]$Receipt.identity.stage_csvs.$stageName.size_bytes -ne [long]$TaskPin.stage_csvs.$stageName.size_bytes) {
+            throw "Worker receipt stage-input pin mismatch for $RunId ($stageName)."
+        }
+    }
+    $expectedSnapshots = [long]$TaskPin.stage0_window_count * 40
+    $qa = $Receipt.hdf5_validation
+    $metadata = $Receipt.metadata_summary
+    $export = $Receipt.export_summary
+    if ([long]$qa.snapshot_count -ne $expectedSnapshots -or [long]$qa.delay_count -ne 451 -or
+        $qa.time_monotonic_nondecreasing -ne $true -or $qa.raw_iq_rms_all_positive -ne $true -or
+        $qa.cir_all_finite -ne $true -or [long]$qa.pdp_window_count -ne [long]$TaskPin.stage0_window_count -or
+        [long]$qa.snapshots_per_pdp_window -ne 40 -or $qa.pdp_mean_exactly_recomputed -ne $true -or
+        [double]$qa.max_pdp_recomputation_difference -ne 0 -or
+        [long]$metadata.stage0_window_count -ne [long]$TaskPin.stage0_window_count -or
+        [long]$metadata.cir_snapshot_count -ne $expectedSnapshots -or
+        [long]$metadata.delay_grid_count -ne 451 -or
+        $metadata.amplitude_reference_status -ne 'UNKNOWN_RECEIVER_GAIN_OR_AGC' -or
+        [long]$export.stage0_window_count -ne [long]$TaskPin.stage0_window_count -or
+        [long]$export.cir_snapshot_count -ne $expectedSnapshots -or
+        [long]$export.delay_grid_count -ne 451) {
+        throw "Windows task PASS receipt lacks internally consistent CIR/PDP/HDF5 QA for $RunId."
+    }
+    $runRoot = [IO.Path]::GetFullPath((Join-Path (Join-Path $ReleaseRoot 'runs') $RunId))
+    $matlabExitReceiptPath = Join-Path $runRoot 'matlab_exit_receipt.json'
+    if (-not (Test-Path -LiteralPath $matlabExitReceiptPath -PathType Leaf) -or
+        [string]$Receipt.matlab_exit_receipt_path -cne (Get-RelativeProjectPath $matlabExitReceiptPath) -or
+        [string]$Receipt.matlab_exit_receipt_sha256 -cne (Get-Sha256 $matlabExitReceiptPath)) {
+        throw "CIR PASS receipt does not pin the actual MATLAB exit record for $RunId."
+    }
+    $matlabExitReceipt = Get-JsonDocument $matlabExitReceiptPath
+    Assert-MatlabExitReceiptMatches $Receipt $matlabExitReceipt | Out-Null
+    if (@($Receipt.outputs).Count -ne 3) { throw "CIR receipt must bind exactly three output files for $RunId." }
+    $hdf5OutputPath = Resolve-ProjectPath ([string]$Receipt.outputs[0].path)
+    if ([IO.Path]::GetFullPath([string]$qa.hdf5_path) -ne $hdf5OutputPath) {
+        throw "HDF5 QA path does not match the task's first output receipt for $RunId."
+    }
+    foreach ($output in $Receipt.outputs) {
+        $path = Resolve-ProjectPath ([string]$output.path)
+        if (-not $path.StartsWith($runRoot.TrimEnd('\') + '\attempt_01\', [StringComparison]::OrdinalIgnoreCase) -or
+            -not (Test-Path -LiteralPath $path -PathType Leaf) -or
+            [long]$output.size_bytes -le 0 -or
+            [long](Get-Item -LiteralPath $path).Length -ne [long]$output.size_bytes -or
+            [string]$output.sha256 -notmatch '^[a-fA-F0-9]{64}$') {
+            throw "CIR receipt output namespace/size/SHA metadata mismatch for $RunId."
+        }
+    }
+}
+
+function Assert-NoNewStorageFailures {
+    param([AllowEmptyCollection()][object[]]$Events, [Parameter(Mandatory)][string]$Context)
+    if (@($Events).Count -gt 0) {
+        $ids = (@($Events | ForEach-Object { "$( $_.TimeCreated.ToUniversalTime().ToString('o') )/$($_.Id)/$($_.ProviderName)/$($_.RecordId)" })) -join '; '
+        throw "New matching System disk/USB failures ${Context}: $ids"
+    }
+    $true
+}
+
 function Assert-ReleaseRequestContract {
     param(
         [Parameter(Mandatory)]$Request,
         [Parameter(Mandatory)][System.Collections.IDictionary]$CurrentSourcePins
     )
-    if ($Request.execution_policy -isnot [string] -or
-        $Request.execution_policy -cne 'MANUAL_ONLY_SERIAL_ONE_TASK_PER_INVOCATION_NO_RETRY') {
-        throw 'Release execution policy must remain manual-only, serial, one-task-per-invocation, and no-retry.'
+    $mode = Get-RequestExecutionMode $Request
+    $expectedPolicy = if ($mode -eq 'SERIAL_BATCH') { 'MANUAL_ONLY_SERIAL_BATCH_NO_RETRY' } else { 'MANUAL_ONLY_SERIAL_ONE_TASK_PER_INVOCATION_NO_RETRY' }
+    if ($Request.execution_policy -isnot [string] -or $Request.execution_policy -cne $expectedPolicy) {
+        throw "Release execution policy is invalid for $mode mode."
+    }
+    if ($mode -eq 'SERIAL_BATCH') {
+        if ($Request.batch_policy.max_parallel_matlab -ne 1 -or
+            $Request.batch_policy.stop_on_first_failure -ne $true -or
+            $Request.batch_policy.automatic_retry -ne $false -or
+            $Request.batch_policy.resume -ne $false) {
+            throw 'Batch policy must remain serial, fail-stop, no-retry, and non-resuming.'
+        }
     }
     if ($Request.resume -isnot [bool] -or $Request.resume -ne $false) {
         throw 'Release resume policy must remain false.'
@@ -334,7 +621,7 @@ function Get-StorageEventsSince {
 }
 
 function Get-LiveExecutionState {
-    param([string]$AllowedTaskName = '')
+    param([string[]]$AllowedTaskNames = @())
     $matlab = @(Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -match '(?i)^matlab' })
     if ($matlab.Count -gt 0) {
         throw "MATLAB process already active; refusing concurrent CIR execution/validation: $($matlab.Id -join ',')."
@@ -342,7 +629,7 @@ function Get-LiveExecutionState {
     $tasks = @(Get-ScheduledTask -ErrorAction Stop | Where-Object {
         $_.State -in @('Running','Queued') -and $_.TaskName -match '(?i)(SAGE|CIR)'
     })
-    $unexpectedTasks = @($tasks | Where-Object { $_.TaskName -ne $AllowedTaskName })
+    $unexpectedTasks = @($tasks | Where-Object { $_.TaskName -notin $AllowedTaskNames })
     if ($unexpectedTasks.Count -gt 0) {
         throw "Another SAGE/CIR scheduled task is running: $($unexpectedTasks.TaskName -join ',')."
     }
@@ -353,11 +640,11 @@ function Get-LiveExecutionState {
 }
 
 function Assert-NoOtherExecutionProcess {
-    param([string]$AllowedTaskName = '')
+    param([string[]]$AllowedTaskNames = @())
     $matlab = @(Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -match '(?i)^matlab' })
     if ($matlab.Count -gt 0) { throw "MATLAB process became active before the worker acquired its execution slot: $($matlab.Id -join ',')." }
     $tasks = @(Get-ScheduledTask -ErrorAction Stop | Where-Object {
-        $_.State -in @('Running','Queued') -and $_.TaskName -match '(?i)(SAGE|CIR)' -and $_.TaskName -ne $AllowedTaskName
+        $_.State -in @('Running','Queued') -and $_.TaskName -match '(?i)(SAGE|CIR)' -and $_.TaskName -notin $AllowedTaskNames
     })
     if ($tasks.Count -gt 0) { throw "Another SAGE/CIR task became active before execution: $($tasks.TaskName -join ',')." }
 }
@@ -452,7 +739,7 @@ function Assert-PilotSequenceReady {
     }
 }
 
-function Assert-NewPilotOutputNamespace {
+function Assert-NewCIROutputNamespace {
     param([Parameter(Mandatory)]$Request, [Parameter(Mandatory)]$TaskPin)
     $runRoot = Join-Path (Join-Path $Request.release_root 'runs') $TaskPin.run_id
     if (Test-Path -LiteralPath $runRoot) { throw "Run namespace already exists; refusing retry or overwrite: $runRoot" }
@@ -467,12 +754,18 @@ function Assert-NewPilotOutputNamespace {
     }
 }
 
+function Assert-NewPilotOutputNamespace {
+    param([Parameter(Mandatory)]$Request, [Parameter(Mandatory)]$TaskPin)
+    Assert-NewCIROutputNamespace $Request $TaskPin
+}
+
 function Get-ValidatedSnapshot {
-    param([Parameter(Mandatory)][string]$RequestPath, [Parameter(Mandatory)][string]$ExpectedHash, [string]$ForRunId = '', [string]$AllowedTaskName = '', [switch]$SkipLockCheck)
+    param([Parameter(Mandatory)][string]$RequestPath, [Parameter(Mandatory)][string]$ExpectedHash, [string]$ForRunId = '', [string]$AllowedTaskName = '', [string[]]$AdditionalAllowedTaskNames = @(), [switch]$SkipLockCheck)
     if (-not (Test-Path -LiteralPath $RequestPath -PathType Leaf)) { throw "Request manifest is missing: $RequestPath" }
     $actualHash = Get-Sha256 $RequestPath
     if ($actualHash -ne $ExpectedHash.ToLowerInvariant()) { throw 'Immutable request SHA256 does not match the caller pin.' }
     $request = Get-JsonDocument $RequestPath
+    $executionMode = Get-RequestExecutionMode $request
     if ([string]$request.schema_version -ne '1' -or [string]$request.release_root -ne [IO.Path]::GetFullPath([string]$request.release_root)) {
         throw 'Malformed or noncanonical release request.'
     }
@@ -508,7 +801,11 @@ function Get-ValidatedSnapshot {
     $summaryRows = @($snapshot.rows)
     $sceneRows = @(Import-Csv -LiteralPath $script:SceneMetadataPath)
     $resolvedPins = @()
-    foreach ($requestedTask in $request.tasks) {
+    $tasksToResolve = @($request.tasks)
+    if ($executionMode -eq 'SERIAL_BATCH' -and $ForRunId) {
+        $tasksToResolve = @($request.tasks | Where-Object { [string]$_.run_id -eq $ForRunId })
+    }
+    foreach ($requestedTask in $tasksToResolve) {
         $pin = Get-TaskPin ([string]$requestedTask.run_id) $cohort $cirTasks $gateRows $snapshot.manifest_rows $summaryRows $sceneRows
         foreach ($property in @('scene_id','prn','tracking_channel','raw_iq_path','raw_iq_size_bytes','environment_class','elevation_group','mean_elevation_deg','stage0_window_count','stage2_selected_path_count')) {
             if (-not (Test-TaskPinPropertyMatch $property $pin.$property $requestedTask.$property)) {
@@ -524,27 +821,41 @@ function Get-ValidatedSnapshot {
         }
         $resolvedPins += $pin
     }
-    if (@($request.tasks).Count -ne 2 -or
-        [string]$request.tasks[0].run_id -ne $script:ApprovedPilotIds[0] -or
-        [string]$request.tasks[1].run_id -ne $script:ApprovedPilotIds[1] -or
-        $request.tasks[0].scene_id -eq $request.tasks[1].scene_id -or
-        $request.tasks[0].environment_class -ne 'Urban' -or $request.tasks[1].environment_class -ne 'Urban' -or
-        $request.tasks[0].elevation_group -eq $request.tasks[1].elevation_group) {
-        throw 'Release request must contain the two approved Urban tasks from distinct scenes and elevation groups.'
-    }
-    $auditPath = Join-Path ([string]$request.release_root) 'pilot_audit.json'
-    $auditHasFailure = $false
-    if (Test-Path -LiteralPath $auditPath -PathType Leaf) {
-        $auditHasFailure = @((Get-PilotAudit ([string]$request.release_root)).pilots | Where-Object { $_.status -ne 'PASS' }).Count -gt 0
-    }
-    if ($auditHasFailure) {
-        throw 'A prior pilot failure is recorded; no later task may continue.'
+    if ($executionMode -eq 'PILOT') {
+        if (@($request.tasks).Count -ne 2 -or
+            [string]$request.tasks[0].run_id -ne $script:ApprovedPilotIds[0] -or
+            [string]$request.tasks[1].run_id -ne $script:ApprovedPilotIds[1] -or
+            $request.tasks[0].scene_id -eq $request.tasks[1].scene_id -or
+            $request.tasks[0].environment_class -ne 'Urban' -or $request.tasks[1].environment_class -ne 'Urban' -or
+            $request.tasks[0].elevation_group -eq $request.tasks[1].elevation_group) {
+            throw 'Release request must contain the two approved Urban tasks from distinct scenes and elevation groups.'
+        }
+        $auditPath = Join-Path ([string]$request.release_root) 'pilot_audit.json'
+        $auditHasFailure = $false
+        if (Test-Path -LiteralPath $auditPath -PathType Leaf) {
+            $auditHasFailure = @((Get-PilotAudit ([string]$request.release_root)).pilots | Where-Object { $_.status -ne 'PASS' }).Count -gt 0
+        }
+        if ($auditHasFailure) { throw 'A prior pilot failure is recorded; no later task may continue.' }
+    } else {
+        Assert-BatchRequestIdentities $request $cohort $cirTasks
+        Get-BaselineInputs $request | Out-Null
+        foreach ($skip in $request.skipped_existing_pass) {
+            $expectedPin = $null
+            if ([string]$skip.run_id -eq $script:ExistingPilotRunId) {
+                $expectedPin = [pscustomobject]@{ run_id = [string]$request.baseline_existing_pilot.run_id; scene_id = [string]$request.baseline_existing_pilot.scene_id; prn = [string]$request.baseline_existing_pilot.prn; tracking_channel = [int]$request.baseline_existing_pilot.tracking_channel }
+            } else {
+                $expectedPin = Get-TaskPin ([string]$skip.run_id) $cohort $cirTasks $gateRows $snapshot.manifest_rows $summaryRows $sceneRows
+            }
+            Assert-VerifiedPassReceiptReference $skip $expectedPin $request.inputs.cohort_sha256 $request.inputs.cir_tasks_sha256
+        }
     }
     if ($ForRunId) {
         $requestedTask = @($request.tasks | Where-Object { $_.run_id -eq $ForRunId })
-        if ($requestedTask.Count -ne 1) { throw "RunId is not one of the two pinned pilot identities: $ForRunId" }
+        if ($requestedTask.Count -ne 1) { throw "RunId is not exactly one executable identity in the pinned $executionMode release: $ForRunId" }
         $targetPin = @($resolvedPins | Where-Object run_id -eq $ForRunId)[0]
-        Assert-NewPilotOutputNamespace $request $targetPin
+        Assert-NewCIROutputNamespace $request $targetPin
+    } elseif ($executionMode -eq 'SERIAL_BATCH') {
+        foreach ($targetPin in $resolvedPins) { Assert-NewCIROutputNamespace $request $targetPin }
     }
     $budget = Get-VolumeBudget $cohort
     if (-not $budget.enough_space) {
@@ -555,7 +866,10 @@ function Get-ValidatedSnapshot {
             throw "E: storage identity/health changed since release creation ($field); stopping before execution."
         }
     }
-    if (-not $SkipLockCheck) { Get-LiveExecutionState -AllowedTaskName $AllowedTaskName }
+    if (-not $SkipLockCheck) {
+        $allowedTaskNames = @($AllowedTaskName) + @($AdditionalAllowedTaskNames) | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) }
+        Get-LiveExecutionState -AllowedTaskNames $allowedTaskNames
+    }
     $since = ConvertTo-UtcDateTimeOffset $request.created_utc
     $storageEvents = @(Get-StorageEventsSince $since)
     if ($storageEvents.Count -gt 0) {
@@ -566,6 +880,7 @@ function Get-ValidatedSnapshot {
         request = $request
         request_sha256 = $actualHash
         task_pins = $resolvedPins
+        execution_mode = $executionMode
         selected_pin = if ($ForRunId) { @($resolvedPins | Where-Object run_id -eq $ForRunId)[0] } else { $null }
         counts = $snapshot.counts
         space_budget = $budget
@@ -712,6 +1027,201 @@ function New-ReleaseRequest {
     "CIR_SPACE_ESTIMATE_BYTES=$($volumeBudget.estimated_new_cir_bytes) E_FREE_BYTES=$($volumeBudget.current_e_free_bytes) RESERVE_BYTES=$($volumeBudget.minimum_free_reserve_bytes)"
 }
 
+function New-CirBatchAuditDocument {
+    param([Parameter(Mandatory)][string]$RequestSha256)
+    [pscustomobject][ordered]@{
+        schema_version = 1
+        release_request_sha256 = $RequestSha256.ToLowerInvariant()
+        status = 'CREATED_NOT_STARTED'
+        expected_new_required_tasks = 80
+        completed_tasks = @()
+        current_run_id = ''
+        current_task_started_utc = ''
+        last_completed_utc = ''
+        completion_receipt_path = ''
+        completed_utc = ''
+        stop_receipt_path = ''
+        stopped_utc = ''
+        automatic_retry = $false
+    }
+}
+
+function New-BatchReleaseRequest {
+    if (-not $ReleaseRoot) { throw '-ReleaseRoot is required with -CreateBatchReleaseRequest.' }
+    if (@($PassReceiptPaths).Count -ne 3) { throw 'Exactly three verified existing PASS receipt paths are required for this frozen 83-task cohort.' }
+    $fullRoot = [IO.Path]::GetFullPath($ReleaseRoot)
+    $basePrefix = [IO.Path]::GetFullPath($script:ReleaseBase).TrimEnd('\') + '\'
+    if (-not $fullRoot.StartsWith($basePrefix, [StringComparison]::OrdinalIgnoreCase) -or
+        (Split-Path -Leaf $fullRoot) -notmatch '^mainline_1023_cir_v1_[A-Za-z0-9_]+$') {
+        throw 'ReleaseRoot must be a unique mainline_1023_cir_v1_<UTC> directory directly under dataset_generation_logs/channel_modeling.'
+    }
+    if (Test-Path -LiteralPath $fullRoot) { throw "ReleaseRoot already exists; preserving it and refusing overwrite: $fullRoot" }
+    $cohort = Get-JsonDocument $script:CohortPath
+    $cirTasks = Get-JsonDocument $script:CirTasksPath
+    $cohortValidation = Get-JsonDocument $script:CohortValidationPath
+    if ($cohortValidation.validation_status -ne 'PASS' -or $cohortValidation.gate_b_pass -ne $true -or
+        $cohort.eligible_count -ne 83 -or $cohort.excluded_count -ne 6) {
+        throw 'The frozen Gate-B 83/6 cohort does not pass its original validation.'
+    }
+    $snapshot = Get-CurrentCountSnapshot
+    $gateRows = @(Import-Csv -LiteralPath $script:GateATaskAuditPath)
+    $sceneRows = @(Import-Csv -LiteralPath $script:SceneMetadataPath)
+    Get-LiveExecutionState
+    Assert-NoNewStorageFailures @(Get-StorageEventsSince ([DateTimeOffset]::UtcNow.AddMinutes(-5))) 'before batch release creation' | Out-Null
+
+    $baselineId = $script:ExistingPilotRunId
+    $baselineTask = Get-UniqueRow $cohort.tasks 'run_id' $baselineId 'Existing G28 pilot cohort row'
+    $baselineCir = Get-UniqueRow $cirTasks.tasks 'run_id' $baselineId 'Existing G28 pilot cir_tasks row'
+    $baselineSummary = Get-UniqueRow $snapshot.rows 'run_id' $baselineId 'Existing G28 pilot Summary row'
+    if ($baselineCir.task_status -ne 'EXISTING_VALIDATED' -or $baselineSummary.execution_status -ne 'ALREADY_COMPLETE') {
+        throw 'Existing G28/ch1 pilot is not in its expected validated/already-complete state.'
+    }
+    $baselineNamespace = Resolve-ProjectPath ([string]$baselineTask.output_namespace)
+    $baselineH5 = Join-Path $baselineNamespace 'G28_ch1_code_domain_cir.h5'
+    $baselineMetadata = Join-Path $baselineNamespace 'G28_ch1_code_domain_cir_metadata.json'
+    foreach ($path in @($baselineH5,$baselineMetadata,$script:DelayComparisonPath)) {
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "Existing G28 pilot read-back input is missing: $path" }
+    }
+    $baselineH5Info = Get-Item -LiteralPath $baselineH5
+    $baselineMetadataJson = Get-JsonDocument $baselineMetadata
+    if ($baselineMetadataJson.run_id -ne $baselineId -or $baselineMetadataJson.stage0_window_count -ne 898 -or
+        $baselineMetadataJson.cir_snapshot_count -ne 35920 -or $baselineMetadataJson.delay_grid_count -ne 451 -or
+        $baselineMetadataJson.amplitude_reference_status -ne 'UNKNOWN_RECEIVER_GAIN_OR_AGC' -or
+        $baselineMetadataJson.primary_delay_comparison.count -ne 54 -or
+        [Math]::Abs([double]$baselineMetadataJson.primary_delay_comparison.max_abs_difference_samples - 32.5) -gt 1e-12 -or
+        [Math]::Abs([double]$baselineMetadataJson.primary_delay_comparison.median_signed_difference_samples - 0.1) -gt 1e-12) {
+        throw 'Existing G28 pilot metadata differs from the frozen identity/shape/relative-amplitude baseline.'
+    }
+    $volumeBudget = Get-VolumeBudget $cohort
+    if (-not $volumeBudget.enough_space) { throw 'E: does not meet the CIR forecast plus 100 GiB reserve.' }
+
+    $baselineIdentity = [pscustomobject]@{
+        run_id = $baselineId
+        scene_id = [string]$baselineTask.scene_id
+        prn = [string]$baselineTask.prn
+        tracking_channel = [int]$baselineTask.tracking_channel
+    }
+    $receiptInputs = @()
+    foreach ($receiptPath in $PassReceiptPaths) {
+        $receipt = Get-JsonDocument $receiptPath
+        $runId = [string]$receipt.run_id
+        if ([string]::IsNullOrWhiteSpace($runId) -or @($receiptInputs | Where-Object { $_.run_id -eq $runId }).Count -gt 0) {
+            throw "PASS receipt paths must identify three unique frozen tasks; duplicate/empty identity: $receiptPath"
+        }
+        $cirRow = Get-UniqueRow $cirTasks.tasks 'run_id' $runId 'PASS-receipt Gate-B CIR task'
+        if ($runId -eq $baselineId) {
+            if ($null -eq $receipt.PSObject.Properties['matlab_exit_code']) { throw 'G28 skip must use its read-back receipt, not a generated pilot receipt.' }
+            $expectedIdentity = $baselineIdentity
+            $receiptType = 'EXISTING_BASELINE_READBACK'
+        } else {
+            if ($cirRow.task_status -ne 'NEW_REQUIRED' -or $null -eq $receipt.PSObject.Properties['outputs']) {
+                throw "Only PASS receipts for Gate-B NEW_REQUIRED tasks may be used as batch skips: $runId"
+            }
+            $expectedIdentity = Get-TaskPin $runId $cohort $cirTasks $gateRows $snapshot.manifest_rows $snapshot.rows $sceneRows
+            $receiptType = 'CIR_PILOT'
+        }
+        $receiptInputs += Get-VerifiedPassReceiptReference $receiptPath $expectedIdentity $receiptType `
+            (Get-Sha256 $script:CohortPath) (Get-Sha256 $script:CirTasksPath)
+    }
+
+    $skipById = @{}
+    foreach ($reference in $receiptInputs) { $skipById[[string]$reference.run_id] = $reference }
+    $tasks = @()
+    $skipped = @()
+    foreach ($cirTask in $cirTasks.tasks) {
+        $id = [string]$cirTask.run_id
+        if ($skipById.ContainsKey($id)) {
+            $skipped += $skipById[$id]
+            continue
+        }
+        if ($cirTask.task_status -ne 'NEW_REQUIRED') { throw "Gate-B task status is neither a validated skip nor NEW_REQUIRED: $id / $($cirTask.task_status)" }
+        $tasks += Get-TaskPin $id $cohort $cirTasks $gateRows $snapshot.manifest_rows $snapshot.rows $sceneRows
+    }
+    if ($skipped.Count -ne 3 -or $tasks.Count -ne 80) { throw "Expected exactly three verified PASS skips and 80 remaining tasks; got $($skipped.Count)/$($tasks.Count)." }
+    $createdUtc = [DateTimeOffset]::UtcNow
+    $request = [ordered]@{
+        schema_version = 1
+        release_id = (Split-Path -Leaf $fullRoot)
+        created_utc = $createdUtc.ToString('o')
+        project_root = $script:ProjectRoot
+        release_root = $fullRoot
+        execution_mode = 'SERIAL_BATCH'
+        execution_policy = 'MANUAL_ONLY_SERIAL_BATCH_NO_RETRY'
+        mode = 'FROZEN_SAGE_CIR_STAGE2_EXPORT'
+        scientific_algorithm_modified = $false
+        resume = $false
+        max_parallel_matlab = 1
+        permitted_raw_iq_access = 'ONLY_THE_UNIQUE_SCENE_METADATA_ROW_FOR_THE_SELECTED_RUN_ID_DURING_CONFIRMED_CIR_EXECUTION'
+        inputs = [ordered]@{
+            manifest_sha256 = $snapshot.manifest_sha256
+            summary_sha256 = $snapshot.summary_sha256
+            cohort_path = Get-RelativeProjectPath $script:CohortPath
+            cohort_sha256 = Get-Sha256 $script:CohortPath
+            cir_tasks_path = Get-RelativeProjectPath $script:CirTasksPath
+            cir_tasks_sha256 = Get-Sha256 $script:CirTasksPath
+            cohort_validation_path = Get-RelativeProjectPath $script:CohortValidationPath
+            cohort_validation_sha256 = Get-Sha256 $script:CohortValidationPath
+            gate_a_task_audit_path = Get-RelativeProjectPath $script:GateATaskAuditPath
+            gate_a_task_audit_sha256 = Get-Sha256 $script:GateATaskAuditPath
+            scene_metadata_path = Get-RelativeProjectPath $script:SceneMetadataPath
+            scene_metadata_sha256 = Get-Sha256 $script:SceneMetadataPath
+        }
+        source_sha256 = Get-SourcePins
+        status_counts_at_release = $snapshot.counts
+        batch_policy = [ordered]@{
+            frozen_cohort_task_count = 83
+            excluded_task_count = 6
+            validated_existing_pass_skip_count = 3
+            new_required_task_count = 80
+            max_parallel_matlab = 1
+            resume = $false
+            automatic_retry = $false
+            stop_on_first_failure = $true
+            dispatch_next_only_after_task_pass_receipt_and_zero_task_result = $true
+        }
+        frozen_cohort_run_ids = @($cirTasks.tasks | ForEach-Object { [string]$_.run_id })
+        excluded_run_ids = @($cohort.excluded | ForEach-Object { [string]$_.run_id })
+        skipped_existing_pass = $skipped
+        baseline_existing_pilot = [ordered]@{
+            run_id = $baselineId
+            scene_id = [string]$baselineTask.scene_id
+            prn = [string]$baselineTask.prn
+            tracking_channel = [int]$baselineTask.tracking_channel
+            output_namespace = [string]$baselineTask.output_namespace
+            hdf5_path = Get-RelativeProjectPath $baselineH5
+            hdf5_size_bytes = [long]$baselineH5Info.Length
+            hdf5_last_write_time_utc = $baselineH5Info.LastWriteTimeUtc.ToString('o')
+            metadata_path = Get-RelativeProjectPath $baselineMetadata
+            metadata_sha256 = Get-Sha256 $baselineMetadata
+            comparison_csv_path = Get-RelativeProjectPath $script:DelayComparisonPath
+            comparison_csv_sha256 = Get-Sha256 $script:DelayComparisonPath
+            baseline_audit_path = Get-RelativeProjectPath $script:BaselineAuditPath
+            baseline_audit_sha256 = Get-Sha256 $script:BaselineAuditPath
+            stage0_windows_path = [string]$baselineTask.stage_csvs.stage0_valid_windows.path
+            stage0_windows_sha256 = [string]$baselineTask.stage_csvs.stage0_valid_windows.sha256
+            stage2_selected_paths_path = [string]$baselineTask.stage_csvs.stage2_selected_paths.path
+            stage2_selected_paths_sha256 = [string]$baselineTask.stage_csvs.stage2_selected_paths.sha256
+        }
+        space_budget_at_release = $volumeBudget
+        minimum_free_reserve_bytes = [long]$script:MinimumFreeReserveBytes
+        tasks = $tasks
+    }
+    Assert-BatchRequestIdentities ([pscustomobject]$request) $cohort $cirTasks
+    New-Item -ItemType Directory -Path $fullRoot | Out-Null
+    try {
+        Write-JsonNew (Join-Path $fullRoot 'release_request.json') $request
+        $releaseRequestHash = Get-Sha256 (Join-Path $fullRoot 'release_request.json')
+        Write-JsonNew (Join-Path $fullRoot 'cir_batch_audit.json') `
+            (New-CirBatchAuditDocument -RequestSha256 $releaseRequestHash)
+    } catch {
+        throw "Batch release root was created but immutable evidence assembly failed; preserving partial evidence at $fullRoot. $($_.Exception.Message)"
+    }
+    "CIR_BATCH_RELEASE_REQUEST=$((Join-Path $fullRoot 'release_request.json'))"
+    "CIR_BATCH_RELEASE_REQUEST_SHA256=$(Get-Sha256 (Join-Path $fullRoot 'release_request.json'))"
+    "CIR_BATCH_FROZEN_IDENTITIES=83 EXECUTABLE=80 VERIFIED_PASS_SKIPS=3 EXCLUDED=6"
+    "CIR_BATCH_SPACE_ESTIMATE_BYTES=$($volumeBudget.estimated_new_cir_bytes) E_FREE_BYTES=$($volumeBudget.current_e_free_bytes) RESERVE_BYTES=$($volumeBudget.minimum_free_reserve_bytes)"
+}
+
 function Invoke-ValidateOnly {
     if (-not $RequestManifest -or -not $ExpectedRequestSha256 -or -not $RunId) { throw '-RequestManifest, -ExpectedRequestSha256, and -RunId are required with -ValidateOnly.' }
     $validated = Get-ValidatedSnapshot $RequestManifest $ExpectedRequestSha256 $RunId
@@ -819,7 +1329,7 @@ function New-CirLaunchReservation {
 }
 
 function Register-WorkerTask {
-    param([Parameter(Mandatory)][string]$WorkerMode, [Parameter(Mandatory)][string]$RequestPath, [Parameter(Mandatory)][string]$RequestHash, [Parameter(Mandatory)][string]$TargetRunId)
+    param([Parameter(Mandatory)][string]$WorkerMode, [Parameter(Mandatory)][string]$RequestPath, [Parameter(Mandatory)][string]$RequestHash, [Parameter(Mandatory)][string]$TargetRunId, [string]$CoordinatorTaskName = '')
     $currentUser = [Security.Principal.WindowsIdentity]::GetCurrent().Name
     if ($currentUser -ine $script:ExpectedUser) { throw "Runner must execute as $($script:ExpectedUser), not $currentUser." }
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -832,16 +1342,365 @@ function Register-WorkerTask {
     $escapedScript = '"' + $PSCommandPath.Replace('"','\"') + '"'
     $escapedRequest = '"' + $RequestPath.Replace('"','\"') + '"'
     $arguments = "-NoProfile -ExecutionPolicy Bypass -File $escapedScript -$WorkerMode -ConfirmPilot -RequestManifest $escapedRequest -ExpectedRequestSha256 $RequestHash -RunId $TargetRunId -TaskName $name"
+    if ($CoordinatorTaskName) { $arguments += ' -CoordinatorTaskName "' + $CoordinatorTaskName.Replace('"','\"') + '"' }
     $action = New-ScheduledTaskAction -Execute $powershell -Argument $arguments -WorkingDirectory $script:ProjectRoot
     $principal = New-ScheduledTaskPrincipal -UserId $currentUser -LogonType Interactive -RunLevel Limited
-    $settings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Hours 12) -StartWhenAvailable:$false -DontStopIfGoingOnBatteries
-    Register-ScheduledTask -TaskName $name -Action $action -Principal $principal -Settings $settings -Description 'Manual-only, no-retry, limited-user GNSS CIR pilot/read-back.' | Out-Null
+    $executionTimeLimit = if ($WorkerMode -eq 'ExecuteBatchWorker') { New-TimeSpan -Seconds 0 } else { New-TimeSpan -Hours 12 }
+    $settings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -ExecutionTimeLimit $executionTimeLimit -StartWhenAvailable:$false -DontStopIfGoingOnBatteries
+    Register-ScheduledTask -TaskName $name -Action $action -Principal $principal -Settings $settings -Description 'Manual-only, serial, no-retry, limited-user GNSS CIR worker.' | Out-Null
     try {
         Start-ScheduledTask -TaskName $name
     } catch {
         throw "Worker task registered but Start-ScheduledTask failed; preserve registration for diagnosis: $name. $($_.Exception.Message)"
     }
     [pscustomobject]@{ task_name = $name; user = $currentUser; logon_type = 'Interactive'; run_level = 'Limited'; max_instances = 1; restart_count = 0; task_name_exists = $true }
+}
+
+function Register-BatchCoordinatorTask {
+    param([Parameter(Mandatory)][string]$RequestPath, [Parameter(Mandatory)][string]$RequestHash)
+    $currentUser = [Security.Principal.WindowsIdentity]::GetCurrent().Name
+    if ($currentUser -ine $script:ExpectedUser) { throw "Batch coordinator must run as $($script:ExpectedUser), not $currentUser." }
+    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $principalCheck = [Security.Principal.WindowsPrincipal]::new($identity)
+    if ($principalCheck.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { throw 'Elevated/admin execution is prohibited for CIR production.' }
+    $suffix = [DateTimeOffset]::UtcNow.ToString('yyyyMMddTHHmmssfffZ')
+    $name = 'GNSS-CIR-Batch1023-' + $suffix
+    if (Get-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue) { throw "Unique batch task name collision: $name" }
+    $powershell = (Get-Command powershell.exe -ErrorAction Stop).Source
+    $escapedScript = '"' + $PSCommandPath.Replace('"','\"') + '"'
+    $escapedRequest = '"' + $RequestPath.Replace('"','\"') + '"'
+    $arguments = "-NoProfile -ExecutionPolicy Bypass -File $escapedScript -RunBatchCoordinator -RequestManifest $escapedRequest -ExpectedRequestSha256 $RequestHash -TaskName `"$name`""
+    $action = New-ScheduledTaskAction -Execute $powershell -Argument $arguments -WorkingDirectory $script:ProjectRoot
+    $principal = New-ScheduledTaskPrincipal -UserId $currentUser -LogonType Interactive -RunLevel Limited
+    $settings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Seconds 0) -StartWhenAvailable:$false -DontStopIfGoingOnBatteries
+    Register-ScheduledTask -TaskName $name -Action $action -Principal $principal -Settings $settings `
+        -Description 'Manual-only, serial CIR coordinator; one limited-user worker at a time; stop on first failure.' | Out-Null
+    [pscustomobject]@{ task_name = $name; user = $currentUser; logon_type = 'Interactive'; run_level = 'Limited'; max_instances = 1; restart_count = 0 }
+}
+
+function New-CirBatchLaunchReservation {
+    param([Parameter(Mandatory)]$Request, [Parameter(Mandatory)][string]$RequestSha256)
+    $reservationRoot = Join-Path $script:BatchLogRoot 'cir_batch_reservations'
+    [IO.Directory]::CreateDirectory($reservationRoot) | Out-Null
+    $cohortHash = [string]$Request.inputs.cohort_sha256
+    if ($cohortHash -notmatch '^[a-fA-F0-9]{64}$') { throw 'Batch reservation requires a pinned cohort SHA256.' }
+    $path = Join-Path $reservationRoot "$($cohortHash.ToLowerInvariant()).json"
+    $stream = $null
+    try {
+        $stream = [IO.File]::Open($path, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
+        $record = [ordered]@{
+            schema_version = 1
+            cohort_sha256 = $cohortHash.ToLowerInvariant()
+            release_root = [IO.Path]::GetFullPath([string]$Request.release_root)
+            request_sha256 = $RequestSha256.ToLowerInvariant()
+            reserved_utc = [DateTimeOffset]::UtcNow.ToString('o')
+            reservation_process_id = $PID
+            automatic_retry = $false
+        }
+        $json = ConvertTo-Json -InputObject $record -Depth 8
+        $bytes = [Text.UTF8Encoding]::new($false).GetBytes($json + [Environment]::NewLine)
+        $stream.Write($bytes, 0, $bytes.Length)
+        $stream.Flush($true)
+    } catch [IO.IOException] {
+        throw "The frozen cohort already has a durable batch reservation; refusing a cross-release duplicate or retry: $path. $($_.Exception.Message)"
+    } finally {
+        if ($null -ne $stream) { $stream.Dispose() }
+    }
+    $path
+}
+
+function Invoke-ValidateBatchOnly {
+    if (-not $RequestManifest -or -not $ExpectedRequestSha256) { throw '-RequestManifest and -ExpectedRequestSha256 are required with -ValidateBatchOnly.' }
+    $validated = Get-ValidatedSnapshot $RequestManifest $ExpectedRequestSha256
+    if ($validated.execution_mode -ne 'SERIAL_BATCH') { throw '-ValidateBatchOnly requires a SERIAL_BATCH release request.' }
+    $directory = Join-Path ([string]$validated.request.release_root) 'batch_validate_only'
+    $stamp = [DateTimeOffset]::UtcNow.ToString('yyyyMMddTHHmmssfffZ')
+    $path = Join-Path $directory "$stamp.json"
+    $report = [ordered]@{
+        validation_status = 'PASS'
+        check = 'BATCH_VALIDATE_ONLY_NO_MATLAB_NO_RAW_CONTENT'
+        validated_at_utc = $validated.validated_at_utc
+        request_path = [IO.Path]::GetFullPath($RequestManifest)
+        request_sha256 = $validated.request_sha256
+        frozen_cohort_task_count = 83
+        executable_task_count = @($validated.request.tasks).Count
+        skipped_pass_run_ids = @($validated.request.skipped_existing_pass | ForEach-Object { [string]$_.run_id })
+        excluded_run_ids = @($validated.request.excluded_run_ids)
+        planned_run_ids = @($validated.request.tasks | ForEach-Object { [string]$_.run_id })
+        source_sha256 = $validated.request.source_sha256
+        current_summary_counts = $validated.counts
+        space_budget = $validated.space_budget
+        raw_content_read = $false
+        raw_hash_recomputed = $false
+        matlab_invoked = $false
+        global_lock_exists = $false
+        new_storage_events = @()
+    }
+    Write-JsonNew $path $report
+    "BATCH_VALIDATION_ONLY_OK=$path"
+    "MATLAB_INVOKED=false RAW_CONTENT_READ=false TASK_COUNT=$($report.executable_task_count)"
+}
+
+function Invoke-ExecuteBatch {
+    if (-not $ConfirmBatch) { throw '-ExecuteBatch requires -ConfirmBatch.' }
+    if (-not $RequestManifest -or -not $ExpectedRequestSha256) { throw '-RequestManifest and -ExpectedRequestSha256 are required with -ExecuteBatch.' }
+    $validated = Get-ValidatedSnapshot $RequestManifest $ExpectedRequestSha256
+    if ($validated.execution_mode -ne 'SERIAL_BATCH') { throw '-ExecuteBatch requires a SERIAL_BATCH release request.' }
+    $reports = @(Get-ChildItem -LiteralPath (Join-Path $validated.request.release_root 'batch_validate_only') -Filter '*.json' -File -ErrorAction SilentlyContinue |
+        Sort-Object LastWriteTimeUtc -Descending)
+    if ($reports.Count -lt 1) { throw 'A successful Batch ValidateOnly report is required before coordinator launch.' }
+    $validation = Get-JsonDocument $reports[0].FullName
+    $plannedIds = @($validated.request.tasks | ForEach-Object { [string]$_.run_id })
+    if ($validation.validation_status -ne 'PASS' -or $validation.request_sha256 -ne $validated.request_sha256 -or
+        $validation.matlab_invoked -ne $false -or (@($validation.planned_run_ids) -join "`n") -cne ($plannedIds -join "`n")) {
+        throw 'Latest Batch ValidateOnly does not authorize this exact 80-task release.'
+    }
+    if ((Test-Path -LiteralPath (Join-Path $validated.request.release_root 'cir_batch_completion_receipt.json')) -or
+        (Test-Path -LiteralPath (Join-Path $validated.request.release_root 'cir_batch_stop_receipt.json'))) {
+        throw 'Batch already has a terminal receipt; refusing restart, resume, or retry.'
+    }
+    $launchReservation = New-CirBatchLaunchReservation $validated.request $validated.request_sha256
+    $task = Register-BatchCoordinatorTask ([IO.Path]::GetFullPath($RequestManifest)) $validated.request_sha256
+    $launchPath = Join-Path (Join-Path $validated.request.release_root 'batch_launch_records') "$($task.task_name).json"
+    Write-JsonNew $launchPath ([ordered]@{
+        task_name = $task.task_name
+        request_path = [IO.Path]::GetFullPath($RequestManifest)
+        request_sha256 = $validated.request_sha256
+        batch_reservation_path = Get-RelativeProjectPath $launchReservation
+        created_utc = [DateTimeOffset]::UtcNow.ToString('o')
+        normal_user = $task.user
+        logon_type = $task.logon_type
+        run_level = $task.run_level
+        maximum_instances = 1
+        automatic_retry = $false
+        matlab_launched_by = 'Sequential limited-user worker scheduled only after per-task ValidateOnly and durable run reservation'
+    })
+    try {
+        Start-ScheduledTask -TaskName $task.task_name
+    } catch {
+        throw "Batch coordinator was registered and its reservation/launch record preserved, but it did not start: $($task.task_name). $($_.Exception.Message)"
+    }
+    "CIR_BATCH_COORDINATOR_STARTED=$($task.task_name)"
+    "CIR_BATCH_LAUNCH_RECORD=$launchPath"
+    "CIR_BATCH_REQUEST=$RequestManifest"
+    'CIR_BATCH_AUTOMATIC_RETRY=false MAX_PARALLEL_MATLAB=1'
+}
+
+function Wait-CirWorkerTask {
+    param([Parameter(Mandatory)][string]$WorkerTaskName, [Parameter(Mandatory)][DateTimeOffset]$StartRequestedUtc)
+    $observedStart = $false
+    while ($true) {
+        $task = Get-ScheduledTask -TaskName $WorkerTaskName -ErrorAction Stop
+        $info = Get-ScheduledTaskInfo -TaskName $WorkerTaskName -ErrorAction Stop
+        if ($task.State -in @('Running','Queued')) { $observedStart = $true }
+        if (-not $observedStart -and $info.LastRunTime -gt [DateTime]::MinValue -and
+            $info.LastRunTime.ToUniversalTime() -ge $StartRequestedUtc.UtcDateTime.AddSeconds(-2)) {
+            $observedStart = $true
+        }
+        if ($observedStart -and $task.State -notin @('Running','Queued')) { return $info }
+        if (-not $observedStart -and [DateTimeOffset]::UtcNow -gt $StartRequestedUtc.AddMinutes(2)) {
+            throw "Worker scheduled task never entered a verified run state: $WorkerTaskName"
+        }
+        Start-Sleep -Seconds 10
+    }
+}
+
+function Invoke-SerialCirBatchTasks {
+    param([Parameter(Mandatory)][object[]]$TaskPins, [Parameter(Mandatory)][scriptblock]$DispatchAndVerify)
+    $accepted = [System.Collections.Generic.List[object]]::new()
+    foreach ($taskPin in $TaskPins) {
+        $result = & $DispatchAndVerify $taskPin
+        if ($null -eq $result -or [string]$result.status -cne 'PASS') {
+            $id = if ($null -ne $taskPin.PSObject.Properties['run_id']) { [string]$taskPin.run_id } else { '<unknown>' }
+            throw "Batch is fail-stop: task $id did not return a complete PASS result; no following task may be dispatched."
+        }
+        $accepted.Add($result)
+    }
+    return ,$accepted.ToArray()
+}
+
+function Set-CirBatchSystemRequired {
+    param([Parameter(Mandatory)][bool]$Enable)
+    if ($null -eq ('GNSS.CIR.CirPowerRequest' -as [type])) {
+        Add-Type -Namespace GNSS.CIR -Name CirPowerRequest -MemberDefinition @'
+[System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true)]
+public static extern uint SetThreadExecutionState(uint esFlags);
+'@ -ErrorAction Stop
+    }
+    $flags = if ($Enable) { [uint32]2147483649 } else { [uint32]2147483648 }
+    $previousState = [GNSS.CIR.CirPowerRequest]::SetThreadExecutionState($flags)
+    if ($previousState -eq 0) {
+        $win32Error = [Runtime.InteropServices.Marshal]::GetLastWin32Error()
+        throw "Unable to set/clear the CIR coordinator system-sleep request (Win32=$win32Error)."
+    }
+    $true
+}
+
+function Invoke-RunBatchCoordinator {
+    if (-not $RequestManifest -or -not $ExpectedRequestSha256 -or -not $TaskName) {
+        throw '-RunBatchCoordinator requires -RequestManifest, -ExpectedRequestSha256, and -TaskName.'
+    }
+    $state = [pscustomobject]@{
+        current_run_id = ''
+        current_worker_task = ''
+        completed = [System.Collections.Generic.List[object]]::new()
+    }
+    $validated = Get-ValidatedSnapshot -RequestPath $RequestManifest -ExpectedHash $ExpectedRequestSha256 `
+        -AllowedTaskName $TaskName
+    if ($validated.execution_mode -ne 'SERIAL_BATCH') { throw 'Coordinator request is not a SERIAL_BATCH release.' }
+    $releaseRoot = [string]$validated.request.release_root
+    $launchRecord = Join-Path (Join-Path $releaseRoot 'batch_launch_records') "$TaskName.json"
+    if (-not (Test-Path -LiteralPath $launchRecord -PathType Leaf)) { throw 'Coordinator has no pre-start launch record; refusing production.' }
+    $launch = Get-JsonDocument $launchRecord
+    if ($launch.request_sha256 -ne $validated.request_sha256 -or $launch.task_name -ne $TaskName) {
+        throw 'Coordinator launch record does not match the immutable release request.'
+    }
+    $auditPath = Join-Path $releaseRoot 'cir_batch_audit.json'
+    $audit = Get-JsonDocument $auditPath
+    if ($audit.release_request_sha256 -ne $validated.request_sha256 -or $audit.status -ne 'CREATED_NOT_STARTED' -or
+        @($audit.completed_tasks).Count -ne 0) {
+        throw 'Batch audit is not in its untouched pre-production state; refusing resume or retry.'
+    }
+    $powerRequestHeld = $false
+    try {
+        Set-CirBatchSystemRequired -Enable $true | Out-Null
+        $powerRequestHeld = $true
+        Write-JsonNew (Join-Path $releaseRoot 'batch_execution_started.json') ([ordered]@{
+            status = 'RUNNING'
+            request_sha256 = $validated.request_sha256
+            coordinator_task_name = $TaskName
+            coordinator_pid = $PID
+            started_utc = [DateTimeOffset]::UtcNow.ToString('o')
+            max_parallel_matlab = 1
+            automatic_retry = $false
+            prevents_idle_sleep = $true
+        })
+        $completed = @(Invoke-SerialCirBatchTasks -TaskPins $validated.task_pins -DispatchAndVerify {
+          param($taskPin)
+            $currentRunId = [string]$taskPin.run_id
+            $state.current_run_id = $currentRunId
+            Assert-NoOtherExecutionProcess -AllowedTaskNames @($TaskName)
+            $oneTask = Get-ValidatedSnapshot -RequestPath $RequestManifest -ExpectedHash $ExpectedRequestSha256 `
+                -ForRunId $currentRunId -AllowedTaskName $TaskName
+            $oneTaskPin = $oneTask.selected_pin
+            $audit = Get-JsonDocument $auditPath
+            $audit.status = 'RUNNING'
+            $audit.current_run_id = $currentRunId
+            $audit.current_task_started_utc = [DateTimeOffset]::UtcNow.ToString('o')
+            $audit.completed_tasks = @($state.completed.ToArray())
+            Write-JsonReplace $auditPath $audit
+
+            $null = New-CirLaunchReservation -ReleaseRoot $releaseRoot `
+                -ReservationRoot (Join-Path $script:BatchLogRoot 'cir_launch_reservations') `
+                -RunId $currentRunId -RequestSha256 $validated.request_sha256
+            $workerStartRequestedUtc = [DateTimeOffset]::UtcNow
+            $worker = Register-WorkerTask 'ExecuteBatchWorker' ([IO.Path]::GetFullPath($RequestManifest)) `
+                $validated.request_sha256 $currentRunId $TaskName
+            $currentWorkerTask = [string]$worker.task_name
+            $state.current_worker_task = $currentWorkerTask
+            $workerRecord = Join-Path (Join-Path $releaseRoot 'task_launch_records') "$currentWorkerTask.json"
+            Write-JsonNew $workerRecord ([ordered]@{
+                task_name = $currentWorkerTask
+                coordinator_task_name = $TaskName
+                run_id = $currentRunId
+                request_sha256 = $validated.request_sha256
+                created_utc = [DateTimeOffset]::UtcNow.ToString('o')
+                automatic_retry = $false
+                max_parallel_matlab = 1
+            })
+            $taskInfo = Wait-CirWorkerTask $currentWorkerTask $workerStartRequestedUtc
+            $receiptPath = Join-Path (Join-Path (Join-Path $releaseRoot 'runs') $currentRunId) 'cir_receipt.json'
+            if (-not (Test-Path -LiteralPath $receiptPath -PathType Leaf)) {
+                throw "Windows task ended without its authoritative CIR receipt: task=$currentWorkerTask run_id=$currentRunId result=$($taskInfo.LastTaskResult)."
+            }
+            $receipt = Get-JsonDocument $receiptPath
+            Assert-WorkerTaskReceiptPass $taskInfo $receipt $currentRunId $validated.request_sha256 $oneTaskPin $releaseRoot
+            $record = [ordered]@{
+                status = 'PASS'
+                run_id = $currentRunId
+                windows_task_name = $currentWorkerTask
+                windows_task_last_result = [long]$taskInfo.LastTaskResult
+                receipt_path = Get-RelativeProjectPath $receiptPath
+                receipt_sha256 = Get-Sha256 $receiptPath
+                completed_utc = [DateTimeOffset]::UtcNow.ToString('o')
+                elapsed_seconds = [double]$receipt.elapsed_seconds
+                output_bytes = [long]$receipt.outputs[0].size_bytes
+                peak_working_set_bytes_observed = [long]$receipt.peak_working_set_bytes_observed
+            }
+            $state.completed.Add($record)
+            $state.current_run_id = ''
+            $state.current_worker_task = ''
+            $audit = Get-JsonDocument $auditPath
+            $audit.status = 'RUNNING'
+            $audit.current_run_id = ''
+            $audit.completed_tasks = @($state.completed.ToArray())
+            $audit.last_completed_utc = [DateTimeOffset]::UtcNow.ToString('o')
+            Write-JsonReplace $auditPath $audit
+            [pscustomobject]$record
+        })
+        $completed = @($state.completed.ToArray())
+        if ($completed.Count -ne 80) { throw "Batch ended without exactly 80 QA/receipt-accepted tasks; found $($completed.Count)." }
+        $completionPath = Join-Path $releaseRoot 'cir_batch_completion_receipt.json'
+        Write-JsonNew $completionPath ([ordered]@{
+            status = 'PASS'
+            request_sha256 = $validated.request_sha256
+            completed_utc = [DateTimeOffset]::UtcNow.ToString('o')
+            expected_task_count = 80
+            completed_task_count = $completed.Count
+            skipped_existing_pass_run_ids = @($validated.request.skipped_existing_pass | ForEach-Object { [string]$_.run_id })
+            excluded_run_ids = @($validated.request.excluded_run_ids)
+            tasks = @($completed)
+            resume = $false
+            automatic_retry = $false
+            max_parallel_matlab = 1
+            scientific_algorithm_modified = $false
+            prevents_idle_sleep_while_running = $true
+        })
+        $audit = Get-JsonDocument $auditPath
+        $audit.status = 'COMPLETE'
+        $audit.current_run_id = ''
+        $audit.completed_tasks = @($completed)
+        $audit.completion_receipt_path = Get-RelativeProjectPath $completionPath
+        $audit.completed_utc = [DateTimeOffset]::UtcNow.ToString('o')
+        Write-JsonReplace $auditPath $audit
+        'CIR_BATCH_EXECUTION=PASS'
+        "CIR_BATCH_COMPLETION_RECEIPT=$completionPath"
+    } catch {
+        $stopPath = Join-Path $releaseRoot 'cir_batch_stop_receipt.json'
+        if (-not (Test-Path -LiteralPath $stopPath)) {
+            Write-JsonNew $stopPath ([ordered]@{
+                status = 'FAILED_NO_RETRY'
+                request_sha256 = $validated.request_sha256
+                stopped_utc = [DateTimeOffset]::UtcNow.ToString('o')
+                coordinator_task_name = $TaskName
+                coordinator_pid = $PID
+                current_run_id = $state.current_run_id
+                current_worker_task_name = $state.current_worker_task
+                completed_count = $state.completed.Count
+                completed_run_ids = @($state.completed.ToArray() | ForEach-Object { [string]$_.run_id })
+                error = $_.Exception.Message
+                automatic_retry = $false
+                attempt_preserved = $true
+                prevents_idle_sleep_while_running = $powerRequestHeld
+            })
+        }
+        try {
+            $audit = Get-JsonDocument $auditPath
+            $audit.status = 'FAILED_NO_RETRY'
+            $audit.current_run_id = $state.current_run_id
+            $audit.completed_tasks = @($state.completed.ToArray())
+            $audit.stop_receipt_path = Get-RelativeProjectPath $stopPath
+            $audit.stopped_utc = [DateTimeOffset]::UtcNow.ToString('o')
+            Write-JsonReplace $auditPath $audit
+        } catch { }
+        Write-Error "CIR batch stopped without retry or next-task dispatch. Receipt: $stopPath. $($_.Exception.Message)"
+        exit 1
+    } finally {
+        if ($powerRequestHeld) {
+            try { Set-CirBatchSystemRequired -Enable $false | Out-Null }
+            catch { Write-Warning "CIR coordinator could not clear its idle-sleep prevention request: $($_.Exception.Message)" }
+        }
+    }
 }
 
 function Invoke-ExecuteRequest {
@@ -1069,8 +1928,16 @@ function Update-PilotAudit {
 
 function Invoke-ExecuteWorker {
     if (-not $ConfirmPilot) { throw 'Worker execution requires the launcher confirmation.' }
-    $validated = Get-ValidatedSnapshot $RequestManifest $ExpectedRequestSha256 $RunId $TaskName -SkipLockCheck
-    Assert-PilotSequenceReady $validated.request $RunId
+    $validated = Get-ValidatedSnapshot -RequestPath $RequestManifest -ExpectedHash $ExpectedRequestSha256 `
+        -ForRunId $RunId -AllowedTaskName $TaskName -AdditionalAllowedTaskNames @($CoordinatorTaskName) -SkipLockCheck
+    if ($validated.execution_mode -eq 'PILOT') {
+        if ($ExecuteBatchWorker) { throw 'Batch worker switch cannot execute a pilot-mode release.' }
+        Assert-PilotSequenceReady $validated.request $RunId
+    } else {
+        if (-not $ExecuteBatchWorker -or [string]::IsNullOrWhiteSpace($CoordinatorTaskName)) {
+            throw 'SERIAL_BATCH tasks may execute only as a child worker of the pinned batch coordinator.'
+        }
+    }
     if ([Security.Principal.WindowsIdentity]::GetCurrent().Name -ine $script:ExpectedUser) { throw "Worker must run as $($script:ExpectedUser)." }
     $lock = $null
     $attemptRoot = $null
@@ -1079,9 +1946,10 @@ function Invoke-ExecuteWorker {
     try {
         $lock = Acquire-GlobalLock
         if (Test-Path -LiteralPath $runRoot) { throw "Run root already exists; no retry/overwrite permitted: $runRoot" }
-        Assert-NoOtherExecutionProcess -AllowedTaskName $TaskName
+        $allowedTaskNames = @($TaskName,$CoordinatorTaskName) | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) }
+        Assert-NoOtherExecutionProcess -AllowedTaskNames $allowedTaskNames
         $storageEventsAfterLock = @(Get-StorageEventsSince (ConvertTo-UtcDateTimeOffset $validated.request.created_utc))
-        if ($storageEventsAfterLock.Count -gt 0) { throw 'New matching System disk/USB event appeared before MATLAB; stopping without science.' }
+        Assert-NoNewStorageFailures $storageEventsAfterLock 'before MATLAB execution' | Out-Null
         New-Item -ItemType Directory -Path $runRoot | Out-Null
         $runRootOwned = $true
         $attemptRoot = Join-Path $runRoot 'attempt_01'
@@ -1137,27 +2005,40 @@ function Invoke-ExecuteWorker {
             published_to = 'new-only release root; original SAGE namespace unchanged'
             scientific_algorithm_modified = $false
         }
-        Write-JsonNew (Join-Path $runRoot 'pilot_receipt.json') $completion
-        Update-PilotAudit $validated.request.release_root ([ordered]@{
-            run_id = $RunId
-            status = 'PASS'
-            receipt_path = Get-RelativeProjectPath (Join-Path $runRoot 'pilot_receipt.json')
-            completed_utc = $completion.completed_utc
-            hdf5_bytes = [long](Get-Item -LiteralPath $driver.hdf5_path).Length
-            window_count = [int]$result.metadata.stage0_window_count
-            bytes_per_window = [double]((Get-Item -LiteralPath $driver.hdf5_path).Length / [double]$result.metadata.stage0_window_count)
-            elapsed_seconds = $matlabResult.elapsed_seconds
-            peak_working_set_bytes_observed = $matlabResult.peak_working_set_bytes_observed
-            primary_delay_comparison_count = $result.export_summary.primary_delay_comparison_count
-            primary_delay_max_abs_samples = $result.export_summary.primary_delay_difference_max_abs_samples
-            pdp_max_absolute_difference = $result.validation_summary.max_pdp_recomputation_difference
-        })
-        'CIR_PILOT_EXECUTION=PASS'
-        "CIR_PILOT_RECEIPT=$(Join-Path $runRoot 'pilot_receipt.json')"
+        if ($validated.execution_mode -eq 'SERIAL_BATCH') {
+            $matlabExitReceiptPath = Join-Path $runRoot 'matlab_exit_receipt.json'
+            $completion['matlab_exit_receipt_path'] = Get-RelativeProjectPath $matlabExitReceiptPath
+            $completion['matlab_exit_receipt_sha256'] = Get-Sha256 $matlabExitReceiptPath
+        }
+        $receiptName = if ($validated.execution_mode -eq 'SERIAL_BATCH') { 'cir_receipt.json' } else { 'pilot_receipt.json' }
+        $receiptPath = Join-Path $runRoot $receiptName
+        Write-JsonNew $receiptPath $completion
+        if ($validated.execution_mode -eq 'PILOT') {
+            Update-PilotAudit $validated.request.release_root ([ordered]@{
+                run_id = $RunId
+                status = 'PASS'
+                receipt_path = Get-RelativeProjectPath $receiptPath
+                completed_utc = $completion.completed_utc
+                hdf5_bytes = [long](Get-Item -LiteralPath $driver.hdf5_path -ErrorAction Stop).Length
+                window_count = [int]$result.metadata.stage0_window_count
+                bytes_per_window = [double]((Get-Item -LiteralPath $driver.hdf5_path).Length / [double]$result.metadata.stage0_window_count)
+                elapsed_seconds = $matlabResult.elapsed_seconds
+                peak_working_set_bytes_observed = $matlabResult.peak_working_set_bytes_observed
+                primary_delay_comparison_count = $result.export_summary.primary_delay_comparison_count
+                primary_delay_max_abs_samples = $result.export_summary.primary_delay_difference_max_abs_samples
+                pdp_max_absolute_difference = $result.validation_summary.max_pdp_recomputation_difference
+            })
+            'CIR_PILOT_EXECUTION=PASS'
+            "CIR_PILOT_RECEIPT=$receiptPath"
+        } else {
+            'CIR_TASK_EXECUTION=PASS'
+            "CIR_TASK_RECEIPT=$receiptPath"
+        }
     } catch {
         $failedAt = [DateTimeOffset]::UtcNow.ToString('o')
         if ($runRootOwned) {
-            $failurePath = Join-Path $runRoot 'pilot_failure_receipt.json'
+            $failureLeaf = if ($validated.execution_mode -eq 'SERIAL_BATCH') { 'cir_failure_receipt.json' } else { 'pilot_failure_receipt.json' }
+            $failurePath = Join-Path $runRoot $failureLeaf
         } else {
             $failureDirectory = Join-Path ([string]$validated.request.release_root) 'launch_failures'
             $failurePath = Join-Path $failureDirectory ("$RunId`_$([DateTimeOffset]::UtcNow.ToString('yyyyMMddTHHmmssfffZ')).json")
@@ -1174,8 +2055,10 @@ function Invoke-ExecuteWorker {
                 no_automatic_retry = $true
             })
         }
-        try { Update-PilotAudit $validated.request.release_root ([ordered]@{ run_id = $RunId; status = 'FAILED_NO_RETRY'; failure_receipt = Get-RelativeProjectPath $failurePath; failed_utc = $failedAt }) } catch { }
-        Write-Error "CIR pilot failed and was preserved. No retry/next task: $failurePath. $($_.Exception.Message)"
+        if ($validated.execution_mode -eq 'PILOT') {
+            try { Update-PilotAudit $validated.request.release_root ([ordered]@{ run_id = $RunId; status = 'FAILED_NO_RETRY'; failure_receipt = Get-RelativeProjectPath $failurePath; failed_utc = $failedAt }) } catch { }
+        }
+        Write-Error "CIR task failed and was preserved. No retry/next task: $failurePath. $($_.Exception.Message)"
         exit 1
     } finally {
         if ($lock) { Release-GlobalLock $lock }
@@ -1520,12 +2403,17 @@ function Invoke-FinalizePilotAudit {
     'BULK_CIR_BATCH_STARTED=false'
 }
 
-$modeCount = @($CreateReleaseRequest,$ValidateOnly,$Execute,$ExecuteWorker,$ReadBackExistingPilot,$ReadBackWorker,$FinalizePilotAudit | Where-Object { $_ }).Count
-if ($modeCount -ne 1) { throw 'Select exactly one mode: CreateReleaseRequest, ValidateOnly, Execute, ExecuteWorker, ReadBackExistingPilot, ReadBackWorker, or FinalizePilotAudit.' }
+$modeCount = @($CreateReleaseRequest,$CreateBatchReleaseRequest,$ValidateOnly,$ValidateBatchOnly,$Execute,$ExecuteBatch,$ExecuteWorker,$ExecuteBatchWorker,$RunBatchCoordinator,$ReadBackExistingPilot,$ReadBackWorker,$FinalizePilotAudit | Where-Object { $_ }).Count
+if ($modeCount -ne 1) { throw 'Select exactly one CIR mode; Pilot and SERIAL_BATCH modes are mutually exclusive.' }
 if ($CreateReleaseRequest) { New-ReleaseRequest; exit 0 }
+if ($CreateBatchReleaseRequest) { New-BatchReleaseRequest; exit 0 }
 if ($ValidateOnly) { Invoke-ValidateOnly; exit 0 }
+if ($ValidateBatchOnly) { Invoke-ValidateBatchOnly; exit 0 }
 if ($Execute) { Invoke-ExecuteRequest; exit 0 }
+if ($ExecuteBatch) { Invoke-ExecuteBatch; exit 0 }
+if ($RunBatchCoordinator) { Invoke-RunBatchCoordinator; exit 0 }
 if ($ExecuteWorker) { Invoke-ExecuteWorker; exit 0 }
+if ($ExecuteBatchWorker) { Invoke-ExecuteWorker; exit 0 }
 if ($ReadBackExistingPilot) { Invoke-ReadBackExistingPilot; exit 0 }
 if ($ReadBackWorker) { Invoke-ReadBackWorker; exit 0 }
 if ($FinalizePilotAudit) { Invoke-FinalizePilotAudit; exit 0 }

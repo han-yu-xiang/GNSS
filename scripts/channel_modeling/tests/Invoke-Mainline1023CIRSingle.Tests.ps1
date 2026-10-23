@@ -11,6 +11,7 @@ $runnerText = Get-Content -LiteralPath $scriptPath -Raw -Encoding UTF8
 $releaseBase = Join-Path $projectRoot 'dataset_generation_logs\channel_modeling'
 $stamp = [DateTimeOffset]::UtcNow.ToString('yyyyMMddTHHmmssfffZ')
 $fixtureRoot = Join-Path $releaseBase ("mainline_1023_cir_v1_${stamp}_TEST_" + [Guid]::NewGuid().ToString('N'))
+$batchFixtureRoot = $fixtureRoot + '_BATCH'
 $temporaryRequest = Join-Path ([System.IO.Path]::GetTempPath()) ("cir-request-" + [Guid]::NewGuid().ToString('N') + '.json')
 $pilotRunIds = @(
     'run_20261003_F1023_V70_D0120_P1_G18_ch2',
@@ -45,15 +46,25 @@ try {
     Assert-True ($launchRecordAssignment.Count -eq 1 -and
         $launchRecordAssignment[0] -match 'release_root.*launch_records' -and
         $launchRecordAssignment[0] -notmatch 'runs') 'The launcher receipt must stay outside the run namespace so worker preflight can require that namespace to be absent.'
-    $settingsLine = @($runnerText -split "`r?`n" | Where-Object { $_ -match 'New-ScheduledTaskSettingsSet' })
-    Assert-True ($settingsLine.Count -eq 1 -and
+    $settingsLine = @($runnerText -split "`r?`n" | Where-Object { $_ -match 'New-ScheduledTaskSettingsSet.*-ExecutionTimeLimit \$executionTimeLimit' })
+    $limitSelectionLine = @($runnerText -split "`r?`n" | Where-Object { $_ -match '^\s*\$executionTimeLimit = if \(\$WorkerMode -eq ''ExecuteBatchWorker''\)' })
+    Assert-True ($settingsLine.Count -eq 1 -and $limitSelectionLine.Count -eq 1 -and
         $settingsLine[0] -match '\s-DontStopIfGoingOnBatteries(?:\s|$)' -and
-        $settingsLine[0] -notmatch '\s-AllowStartIfOnBatteries(?:\s|$)') 'A worker must require AC when it starts but must not be killed if AC briefly drops after launch.'
+        $settingsLine[0] -notmatch '\s-AllowStartIfOnBatteries(?:\s|$)') 'A batch CIR worker must have no scheduler time limit, require AC at start and continue if AC briefly drops.'
     $powerSettings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew `
         -ExecutionTimeLimit (New-TimeSpan -Hours 12) -StartWhenAvailable:$false `
         -DontStopIfGoingOnBatteries
+    $unlimitedSettings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew `
+        -ExecutionTimeLimit (New-TimeSpan -Seconds 0) -StartWhenAvailable:$false `
+        -DontStopIfGoingOnBatteries
     Assert-True ($powerSettings.DisallowStartIfOnBatteries -and
         -not $powerSettings.StopIfGoingOnBatteries) 'PowerShell task settings must deny battery start while allowing a running worker to continue through a brief battery switch.'
+    Assert-True ($unlimitedSettings.ExecutionTimeLimit -eq 'PT0S') 'Task Scheduler zero duration must represent no imposed execution timeout for long batch workers.'
+    $coordinatorSettingsLine = @($runnerText -split "`r?`n" | Where-Object { $_ -match 'New-ScheduledTaskSettingsSet.*-Seconds 0' })
+    Assert-True ($coordinatorSettingsLine.Count -eq 1 -and
+        $coordinatorSettingsLine[0] -match '\s-DontStopIfGoingOnBatteries(?:\s|$)' -and
+        $runnerText -match 'Set-CirBatchSystemRequired -Enable \$true' -and
+        $runnerText -match 'Set-CirBatchSystemRequired -Enable \$false') 'The batch coordinator must run without a timeout, continue through AC switching, hold a scoped idle-sleep request, then release it.'
 
     $prepare = Invoke-Captured { & $scriptPath -CreateReleaseRequest -ReleaseRoot $fixtureRoot -PilotRunIds $pilotRunIds }
     Assert-True $prepare.Succeeded "CreateReleaseRequest must create a pinned two-pilot request: $($prepare.Error)"
@@ -89,6 +100,256 @@ try {
     Assert-True ($request.resume -eq $false -and $request.max_parallel_matlab -eq 1) 'Release policy must be fresh, serial, and non-resuming.'
     Assert-True ($request.baseline_existing_pilot.run_id -eq 'run_20261003_F1023_V70_D0117_P2_G28_ch1') 'The frozen G28/ch1 pilot must be bound as read-only baseline evidence.'
     Assert-True ($request.baseline_existing_pilot.psobject.Properties.Name -notcontains 'raw_iq_sha256') 'The existing baseline must not introduce a raw-IQ content hash.'
+
+    $passReceiptPaths = @(
+        (Join-Path $projectRoot 'dataset_generation_logs\channel_modeling\mainline_1023_cir_v1_20261022T164829696Z\baseline_readback\readback_receipt.json'),
+        (Join-Path $projectRoot 'dataset_generation_logs\channel_modeling\mainline_1023_cir_v1_20261023T060236191Z\runs\run_20261003_F1023_V70_D0120_P1_G18_ch2\pilot_receipt.json'),
+        (Join-Path $projectRoot 'dataset_generation_logs\channel_modeling\mainline_1023_cir_v1_20261023T060236191Z\runs\run_20261003_F1023_V70_D0120_P5_G23_ch0\pilot_receipt.json')
+    )
+    $batchPrepare = Invoke-Captured {
+        & $scriptPath -CreateBatchReleaseRequest -ReleaseRoot $batchFixtureRoot -PassReceiptPaths $passReceiptPaths
+    }
+    Assert-True $batchPrepare.Succeeded "Batch release creation must accept the frozen cohort and three PASS skips: $($batchPrepare.Error)"
+    $batchRequestPath = Join-Path $batchFixtureRoot 'release_request.json'
+    Assert-True (Test-Path -LiteralPath $batchRequestPath -PathType Leaf) 'Batch release creation must write an immutable request.'
+    $batchRequest = Get-Content -LiteralPath $batchRequestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    $frozenTaskPath = Join-Path $projectRoot 'dataset_generation_logs\channel_modeling\mainline_1023_cohort_v1_20261022T082520Z\cir_tasks.json'
+    $frozenTasks = @((Get-Content -LiteralPath $frozenTaskPath -Raw -Encoding UTF8 | ConvertFrom-Json).tasks)
+    $frozenIds = @($frozenTasks | ForEach-Object { [string]$_.run_id })
+    $expectedSkipIds = @(
+        'run_20261003_F1023_V70_D0117_P2_G28_ch1',
+        'run_20261003_F1023_V70_D0120_P1_G18_ch2',
+        'run_20261003_F1023_V70_D0120_P5_G23_ch0'
+    )
+    $expectedBatchIds = @($frozenIds | Where-Object { $_ -notin $expectedSkipIds })
+    Assert-True ($frozenIds.Count -eq 83 -and $batchRequest.frozen_cohort_run_ids.Count -eq 83) 'Batch request must bind all 83 Gate-B identities.'
+    Assert-True ((@($batchRequest.frozen_cohort_run_ids) -join "`n") -ceq ($frozenIds -join "`n")) 'Batch request must preserve exact frozen Gate-B order.'
+    Assert-True ($batchRequest.tasks.Count -eq 80 -and $batchRequest.skipped_existing_pass.Count -eq 3) 'Batch request must contain exactly 80 remaining tasks and three PASS skips.'
+    Assert-True ((@($batchRequest.skipped_existing_pass | ForEach-Object { [string]$_.run_id }) -join ',') -ceq ($expectedSkipIds -join ',')) 'G28/G18/G23 PASS identities must be skipped exactly once.'
+    Assert-True ((@($batchRequest.tasks | ForEach-Object { [string]$_.run_id }) -join "`n") -ceq ($expectedBatchIds -join "`n")) 'The executable queue must retain Gate-B order after removing only PASS identities.'
+    Assert-True (@($batchRequest.tasks | Where-Object { $_.task_status -ne 'NEW_REQUIRED' }).Count -eq 0) 'Only NEW_REQUIRED identities may enter the executable queue.'
+    Assert-True ($batchRequest.excluded_run_ids.Count -eq 6 -and
+        @($batchRequest.tasks | Where-Object { $_.run_id -in @($batchRequest.excluded_run_ids) }).Count -eq 0) 'All six frozen exclusions must remain out of the queue.'
+    Assert-True ($batchRequest.execution_mode -eq 'SERIAL_BATCH' -and $batchRequest.resume -eq $false -and
+        $batchRequest.max_parallel_matlab -eq 1 -and
+        $batchRequest.source_sha256.'scripts/channel_modeling/Invoke-Mainline1023CIRSingle.ps1' -eq
+        (Get-FileHash -LiteralPath $scriptPath -Algorithm SHA256).Hash.ToLowerInvariant()) 'Batch release must bind the current source SHA and fresh serial policy.'
+    foreach ($sourcePath in @(
+        'scripts/channel_modeling/Invoke-Mainline1023CIRSingle.ps1',
+        'scripts/channel_modeling/export_gnss_code_domain_cir.m',
+        'scripts/channel_modeling/validate_gnss_code_domain_cir.m'
+    )) {
+        $runnerRepoRoot = [IO.Path]::GetFullPath((Join-Path (Split-Path -Parent $scriptPath) '..\..'))
+        $sourceFullPath = Join-Path $runnerRepoRoot ($sourcePath.Replace('/', '\'))
+        $actualSourceHash = (Get-FileHash -LiteralPath $sourceFullPath -Algorithm SHA256).Hash.ToLowerInvariant()
+        Assert-True ($batchRequest.source_sha256.$sourcePath -eq $actualSourceHash) "Batch release must bind the current SHA of $sourcePath."
+    }
+    $batchHash = (Get-FileHash -LiteralPath $batchRequestPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    $batchValidation = Invoke-Captured {
+        & $scriptPath -ValidateBatchOnly -RequestManifest $batchRequestPath -ExpectedRequestSha256 $batchHash
+    }
+    Assert-True $batchValidation.Succeeded "Batch ValidateOnly must not require a MATLAB worker: $($batchValidation.Error)"
+    Assert-True ($batchValidation.Output -match 'BATCH_VALIDATION_ONLY_OK' -and
+        $batchValidation.Output -match 'MATLAB_INVOKED=false') 'Batch ValidateOnly must explicitly confirm no MATLAB invocation.'
+    Assert-True (-not (Test-Path -LiteralPath (Join-Path $batchFixtureRoot 'runs'))) 'Batch ValidateOnly must not create output namespaces.'
+    Assert-True (-not (Test-Path -LiteralPath (Join-Path $projectRoot 'dataset_generation_logs\batch_sage_execution\.windows_runner_active.lock'))) 'Batch ValidateOnly must not create or change the execution lock.'
+    $windowsPowerShellBatchOutput = @(& $windowsPowerShell -NoProfile -ExecutionPolicy Bypass -File $scriptPath `
+        -ValidateBatchOnly -RequestManifest $batchRequestPath -ExpectedRequestSha256 $batchHash 2>&1 |
+        ForEach-Object { [string]$_ }) -join [Environment]::NewLine
+    $windowsPowerShellBatchExitCode = $LASTEXITCODE
+    Assert-True ($windowsPowerShellBatchExitCode -eq 0) 'Windows PowerShell 5.1 must accept the immutable SERIAL_BATCH request without invoking MATLAB.'
+    Assert-True ($windowsPowerShellBatchOutput -match 'BATCH_VALIDATION_ONLY_OK' -and
+        $windowsPowerShellBatchOutput -match 'MATLAB_INVOKED=false') 'Windows PowerShell 5.1 Batch ValidateOnly must explicitly remain no-compute.'
+
+    $wrongChannelRequest = $batchRequest | ConvertTo-Json -Depth 24 | ConvertFrom-Json
+    $wrongChannelRequest.tasks[0].tracking_channel = [int]$wrongChannelRequest.tasks[0].tracking_channel + 1
+    [System.IO.File]::WriteAllText($temporaryRequest, ($wrongChannelRequest | ConvertTo-Json -Depth 24) + [Environment]::NewLine,
+        [System.Text.UTF8Encoding]::new($false))
+    $wrongChannelHash = (Get-FileHash -LiteralPath $temporaryRequest -Algorithm SHA256).Hash.ToLowerInvariant()
+    $wrongChannel = Invoke-Captured {
+        & $scriptPath -ValidateBatchOnly -RequestManifest $temporaryRequest -ExpectedRequestSha256 $wrongChannelHash
+    }
+    Assert-True (-not $wrongChannel.Succeeded -and $wrongChannel.Error -match 'identity|tracking_channel') 'Batch validation must reject an altered PRN/channel identity.'
+
+    $crossTaskRequest = $batchRequest | ConvertTo-Json -Depth 24 | ConvertFrom-Json
+    $crossTaskRequest.tasks[0].run_id = [string]$crossTaskRequest.tasks[1].run_id
+    [System.IO.File]::WriteAllText($temporaryRequest, ($crossTaskRequest | ConvertTo-Json -Depth 24) + [Environment]::NewLine,
+        [System.Text.UTF8Encoding]::new($false))
+    $crossTaskHash = (Get-FileHash -LiteralPath $temporaryRequest -Algorithm SHA256).Hash.ToLowerInvariant()
+    $crossTask = Invoke-Captured {
+        & $scriptPath -ValidateBatchOnly -RequestManifest $temporaryRequest -ExpectedRequestSha256 $crossTaskHash
+    }
+    Assert-True (-not $crossTask.Succeeded -and $crossTask.Error -match 'identity|run_id') 'Batch validation must reject cross-task pin substitution.'
+
+    $testTokens = $null
+    $testParseErrors = $null
+    $testAst = [System.Management.Automation.Language.Parser]::ParseInput($runnerText, [ref]$testTokens, [ref]$testParseErrors)
+    Assert-True ($testParseErrors.Count -eq 0) 'Runner AST must parse before extracting batch safety helpers.'
+    foreach ($functionName in @(
+        'Resolve-ProjectPath', 'Get-RelativeProjectPath', 'Get-Sha256', 'Get-JsonDocument', 'ConvertTo-UtcDateTimeOffset', 'Test-TaskPinPropertyMatch',
+        'Assert-NewCIROutputNamespace', 'Assert-BatchRequestIdentities', 'Assert-MatlabExitReceiptMatches', 'Invoke-SerialCirBatchTasks',
+        'Assert-WorkerTaskReceiptPass', 'Assert-NoNewStorageFailures', 'New-CirBatchAuditDocument'
+    )) {
+        $functionAst = @($testAst.FindAll({
+            param($node)
+            $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $functionName
+        }, $true))
+        Assert-True ($functionAst.Count -eq 1) "Expected one testable safety helper: $functionName"
+        . ([scriptblock]::Create($functionAst[0].Extent.Text))
+    }
+    $script:ProjectRoot = $projectRoot
+    $script:ExistingPilotRunId = [string]$expectedSkipIds[0]
+
+    $batchAudit = New-CirBatchAuditDocument -RequestSha256 $batchHash
+    $batchAudit.status = 'RUNNING'
+    $batchAudit.current_run_id = [string]$batchRequest.tasks[0].run_id
+    $batchAudit.current_task_started_utc = [DateTimeOffset]::UtcNow.ToString('o')
+    $batchAudit.completed_tasks = @()
+    $batchAudit.last_completed_utc = [DateTimeOffset]::UtcNow.ToString('o')
+    $batchAudit.completion_receipt_path = 'cir_batch_completion_receipt.json'
+    $batchAudit.completed_utc = [DateTimeOffset]::UtcNow.ToString('o')
+    $batchAudit.stop_receipt_path = 'cir_batch_stop_receipt.json'
+    $batchAudit.stopped_utc = [DateTimeOffset]::UtcNow.ToString('o')
+    Assert-True ($batchAudit.release_request_sha256 -eq $batchHash -and
+        @('current_task_started_utc','last_completed_utc','completion_receipt_path','completed_utc','stop_receipt_path','stopped_utc' |
+            Where-Object { $null -eq $batchAudit.PSObject.Properties[$_] }).Count -eq 0) 'A newly created batch audit must declare every strict-mode field the coordinator may later update.'
+
+    $wrongSkipIds = @([string]$expectedSkipIds[0], [string]$batchRequest.tasks[0].run_id, [string]$expectedSkipIds[2])
+    $wrongSkipRequest = [pscustomobject]@{
+        frozen_cohort_run_ids = @($batchRequest.frozen_cohort_run_ids)
+        excluded_run_ids = @($batchRequest.excluded_run_ids)
+        skipped_existing_pass = @(
+            [pscustomobject]@{ run_id = [string]$expectedSkipIds[0]; receipt_type = 'EXISTING_BASELINE_READBACK' },
+            [pscustomobject]@{ run_id = [string]$batchRequest.tasks[0].run_id; receipt_type = 'CIR_PILOT' },
+            [pscustomobject]@{ run_id = [string]$expectedSkipIds[2]; receipt_type = 'CIR_PILOT' }
+        )
+        tasks = @($frozenTasks | Where-Object { $_.task_status -eq 'NEW_REQUIRED' -and $_.run_id -notin $wrongSkipIds } |
+            ForEach-Object { [pscustomobject]@{ run_id = [string]$_.run_id; task_status = 'NEW_REQUIRED' } })
+    }
+    $cohortPath = Join-Path $projectRoot 'dataset_generation_logs\channel_modeling\mainline_1023_cohort_v1_20261022T082520Z\cohort.json'
+    $cirTasksForSkipTest = Get-Content -LiteralPath $frozenTaskPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    $cohortForSkipTest = Get-Content -LiteralPath $cohortPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    $wrongPilotSkip = Invoke-Captured {
+        Assert-BatchRequestIdentities $wrongSkipRequest $cohortForSkipTest $cirTasksForSkipTest
+    }
+    Assert-True (-not $wrongPilotSkip.Succeeded -and $wrongPilotSkip.Error -match 'exactly the three approved') "Batch identity validation must reject skipping a different valid NEW_REQUIRED run instead of the exact approved G18/G23 pilots. Actual error: $($wrongPilotSkip.Error)"
+
+    $batchRunRoot = Join-Path (Join-Path $batchFixtureRoot 'runs') ([string]$batchRequest.tasks[0].run_id)
+    $preservedFile = Join-Path $batchRunRoot 'attempt_01\preserved_fixture.txt'
+    New-Item -ItemType Directory -Path (Split-Path -Parent $preservedFile) -Force | Out-Null
+    [System.IO.File]::WriteAllText($preservedFile, 'preserve-existing-test-fixture')
+    $existingOutput = Invoke-Captured {
+        Assert-NewCIROutputNamespace -Request $batchRequest -TaskPin $batchRequest.tasks[0]
+    }
+    Assert-True (-not $existingOutput.Succeeded -and $existingOutput.Error -match 'already exists|overwrite') 'An existing batch run namespace must fail closed without overwrite.'
+    Assert-True ((Get-Content -LiteralPath $preservedFile -Raw) -ceq 'preserve-existing-test-fixture') 'A rejected existing namespace must remain byte-for-byte untouched.'
+
+    $seenSerialIds = [System.Collections.Generic.List[string]]::new()
+    $serialPins = @(
+        [pscustomobject]@{ run_id = 'run_fixture_first' },
+        [pscustomobject]@{ run_id = 'run_fixture_second' },
+        [pscustomobject]@{ run_id = 'run_fixture_third' }
+    )
+    $serialResult = Invoke-SerialCirBatchTasks -TaskPins $serialPins -DispatchAndVerify {
+        param($pin)
+        $seenSerialIds.Add([string]$pin.run_id)
+        [pscustomobject]@{ status = 'PASS'; run_id = [string]$pin.run_id }
+    }
+    Assert-True (($seenSerialIds -join ',') -ceq 'run_fixture_first,run_fixture_second,run_fixture_third' -and $serialResult.Count -eq 3) 'The batch coordinator helper must preserve strict frozen order after each callback returns PASS.'
+    $seenSerialIds.Clear()
+    $failStop = Invoke-Captured {
+        Invoke-SerialCirBatchTasks -TaskPins $serialPins -DispatchAndVerify {
+            param($pin)
+            $seenSerialIds.Add([string]$pin.run_id)
+            [pscustomobject]@{ status = 'FAILED_NO_RETRY'; run_id = [string]$pin.run_id }
+        }
+    }
+    Assert-True (-not $failStop.Succeeded -and $seenSerialIds.Count -eq 1 -and
+        $seenSerialIds[0] -eq 'run_fixture_first') 'A failed task must stop the coordinator before the next task is dispatched.'
+
+    $taskPin = $batchRequest.tasks[0]
+    $attemptRoot = Join-Path $batchRunRoot 'attempt_01'
+    New-Item -ItemType Directory -Path $attemptRoot -Force | Out-Null
+    $stem = "$($taskPin.prn)_ch$($taskPin.tracking_channel)_code_domain_cir"
+    $outputPaths = @(
+        (Join-Path $attemptRoot "$stem.h5"),
+        (Join-Path $attemptRoot "${stem}_metadata.json"),
+        (Join-Path $attemptRoot "$($taskPin.prn)_ch$($taskPin.tracking_channel)_primary_delay_comparison.csv")
+    )
+    foreach ($outputPath in $outputPaths) { [System.IO.File]::WriteAllText($outputPath, 'metadata-only-test-fixture') }
+    $outputRecords = @($outputPaths | ForEach-Object {
+        [pscustomobject]@{
+            path = (Get-RelativeProjectPath $_)
+            size_bytes = [long](Get-Item -LiteralPath $_).Length
+            sha256 = 'a' * 64
+        }
+    })
+    $expectedSnapshotCount = [long]$taskPin.stage0_window_count * 40
+    $matlabStarted = [DateTimeOffset]::UtcNow.AddMinutes(-1)
+    $matlabEnded = $matlabStarted.AddSeconds(1)
+    $matlabExitReceiptPath = Join-Path $batchRunRoot 'matlab_exit_receipt.json'
+    $matlabExitReceipt = [pscustomobject]@{
+        exit_code = 0; pid = 43210; started_utc = $matlabStarted.ToString('o')
+        ended_utc = $matlabEnded.ToString('o'); elapsed_seconds = 1.0
+        peak_working_set_bytes_observed = 1048576
+    }
+    [System.IO.File]::WriteAllText($matlabExitReceiptPath,
+        ($matlabExitReceipt | ConvertTo-Json -Depth 5) + [Environment]::NewLine,
+        [System.Text.UTF8Encoding]::new($false))
+    $workerReceipt = [pscustomobject]@{
+        status = 'PASS'; run_id = [string]$taskPin.run_id; request_sha256 = $batchHash
+        attempt = 1; resume = $false; exit_code = 0; scientific_algorithm_modified = $false
+        matlab_pid = 43210; started_utc = $matlabStarted.ToString('o'); elapsed_seconds = 1.0
+        peak_working_set_bytes_observed = 1048576
+        matlab_exit_receipt_path = (Get-RelativeProjectPath $matlabExitReceiptPath)
+        matlab_exit_receipt_sha256 = (Get-FileHash -LiteralPath $matlabExitReceiptPath -Algorithm SHA256).Hash.ToLowerInvariant()
+        identity = $taskPin
+        hdf5_validation = [pscustomobject]@{
+            hdf5_path = $outputPaths[0]; snapshot_count = $expectedSnapshotCount; delay_count = 451
+            time_monotonic_nondecreasing = $true; raw_iq_rms_all_positive = $true; cir_all_finite = $true
+            pdp_window_count = [long]$taskPin.stage0_window_count; snapshots_per_pdp_window = 40
+            pdp_mean_exactly_recomputed = $true; max_pdp_recomputation_difference = 0
+        }
+        metadata_summary = [pscustomobject]@{
+            stage0_window_count = [long]$taskPin.stage0_window_count; cir_snapshot_count = $expectedSnapshotCount
+            delay_grid_count = 451; amplitude_reference_status = 'UNKNOWN_RECEIVER_GAIN_OR_AGC'
+        }
+        export_summary = [pscustomobject]@{
+            stage0_window_count = [long]$taskPin.stage0_window_count; cir_snapshot_count = $expectedSnapshotCount
+            delay_grid_count = 451
+        }
+        outputs = $outputRecords
+    }
+    $matchingMatlabExit = Invoke-Captured { Assert-MatlabExitReceiptMatches $workerReceipt $matlabExitReceipt }
+    Assert-True $matchingMatlabExit.Succeeded "The CIR receipt must bind the actual MATLAB exit record: $($matchingMatlabExit.Error)"
+    $wrongMatlabExit = $matlabExitReceipt | ConvertTo-Json -Depth 5 | ConvertFrom-Json
+    $wrongMatlabExit.pid++
+    $matlabMismatch = Invoke-Captured { Assert-MatlabExitReceiptMatches $workerReceipt $wrongMatlabExit }
+    Assert-True (-not $matlabMismatch.Succeeded -and $matlabMismatch.Error -match 'MATLAB exit receipt') 'A CIR PASS receipt must not disagree with MATLAB PID/exit evidence.'
+    $workerReceiptCheck = Invoke-Captured {
+        Assert-WorkerTaskReceiptPass ([pscustomobject]@{ LastTaskResult = 0 }) $workerReceipt `
+            ([string]$taskPin.run_id) $batchHash $taskPin $batchFixtureRoot
+    }
+    Assert-True $workerReceiptCheck.Succeeded "A matching zero-exit Windows task and complete CIR/PDP receipt should pass: $($workerReceiptCheck.Error)"
+    $badWindowsExit = Invoke-Captured {
+        Assert-WorkerTaskReceiptPass ([pscustomobject]@{ LastTaskResult = 1 }) $workerReceipt `
+            ([string]$taskPin.run_id) $batchHash $taskPin $batchFixtureRoot
+    }
+    Assert-True (-not $badWindowsExit.Succeeded -and $badWindowsExit.Error -match 'LastTaskResult') 'A PASS receipt cannot override a failing Windows scheduled-task result.'
+    $badQaReceipt = $workerReceipt | ConvertTo-Json -Depth 20 | ConvertFrom-Json
+    $badQaReceipt.hdf5_validation.max_pdp_recomputation_difference = 0.0001
+    $badQa = Invoke-Captured {
+        Assert-WorkerTaskReceiptPass ([pscustomobject]@{ LastTaskResult = 0 }) $badQaReceipt `
+            ([string]$taskPin.run_id) $batchHash $taskPin $batchFixtureRoot
+    }
+    Assert-True (-not $badQa.Succeeded -and $badQa.Error -match 'QA') 'A Windows exit 0 cannot pass a receipt with contradictory HDF5/PDP QA.'
+
+    Assert-True (Assert-NoNewStorageFailures -Events @() -Context 'synthetic baseline Warning test') 'An unchanged accepted storage warning with no new events must not be treated as a new I/O failure.'
+    $syntheticIoEvent = [pscustomobject]@{
+        TimeCreated = [DateTimeOffset]::UtcNow; Id = 157; ProviderName = 'Disk'; RecordId = 999999
+    }
+    $newIo = Invoke-Captured { Assert-NoNewStorageFailures -Events @($syntheticIoEvent) -Context 'synthetic new I/O test' }
+    Assert-True (-not $newIo.Succeeded -and $newIo.Error -match 'New matching System') 'A new matching storage I/O event must fail closed despite the accepted historical Warning baseline.'
 
     $missingSourcePinRequest = $request | ConvertTo-Json -Depth 16 | ConvertFrom-Json
     $missingSourcePinRequest.source_sha256.PSObject.Properties.Remove('scripts/channel_modeling/validate_gnss_code_domain_cir.m')
@@ -251,14 +512,16 @@ try {
     if (Test-Path -LiteralPath $temporaryRequest) {
         Remove-Item -LiteralPath $temporaryRequest -Force
     }
-    if (Test-Path -LiteralPath $fixtureRoot) {
+    foreach ($fixture in @($fixtureRoot,$batchFixtureRoot)) {
+      if (Test-Path -LiteralPath $fixture) {
         $expectedParent = [System.IO.Path]::GetFullPath($releaseBase).TrimEnd('\') + '\'
-        $resolvedFixture = [System.IO.Path]::GetFullPath($fixtureRoot)
+        $resolvedFixture = [System.IO.Path]::GetFullPath($fixture)
         if ($resolvedFixture.StartsWith($expectedParent, [System.StringComparison]::OrdinalIgnoreCase) -and
             (Split-Path -Leaf $resolvedFixture) -match '^mainline_1023_cir_v1_[A-Za-z0-9_]+$') {
             Remove-Item -LiteralPath $resolvedFixture -Recurse -Force
         } else {
             throw "Refusing to clean unexpected test fixture path: $resolvedFixture"
         }
+      }
     }
 }
