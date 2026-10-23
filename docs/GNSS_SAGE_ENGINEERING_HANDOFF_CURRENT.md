@@ -2259,3 +2259,13 @@ TASK5_TARGETED_TESTS=105_OF_105_PASS
 TASK5_NEW_RELEASE_OR_RETRY_AFTER_FAILURE=NO
 SAGE_SUMMARY_MODIFIED=NO
 ```
+
+## 95. Task 6 Stage2 all-MPC ledger audit (2026-10-23 UTC)
+
+- Built the Mainline-specific Stage2 ledger from the frozen 83-task cohort and read-only Stage2/3/4 CSVs. The result is STAGE2_LEDGER_PASS_CIR_ASSOCIATION_PENDING, not Gate F and not a model.
+- The ledger preserves all 16,761 Stage2 selected paths under the unique (run_id, window_id, path_id) identity: 7,847 direct/reference paths and all 8,914 MPC candidates. It has 16,761 unique composite keys. Stage3/Stage4 are annotations only: 2,228 Stage3-persistent MPC and 120 Stage4-confirmed MPC; 1,587 MPC rows retain an explicit Stage4-unmapped/non-confirmed state. Four Stage4 path rows lack a Stage2 selected-path key (G06/ch4 window 203 paths 3/4; G17/ch2 window 1429 paths 3/4); no Stage2 ledger row was discarded.
+- Descriptive environment counts are Highway/Open 18 tasks / 575 MPC; Mountain/Valley 20 / 2,637; Special Reflective 16 / 2,004; Urban 29 / 3,698. The 9 originally missing elevation summaries remain MISSING with 407 MPC candidates. Categorical groups are preserved for the other 74 tasks; numeric mean elevation remains absent in all 83 and was not inferred.
+- Windows remain dependent observations clustered by run_id. Relative power is relative dB, not calibrated receive power. CIR/PDP features remain pending Task 5; no alpha was extracted and no MAT/HDF5 or raw-IQ payload was opened. No model fitting was done.
+- Focused verification passed: compile check plus 11/11 synthetic tests and an independent CSV recount. Report: reports/data_consolidation_20261003/mainline_1023_model_v1/task6_stage2_ledger_summary_20261023.md; committed lightweight 83-task statistics: reports/data_consolidation_20261003/mainline_1023_model_v1/task6_stage2_task_summary_20261023.csv; frozen Stage4 summary hash inventory: reports/data_consolidation_20261003/mainline_1023_model_v1/stage4_joint_summary_sha256_pins_20261023.json. Full ledger and machine audit remain at E:/GNSS_Multipath_Project/dataset_generation_logs/channel_modeling/mainline_1023_model_v1_20261023T135341Z/.
+- At the latest existing Task 5 monitor sample inspected (2026-10-23 13:35:01 UTC), the batch was RUNNING at G06/ch9, 1/80 complete, with no reported exceptions or new storage events. The existing 30-minute monitor was Ready with LastTaskResult 0 and next run at 22:05 +08. This is a sample, not a claim of later state. Task 5 was not controlled or modified during Task 6.
+- Next: keep Task 5 uninterrupted. After it finishes, perform the exact-window CIR/PDP association, HDF5 read-back, and final Gate E/F checks; only then proceed to model work.

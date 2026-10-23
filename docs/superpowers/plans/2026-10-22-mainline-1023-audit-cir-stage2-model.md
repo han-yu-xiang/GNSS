@@ -149,4 +149,4 @@
 
 ## 本次交付边界
 
-截至2026-10-23：Task 1/Gate A、Task 2/Gate B、Task 3/Gate C 和 Task 4 的 baseline + G18/G23 先导验收已完成；详细 Task 4 结果见 `docs/CIR_TASK4_PILOT_ACCEPTANCE_20261023.md`。Task 5–8 仍未执行；83项 cohort 中已有 G28 既有 pilot 与 G18/G23 两项新 pilot，仍有80项 NEW_REQUIRED。不得自动启动其余80项；下一步先由 Commander 独立审查代码和真实 pilot 证据，再单独决定生产。Stage2 ledger/model 尚未生成，本计划也不代表本次已经建模。
+截至2026-10-23 UTC：Task 1/Gate A、Task 2/Gate B、Task 3/Gate C 和 Task 4 baseline + G18/G23 pilot 验收已完成；Task 5 的80项 CIR serial batch 已获单独授权并开始生产，最新检查样本见工程交接手册第95节。Task 6 的 Stage2 全路径账本及83项统计已生成，16,761行守恒、7,847 direct reference、8,914 MPC候选，具体结果见 reports/data_consolidation_20261003/mainline_1023_model_v1/task6_stage2_ledger_summary_20261023.md。这只是 Stage2 ledger 的阶段性通过：CIR/PDP精确关联、HDF5 read-back 和 Gate F 仍待 Task 5 完成；本计划不表示 CIR 特征已齐或已建模。
