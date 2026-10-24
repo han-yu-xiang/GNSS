@@ -1,5 +1,39 @@
 # GNSS Academic Channel Modeling Master Plan
 
+## Mainline 10.23 MHz three-layer route (Commander authorization, 2026-10-24)
+
+This dated Mainline route governs the new 83-run / 13-scene Stage2 population;
+the older Stage3 r3/Phase-1 results below remain historical, bounded evidence
+for their different population. Do not transfer their fitted parameters.
+
+| Layer | Question, output and status | Prerequisites and acceptance |
+|---|---|---|
+| 1: SAGE path-parameter statistics | Excess-delay, signed relative-Doppler and relative-power marginals; power-delay dependence, selected-window MPC counts and cross-scene baseline. **EXPLORATORY_V0_COMPLETE_WITH_LIMITATIONS** under explicit 2026-10-24 authorization. | Verified all-Stage2 ledger; preserve all 8,914 MPC; exact identities, quality/fit-failure accounting, scene-LOSO and whole-scene uncertainty, reproducible real-data tables/figures and independent review. Formal Gate G is not granted by the V0 execution status. |
+| 2: Environment, satellite geometry and vehicle-motion conditions | Global/Urban and other environment comparisons; continuous elevation and position descriptors, source/missingness/selection sensitivity. **INITIAL_EXPLORATION**, later extension. | Distinguish GSV-measured and ephemeris-derived elevation, including GGA/zero-height sources. Scene support and held-out results must justify shared/hierarchical or environment-specific parameters; two-scene environments remain cautious/descriptive. |
+| 3: Channel structure, temporal evolution and CIR validation | Window CIR/PDP features, SAGE/CIR consistency, selected/nonselected-window differences, path counts/structure/clusters and temporal variation where supported. **WAITING_FOR_TASK5_AND_GATE_EF**. | Complete Task5 with independent Gate E/F, exact run/window association and source-bound read-back QA before full structural validation; no physical path tracking or random-cluster claim by inference. |
+
+The progression is one engineering objective: parameter baseline → conditional
+explanation → channel structure with CIR evidence. SAGE-only exploratory V0
+does **not** wait for CIR and does not grant Gate E/F or full Gate G. Stage3/4
+are attributes, not population filters. Outer validation holds entire scenes;
+overlapping windows and same-scene PRNs are repeated observations. The current
+36 spatial summaries remain insufficient to estimate independent route units.
+Phase-2 generative AI remains planned-only. Implementation and actual outcomes:
+`docs/superpowers/plans/2026-10-24-mainline-1023-stage2-v0.md`.
+
+Actual V0 evidence: `reports/data_consolidation_20261003/mainline_1023_model_v1/v0_20261024T132210Z/v0_model_report.md`.
+All 8,914 MPC are retained. Global 13-scene LOSO favors Lognormal among the
+delay candidates; Normal/Student-t remain competitive for signed Doppler and
+relative power. Training AICc and held-out power rankings differ. Same-scene
+Urban-vs-global paired comparisons have negative mean deltas for all nine
+candidate combinations, so the evidence does not justify an Urban-specific
+parameter set yet. Pooled power-delay Spearman rho=-0.616410, slope=-8.209394
+dB/chip with whole-scene bootstrap 95% interval [-14.288980,-3.852434]; linear
+R²=0.055343 and large scene differences prevent a universal linear-law claim.
+Three Student-t numerical failures and 36 support-limited environment-fold
+records are preserved. The three layers remain the same route; completion of
+this exploratory baseline does not complete the conditional/structural layers.
+
 ## Scope and governing decision
 
 This document governs the long-term academic channel-modeling route. The

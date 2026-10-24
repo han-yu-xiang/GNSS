@@ -2,8 +2,9 @@
 
 **项目根目录：** `E:\GNSS_Multipath_Project`  
 **论文状态唯一来源：** 本文件  
-**最后审计时点：** 2026-08-31（Asia/Shanghai）
+**最后审计时点：** 2026-10-24（Asia/Shanghai；Mainline Stage2探索V0见第25节，历史Stage3结果口径保留）
 **面向对象：** 论文写作者、科研人员、方法分析人员  
+**当前 Mainline 新增研究状态：** 经Commander授权，已在CIR未完工时完成SAGE-only Stage2探索V0；限于筛选后候选参数总体。完整CIR关联、Gate E/F、正式模型验收和Phase-2仍未完成，不能据V0宣称完整信道生成模型。
 **研究阶段：** accuracy-first full SAGE 冻结批次及独立批后 QA 已完成；Phase-1 的 Stage3 传统统计建模和 scientific closure 已完成并通过 QA（带明确限制）。coverage-complete event/path database、通用 channel-parameter database、Phase-2 AI 和完整暗室生成器仍是独立后续范围。
 
 > 本文只负责科学问题、贡献、实验解释、论文可写事实、图表、限制和未来路线。工程文件路径、执行门禁、hash和receipt的唯一状态源是 `docs/GNSS_SAGE_ENGINEERING_HANDOFF_CURRENT.md`。本文不得把设计、计划或gold前预测写成实验结果。
@@ -1517,3 +1518,47 @@ RAW_IQ_CONTENT_READ = NO
 GNSS_SDR_RERUN = NO
 NEXT_ACTION = AUTHOR_REVIEW_OF_BOUNDED_GEOMETRY_RECOVERY_EVIDENCE
 ```
+
+## 25. Mainline Stage2 exploratory statistics V0 (2026-10-24)
+
+The Commander authorized a SAGE-only exploratory model before CIR completion.
+This is a new Stage2-selected candidate population, not a revision of the old
+Stage3 r3 canonical model or a completed CIR/physical channel generator.
+
+- All 8,914 MPC from 83 runs and 13 scenes are retained; 7,847 reference rows
+  support relative-parameter checks. The 7,847 selected windows are only 2.746%
+  of 285,752 Stage0-valid windows. Unselected windows are not zero-MPC samples.
+- Global 13-scene LOSO favors Lognormal delay over Gamma/Weibull. Global
+  signed-Doppler Normal/Student-t are competitive. Power training AICc favors
+  Student-t, but scene-held-out mean slightly favors Normal; retain both rather
+  than claiming a unique law. Every held-out scene includes all its PRN/channel
+  runs and overlapping windows. No path/window random split was used.
+- Urban/global comparison is paired on the same six Urban held-out scenes;
+  all nine mean deltas favor the global baseline, so current evidence does not
+  justify a separate Urban parameter set. Two-scene environments remain
+  descriptive; their one-training-scene folds are explicitly unevaluable.
+- Power-delay pooled rho=-0.616410, slope=-8.209394 dB/chip, whole-scene
+  bootstrap95% interval [-14.288980,-3.852434]. Linear R²=0.055343 and scene
+  heterogeneity mean that negative association is supported but a universal
+  linear physical decay law is not. Relative power is not absolute receive
+  power; signed Doppler is not reflector velocity; path numbering does not
+  establish physical identity across windows.
+- Geometry remains source-marked: 5,128 GSV, 1,665 derived, 1,054 missing;
+  7,020 positions and 6,791 joint windows. Derived angles are finite and within
+  4.625576491°–82.630120842°; 622 GGA-height vs1,043 zero-height observations
+  remain distinct. Continuous-angle relations are exploratory and coverage-
+  conditional. Nine frozen missing classifications remain unchanged. Spatial
+  range/independent segment evidence remains insufficient.
+- Three numerical Student-t failures remain in output, as do36 unsupported
+  fold records. They do not remove observations. No new CIR/SAGE/GNSS-SDR or
+  raw-IQ/MAT/HDF5 read occurred. This does not admit a full Gate G claim.
+
+The authoritative three-layer long-term route is: **SAGE parameter baseline →
+environment/geometry/motion explanation → channel structure/time evolution
+with CIR validation**. Layer1 exploratory V0 is complete with limitations;
+layer2 initial exploration continues only as scene support warrants; layer3
+waits for Task5 and independent Gate E/F. Phase-2 AI remains planned-only.
+Methods, actual fit parameters, folds and real-data plots:
+`reports/data_consolidation_20261003/mainline_1023_model_v1/v0_20261024T132210Z/v0_model_report.md`.
+Literature-method links in that report distinguish verified author abstracts
+from unavailable full-text details; no published parameter is transplanted.

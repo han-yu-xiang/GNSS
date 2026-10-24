@@ -124,6 +124,14 @@
 
 ### Task 7: 拟合、对照并独立验证新版本模型
 
+**2026-10-24 Commander 补充授权：** 立即实施 SAGE-only 探索性 V0，
+无需等待 Task5 CIR。具体执行见 `2026-10-24-mainline-1023-stage2-v0.md`。
+这取代早期“所有拟合必须等 Gate E/F”的准备阶段限制；完整 CIR 特征关联、
+结构/时间演化模型和正式 Gate G 仍需相应独立验收。长期路线为：
+第一层 SAGE 参数统计基线（V0 实施中）→ 第二层环境/几何/运动条件解释
+（初步探索，按场景支持决定共享或分层）→ 第三层完整信道结构与 CIR 验证
+（等待 Task5 与 Gate E/F）。各层产出与验收以 Master Plan 的三层表为准。
+
 **Files:**
 - Add: `scripts/channel_modeling/fit_mainline_1023_stage2_model.py`
 - Add: `scripts/channel_modeling/tests/test_fit_mainline_1023_stage2_model.py`
