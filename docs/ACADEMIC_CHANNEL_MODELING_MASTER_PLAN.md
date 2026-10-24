@@ -1,4 +1,12 @@
-# GNSS Academic Channel Modeling Master Plan
+# GNSS 完整多径参数统计建模：总体目标、工作包与验收路线图
+
+**唯一长期建模路线与工作包状态来源：** 本文件。
+
+**最新主线状态核实：** 2026-10-24（Asia/Shanghai）；Task 5 的状态样本见工程交接手册第101节。
+
+**状态职责：** 工程执行、release、QA、receipt 和生产状态以 `docs/GNSS_SAGE_ENGINEERING_HANDOFF_CURRENT.md` 为唯一工程来源；论文事实与科学解释以 `docs/GNSS_SAGE_PAPER_HANDOFF_CURRENT.md` 为唯一论文来源。本文件负责最终研究目标、长期路线、WP0–WP6、依赖及其状态；其他文件只链接本文件或记录执行细节，不建立竞争性的总计划。
+
+WP编号是长期研究工作包编号，与 Mainline CIR 实施计划中的 Task 1–7、SAGE Stage 0–4 不是同一套编号。
 
 ## Mainline 10.23 MHz three-layer route (Commander authorization, 2026-10-24)
 
@@ -8,9 +16,9 @@ for their different population. Do not transfer their fitted parameters.
 
 | Layer | Question, output and status | Prerequisites and acceptance |
 |---|---|---|
-| 1: SAGE path-parameter statistics | Excess-delay, signed relative-Doppler and relative-power marginals; power-delay dependence, selected-window MPC counts and cross-scene baseline. **EXPLORATORY_V0_COMPLETE_WITH_LIMITATIONS** under explicit 2026-10-24 authorization. | Verified all-Stage2 ledger; preserve all 8,914 MPC; exact identities, quality/fit-failure accounting, scene-LOSO and whole-scene uncertainty, reproducible real-data tables/figures and independent review. Formal Gate G is not granted by the V0 execution status. |
-| 2: Environment, satellite geometry and vehicle-motion conditions | Global/Urban and other environment comparisons; continuous elevation and position descriptors, source/missingness/selection sensitivity. **INITIAL_EXPLORATION**, later extension. | Distinguish GSV-measured and ephemeris-derived elevation, including GGA/zero-height sources. Scene support and held-out results must justify shared/hierarchical or environment-specific parameters; two-scene environments remain cautious/descriptive. |
-| 3: Channel structure, temporal evolution and CIR validation | Window CIR/PDP features, SAGE/CIR consistency, selected/nonselected-window differences, path counts/structure/clusters and temporal variation where supported. **WAITING_FOR_TASK5_AND_GATE_EF**. | Complete Task5 with independent Gate E/F, exact run/window association and source-bound read-back QA before full structural validation; no physical path tracking or random-cluster claim by inference. |
+| 1: SAGE path-parameter statistics | Excess-delay, signed relative-Doppler and relative-power marginals; power-delay dependence, selected-window MPC counts and cross-scene baseline. **COMPLETED_WITH_LIMITATIONS** for exploratory V0 under explicit 2026-10-24 authorization. | Verified all-Stage2 ledger; preserve all 8,914 MPC; exact identities, quality/fit-failure accounting, scene-LOSO and whole-scene uncertainty, reproducible real-data tables/figures and independent review. Formal Gate G is not granted by the V0 execution status. |
+| 2: Environment, satellite geometry and vehicle-motion conditions | Global/Urban and other environment comparisons; continuous elevation and position descriptors, source/missingness/selection sensitivity. **IN_PROGRESS**: initial exploration only. | Distinguish GSV-measured and ephemeris-derived elevation, including GGA/zero-height sources. Scene support and held-out results must justify shared/hierarchical or environment-specific parameters; two-scene environments remain cautious/descriptive. |
+| 3: Channel structure, temporal evolution and CIR validation | Window CIR/PDP features, SAGE/CIR consistency, selected/nonselected-window differences, path counts/structure/clusters and temporal variation where supported. **PENDING_DEPENDENCY** on Task 5 and independent Gate E/F. | Complete Task5 with independent Gate E/F, exact run/window association and source-bound read-back QA before full structural validation; no physical path tracking or random-cluster claim by inference. |
 
 The progression is one engineering objective: parameter baseline → conditional
 explanation → channel structure with CIR evidence. SAGE-only exploratory V0
@@ -34,10 +42,110 @@ Three Student-t numerical failures and 36 support-limited environment-fold
 records are preserved. The three layers remain the same route; completion of
 this exploratory baseline does not complete the conditional/structural layers.
 
-## Scope and governing decision
+## Final scientific objective
 
-This document governs the long-term academic channel-modeling route. The
-canonical traditional model is the frozen, QA-passed:
+Build a reproducible, observation-derived statistical model of GNSS multipath
+that explains measured parameter distributions and their supported condition
+dependence, then validates the resulting channel description against real
+CIR/PDP evidence and independent scenes. The final model may include excess
+delay, signed relative Doppler, relative power and complex alpha; their joint
+relationships; window-level MPC counts and path structure; environment,
+satellite-elevation, vehicle-motion and spatial context; and temporal change
+where the observations support it. It must report provenance, uncertainty,
+selection mechanisms, applicable populations and limitations. Final model
+families and physical interpretations remain open until evidence justifies
+them; a plan, fitted marginal or completed CIR batch alone is not the complete
+model.
+
+## Work packages WP0–WP6
+
+These packages organize the long-term Mainline modeling objective. Statuses
+below were reconciled against the dated V0 report, existing geometry and
+Stage2-ledger evidence, current Mainline implementation plan and the latest
+available Task 5 local status snapshot. The Task 5 process fields were
+incomplete in that snapshot; see WP4 and the Engineering Handoff before any
+operational decision.
+
+| WP | Status (controlled vocabulary) | Scope and verified state | Dependency and acceptance boundary |
+|---|---|---|---|
+| WP0 — Data baseline and production-state management | `IN_PROGRESS` (continuous) | Maintain identity-frozen SAGE cohort, CIR queue, exclusions, Stage2 ledger, geometry/trajectory overlays, provenance, hashes and independently accepted QA. Keep SAGE and CIR denominators distinct. | Foundation for WP1–WP6. Each result must resolve to the exact dataset/version and task identity; production status is timestamped from current receipts/snapshots, never inferred from an old handoff. |
+| WP1 — Layer 1 SAGE parameter statistics V0 | `COMPLETED_WITH_LIMITATIONS` | Real-data exploratory V0 retains 8,914 MPC from 83 runs / 13 scenes and 7,847 selected windows. Global scene-LOSO favored Lognormal among tested delay marginals; Normal/Student-t remain competitive for signed Doppler and relative power. A negative pooled power-delay association is present, but low linear R² and scene heterogeneity do not establish a universal law. Urban-specific gains were not supported by paired same-scene comparisons. | Keep the V0 report, tables, fit failures and support-limited folds immutable. This status is only the authorized exploratory baseline; formal Gate G and the complete channel model are not passed. |
+| WP2 — Layer 1 robustness and statistical closure | `IN_PROGRESS` | V0 already supplies scene-level LOSO, whole-scene bootstrap for the power-delay slope, marginal comparisons, count summaries and initial association checks. Remaining work is a bounded robustness closure: sensitivity to scene support and tails, parameter dependence, count-model candidates and uncertainty/model-rank stability. | Uses the frozen Stage2-selected population; can proceed before CIR completion. Do not treat 8,914 paths or overlapping windows as independent scenes; retain failed fits and unsupported folds. |
+| WP3 — Layer 2 environment, geometry and motion conditions | `IN_PROGRESS` | Initial overlays and descriptions distinguish GSV measured from ephemeris-derived elevation, GGA height from zero-height assumptions, and position-source coverage. Existing 36 spatial summaries remain insufficient to support an independent spatial range/segment claim. Formal condition models are not complete. | Can proceed on existing Stage2 data without waiting for WP4. Use scene-held-out evaluation; preserve missingness, provenance and support. Do not extrapolate missing angles/positions or create separate environment models without held-out benefit and adequate scene support. |
+| WP4 — CIR/PDP production and quality acceptance | `IN_PROGRESS` | The latest hourly snapshot at 2026-10-24 22:10 +08 recorded Task 5 and audit `RUNNING`, 9/80 complete, 0 newly reported PASS in the prior hour, current `run_20261003_F1023_V120_D0121_P2_G28_ch6`, elapsed 4,350 s, 362 GiB free, monitor `FRESH` with age 5 min at collection, zero reported storage errors in the prior hour, and no completion or stop receipt. MATLAB/Coordinator status booleans and last-PASS identity were null; the snapshot listed MATLAB PIDs 42528/47340 but supplied no Coordinator PID. The last valid progress timestamp was 20:57:42 +08 and excludes MAT/HDF5 file times. An adjacent 21:10 snapshot had recorded G25/ch5 as the last PASS at 20:57:24 +08. This is a timestamped sample, not a fresh process-owner check or a stall finding. | Preserve the immutable serial release, successful outputs and receipts; never rerun accepted pilots or silently retry failures. Gate E requires reconciliation of the frozen 83-identity cohort, the three retained PASS pilots, all 80 serial-batch task receipts, the batch audit and its completion receipt. Gate F then requires exact run/window identity, retention of all Stage2 MPC, HDF5 read-back and independent SAGE/CIR/PDP consistency checks. Task 5 completion alone passes neither gate automatically. |
+| WP5 — Complex alpha and path-attribute integration | `IN_PROGRESS` (preparation only; real batch delivery unverified) | Candidate `scripts/channel_modeling/export_stage2_complex_alpha.m` and its test file exist in the isolated worktree but are untracked; their existence is not release-pinned implementation, production output, or QA evidence. No accepted batch alpha receipt or independently verified alpha dataset was found in the authoritative status record reviewed for this update. | May progress alongside WP2/WP3 where it does not contend with Task 5 resources. Bind run/window/path identity and source hashes; validate complex values, ordering and provenance. Keep window-normalized alpha and receiver-calibration limitations explicit. |
+| WP6 — Integrated channel model and final independent validation | `PENDING_DEPENDENCY` | No Mainline integrated model, complete CIR feature association or final Gate G acceptance is claimed. The older Stage3 r3 Phase-1 model remains a separate completed-with-limitations population and is not a substitute for this Mainline model. | Requires WP1 plus accepted WP2–WP5 evidence. Select final model only after support and diagnostics; validate by holding out entire scenes, preserve uncertainty, and document what the model cannot establish. Phase-2 generative AI is a separate planned-only decision. |
+
+## Work-package dependencies and concurrency
+
+- WP0 supplies identity, source/version and status controls for every package.
+- WP1 provides the exploratory baseline used by WP2, WP3 and ultimately WP6.
+- WP2 and WP3 can proceed in parallel on the existing Stage2 cohort; neither must wait for the entire CIR batch.
+- WP4 proceeds under its already-authorized serial release. WP4's real CIR/PDP associations and acceptance evidence feed WP6 only after independent Gate E/F checks.
+- WP5 may proceed alongside WP2/WP3 when input provenance and storage/compute resources permit; its real outputs need their own independent acceptance before WP6 consumes them.
+- WP6 starts only when the required WP2–WP5 inputs and validation evidence are available. Dependencies are evidence gates, not a requirement to serialize unrelated analysis.
+
+## Acceptance, scientific boundaries and state vocabulary
+
+Use only these work-package statuses: `NOT_STARTED`, `IN_PROGRESS`,
+`BLOCKED`, `PENDING_DEPENDENCY`, `COMPLETED`, and
+`COMPLETED_WITH_LIMITATIONS`. A status applies to the named scope and must
+cite its evidence and as-of time. Keep implementation, actual production,
+QA acceptance and scientific conclusion as separate sub-states; for example,
+code present does not mean output produced, output produced does not mean QA
+passed, and a model fit does not mean independent validation passed.
+
+- Preserve all 8,914 MPC in the current Stage2 candidate population. The
+  7,847 selected windows are conditional on the Stage1/Stage2 selection
+  pipeline from 285,752 Stage0-valid windows; unselected windows are not
+  zero-MPC observations.
+- Use `(run_id, window_id, path_id)` where path-level joins apply, and exact
+  `(run_id, window_id)` for window overlays. Keep scene as the outer
+  validation and uncertainty unit; overlapping windows and same-scene PRNs
+  are repeated observations.
+- Stage3/Stage4 are attributes or specified validation subsets, not automatic
+  filters. Distinguish GSV-measured and ephemeris-derived elevation and keep
+  GGA/zero-height provenance and missing values explicit.
+- Treat relative power as relative, not calibrated absolute receive power.
+  Do not infer physical reflector identity or lifetime from path numbering or
+  temporal persistence alone. Do not claim a physical propagation law from a
+  weak pooled association.
+- `COMPLETED` requires the scope's actual artifacts and acceptance evidence;
+  use `COMPLETED_WITH_LIMITATIONS` when results are valid only within stated
+  limitations. Use `BLOCKED` for an identified blocker and
+  `PENDING_DEPENDENCY` when a prerequisite is not yet accepted.
+
+## Long-term update and handoff protocol
+
+At the start of each substantial task, read this plan and the current
+Engineering Handoff, then read the relevant implementation plan, manifest,
+receipt, QA and artifact. Identify its WP, goal, dependencies, prohibited
+actions and status evidence. Check the evidence timestamps; do not reuse a
+historical sample as live state. If documents and current evidence disagree,
+resolve the facts first and update the affected current record before
+continuing.
+
+At task completion, record the actual scope, file/output paths, code and data
+versions, tests, production status, QA status, scientific result, limitations
+and next dependency. Update this Master Plan's WP state and the Engineering
+Handoff. Update the Paper Handoff when research questions, claims, results or
+paper status change; update `PAPER_WORKSPACE_INDEX.md` only when paper asset
+structure changes. Retain unfinished, failed, unsupported and blocked work
+with reasons. A plan is not execution, a passing test is not real-data
+acceptance, and one gate does not complete its downstream package.
+
+At handoff, answer: the final objective; active and accepted WPs with evidence
+dates; completed artifacts and their limits; work still running or waiting;
+the next authorized action; and production/data that must not be touched.
+Append dated evidence; do not replace prior experiment receipts or turn a
+temporary status snapshot into a new status authority.
+
+## Historical Stage3 r3 model and Phase‑1 scope (separate population)
+
+This section records the separately completed Stage3 r3 Phase‑1 population;
+it does not replace or provide parameters for the current Mainline Stage2
+route and WP0–WP6 status above. Its canonical traditional model is the frozen,
+QA-passed:
 
 ```text
 environment_elevation_stage3_path_model_v1_20260829_r3
@@ -61,7 +169,7 @@ dependence is retained only at global, environment, and support-gated cell
 levels; no independent covariance fit is claimed for every cell. The closure
 uses scene-block bootstrap, run-level sensitivity, and grouped LOSO evidence.
 
-## Phase status
+## Historical Phase‑1 / Phase‑2 status for Stage3 r3
 
 ```text
 PHASE 1 = Traditional Statistical Modeling + Scientific Closure

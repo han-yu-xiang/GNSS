@@ -17,21 +17,53 @@ Read the relevant current sources before acting:
 
 - Engineering state: docs/GNSS_SAGE_ENGINEERING_HANDOFF_CURRENT.md (唯一 engineering status source).
 - Paper/scientific state: docs/GNSS_SAGE_PAPER_HANDOFF_CURRENT.md (唯一 paper status source).
+- Long-term modeling route and WP0–WP6 status: docs/ACADEMIC_CHANNEL_MODELING_MASTER_PLAN.md (唯一 long-term objective, route, dependency and work-package source).
 - Paper asset navigation: docs/PAPER_WORKSPACE_INDEX.md (asset structure only, not experiment status).
 - VTC workspace: docs/vtc2027_spring/, especially VTC_PLAN.md, EVIDENCE_MATRIX.md, VTC_PRODUCTION_PRIORITY_QUEUE.md, MANUSCRIPT_OUTLINE.md, and FIGURE_TABLE_PLAN.md.
 - Accepted 10.23 MHz production count: dataset_generation_logs/production_monitoring_10MHz/production_summary_10MHz.csv and its report. Do not hand-count from chat history or overwrite the summary with an inferred count.
 
 Do not create parallel Engineering/Paper handoffs, a second production status system, or a new status/plan file merely to record temporary state. Do not treat a README, QA report, planning document, or daily handoff as the unique current state source.
 
-After a real change, update only the affected source: update Engineering Handoff for code, execution, QA, hash, environment, or production-state changes; update Paper Handoff for research direction, paper facts, or chapter state; update PAPER_WORKSPACE_INDEX.md only when the paper asset structure changes.
+After a real change, update only the affected source: update the Master Plan when a long-term route, dependency, or WP status changes; update Engineering Handoff for code, execution, QA, hash, environment, or production-state changes; update Paper Handoff for research direction, paper facts, or chapter state; update PAPER_WORKSPACE_INDEX.md only when the paper asset structure changes.
 
 ## Start-of-task protocol
 
-1. Read the applicable handoff and the relevant queue, manifest, receipt, QA report, or artifact.
+1. For modeling work, read the Master Plan and current Engineering Handoff first; read the Paper Handoff when paper claims or scientific interpretation are in scope. Then read the relevant plan, queue, manifest, receipt, QA report, or artifact.
 2. Classify the request explicitly as validation, production, QA, VTC evidence, paper support, or planning.
 3. Inspect the actual directory, metadata, inventory, manifest, and hashes before using a path or status.
 4. State whether raw IQ content, MATLAB, SAGE, batch execution, or file writes are authorized.
 5. Preserve Completed, Validated, Implemented, Planned, Not started, and Failed/Frozen distinctions. Never turn a plan or implementation into a result.
+
+## Long-term modeling continuity and status maintenance
+
+The Master Plan is the sole authority for the complete GNSS multipath modeling
+objective, its three-layer route, WP0–WP6 scope/dependencies/acceptance, and
+work-package status. WP numbers are not Mainline Task numbers or SAGE Stage
+numbers. The Engineering Handoff remains the sole current engineering and
+production-state record; the Paper Handoff remains the sole paper/scientific
+claim record. Do not create parallel long-term plans or status handoffs.
+
+Before each substantial task, identify its WP, goal, dependencies, prohibited
+operations, and dated evidence. Re-read live status sources where a production
+state matters. If a snapshot is old, has missing fields, or conflicts with
+receipts, label it unverified and resolve the evidence before operational
+action.
+
+After each substantial task, record actual changes, outputs, identities and
+source versions, verification/QA, limitations, and the next dependency. Update
+the Master Plan's affected WP status and the Engineering Handoff's engineering
+state; update the Paper Handoff only when scientific interpretation, paper
+facts, or paper state changed. Preserve incomplete, failed, unsupported, and
+blocked work. A plan is not execution, code is not production, production is
+not QA, and a statistical fit is not independent scientific validation.
+
+Use these WP status values consistently: `NOT_STARTED`, `IN_PROGRESS`,
+`BLOCKED`, `PENDING_DEPENDENCY`, `COMPLETED`, and
+`COMPLETED_WITH_LIMITATIONS`. Attach evidence paths and an as-of time. Keep
+implementation, production, QA acceptance, and scientific conclusion distinct.
+At handoff, state the project objective, active and accepted WPs, evidence and
+limitations, work still running/waiting, next authorized step, and production
+or data that must not be touched.
 
 If a requested fact is missing, report it as missing. Do not infer channel, geometry, environment, event count, runtime, or scientific meaning from a filename or an old handoff.
 

@@ -2,9 +2,9 @@
 
 **项目根目录：** `E:\GNSS_Multipath_Project`  
 **工程状态唯一来源：** 本文件  
-**最后审计时点：** 2026-10-24（Asia/Shanghai；Mainline Stage2 V0见第100节，早期生产口径保留在各自历史范围）
+**最后审计时点：** 2026-10-24（Asia/Shanghai；长期路线与WP状态见第101节；Task 5最新可用快照为22:10，非实时进程核查）
 **面向对象：** Codex、AI Agent、开发人员、实验执行人员  
-**当前 Mainline 新增状态：** SAGE-only Stage2 参数探索V0已完成真实分析；三层长期路线见 Master Plan。Task5 CIR继续运行，Gate E/F、完整CIR结构模型及正式Gate G仍待验收；不将旧Stage3 r3与新Stage2总体合并。
+**当前 Mainline 新增状态：** SAGE-only Stage2 参数探索V0为 `COMPLETED_WITH_LIMITATIONS`；三层路线及WP0–WP6唯一权威计划为 `docs/ACADEMIC_CHANNEL_MODELING_MASTER_PLAN.md`。Task5最新本地快照（22:10 +08）记录 `RUNNING, 9/80, G28/ch6`，但进程布尔字段为空，故不是实时进程确认；详见第101节。Gate E/F、完整CIR结构模型及正式Gate G仍待验收；不将旧Stage3 r3与新Stage2总体合并。
 **当前阶段：** accuracy-first full SAGE 主线的冻结 unattended batch 已完成并通过独立批后 QA：57/57 task-level QA ACCEPTED、0 REJECTED；其中 A validation batch 40 个保持 VALIDATED，B/C 正式生产 batch 17 个计入 formal accepted production。当前 formal accepted production 为 26/67（历史 A3 G16 仍为 REJECTED_PROTECTED，不计入）；SAGE 不再自动续跑，database schema/enum/label/derivation v1 已冻结，64-run event/path audit ingest、modeling-context alignment overlay 和 Stage4 path-parameter derivation 已完成并通过独立 QA。G06 legacy 已保留审计但排除建模输入；canonical r3 traditional channel model 及 Phase-1 scientific closure 已完成并通过独立 QA（带明确限制），Phase 2 仍为 planned-only。
 
 > 本文只负责工程事实、文件、输入输出、执行、QA、hash、provenance 和下一步操作。论文科学叙事的唯一状态来源是 `docs/GNSS_SAGE_PAPER_HANDOFF_CURRENT.md`。其他 handoff、设计稿、诊断稿和日报均为历史/专题参考，不再作为独立的当前工程状态源。
@@ -483,6 +483,14 @@ Execution
 - 不得把Implemented/Planned、gold前预测或单次zero-event输出扩大为统计模型、完整数据库或全部scene结论。
 
 该规则本身只改变文档管理流程，不代表任何新实验或production任务已执行。
+
+### 16.7 长期建模路线与持续交接
+
+`docs/ACADEMIC_CHANNEL_MODELING_MASTER_PLAN.md` 是长期科研目标、三层路线、WP0–WP6 状态、依赖和验收路线的唯一权威文件；本 Engineering Handoff 仍是唯一工程事实与实时状态交接源。WP编号不同于 Mainline Task 编号和 SAGE Stage 编号。每次开始与建模路线有关的实质工作，必须先读 Master Plan、本手册当前状态及相关实施计划/receipt/QA，并核实证据时间；旧快照不得当作实时状态。证据与文档不一致时，先核实并更新受影响的当前记录，再继续。
+
+每次完成实质工作后，按证据分别更新实现、生产、QA和科学结论；同步更新 Master Plan 的受影响 WP 状态与本手册的工程状态。研究结论或论文事实变化时更新 Paper Handoff；论文资产结构变化时才更新 Paper Workspace Index。保留失败、限制、样本不足和未完成依赖；计划、代码存在或单元测试通过均不能单独作为真实数据验收。状态使用 Master Plan 中的六个受控标签，并附证据路径及核实时间。
+
+每次对话交接必须简明回答项目最终目标、当前活动/已验收 WP、成果证据与限制、仍运行或等待的工作、下一项已授权行动，以及严禁干预的生产进程和数据。不得为临时状态创建平行 handoff 或第二套生产状态源。
 
 ## 17. 2026-08-14 production executor/request contract fix
 
@@ -2397,7 +2405,7 @@ NEXT_ACTION = REVIEW_SANITIZED_AUDIT; NO_RERUN_UNTIL_RAW_INTEGRITY_AND_EXPECTED_
 ## 100. Mainline SAGE-only statistical V0 and three-layer route (2026-10-24)
 
 - Commander explicitly authorized immediate exploratory V0 before Task5 completion. This supersedes the old preparation-only fitting restriction for this SAGE-only scope; Gate E/F and formal full-model Gate G remain pending. The earlier Stage3 r3/Phase-1 population and its evidence remain separate and unchanged.
-- The one long-term route is now recorded in `ACADEMIC_CHANNEL_MODELING_MASTER_PLAN.md` and the existing Mainline plan: (1) SAGE path-parameter baseline, now `EXPLORATORY_V0_COMPLETE_WITH_LIMITATIONS`; (2) environment/geometry/motion conditions, initial exploration and later support-gated shared/hierarchical modeling; (3) full channel structure/time evolution/CIR evidence, waiting for Task5 and independent Gate E/F. Each layer has explicit prerequisites, products and acceptance requirements. Phase-2 generative AI remains planned-only.
+- The one long-term route is recorded in `ACADEMIC_CHANNEL_MODELING_MASTER_PLAN.md` and the existing Mainline plan: (1) SAGE path-parameter baseline, `COMPLETED_WITH_LIMITATIONS` for exploratory V0; (2) environment/geometry/motion conditions, initial exploration and later support-gated shared/hierarchical modeling; (3) full channel structure/time evolution/CIR evidence, pending Task5 and independent Gate E/F. Each layer has explicit prerequisites, products and acceptance requirements. Phase-2 generative AI remains planned-only.
 - Inputs verified in place: Task6 ledger `mainline_1023_model_v1_20261023T135341Z/stage2_ledger.csv` SHA-256 `bbb8cac8338194b5527e00812a6547129a58466cc5fdd7db36b8c44bba01e551`; cohort `287e891fae0cd294a85c073080611a19b7389ece46240b89cb1d5dab4df90229`; recovered geometry overlay `a553280900046e0e1ea5a57e30b504a82453f44bdfbadc29f279e4196ca0a912`; recovered trajectory overlay `1f7385663341d89cdb42c459c1e9d8c36a0ef4ca6f5d6a4f0c667944de0f0c93`. Counts and exact identities: 83 runs / 13 scenes / 16,761 paths / 7,847 direct references / all 8,914 MPC. No Stage3/4 gating. Stage0 valid windows remain 285,752; selected-window coverage is not occurrence probability.
 - New reusable CSV-only runner `scripts/channel_modeling/fit_mainline_1023_stage2_model.py` uses the existing preparation helpers plus `mainline_stage2_v0.py`. Final successful run at 2026-10-24 13:22:16 UTC took36.790 s; products are in the **C: isolated checkout** `dataset_generation_logs/channel_modeling/mainline_1023_stage2_v0_20261024T132210Z/`. Incomplete and pre-review analysis directories remain preserved, not reused as final evidence.
 - Real-data outputs include quality/descriptive/support tables, 72 full-data marginal records, 234 fold scores, 26 complete-scene fold manifests, paired environment comparisons, whole-scene bootstrap, counts, source-stratified geometry and six real-data figure sets (PNG/PDF). All 8,914 MPC main variables are finite/nonmissing. Positive-delay fits use strict positive support, fixed loc=0 and no epsilon. No outliers removed. Relative power has 327 positive-dB rows; reference path 1 is not guaranteed strongest or independently known LOS.
@@ -2408,3 +2416,31 @@ NEXT_ACTION = REVIEW_SANITIZED_AUDIT; NO_RERUN_UNTIL_RAW_INTEGRITY_AND_EXPECTED_
 - Task5 remained uninterrupted. At 2026-10-24 13:05:39 UTC, its audit was RUNNING, **9/80**, current `run_20261003_F1023_V120_D0121_P2_G28_ch6`, no completion/stop receipt. At 21:11 +08 the Coordinator PID34916, worker35604 and MATLAB42528/47340 were present. This is a timestamped sample. No production code/release/worker/monitor, Manifest/Summary, raw data, SAGE output or overlay was modified. No MATLAB, SAGE, GNSS-SDR or CIR was started by V0.
 - Sanitized final review package: `reports/data_consolidation_20261003/mainline_1023_model_v1/v0_20261024T132210Z/`; principal report `v0_model_report.md`. Keep PR #2 Draft/unmerged. Commander next reviews the bounded V0 results; full CIR association/structural modeling waits for Task5 plus Gate E/F.
 - Git delivery: implementation/results commit `415fe937e8c55b382c48cf3a478ee9011cfbf7cb` pushed to `review/gnss-mainline-cir-model-20261022`; Draft PR #2 description now includes actual V0 evidence and the progressive three-layer route. Executed source bytes match the committed blobs. No main merge; existing untracked files remain excluded from this delivery.
+
+## 101. Long-term multipath modeling roadmap and current WP state (2026-10-24)
+
+The sole long-term route and WP0–WP6 acceptance plan is [`docs/ACADEMIC_CHANNEL_MODELING_MASTER_PLAN.md`](ACADEMIC_CHANNEL_MODELING_MASTER_PLAN.md). WP state below was reconciled at 2026-10-24 22:10 Asia/Shanghai from the current V0 package, Task 6 ledger, geometry/trajectory overlays, Mainline plan, current worktree inventory and Task 5 hourly status snapshot. This is a dated handoff sample; it does not claim a fresh production-process inspection.
+
+| Work package | Status | Current evidence and next boundary |
+|---|---|---|
+| WP0 data/provenance/state | `IN_PROGRESS` (continuous) | Frozen cohort, Stage2 ledger, geometry and trajectory overlays remain the versioned sources. Keep SAGE cohort and CIR production queue denominators distinct; refresh status from current receipts/snapshots before action. |
+| WP1 SAGE statistics V0 | `COMPLETED_WITH_LIMITATIONS` | 8,914 MPC / 83 runs / 13 scenes; scene-LOSO and whole-scene bootstrap are in the V0 package. Selection is conditional on Stage2; no formal Gate G. |
+| WP2 robustness and statistical closure | `IN_PROGRESS` | Initial LOSO, bootstrap, candidate marginals and count summaries exist. Tail/model-rank sensitivity, additional joint/count analysis and a scoped robustness closure remain. |
+| WP3 environment/geometry/motion conditions | `IN_PROGRESS` | GSV/ephemeris elevation and position overlays are available; initial coverage analyses are complete. Formal support-gated conditional models and spatial inference remain incomplete; 36 existing spatial summaries are insufficient for an independence/range claim. |
+| WP4 CIR/PDP batch and acceptance | `IN_PROGRESS` | Latest local snapshot 2026-10-24 22:10 +08: Task 5 and audit `RUNNING`, 9/80, 0 newly reported PASS in the prior hour, current `run_20261003_F1023_V120_D0121_P2_G28_ch6`, elapsed 4,350 s, monitor `FRESH` (age 5 minutes at collection), E: free 362 GiB, zero newly reported storage errors in the prior hour, and no completion/stop receipt. MATLAB/Coordinator status booleans and last-PASS identity were null; MATLAB PIDs 42528/47340 were listed, Coordinator PID was null. Latest valid progress was 20:57:42 +08; monitor metadata excludes MAT/HDF5 timestamps, so this alone does not establish a stall. The adjacent 21:10 snapshot identified the prior PASS as G25/ch5 at 20:57:24 +08; the 22:10 snapshot retained the completion time but omitted its task identity. Obtain a current process/receipt check before any operational decision. |
+| WP5 complex alpha/path attributes | `IN_PROGRESS` (preparation only) | Candidate files `scripts/channel_modeling/export_stage2_complex_alpha.m` and `scripts/channel_modeling/tests/test_export_stage2_complex_alpha.m` are present as untracked worktree files, but their source pins, tests, real batch output and independent QA were not verified as accepted evidence. No batch alpha delivery is claimed. |
+| WP6 integrated channel model | `PENDING_DEPENDENCY` | Full CIR feature association, final Gate E/F, validated alpha/path attributes and remaining WP2/WP3 evidence are prerequisites. No complete Mainline channel model or Gate G pass is claimed. |
+
+The older Stage3 r3 Phase-1 model remains a separate completed-with-limitations population. Do not transfer its sample estimates to this 83-run Stage2 V0. Stage3/Stage4 remain attributes, not filters. All 8,914 Stage2 MPC remain in the modeling candidate population; 7,847 selected windows represent 2.746% of 285,752 Stage0-valid windows and do not establish unconditional multipath occurrence.
+
+### Current dependencies and next work
+
+- WP2 and WP3 may proceed on existing CSV/overlay evidence while WP4 runs, subject to avoiding sustained disk contention.
+- WP4 remains under its existing immutable serial release. Do not restart, pause, modify or retry it from this documentation handoff. After it settles, independently perform Gate E/F and exact run/window CIR/PDP linkage.
+- WP5 can be developed alongside WP2/WP3, but do not treat local candidate code as accepted alpha data; independently bind and validate any real export.
+- WP6 follows only after the required WP2–WP5 evidence is accepted and must validate by holding out entire scenes.
+- Phase-2 generative AI remains planned-only and requires a separate Commander decision.
+
+### Handoff record
+
+For every new substantial task, read the Master Plan, this current Engineering Handoff and the relevant evidence before acting. At completion, record actual paths, identities/versions, checks, QA, scientific limitations, status and the next dependency in the affected authoritative documents. Do not claim production or scientific completion from a plan, code artifact, stale process sample or exit code alone. The latest Task 5 record above is a timestamped sample, not a live assertion.

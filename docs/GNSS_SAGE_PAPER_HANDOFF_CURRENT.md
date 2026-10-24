@@ -2,6 +2,7 @@
 
 **项目根目录：** `E:\GNSS_Multipath_Project`  
 **论文状态唯一来源：** 本文件  
+**长期建模路线与 WP0–WP6 状态权威来源：** `docs/ACADEMIC_CHANNEL_MODELING_MASTER_PLAN.md`（本文件继续负责论文事实、科学解释和论文状态）
 **最后审计时点：** 2026-10-24（Asia/Shanghai；Mainline Stage2探索V0见第25节，历史Stage3结果口径保留）
 **面向对象：** 论文写作者、科研人员、方法分析人员  
 **当前 Mainline 新增研究状态：** 经Commander授权，已在CIR未完工时完成SAGE-only Stage2探索V0；限于筛选后候选参数总体。完整CIR关联、Gate E/F、正式模型验收和Phase-2仍未完成，不能据V0宣称完整信道生成模型。
@@ -1553,11 +1554,15 @@ Stage3 r3 canonical model or a completed CIR/physical channel generator.
   fold records. They do not remove observations. No new CIR/SAGE/GNSS-SDR or
   raw-IQ/MAT/HDF5 read occurred. This does not admit a full Gate G claim.
 
-The authoritative three-layer long-term route is: **SAGE parameter baseline →
-environment/geometry/motion explanation → channel structure/time evolution
-with CIR validation**. Layer1 exploratory V0 is complete with limitations;
-layer2 initial exploration continues only as scene support warrants; layer3
-waits for Task5 and independent Gate E/F. Phase-2 AI remains planned-only.
+The authoritative three-layer long-term route and WP0–WP6 status/dependencies
+are maintained in `docs/ACADEMIC_CHANNEL_MODELING_MASTER_PLAN.md`. The route is:
+**SAGE parameter baseline → environment/geometry/motion explanation → channel
+structure/time evolution with CIR validation**. Layer1 exploratory V0 is
+complete with limitations; layer2 initial exploration continues only as scene
+support warrants; layer3 waits for Task5 and independent Gate E/F. This Paper
+Handoff remains the source for paper-facing facts and scientific interpretation;
+it does not create a second work-package status authority. Phase-2 AI remains
+planned-only.
 Methods, actual fit parameters, folds and real-data plots:
 `reports/data_consolidation_20261003/mainline_1023_model_v1/v0_20261024T132210Z/v0_model_report.md`.
 Literature-method links in that report distinguish verified author abstracts

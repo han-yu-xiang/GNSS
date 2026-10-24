@@ -6,6 +6,8 @@
 
 **Architecture:** Manifest/Summary 与已完成产物为只读上游；审计报告和不可变83项 cohort 清单固定输入；CIR 采用独立版本目录、单任务新建输出、每项 QA 后发布；建模只消费 QA 通过的 Stage2/alpha/CIR 派生数据，在新命名空间生成模型和独立评估。任一门禁失败时停止当前阶段，不悄悄缩小或更改冻结名单。
 
+> 长期最终目标及 WP0–WP6 的唯一权威路线/状态来源是 `docs/ACADEMIC_CHANNEL_MODELING_MASTER_PLAN.md`；本文件的 Task 1–8 是 Mainline 实施步骤，不是 WP 编号，也不替代 Master Plan 或当前工程交接状态。WP、Task 和 SAGE Stage 必须分别引用。
+
 **Tech Stack:** PowerShell 7 / Python 3（CSV/JSON 审计与统计）、MATLAB（现有 CIR/alpha 实现的最小参数化）、HDF5（按块验证）、定向回归测试、SHA-256（文本/代码/清单/小型 CSV 发布绑定）、Windows 正常用户单实例执行链。
 
 **Spec:** 用户 2026-10-22 本轮决策；工程事实与策略见 `docs/GNSS_SAGE_ENGINEERING_HANDOFF_CURRENT.md` 第106、115节。旧 Phase-1/r3 模型与单任务 CIR pilot 是独立历史结果，不是本计划已完成的批量成果。
