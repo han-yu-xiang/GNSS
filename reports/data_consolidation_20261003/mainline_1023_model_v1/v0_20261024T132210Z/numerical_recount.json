@@ -1,0 +1,26 @@
+{
+  "status": "PASS",
+  "created_utc": "2026-10-24T13:22:16.696964+00:00",
+  "runtime_seconds": 36.78995310002938,
+  "mpc_keys": 8914,
+  "selected_windows": 7847,
+  "scene_fold_manifests": 26,
+  "closed_form_heldout_score_checks": 39,
+  "input_hashes_verified": 20,
+  "output_hashes_verified": 34,
+  "executed_source_hashes_match_current": 3,
+  "unchanged_csv_results_across_review_fix": 17,
+  "gga_height_windows": 622,
+  "distinct_gga_height_records": 55,
+  "targeted_tests": "18 V0 + 15 reused prep = 33/33 PASS",
+  "python_compile": "PASS",
+  "scene_train_test_overlap": 0,
+  "production_control_actions": "NONE",
+  "parent_head_at_execution": "614d49f1d4adbb27d734eb1d72ed82ffd9c5720b",
+  "effective_version": {
+    "fit_mainline_1023_stage2_model.py": "bea01c7df5e23caf49c1a7120c0bd93aa2e15ed5d5365cb3f0eb502943db0fca",
+    "mainline_stage2_v0.py": "a30fa1656b9b3714e9bd3f9072d21c9f443202ca2c5fec5eeebb8377a1d163df",
+    "mainline_stage2_model_prep.py": "8cf414aa977424be97c011f65419d848418b5032aa3c522ece2a4832cecb8ae4"
+  },
+  "code_uncommitted_at_execution": true
+}

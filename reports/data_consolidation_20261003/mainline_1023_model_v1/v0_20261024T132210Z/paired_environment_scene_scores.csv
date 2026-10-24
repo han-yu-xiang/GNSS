@@ -1,0 +1,118 @@
+scope,held_out_scene_id,variable,family,finite_test_n,status,delta_env_minus_global
+ENV:Highway/Open,F1023_V120_D0121_P2,excess_delay_chips,gamma,104,NOT_EVALUABLE,
+ENV:Highway/Open,F1023_V120_D0121_P2,excess_delay_chips,lognormal,104,NOT_EVALUABLE,
+ENV:Highway/Open,F1023_V120_D0121_P2,excess_delay_chips,weibull,104,NOT_EVALUABLE,
+ENV:Highway/Open,F1023_V120_D0121_P2,doppler_offset_hz,normal,104,NOT_EVALUABLE,
+ENV:Highway/Open,F1023_V120_D0121_P2,doppler_offset_hz,laplace,104,NOT_EVALUABLE,
+ENV:Highway/Open,F1023_V120_D0121_P2,doppler_offset_hz,student_t,104,NOT_EVALUABLE,
+ENV:Highway/Open,F1023_V120_D0121_P2,relative_power_db,normal,104,NOT_EVALUABLE,
+ENV:Highway/Open,F1023_V120_D0121_P2,relative_power_db,laplace,104,NOT_EVALUABLE,
+ENV:Highway/Open,F1023_V120_D0121_P2,relative_power_db,student_t,104,NOT_EVALUABLE,
+ENV:Highway/Open,F1023_V80_D0117_P8,excess_delay_chips,gamma,471,NOT_EVALUABLE,
+ENV:Highway/Open,F1023_V80_D0117_P8,excess_delay_chips,lognormal,471,NOT_EVALUABLE,
+ENV:Highway/Open,F1023_V80_D0117_P8,excess_delay_chips,weibull,471,NOT_EVALUABLE,
+ENV:Highway/Open,F1023_V80_D0117_P8,doppler_offset_hz,normal,471,NOT_EVALUABLE,
+ENV:Highway/Open,F1023_V80_D0117_P8,doppler_offset_hz,laplace,471,NOT_EVALUABLE,
+ENV:Highway/Open,F1023_V80_D0117_P8,doppler_offset_hz,student_t,471,NOT_EVALUABLE,
+ENV:Highway/Open,F1023_V80_D0117_P8,relative_power_db,normal,471,NOT_EVALUABLE,
+ENV:Highway/Open,F1023_V80_D0117_P8,relative_power_db,laplace,471,NOT_EVALUABLE,
+ENV:Highway/Open,F1023_V80_D0117_P8,relative_power_db,student_t,471,NOT_EVALUABLE,
+ENV:Mountain/Valley,F1023_V70_D0117_P2,excess_delay_chips,gamma,837,EVALUATED,-0.19849545056628376
+ENV:Mountain/Valley,F1023_V70_D0117_P2,excess_delay_chips,lognormal,837,EVALUATED,-0.06925394038366428
+ENV:Mountain/Valley,F1023_V70_D0117_P2,excess_delay_chips,weibull,837,EVALUATED,-0.5130051597100399
+ENV:Mountain/Valley,F1023_V70_D0117_P2,doppler_offset_hz,normal,837,EVALUATED,0.009095104497701456
+ENV:Mountain/Valley,F1023_V70_D0117_P2,doppler_offset_hz,laplace,837,EVALUATED,-0.12202347782525802
+ENV:Mountain/Valley,F1023_V70_D0117_P2,doppler_offset_hz,student_t,837,EVALUATED,-0.020180418859004234
+ENV:Mountain/Valley,F1023_V70_D0117_P2,relative_power_db,normal,837,EVALUATED,-0.6103783674200773
+ENV:Mountain/Valley,F1023_V70_D0117_P2,relative_power_db,laplace,837,EVALUATED,-0.1274896233824654
+ENV:Mountain/Valley,F1023_V70_D0117_P2,relative_power_db,student_t,837,EVALUATED,-0.602796141109847
+ENV:Mountain/Valley,F1023_V70_D0117_P4,excess_delay_chips,gamma,1093,EVALUATED,-0.0038803207521078686
+ENV:Mountain/Valley,F1023_V70_D0117_P4,excess_delay_chips,lognormal,1093,EVALUATED,-0.000652768914519819
+ENV:Mountain/Valley,F1023_V70_D0117_P4,excess_delay_chips,weibull,1093,EVALUATED,-0.008662533550682028
+ENV:Mountain/Valley,F1023_V70_D0117_P4,doppler_offset_hz,normal,1093,EVALUATED,-0.09177407610794219
+ENV:Mountain/Valley,F1023_V70_D0117_P4,doppler_offset_hz,laplace,1093,EVALUATED,-0.0812602724498479
+ENV:Mountain/Valley,F1023_V70_D0117_P4,doppler_offset_hz,student_t,1093,EVALUATED,-0.07144502536178532
+ENV:Mountain/Valley,F1023_V70_D0117_P4,relative_power_db,normal,1093,EVALUATED,-0.22619831216910757
+ENV:Mountain/Valley,F1023_V70_D0117_P4,relative_power_db,laplace,1093,EVALUATED,-0.08221705031996551
+ENV:Mountain/Valley,F1023_V70_D0117_P4,relative_power_db,student_t,1093,EVALUATED,-0.08810584296298796
+ENV:Mountain/Valley,F1023_v90_D0117_P7,excess_delay_chips,gamma,707,EVALUATED,-0.023673100346055076
+ENV:Mountain/Valley,F1023_v90_D0117_P7,excess_delay_chips,lognormal,707,EVALUATED,-0.020896946592196652
+ENV:Mountain/Valley,F1023_v90_D0117_P7,excess_delay_chips,weibull,707,EVALUATED,-0.02017467797661343
+ENV:Mountain/Valley,F1023_v90_D0117_P7,doppler_offset_hz,normal,707,EVALUATED,-0.09353936633217241
+ENV:Mountain/Valley,F1023_v90_D0117_P7,doppler_offset_hz,laplace,707,EVALUATED,-0.022263287511551155
+ENV:Mountain/Valley,F1023_v90_D0117_P7,doppler_offset_hz,student_t,707,EVALUATED,-0.07021699112324242
+ENV:Mountain/Valley,F1023_v90_D0117_P7,relative_power_db,normal,707,EVALUATED,-0.16248649594392006
+ENV:Mountain/Valley,F1023_v90_D0117_P7,relative_power_db,laplace,707,EVALUATED,-0.042616176710292386
+ENV:Mountain/Valley,F1023_v90_D0117_P7,relative_power_db,student_t,707,EVALUATED,-0.07020750554573585
+ENV:Special Reflective,F1023_V70_D0120_P9,excess_delay_chips,gamma,1172,NOT_EVALUABLE,
+ENV:Special Reflective,F1023_V70_D0120_P9,excess_delay_chips,lognormal,1172,NOT_EVALUABLE,
+ENV:Special Reflective,F1023_V70_D0120_P9,excess_delay_chips,weibull,1172,NOT_EVALUABLE,
+ENV:Special Reflective,F1023_V70_D0120_P9,doppler_offset_hz,normal,1172,NOT_EVALUABLE,
+ENV:Special Reflective,F1023_V70_D0120_P9,doppler_offset_hz,laplace,1172,NOT_EVALUABLE,
+ENV:Special Reflective,F1023_V70_D0120_P9,doppler_offset_hz,student_t,1172,NOT_EVALUABLE,
+ENV:Special Reflective,F1023_V70_D0120_P9,relative_power_db,normal,1172,NOT_EVALUABLE,
+ENV:Special Reflective,F1023_V70_D0120_P9,relative_power_db,laplace,1172,NOT_EVALUABLE,
+ENV:Special Reflective,F1023_V70_D0120_P9,relative_power_db,student_t,1172,NOT_EVALUABLE,
+ENV:Special Reflective,F1023_V70_D0122_P2,excess_delay_chips,gamma,832,NOT_EVALUABLE,
+ENV:Special Reflective,F1023_V70_D0122_P2,excess_delay_chips,lognormal,832,NOT_EVALUABLE,
+ENV:Special Reflective,F1023_V70_D0122_P2,excess_delay_chips,weibull,832,NOT_EVALUABLE,
+ENV:Special Reflective,F1023_V70_D0122_P2,doppler_offset_hz,normal,832,NOT_EVALUABLE,
+ENV:Special Reflective,F1023_V70_D0122_P2,doppler_offset_hz,laplace,832,NOT_EVALUABLE,
+ENV:Special Reflective,F1023_V70_D0122_P2,doppler_offset_hz,student_t,832,NOT_EVALUABLE,
+ENV:Special Reflective,F1023_V70_D0122_P2,relative_power_db,normal,832,NOT_EVALUABLE,
+ENV:Special Reflective,F1023_V70_D0122_P2,relative_power_db,laplace,832,NOT_EVALUABLE,
+ENV:Special Reflective,F1023_V70_D0122_P2,relative_power_db,student_t,832,NOT_EVALUABLE,
+ENV:Urban,F1023_V70_D0120_P1,excess_delay_chips,gamma,334,EVALUATED,-0.0044866804027741125
+ENV:Urban,F1023_V70_D0120_P1,excess_delay_chips,lognormal,334,EVALUATED,-0.009586507664210542
+ENV:Urban,F1023_V70_D0120_P1,excess_delay_chips,weibull,334,EVALUATED,-1.7310228210942746e-05
+ENV:Urban,F1023_V70_D0120_P1,doppler_offset_hz,normal,334,EVALUATED,0.018396661724606744
+ENV:Urban,F1023_V70_D0120_P1,doppler_offset_hz,laplace,334,EVALUATED,-0.01159811757760476
+ENV:Urban,F1023_V70_D0120_P1,doppler_offset_hz,student_t,334,EVALUATED,0.013986859184651479
+ENV:Urban,F1023_V70_D0120_P1,relative_power_db,normal,334,EVALUATED,-0.010975479217663953
+ENV:Urban,F1023_V70_D0120_P1,relative_power_db,laplace,334,EVALUATED,-0.0392333665061142
+ENV:Urban,F1023_V70_D0120_P1,relative_power_db,student_t,334,EVALUATED,-0.0347468966337825
+ENV:Urban,F1023_V70_D0120_P5,excess_delay_chips,gamma,671,EVALUATED,0.0005022761425408362
+ENV:Urban,F1023_V70_D0120_P5,excess_delay_chips,lognormal,671,EVALUATED,0.00015327128546160917
+ENV:Urban,F1023_V70_D0120_P5,excess_delay_chips,weibull,671,EVALUATED,0.0007908525729291016
+ENV:Urban,F1023_V70_D0120_P5,doppler_offset_hz,normal,671,EVALUATED,-0.09462230729225496
+ENV:Urban,F1023_V70_D0120_P5,doppler_offset_hz,laplace,671,EVALUATED,-0.02165476130189159
+ENV:Urban,F1023_V70_D0120_P5,doppler_offset_hz,student_t,671,EVALUATED,-0.1261030356661621
+ENV:Urban,F1023_V70_D0120_P5,relative_power_db,normal,671,EVALUATED,-0.08697667600991776
+ENV:Urban,F1023_V70_D0120_P5,relative_power_db,laplace,671,EVALUATED,-0.0076367015389560144
+ENV:Urban,F1023_V70_D0120_P5,relative_power_db,student_t,671,EVALUATED,-0.08602051878999895
+ENV:Urban,F1023_V70_D0120_P7,excess_delay_chips,gamma,707,EVALUATED,0.0005811696808430966
+ENV:Urban,F1023_V70_D0120_P7,excess_delay_chips,lognormal,707,EVALUATED,-0.0003779913293087134
+ENV:Urban,F1023_V70_D0120_P7,excess_delay_chips,weibull,707,EVALUATED,0.0017954255186041213
+ENV:Urban,F1023_V70_D0120_P7,doppler_offset_hz,normal,707,EVALUATED,0.020912968638939766
+ENV:Urban,F1023_V70_D0120_P7,doppler_offset_hz,laplace,707,EVALUATED,0.002078504328026476
+ENV:Urban,F1023_V70_D0120_P7,doppler_offset_hz,student_t,707,EVALUATED,0.01653275447321967
+ENV:Urban,F1023_V70_D0120_P7,relative_power_db,normal,707,EVALUATED,0.026462076489899733
+ENV:Urban,F1023_V70_D0120_P7,relative_power_db,laplace,707,EVALUATED,0.018116838202718366
+ENV:Urban,F1023_V70_D0120_P7,relative_power_db,student_t,707,EVALUATED,0.04226986484221351
+ENV:Urban,F1023_V70_D0120_P8,excess_delay_chips,gamma,442,EVALUATED,-0.00427610190245753
+ENV:Urban,F1023_V70_D0120_P8,excess_delay_chips,lognormal,442,EVALUATED,-0.006469617549614393
+ENV:Urban,F1023_V70_D0120_P8,excess_delay_chips,weibull,442,EVALUATED,-0.002574220585946696
+ENV:Urban,F1023_V70_D0120_P8,doppler_offset_hz,normal,442,EVALUATED,0.015898836344288014
+ENV:Urban,F1023_V70_D0120_P8,doppler_offset_hz,laplace,442,EVALUATED,0.0048598940342774455
+ENV:Urban,F1023_V70_D0120_P8,doppler_offset_hz,student_t,442,EVALUATED,0.01662447480664575
+ENV:Urban,F1023_V70_D0120_P8,relative_power_db,normal,442,EVALUATED,-0.005816351529387198
+ENV:Urban,F1023_V70_D0120_P8,relative_power_db,laplace,442,EVALUATED,-0.04535858494233658
+ENV:Urban,F1023_V70_D0120_P8,relative_power_db,student_t,442,EVALUATED,-0.006035741901799785
+ENV:Urban,F1023_V70_D0122_P1,excess_delay_chips,gamma,1429,EVALUATED,-0.03481765238001577
+ENV:Urban,F1023_V70_D0122_P1,excess_delay_chips,lognormal,1429,EVALUATED,-0.011853705462592345
+ENV:Urban,F1023_V70_D0122_P1,excess_delay_chips,weibull,1429,EVALUATED,-0.11748581431617805
+ENV:Urban,F1023_V70_D0122_P1,doppler_offset_hz,normal,1429,EVALUATED,-0.004587065312110283
+ENV:Urban,F1023_V70_D0122_P1,doppler_offset_hz,laplace,1429,EVALUATED,-0.015464883682008157
+ENV:Urban,F1023_V70_D0122_P1,doppler_offset_hz,student_t,1429,EVALUATED,-0.004460554393456384
+ENV:Urban,F1023_V70_D0122_P1,relative_power_db,normal,1429,EVALUATED,0.02037439623328874
+ENV:Urban,F1023_V70_D0122_P1,relative_power_db,laplace,1429,EVALUATED,0.004657187442321131
+ENV:Urban,F1023_V70_D0122_P1,relative_power_db,student_t,1429,EVALUATED,0.008562766608202654
+ENV:Urban,F1023_v50_D0127_P1,excess_delay_chips,gamma,115,EVALUATED,0.0009176513167563627
+ENV:Urban,F1023_v50_D0127_P1,excess_delay_chips,lognormal,115,EVALUATED,-0.005718960282881991
+ENV:Urban,F1023_v50_D0127_P1,excess_delay_chips,weibull,115,EVALUATED,0.0043368848927457515
+ENV:Urban,F1023_v50_D0127_P1,doppler_offset_hz,normal,115,EVALUATED,0.026766738990724015
+ENV:Urban,F1023_v50_D0127_P1,doppler_offset_hz,laplace,115,EVALUATED,0.013347116628184885
+ENV:Urban,F1023_v50_D0127_P1,doppler_offset_hz,student_t,115,EVALUATED,0.0234070001683353
+ENV:Urban,F1023_v50_D0127_P1,relative_power_db,normal,115,EVALUATED,-0.024017238969674004
+ENV:Urban,F1023_v50_D0127_P1,relative_power_db,laplace,115,EVALUATED,-0.043347302231379725
+ENV:Urban,F1023_v50_D0127_P1,relative_power_db,student_t,115,EVALUATED,0.029711537107325547

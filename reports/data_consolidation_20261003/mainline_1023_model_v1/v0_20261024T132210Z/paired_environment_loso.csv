@@ -1,0 +1,37 @@
+scope,variable,family,paired_scene_n,macro_delta_env_minus_global,improved_scene_n,status
+ENV:Highway/Open,excess_delay_chips,gamma,0,,0,INSUFFICIENT_SUPPORT
+ENV:Highway/Open,excess_delay_chips,lognormal,0,,0,INSUFFICIENT_SUPPORT
+ENV:Highway/Open,excess_delay_chips,weibull,0,,0,INSUFFICIENT_SUPPORT
+ENV:Highway/Open,doppler_offset_hz,normal,0,,0,INSUFFICIENT_SUPPORT
+ENV:Highway/Open,doppler_offset_hz,laplace,0,,0,INSUFFICIENT_SUPPORT
+ENV:Highway/Open,doppler_offset_hz,student_t,0,,0,INSUFFICIENT_SUPPORT
+ENV:Highway/Open,relative_power_db,normal,0,,0,INSUFFICIENT_SUPPORT
+ENV:Highway/Open,relative_power_db,laplace,0,,0,INSUFFICIENT_SUPPORT
+ENV:Highway/Open,relative_power_db,student_t,0,,0,INSUFFICIENT_SUPPORT
+ENV:Mountain/Valley,excess_delay_chips,gamma,3,-0.0753496238881489,0,EXPLORATORY
+ENV:Mountain/Valley,excess_delay_chips,lognormal,3,-0.030267885296793584,0,EXPLORATORY
+ENV:Mountain/Valley,excess_delay_chips,weibull,3,-0.18061412374577845,0,EXPLORATORY
+ENV:Mountain/Valley,doppler_offset_hz,normal,3,-0.05873944598080438,1,EXPLORATORY
+ENV:Mountain/Valley,doppler_offset_hz,laplace,3,-0.07518234592888569,0,EXPLORATORY
+ENV:Mountain/Valley,doppler_offset_hz,student_t,3,-0.053947478448010656,0,EXPLORATORY
+ENV:Mountain/Valley,relative_power_db,normal,3,-0.333021058511035,0,EXPLORATORY
+ENV:Mountain/Valley,relative_power_db,laplace,3,-0.0841076168042411,0,EXPLORATORY
+ENV:Mountain/Valley,relative_power_db,student_t,3,-0.2537031632061903,0,EXPLORATORY
+ENV:Special Reflective,excess_delay_chips,gamma,0,,0,INSUFFICIENT_SUPPORT
+ENV:Special Reflective,excess_delay_chips,lognormal,0,,0,INSUFFICIENT_SUPPORT
+ENV:Special Reflective,excess_delay_chips,weibull,0,,0,INSUFFICIENT_SUPPORT
+ENV:Special Reflective,doppler_offset_hz,normal,0,,0,INSUFFICIENT_SUPPORT
+ENV:Special Reflective,doppler_offset_hz,laplace,0,,0,INSUFFICIENT_SUPPORT
+ENV:Special Reflective,doppler_offset_hz,student_t,0,,0,INSUFFICIENT_SUPPORT
+ENV:Special Reflective,relative_power_db,normal,0,,0,INSUFFICIENT_SUPPORT
+ENV:Special Reflective,relative_power_db,laplace,0,,0,INSUFFICIENT_SUPPORT
+ENV:Special Reflective,relative_power_db,student_t,0,,0,INSUFFICIENT_SUPPORT
+ENV:Urban,excess_delay_chips,gamma,6,-0.006929889590851186,3,EXPLORATORY
+ENV:Urban,excess_delay_chips,lognormal,6,-0.005642251833857729,1,EXPLORATORY
+ENV:Urban,excess_delay_chips,weibull,6,-0.01885903035767612,3,EXPLORATORY
+ENV:Urban,doppler_offset_hz,normal,6,-0.0028723611509677838,4,EXPLORATORY
+ENV:Urban,doppler_offset_hz,laplace,6,-0.004738707928502617,3,EXPLORATORY
+ENV:Urban,doppler_offset_hz,student_t,6,-0.010002083571127715,4,EXPLORATORY
+ENV:Urban,relative_power_db,normal,6,-0.013491545500575741,2,EXPLORATORY
+ENV:Urban,relative_power_db,laplace,6,-0.018800321595624503,2,EXPLORATORY
+ENV:Urban,relative_power_db,student_t,6,-0.007709831461306586,3,EXPLORATORY

@@ -2,8 +2,10 @@
 
 **项目根目录：** `E:\GNSS_Multipath_Project`  
 **论文状态唯一来源：** 本文件  
-**最后审计时点：** 2026-08-31（Asia/Shanghai）
+**长期建模路线与 WP0–WP6 状态权威来源：** `docs/ACADEMIC_CHANNEL_MODELING_MASTER_PLAN.md`（本文件继续负责论文事实、科学解释和论文状态）
+**最后审计时点：** 2026-10-24（Asia/Shanghai；Mainline Stage2探索V0见第25节，历史Stage3结果口径保留）
 **面向对象：** 论文写作者、科研人员、方法分析人员  
+**当前 Mainline 新增研究状态：** 经Commander授权，已在CIR未完工时完成SAGE-only Stage2探索V0；限于筛选后候选参数总体。完整CIR关联、Gate E/F、正式模型验收和Phase-2仍未完成，不能据V0宣称完整信道生成模型。
 **研究阶段：** accuracy-first full SAGE 冻结批次及独立批后 QA 已完成；Phase-1 的 Stage3 传统统计建模和 scientific closure 已完成并通过 QA（带明确限制）。coverage-complete event/path database、通用 channel-parameter database、Phase-2 AI 和完整暗室生成器仍是独立后续范围。
 
 > 本文只负责科学问题、贡献、实验解释、论文可写事实、图表、限制和未来路线。工程文件路径、执行门禁、hash和receipt的唯一状态源是 `docs/GNSS_SAGE_ENGINEERING_HANDOFF_CURRENT.md`。本文不得把设计、计划或gold前预测写成实验结果。
@@ -1495,3 +1497,73 @@ MATLAB_EXECUTED = NO
 SAGE_EXECUTED = NO
 NEXT_ACTION = AUTHOR_REVIEW_OF_ISOLATED_DOPPLER_REVISION
 ```
+
+## 24. GNSS-SDR historical geometry coverage recovery (2026-10-24; review-only evidence)
+
+- The 13-scene Stage2 cohort remains 7,847 windows / 16,761 paths; all 8,914 MPC records remain in the unchanged Task 6 ledger. Existing measured GSV elevation remains 5,128 windows. A separate, coordinate-free audit overlay adds 1,665 `EPHEMERIS_DERIVED` elevations and retains 1,054 explicitly missing rows. It does not rewrite the frozen High/Mid/Low labels or the nine task-level missing-elevation classifications.
+- Saved GNSS-SDR PVT dumps add 1,480 direct-epoch positions to the earlier 5,540 NMEA matches, yielding 7,020/7,847 located windows. The combined elevation/position support is 6,791/7,847 (86.54%), not an independent-observation count: Stage2 windows overlap, and 622 derived-elevation rows share 55 exact-time GGA height records. 1,043 other derived rows use a disclosed zero-height assumption.
+- Per-scene/environment support and detailed limitations are in `docs/MAINLINE_GNSS_SDR_OUTPUT_RECOVERY_AUDIT_20261024.md`. The new result is geometry enrichment only; no Stage2 MPC was removed and no statistical-model fit or Gate F validation was performed. Treat GSV as measured and ephemeris results as derived, never interchangeable.
+- The pilot compared 145 existing GSV values against same-scene broadcast ephemeris geometry (MAE 0.2695°, maximum absolute error 0.4918°). This is a bounded consistency check and does not establish independent truth or cohort-wide accuracy. Six scenes now have complete position/elevation coverage for this objective; seven retain evidence gaps. Raw-IQ contents and integrity remain unverified, so no GNSS-SDR rerun is recommended or authorized.
+
+```text
+GEOMETRY_RECOVERY = SEPARATE_OVERLAY_WITH_LIMITATIONS
+GSV_MEASURED = 5128
+EPHEMERIS_DERIVED = 1665
+ELEVATION_MISSING = 1054
+POSITION_MATCHED = 7020/7847
+JOINT_ELEVATION_POSITION = 6791/7847
+TASK6_MPC_ROWS_REMOVED = 0
+GATE_F = PENDING
+FORMAL_MODEL_FIT = NOT_RUN
+RAW_IQ_CONTENT_READ = NO
+GNSS_SDR_RERUN = NO
+NEXT_ACTION = AUTHOR_REVIEW_OF_BOUNDED_GEOMETRY_RECOVERY_EVIDENCE
+```
+
+## 25. Mainline Stage2 exploratory statistics V0 (2026-10-24)
+
+The Commander authorized a SAGE-only exploratory model before CIR completion.
+This is a new Stage2-selected candidate population, not a revision of the old
+Stage3 r3 canonical model or a completed CIR/physical channel generator.
+
+- All 8,914 MPC from 83 runs and 13 scenes are retained; 7,847 reference rows
+  support relative-parameter checks. The 7,847 selected windows are only 2.746%
+  of 285,752 Stage0-valid windows. Unselected windows are not zero-MPC samples.
+- Global 13-scene LOSO favors Lognormal delay over Gamma/Weibull. Global
+  signed-Doppler Normal/Student-t are competitive. Power training AICc favors
+  Student-t, but scene-held-out mean slightly favors Normal; retain both rather
+  than claiming a unique law. Every held-out scene includes all its PRN/channel
+  runs and overlapping windows. No path/window random split was used.
+- Urban/global comparison is paired on the same six Urban held-out scenes;
+  all nine mean deltas favor the global baseline, so current evidence does not
+  justify a separate Urban parameter set. Two-scene environments remain
+  descriptive; their one-training-scene folds are explicitly unevaluable.
+- Power-delay pooled rho=-0.616410, slope=-8.209394 dB/chip, whole-scene
+  bootstrap95% interval [-14.288980,-3.852434]. Linear R²=0.055343 and scene
+  heterogeneity mean that negative association is supported but a universal
+  linear physical decay law is not. Relative power is not absolute receive
+  power; signed Doppler is not reflector velocity; path numbering does not
+  establish physical identity across windows.
+- Geometry remains source-marked: 5,128 GSV, 1,665 derived, 1,054 missing;
+  7,020 positions and 6,791 joint windows. Derived angles are finite and within
+  4.625576491°–82.630120842°; 622 GGA-height vs1,043 zero-height observations
+  remain distinct. Continuous-angle relations are exploratory and coverage-
+  conditional. Nine frozen missing classifications remain unchanged. Spatial
+  range/independent segment evidence remains insufficient.
+- Three numerical Student-t failures remain in output, as do36 unsupported
+  fold records. They do not remove observations. No new CIR/SAGE/GNSS-SDR or
+  raw-IQ/MAT/HDF5 read occurred. This does not admit a full Gate G claim.
+
+The authoritative three-layer long-term route and WP0–WP6 status/dependencies
+are maintained in `docs/ACADEMIC_CHANNEL_MODELING_MASTER_PLAN.md`. The route is:
+**SAGE parameter baseline → environment/geometry/motion explanation → channel
+structure/time evolution with CIR validation**. Layer1 exploratory V0 is
+complete with limitations; layer2 initial exploration continues only as scene
+support warrants; layer3 waits for Task5 and independent Gate E/F. This Paper
+Handoff remains the source for paper-facing facts and scientific interpretation;
+it does not create a second work-package status authority. Phase-2 AI remains
+planned-only.
+Methods, actual fit parameters, folds and real-data plots:
+`reports/data_consolidation_20261003/mainline_1023_model_v1/v0_20261024T132210Z/v0_model_report.md`.
+Literature-method links in that report distinguish verified author abstracts
+from unavailable full-text details; no published parameter is transplanted.

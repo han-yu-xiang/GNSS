@@ -1,0 +1,46 @@
+scope,variable,family,fold_n,evaluated_fold_n,finite_score_fold_n,macro_mean_loglik,macro_std_across_scenes,support_violation_n,failed_or_unsupported_fold_n
+GLOBAL,excess_delay_chips,gamma,13,13,13,0.7123467074478107,0.5855839109430603,0,0
+GLOBAL,excess_delay_chips,lognormal,13,13,13,0.8878600980324353,0.35210056695811687,0,0
+GLOBAL,excess_delay_chips,weibull,13,13,13,0.54210315700019,0.5745273910780117,0,0
+GLOBAL,doppler_offset_hz,normal,13,13,13,-5.729152660662208,0.33762764065309325,0,0
+GLOBAL,doppler_offset_hz,laplace,13,13,13,-5.826875584314761,0.21239103194824047,0,0
+GLOBAL,doppler_offset_hz,student_t,13,13,13,-5.719570680375262,0.3188650428422297,0,0
+GLOBAL,relative_power_db,normal,13,13,13,-3.319460030498848,0.49551348633624065,0,0
+GLOBAL,relative_power_db,laplace,13,13,13,-3.3500182659411886,0.28256430348097794,0,0
+GLOBAL,relative_power_db,student_t,13,13,13,-3.3211172808573233,0.4947918855359481,0,0
+ENV:Highway/Open,excess_delay_chips,gamma,2,0,0,,,0,2
+ENV:Highway/Open,excess_delay_chips,lognormal,2,0,0,,,0,2
+ENV:Highway/Open,excess_delay_chips,weibull,2,0,0,,,0,2
+ENV:Highway/Open,doppler_offset_hz,normal,2,0,0,,,0,2
+ENV:Highway/Open,doppler_offset_hz,laplace,2,0,0,,,0,2
+ENV:Highway/Open,doppler_offset_hz,student_t,2,0,0,,,0,2
+ENV:Highway/Open,relative_power_db,normal,2,0,0,,,0,2
+ENV:Highway/Open,relative_power_db,laplace,2,0,0,,,0,2
+ENV:Highway/Open,relative_power_db,student_t,2,0,0,,,0,2
+ENV:Mountain/Valley,excess_delay_chips,gamma,3,3,3,0.746580822036737,0.41825940754978325,0,0
+ENV:Mountain/Valley,excess_delay_chips,lognormal,3,3,3,0.9022243877390513,0.2831575926626302,0,0
+ENV:Mountain/Valley,excess_delay_chips,weibull,3,3,3,0.46591245810256243,0.5683159679817771,0,0
+ENV:Mountain/Valley,doppler_offset_hz,normal,3,3,3,-6.03681791826827,0.4983197142274002,0,0
+ENV:Mountain/Valley,doppler_offset_hz,laplace,3,3,3,-6.089981670684693,0.3535600552354788,0,0
+ENV:Mountain/Valley,doppler_offset_hz,student_t,3,3,3,-6.026160878263049,0.5059010113269934,0,0
+ENV:Mountain/Valley,relative_power_db,normal,3,3,3,-4.022252567327045,1.301782443399752,0,0
+ENV:Mountain/Valley,relative_power_db,laplace,3,3,3,-3.515290860973225,0.5923599574647053,0,0
+ENV:Mountain/Valley,relative_power_db,student_t,3,3,3,-3.9309927356808383,1.3709598933287652,0,0
+ENV:Special Reflective,excess_delay_chips,gamma,2,0,0,,,0,2
+ENV:Special Reflective,excess_delay_chips,lognormal,2,0,0,,,0,2
+ENV:Special Reflective,excess_delay_chips,weibull,2,0,0,,,0,2
+ENV:Special Reflective,doppler_offset_hz,normal,2,0,0,,,0,2
+ENV:Special Reflective,doppler_offset_hz,laplace,2,0,0,,,0,2
+ENV:Special Reflective,doppler_offset_hz,student_t,2,0,0,,,0,2
+ENV:Special Reflective,relative_power_db,normal,2,0,0,,,0,2
+ENV:Special Reflective,relative_power_db,laplace,2,0,0,,,0,2
+ENV:Special Reflective,relative_power_db,student_t,2,0,0,,,0,2
+ENV:Urban,excess_delay_chips,gamma,6,6,6,0.9090772351290025,0.18836398342326288,0,0
+ENV:Urban,excess_delay_chips,lognormal,6,6,6,1.008847243062855,0.16607743617816378,0,0
+ENV:Urban,excess_delay_chips,weibull,6,6,6,0.7223482604975354,0.20589474866804455,0,0
+ENV:Urban,doppler_offset_hz,normal,6,6,6,-5.613473528261153,0.23516363059465062,0,0
+ENV:Urban,doppler_offset_hz,laplace,6,6,6,-5.7538674228383515,0.17005468762090703,0,0
+ENV:Urban,doppler_offset_hz,student_t,6,6,6,-5.616843664498397,0.23581185238543875,0,0
+ENV:Urban,relative_power_db,normal,6,6,6,-3.2059677347780986,0.14743806032239387,0,0
+ENV:Urban,relative_power_db,laplace,6,6,6,-3.3116006322878495,0.09455362309582309,0,0
+ENV:Urban,relative_power_db,student_t,6,6,6,-3.2097585754776063,0.14535854515457172,0,0

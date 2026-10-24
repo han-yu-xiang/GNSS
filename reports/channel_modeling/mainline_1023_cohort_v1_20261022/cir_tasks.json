@@ -1,0 +1,672 @@
+{
+  "cohort_id": "mainline_1023_model_v1",
+  "schema_version": 1,
+  "source_cohort_sha256": "287e891fae0cd294a85c073080611a19b7389ece46240b89cb1d5dab4df90229",
+  "task_count": 83,
+  "tasks": [
+    {
+      "output_namespace": "scenes/F1023_V120_D0121_P2/sage_results/rerun_20261003_frozen_v3/G03_ch2",
+      "prn": "G03",
+      "run_id": "run_20261003_F1023_V120_D0121_P2_G03_ch2",
+      "scene_id": "F1023_V120_D0121_P2",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 2
+    },
+    {
+      "output_namespace": "scenes/F1023_V120_D0121_P2/sage_results/rerun_20261003_frozen_v3/G06_ch9",
+      "prn": "G06",
+      "run_id": "run_20261003_F1023_V120_D0121_P2_G06_ch9",
+      "scene_id": "F1023_V120_D0121_P2",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 9
+    },
+    {
+      "output_namespace": "scenes/F1023_V120_D0121_P2/sage_results/rerun_20261003_frozen_v3/G11_ch0",
+      "prn": "G11",
+      "run_id": "run_20261003_F1023_V120_D0121_P2_G11_ch0",
+      "scene_id": "F1023_V120_D0121_P2",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 0
+    },
+    {
+      "output_namespace": "scenes/F1023_V120_D0121_P2/sage_results/rerun_20261003_frozen_v3/G12_ch11",
+      "prn": "G12",
+      "run_id": "run_20261003_F1023_V120_D0121_P2_G12_ch11",
+      "scene_id": "F1023_V120_D0121_P2",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 11
+    },
+    {
+      "output_namespace": "scenes/F1023_V120_D0121_P2/sage_results/rerun_20261003_frozen_v3/G19_ch0",
+      "prn": "G19",
+      "run_id": "run_20261003_F1023_V120_D0121_P2_G19_ch0",
+      "scene_id": "F1023_V120_D0121_P2",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 0
+    },
+    {
+      "output_namespace": "scenes/F1023_V120_D0121_P2/sage_results/rerun_20261003_frozen_v3/G19_ch1",
+      "prn": "G19",
+      "run_id": "run_20261003_F1023_V120_D0121_P2_G19_ch1",
+      "scene_id": "F1023_V120_D0121_P2",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 1
+    },
+    {
+      "output_namespace": "scenes/F1023_V120_D0121_P2/sage_results/rerun_20261003_frozen_v3/G19_ch3",
+      "prn": "G19",
+      "run_id": "run_20261003_F1023_V120_D0121_P2_G19_ch3",
+      "scene_id": "F1023_V120_D0121_P2",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 3
+    },
+    {
+      "output_namespace": "scenes/F1023_V120_D0121_P2/sage_results/rerun_20261003_frozen_v3/G24_ch2",
+      "prn": "G24",
+      "run_id": "run_20261003_F1023_V120_D0121_P2_G24_ch2",
+      "scene_id": "F1023_V120_D0121_P2",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 2
+    },
+    {
+      "output_namespace": "scenes/F1023_V120_D0121_P2/sage_results/rerun_20261003_frozen_v3/G25_ch5",
+      "prn": "G25",
+      "run_id": "run_20261003_F1023_V120_D0121_P2_G25_ch5",
+      "scene_id": "F1023_V120_D0121_P2",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 5
+    },
+    {
+      "output_namespace": "scenes/F1023_V120_D0121_P2/sage_results/rerun_20261003_frozen_v3/G28_ch6",
+      "prn": "G28",
+      "run_id": "run_20261003_F1023_V120_D0121_P2_G28_ch6",
+      "scene_id": "F1023_V120_D0121_P2",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 6
+    },
+    {
+      "output_namespace": "scenes/F1023_V120_D0121_P2/sage_results/rerun_20261003_frozen_v3/G29_ch10",
+      "prn": "G29",
+      "run_id": "run_20261003_F1023_V120_D0121_P2_G29_ch10",
+      "scene_id": "F1023_V120_D0121_P2",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 10
+    },
+    {
+      "output_namespace": "scenes/F1023_V120_D0121_P2/sage_results/rerun_20261003_frozen_v3/G29_ch3",
+      "prn": "G29",
+      "run_id": "run_20261003_F1023_V120_D0121_P2_G29_ch3",
+      "scene_id": "F1023_V120_D0121_P2",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 3
+    },
+    {
+      "output_namespace": "scenes/F1023_V120_D0121_P2/sage_results/rerun_20261003_frozen_v3/G32_ch7",
+      "prn": "G32",
+      "run_id": "run_20261003_F1023_V120_D0121_P2_G32_ch7",
+      "scene_id": "F1023_V120_D0121_P2",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 7
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0117_P2/sage_results/rerun_20261003_frozen_v3/G06_ch4",
+      "prn": "G06",
+      "run_id": "run_20261003_F1023_V70_D0117_P2_G06_ch4",
+      "scene_id": "F1023_V70_D0117_P2",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 4
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0117_P2/sage_results/rerun_20261003_frozen_v3/G11_ch5",
+      "prn": "G11",
+      "run_id": "run_20261003_F1023_V70_D0117_P2_G11_ch5",
+      "scene_id": "F1023_V70_D0117_P2",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 5
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0117_P2/sage_results/rerun_20261003_frozen_v3/G12_ch6",
+      "prn": "G12",
+      "run_id": "run_20261003_F1023_V70_D0117_P2_G12_ch6",
+      "scene_id": "F1023_V70_D0117_P2",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 6
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0117_P2/sage_results/rerun_20261003_frozen_v3/G25_ch0",
+      "prn": "G25",
+      "run_id": "run_20261003_F1023_V70_D0117_P2_G25_ch0",
+      "scene_id": "F1023_V70_D0117_P2",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 0
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0117_P2/sage_results/rerun_20261003_frozen_v3/G28_ch1",
+      "prn": "G28",
+      "run_id": "run_20261003_F1023_V70_D0117_P2_G28_ch1",
+      "scene_id": "F1023_V70_D0117_P2",
+      "task_status": "EXISTING_VALIDATED",
+      "tracking_channel": 1
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0117_P2/sage_results/rerun_20261003_frozen_v3/G29_ch7",
+      "prn": "G29",
+      "run_id": "run_20261003_F1023_V70_D0117_P2_G29_ch7",
+      "scene_id": "F1023_V70_D0117_P2",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 7
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0117_P2/sage_results/rerun_20261003_frozen_v3/G32_ch11",
+      "prn": "G32",
+      "run_id": "run_20261003_F1023_V70_D0117_P2_G32_ch11",
+      "scene_id": "F1023_V70_D0117_P2",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 11
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0117_P4/sage_results/rerun_20261003_frozen_v3/G11_ch2",
+      "prn": "G11",
+      "run_id": "run_20261003_F1023_V70_D0117_P4_G11_ch2",
+      "scene_id": "F1023_V70_D0117_P4",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 2
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0117_P4/sage_results/rerun_20261003_frozen_v3/G12_ch4",
+      "prn": "G12",
+      "run_id": "run_20261003_F1023_V70_D0117_P4_G12_ch4",
+      "scene_id": "F1023_V70_D0117_P4",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 4
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0117_P4/sage_results/rerun_20261003_frozen_v3/G25_ch7",
+      "prn": "G25",
+      "run_id": "run_20261003_F1023_V70_D0117_P4_G25_ch7",
+      "scene_id": "F1023_V70_D0117_P4",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 7
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0117_P4/sage_results/rerun_20261003_frozen_v3/G28_ch6",
+      "prn": "G28",
+      "run_id": "run_20261003_F1023_V70_D0117_P4_G28_ch6",
+      "scene_id": "F1023_V70_D0117_P4",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 6
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0117_P4/sage_results/rerun_20261003_frozen_v3/G29_ch9",
+      "prn": "G29",
+      "run_id": "run_20261003_F1023_V70_D0117_P4_G29_ch9",
+      "scene_id": "F1023_V70_D0117_P4",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 9
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0117_P4/sage_results/rerun_20261003_frozen_v3/G31_ch1",
+      "prn": "G31",
+      "run_id": "run_20261003_F1023_V70_D0117_P4_G31_ch1",
+      "scene_id": "F1023_V70_D0117_P4",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 1
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0117_P4/sage_results/rerun_20261003_frozen_v3/G32_ch3",
+      "prn": "G32",
+      "run_id": "run_20261003_F1023_V70_D0117_P4_G32_ch3",
+      "scene_id": "F1023_V70_D0117_P4",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 3
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0120_P1/sage_results/rerun_20261003_frozen_v3/G18_ch2",
+      "prn": "G18",
+      "run_id": "run_20261003_F1023_V70_D0120_P1_G18_ch2",
+      "scene_id": "F1023_V70_D0120_P1",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 2
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0120_P1/sage_results/rerun_20261003_frozen_v3/G29_ch5",
+      "prn": "G29",
+      "run_id": "run_20261003_F1023_V70_D0120_P1_G29_ch5",
+      "scene_id": "F1023_V70_D0120_P1",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 5
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0120_P1/sage_results/rerun_20261003_frozen_v3/G31_ch9",
+      "prn": "G31",
+      "run_id": "run_20261003_F1023_V70_D0120_P1_G31_ch9",
+      "scene_id": "F1023_V70_D0120_P1",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 9
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0120_P5/sage_results/rerun_20261003_frozen_v3/G16_ch1",
+      "prn": "G16",
+      "run_id": "run_20261003_F1023_V70_D0120_P5_G16_ch1",
+      "scene_id": "F1023_V70_D0120_P5",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 1
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0120_P5/sage_results/rerun_20261003_frozen_v3/G18_ch2",
+      "prn": "G18",
+      "run_id": "run_20261003_F1023_V70_D0120_P5_G18_ch2",
+      "scene_id": "F1023_V70_D0120_P5",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 2
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0120_P5/sage_results/rerun_20261003_frozen_v3/G23_ch0",
+      "prn": "G23",
+      "run_id": "run_20261003_F1023_V70_D0120_P5_G23_ch0",
+      "scene_id": "F1023_V70_D0120_P5",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 0
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0120_P5/sage_results/rerun_20261003_frozen_v3/G26_ch7",
+      "prn": "G26",
+      "run_id": "run_20261003_F1023_V70_D0120_P5_G26_ch7",
+      "scene_id": "F1023_V70_D0120_P5",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 7
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0120_P5/sage_results/rerun_20261003_frozen_v3/G27_ch10",
+      "prn": "G27",
+      "run_id": "run_20261003_F1023_V70_D0120_P5_G27_ch10",
+      "scene_id": "F1023_V70_D0120_P5",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 10
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0120_P7/sage_results/rerun_20261003_frozen_v3/G16_ch1",
+      "prn": "G16",
+      "run_id": "run_20261003_F1023_V70_D0120_P7_G16_ch1",
+      "scene_id": "F1023_V70_D0120_P7",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 1
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0120_P7/sage_results/rerun_20261003_frozen_v3/G18_ch4",
+      "prn": "G18",
+      "run_id": "run_20261003_F1023_V70_D0120_P7_G18_ch4",
+      "scene_id": "F1023_V70_D0120_P7",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 4
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0120_P7/sage_results/rerun_20261003_frozen_v3/G26_ch6",
+      "prn": "G26",
+      "run_id": "run_20261003_F1023_V70_D0120_P7_G26_ch6",
+      "scene_id": "F1023_V70_D0120_P7",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 6
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0120_P7/sage_results/rerun_20261003_frozen_v3/G31_ch8",
+      "prn": "G31",
+      "run_id": "run_20261003_F1023_V70_D0120_P7_G31_ch8",
+      "scene_id": "F1023_V70_D0120_P7",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 8
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0120_P8/sage_results/rerun_20261003_frozen_v3/G16_ch4",
+      "prn": "G16",
+      "run_id": "run_20261003_F1023_V70_D0120_P8_G16_ch4",
+      "scene_id": "F1023_V70_D0120_P8",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 4
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0120_P8/sage_results/rerun_20261003_frozen_v3/G18_ch9",
+      "prn": "G18",
+      "run_id": "run_20261003_F1023_V70_D0120_P8_G18_ch9",
+      "scene_id": "F1023_V70_D0120_P8",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 9
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0120_P8/sage_results/rerun_20261003_frozen_v3/G23_ch11",
+      "prn": "G23",
+      "run_id": "run_20261003_F1023_V70_D0120_P8_G23_ch11",
+      "scene_id": "F1023_V70_D0120_P8",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 11
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0120_P8/sage_results/rerun_20261003_frozen_v3/G26_ch3",
+      "prn": "G26",
+      "run_id": "run_20261003_F1023_V70_D0120_P8_G26_ch3",
+      "scene_id": "F1023_V70_D0120_P8",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 3
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0120_P9/sage_results/rerun_20261003_frozen_v3/G05_ch10",
+      "prn": "G05",
+      "run_id": "run_20261003_F1023_V70_D0120_P9_G05_ch10",
+      "scene_id": "F1023_V70_D0120_P9",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 10
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0120_P9/sage_results/rerun_20261003_frozen_v3/G16_ch9",
+      "prn": "G16",
+      "run_id": "run_20261003_F1023_V70_D0120_P9_G16_ch9",
+      "scene_id": "F1023_V70_D0120_P9",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 9
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0120_P9/sage_results/rerun_20261003_frozen_v3/G18_ch1",
+      "prn": "G18",
+      "run_id": "run_20261003_F1023_V70_D0120_P9_G18_ch1",
+      "scene_id": "F1023_V70_D0120_P9",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 1
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0120_P9/sage_results/rerun_20261003_frozen_v3/G23_ch3",
+      "prn": "G23",
+      "run_id": "run_20261003_F1023_V70_D0120_P9_G23_ch3",
+      "scene_id": "F1023_V70_D0120_P9",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 3
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0120_P9/sage_results/rerun_20261003_frozen_v3/G26_ch6",
+      "prn": "G26",
+      "run_id": "run_20261003_F1023_V70_D0120_P9_G26_ch6",
+      "scene_id": "F1023_V70_D0120_P9",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 6
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0120_P9/sage_results/rerun_20261003_frozen_v3/G27_ch5",
+      "prn": "G27",
+      "run_id": "run_20261003_F1023_V70_D0120_P9_G27_ch5",
+      "scene_id": "F1023_V70_D0120_P9",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 5
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0120_P9/sage_results/rerun_20261003_frozen_v3/G28_ch11",
+      "prn": "G28",
+      "run_id": "run_20261003_F1023_V70_D0120_P9_G28_ch11",
+      "scene_id": "F1023_V70_D0120_P9",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 11
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0120_P9/sage_results/rerun_20261003_frozen_v3/G29_ch4",
+      "prn": "G29",
+      "run_id": "run_20261003_F1023_V70_D0120_P9_G29_ch4",
+      "scene_id": "F1023_V70_D0120_P9",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 4
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0120_P9/sage_results/rerun_20261003_frozen_v3/G31_ch7",
+      "prn": "G31",
+      "run_id": "run_20261003_F1023_V70_D0120_P9_G31_ch7",
+      "scene_id": "F1023_V70_D0120_P9",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 7
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0122_P1/sage_results/rerun_20261003_frozen_v3/G12_ch6",
+      "prn": "G12",
+      "run_id": "run_20261003_F1023_V70_D0122_P1_G12_ch6",
+      "scene_id": "F1023_V70_D0122_P1",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 6
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0122_P1/sage_results/rerun_20261003_frozen_v3/G13_ch5",
+      "prn": "G13",
+      "run_id": "run_20261003_F1023_V70_D0122_P1_G13_ch5",
+      "scene_id": "F1023_V70_D0122_P1",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 5
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0122_P1/sage_results/rerun_20261003_frozen_v3/G14_ch9",
+      "prn": "G14",
+      "run_id": "run_20261003_F1023_V70_D0122_P1_G14_ch9",
+      "scene_id": "F1023_V70_D0122_P1",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 9
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0122_P1/sage_results/rerun_20261003_frozen_v3/G15_ch8",
+      "prn": "G15",
+      "run_id": "run_20261003_F1023_V70_D0122_P1_G15_ch8",
+      "scene_id": "F1023_V70_D0122_P1",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 8
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0122_P1/sage_results/rerun_20261003_frozen_v3/G17_ch2",
+      "prn": "G17",
+      "run_id": "run_20261003_F1023_V70_D0122_P1_G17_ch2",
+      "scene_id": "F1023_V70_D0122_P1",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 2
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0122_P1/sage_results/rerun_20261003_frozen_v3/G19_ch11",
+      "prn": "G19",
+      "run_id": "run_20261003_F1023_V70_D0122_P1_G19_ch11",
+      "scene_id": "F1023_V70_D0122_P1",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 11
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0122_P1/sage_results/rerun_20261003_frozen_v3/G22_ch4",
+      "prn": "G22",
+      "run_id": "run_20261003_F1023_V70_D0122_P1_G22_ch4",
+      "scene_id": "F1023_V70_D0122_P1",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 4
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0122_P1/sage_results/rerun_20261003_frozen_v3/G24_ch7",
+      "prn": "G24",
+      "run_id": "run_20261003_F1023_V70_D0122_P1_G24_ch7",
+      "scene_id": "F1023_V70_D0122_P1",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 7
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0122_P2/sage_results/rerun_20261003_frozen_v3/G10_ch6",
+      "prn": "G10",
+      "run_id": "run_20261003_F1023_V70_D0122_P2_G10_ch6",
+      "scene_id": "F1023_V70_D0122_P2",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 6
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0122_P2/sage_results/rerun_20261003_frozen_v3/G12_ch2",
+      "prn": "G12",
+      "run_id": "run_20261003_F1023_V70_D0122_P2_G12_ch2",
+      "scene_id": "F1023_V70_D0122_P2",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 2
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0122_P2/sage_results/rerun_20261003_frozen_v3/G13_ch5",
+      "prn": "G13",
+      "run_id": "run_20261003_F1023_V70_D0122_P2_G13_ch5",
+      "scene_id": "F1023_V70_D0122_P2",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 5
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0122_P2/sage_results/rerun_20261003_frozen_v3/G15_ch8",
+      "prn": "G15",
+      "run_id": "run_20261003_F1023_V70_D0122_P2_G15_ch8",
+      "scene_id": "F1023_V70_D0122_P2",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 8
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0122_P2/sage_results/rerun_20261003_frozen_v3/G19_ch11",
+      "prn": "G19",
+      "run_id": "run_20261003_F1023_V70_D0122_P2_G19_ch11",
+      "scene_id": "F1023_V70_D0122_P2",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 11
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0122_P2/sage_results/rerun_20261003_frozen_v3/G23_ch10",
+      "prn": "G23",
+      "run_id": "run_20261003_F1023_V70_D0122_P2_G23_ch10",
+      "scene_id": "F1023_V70_D0122_P2",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 10
+    },
+    {
+      "output_namespace": "scenes/F1023_V70_D0122_P2/sage_results/rerun_20261003_frozen_v3/G24_ch3",
+      "prn": "G24",
+      "run_id": "run_20261003_F1023_V70_D0122_P2_G24_ch3",
+      "scene_id": "F1023_V70_D0122_P2",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 3
+    },
+    {
+      "output_namespace": "scenes/F1023_V80_D0117_P8/sage_results/rerun_20261003_frozen_v3/G12_ch4",
+      "prn": "G12",
+      "run_id": "run_20261003_F1023_V80_D0117_P8_G12_ch4",
+      "scene_id": "F1023_V80_D0117_P8",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 4
+    },
+    {
+      "output_namespace": "scenes/F1023_V80_D0117_P8/sage_results/rerun_20261003_frozen_v3/G25_ch10",
+      "prn": "G25",
+      "run_id": "run_20261003_F1023_V80_D0117_P8_G25_ch10",
+      "scene_id": "F1023_V80_D0117_P8",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 10
+    },
+    {
+      "output_namespace": "scenes/F1023_V80_D0117_P8/sage_results/rerun_20261003_frozen_v3/G28_ch6",
+      "prn": "G28",
+      "run_id": "run_20261003_F1023_V80_D0117_P8_G28_ch6",
+      "scene_id": "F1023_V80_D0117_P8",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 6
+    },
+    {
+      "output_namespace": "scenes/F1023_V80_D0117_P8/sage_results/rerun_20261003_frozen_v3/G31_ch1",
+      "prn": "G31",
+      "run_id": "run_20261003_F1023_V80_D0117_P8_G31_ch1",
+      "scene_id": "F1023_V80_D0117_P8",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 1
+    },
+    {
+      "output_namespace": "scenes/F1023_V80_D0117_P8/sage_results/rerun_20261003_frozen_v3/G32_ch11",
+      "prn": "G32",
+      "run_id": "run_20261003_F1023_V80_D0117_P8_G32_ch11",
+      "scene_id": "F1023_V80_D0117_P8",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 11
+    },
+    {
+      "output_namespace": "scenes/F1023_v50_D0127_P1/sage_results/rerun_20261003_frozen_v3/G11_ch10",
+      "prn": "G11",
+      "run_id": "run_20261003_F1023_v50_D0127_P1_G11_ch10",
+      "scene_id": "F1023_v50_D0127_P1",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 10
+    },
+    {
+      "output_namespace": "scenes/F1023_v50_D0127_P1/sage_results/rerun_20261003_frozen_v3/G25_ch0",
+      "prn": "G25",
+      "run_id": "run_20261003_F1023_v50_D0127_P1_G25_ch0",
+      "scene_id": "F1023_v50_D0127_P1",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 0
+    },
+    {
+      "output_namespace": "scenes/F1023_v50_D0127_P1/sage_results/rerun_20261003_frozen_v3/G28_ch4",
+      "prn": "G28",
+      "run_id": "run_20261003_F1023_v50_D0127_P1_G28_ch4",
+      "scene_id": "F1023_v50_D0127_P1",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 4
+    },
+    {
+      "output_namespace": "scenes/F1023_v50_D0127_P1/sage_results/rerun_20261003_frozen_v3/G29_ch9",
+      "prn": "G29",
+      "run_id": "run_20261003_F1023_v50_D0127_P1_G29_ch9",
+      "scene_id": "F1023_v50_D0127_P1",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 9
+    },
+    {
+      "output_namespace": "scenes/F1023_v50_D0127_P1/sage_results/rerun_20261003_frozen_v3/G31_ch5",
+      "prn": "G31",
+      "run_id": "run_20261003_F1023_v50_D0127_P1_G31_ch5",
+      "scene_id": "F1023_v50_D0127_P1",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 5
+    },
+    {
+      "output_namespace": "scenes/F1023_v90_D0117_P7/sage_results/rerun_20261003_frozen_v3/G11_ch6",
+      "prn": "G11",
+      "run_id": "run_20261003_F1023_v90_D0117_P7_G11_ch6",
+      "scene_id": "F1023_v90_D0117_P7",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 6
+    },
+    {
+      "output_namespace": "scenes/F1023_v90_D0117_P7/sage_results/rerun_20261003_frozen_v3/G12_ch10",
+      "prn": "G12",
+      "run_id": "run_20261003_F1023_v90_D0117_P7_G12_ch10",
+      "scene_id": "F1023_v90_D0117_P7",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 10
+    },
+    {
+      "output_namespace": "scenes/F1023_v90_D0117_P7/sage_results/rerun_20261003_frozen_v3/G25_ch0",
+      "prn": "G25",
+      "run_id": "run_20261003_F1023_v90_D0117_P7_G25_ch0",
+      "scene_id": "F1023_v90_D0117_P7",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 0
+    },
+    {
+      "output_namespace": "scenes/F1023_v90_D0117_P7/sage_results/rerun_20261003_frozen_v3/G28_ch4",
+      "prn": "G28",
+      "run_id": "run_20261003_F1023_v90_D0117_P7_G28_ch4",
+      "scene_id": "F1023_v90_D0117_P7",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 4
+    },
+    {
+      "output_namespace": "scenes/F1023_v90_D0117_P7/sage_results/rerun_20261003_frozen_v3/G29_ch11",
+      "prn": "G29",
+      "run_id": "run_20261003_F1023_v90_D0117_P7_G29_ch11",
+      "scene_id": "F1023_v90_D0117_P7",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 11
+    },
+    {
+      "output_namespace": "scenes/F1023_v90_D0117_P7/sage_results/rerun_20261003_frozen_v3/G32_ch5",
+      "prn": "G32",
+      "run_id": "run_20261003_F1023_v90_D0117_P7_G32_ch5",
+      "scene_id": "F1023_v90_D0117_P7",
+      "task_status": "NEW_REQUIRED",
+      "tracking_channel": 5
+    }
+  ]
+}
