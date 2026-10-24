@@ -2383,3 +2383,12 @@ GNSS_SDR_RERUN = NO
 GATE_F = PENDING
 NEXT_ACTION = REVIEW_SANITIZED_AUDIT; NO_RERUN_UNTIL_RAW_INTEGRITY_AND_EXPECTED_GAIN_ARE_ESTABLISHED
 ```
+
+## 99. GNSS-SDR recovery audit review hardening (2026-10-24)
+
+- Fixed the GPS LNAV TOE selector and reported age to use the continuous GPS week carried by RINEX, without modulo-week folding. RINEX 3.05 §4.1.1 specifies continuous GPS navigation-file week numbers. The existing overlay's 1,665 derived rows were independently checked against absolute GPS week/time: max age 6,072 seconds; none exceeds the 7,200-second gate. The existing overlay and audit were not rewritten.
+- The cohort runner now runs the frozen V120/D0121/P2 GSV comparison before creating the full output. Failure stops before namespace creation; successful metrics and a SHA-256 of the compared `(run_id, window_id)` set are embedded in newly generated audit JSON. The old audit JSON predates this guard and its pilot field is null. A fresh read-only pilot with the corrected code passed 145/145, MAE 0.269477°, P95 0.448884°, max 0.491844°, identity SHA-256 `89b63379672dbdbb1e62bbeafe9f779eeb11d7e7a52e66fbf0b3a3584337eeda`.
+- Recovery/pilot inputs now fail closed for non-finite or out-of-range measured GSV elevation; the existing 5,128 GSV values contain no invalid values. PVT coordinate-overlay output is confined to a new top-level run directory below ignored `dataset_generation_logs/channel_modeling/`; the existing PVT output was not modified.
+- Post-review focused verification passed 60/60 across the ephemeris recovery, PVT recovery, and Stage2 geometry test modules. New regressions cover stale full-week ephemeris, valid week rollover, pilot-before-full-write, pilot identity provenance, GSV range checks, and PVT output isolation.
+- Task 5 remains untouched. At 2026-10-24 16:07:17 +08, MATLAB PIDs 50112/45984 existed with command lines for G25/ch5. This read-only process sample did not inspect current stage or scheduler status and is not a continuing state claim. No Task 5 process, monitor, release, or output was controlled.
+- No raw IQ, MAT/HDF5 payload, GNSS-SDR, MATLAB, SAGE, or CIR production was run. Gate F and the missing-data limitations remain unchanged.

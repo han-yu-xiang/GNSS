@@ -44,6 +44,7 @@ EXPECTED_SCENES = (
     "F1023_v90_D0117_P7",
 )
 EXPECTED_WINDOWS = 7847
+REQUIRED_PILOT_SCENE = "F1023_V120_D0121_P2"
 GEOMETRY_FIELDS = (
     "run_id", "window_id", "scene_id", "prn", "tracking_channel",
     "environment_class", "frozen_elevation_group", "window_utc",
@@ -100,6 +101,26 @@ def _index_unique(rows: Sequence[Mapping[str, str]], label: str) -> dict[tuple[s
             raise ValueError(f"duplicate identity in {label}: {key}")
         indexed[key] = row
     return indexed
+
+
+def _validated_measured_gsv_elevation(value: object, identity: tuple[str, str]) -> float:
+    try:
+        elevation = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"invalid measured GSV elevation for identity {identity}") from exc
+    if not math.isfinite(elevation) or not 0.0 <= elevation <= 90.0:
+        raise ValueError(f"invalid measured GSV elevation for identity {identity}")
+    return elevation
+
+
+def _identity_sha256(identities: Sequence[tuple[str, str]]) -> str:
+    digest = hashlib.sha256()
+    for run_id, window_id in sorted(identities):
+        digest.update(run_id.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(window_id.encode("utf-8"))
+        digest.update(b"\n")
+    return digest.hexdigest()
 
 
 def _parse_utc(value: str, field: str) -> datetime:
@@ -435,7 +456,7 @@ def build_recovery_overlay(
             measured = geom.get("elevation_deg", "")
             if not measured:
                 raise ValueError(f"GSV_MATCHED row has no measured elevation: {key}")
-            float(measured)
+            _validated_measured_gsv_elevation(measured, key)
             value = measured
         elif position_status != "POSITION_MATCHED":
             missing_reason = "NO_VALID_POSITION"
@@ -503,12 +524,7 @@ def build_recovery_overlay(
                 nav_toe = f"{ephemeris.toe_seconds:.3f}"
                 toe_absolute = ephemeris.week_number * 604800 + ephemeris.toe_seconds
                 gps_absolute = (observation_utc + timedelta(seconds=gps_utc_offset_seconds) - datetime(1980, 1, 6, tzinfo=timezone.utc)).total_seconds()
-                age = gps_absolute - toe_absolute
-                if age > 302400:
-                    age -= 604800
-                elif age < -302400:
-                    age += 604800
-                nav_age = f"{abs(age):.3f}"
+                nav_age = f"{abs(gps_absolute - toe_absolute):.3f}"
 
         output.append(
             {
@@ -646,6 +662,9 @@ def validate_gsv_pilot(
         for field in ("scene_id", "prn", "tracking_channel", "window_utc"):
             if row.get(field, "") != pos.get(field, ""):
                 raise ValueError(f"{field} mismatch for pilot identity {key}")
+        measured_elevation = _validated_measured_gsv_elevation(
+            row.get("elevation_deg", ""), key
+        )
         candidates.append(key)
         eph = select_ephemeris(
             records,
@@ -679,7 +698,7 @@ def validate_gsv_pilot(
             height_m=height_m,
             gps_utc_offset_seconds=gps_utc_offset_seconds,
         )
-        errors.append(elevation - float(row["elevation_deg"]))
+        errors.append(elevation - measured_elevation)
 
     if len(errors) != len(candidates):
         raise ValueError(
@@ -692,6 +711,8 @@ def validate_gsv_pilot(
     result: dict[str, object] = {
         "scene_id": scene_id,
         "comparison_count": len(errors),
+        "comparison_identity_count": len(candidates),
+        "comparison_identity_sha256": _identity_sha256(candidates),
         "signed_bias_deg": statistics.fmean(errors),
         "mae_deg": statistics.fmean(absolute),
         "p95_absolute_error_deg": absolute[p95_index],
@@ -802,6 +823,14 @@ def _run_full(
     trajectory_path: Path,
     output_dir: Path,
 ) -> dict[str, object]:
+    pilot_validation = _pilot(
+        project_root, geometry_path, trajectory_path, REQUIRED_PILOT_SCENE
+    )
+    if pilot_validation.get("passed") is not True:
+        raise ValueError(
+            f"required GSV pilot failed for {REQUIRED_PILOT_SCENE}: {pilot_validation}"
+        )
+
     geometry, trajectory = _load_overlays(geometry_path, trajectory_path)
     geometry_index = _index_unique(geometry, "geometry overlay")
     if len(geometry_index) != EXPECTED_WINDOWS:
@@ -892,6 +921,7 @@ def _run_full(
         "input_files": input_files,
         "rinex_navigation_by_scene": nav_audit,
         "exact_gga_height_by_scene": gga_audit,
+        "required_gsv_pilot": pilot_validation,
         "derived_rows_using_exact_gga_height": sum(
             row["elevation_source"] == "EPHEMERIS_DERIVED"
             and row["receiver_height_source"] == "GGA_ELLIPSOIDAL_HEIGHT"

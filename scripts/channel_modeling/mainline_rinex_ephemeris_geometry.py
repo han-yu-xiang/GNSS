@@ -191,14 +191,9 @@ def select_ephemeris(
         if record.week_number < 0 or not 0.0 <= record.toe_seconds < GPS_WEEK_SECONDS:
             continue
         ephemeris_gps_s = record.week_number * GPS_WEEK_SECONDS + record.toe_seconds
-        delta = observation_gps_s - ephemeris_gps_s
-        # RINEX uses full week numbers. Normalize once for files that carry a
-        # modulo-week value near a rollover; the age gate remains conservative.
-        if delta > GPS_WEEK_SECONDS / 2:
-            delta -= GPS_WEEK_SECONDS
-        elif delta < -GPS_WEEK_SECONDS / 2:
-            delta += GPS_WEEK_SECONDS
-        age = abs(delta)
+        # RINEX GPS week numbers are continuous; folding this difference by a
+        # week would make an ephemeris exactly one week stale look current.
+        age = abs(observation_gps_s - ephemeris_gps_s)
         if age <= max_toe_age_s:
             eligible.append((age, record))
     if not eligible:

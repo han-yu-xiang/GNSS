@@ -1,10 +1,15 @@
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
+import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from unittest.mock import patch
+
+import scripts.channel_modeling.run_mainline_rinex_ephemeris_recovery as recovery_runner
 
 from scripts.channel_modeling.mainline_rinex_ephemeris_geometry import (
     parse_gps_lnav_records,
@@ -187,6 +192,25 @@ class MainlineRinexEphemerisGeometryTests(unittest.TestCase):
         self.assertIsNotNone(selected)
         self.assertIsNone(stale)
 
+    def test_selection_rejects_record_one_full_gps_week_old_at_same_toe(self):
+        record = parse_gps_lnav_records(
+            rinex3_record(
+                prn="G03",
+                epoch="1981 12 06 00 00 00",
+                week=100,
+                toe=252018.0,
+            )
+        )[0]
+        # Same time-of-week in continuous GPS week 101 is 604,800 seconds
+        # after this full-week RINEX record, not a week rollover alias.
+        observation = datetime(1980, 1, 6, tzinfo=timezone.utc) + timedelta(
+            weeks=101, seconds=252000
+        )
+
+        selected = select_ephemeris([record], "G03", observation)
+
+        self.assertIsNone(selected)
+
     def test_broadcast_orbit_places_synthetic_zero_inclination_satellite_at_zenith(self):
         record = parse_gps_lnav_records(
             rinex3_record(
@@ -280,6 +304,139 @@ class MainlineRinexRecoveryOverlayTests(unittest.TestCase):
         self.assertEqual(by_key[("run-b", "1")]["receiver_position_status"], "POSITION_MISSING")
         self.assertNotIn("latitude_deg", by_key[("run-a", "2")])
         self.assertNotIn("longitude_deg", by_key[("run-a", "2")])
+
+    def test_overlay_rejects_nonfinite_or_out_of_range_measured_gsv_elevation(self):
+        for elevation in ("NaN", "Inf", "-1", "91"):
+            with self.subTest(elevation=elevation), self.assertRaisesRegex(
+                ValueError, "invalid measured GSV elevation"
+            ):
+                build_recovery_overlay(
+                    [geometry_row("run-a", "1", status="GSV_MATCHED", elevation=elevation)],
+                    [trajectory_row("run-a", "1")],
+                    {},
+                )
+
+    def test_full_overlay_refuses_to_write_when_required_pilot_fails(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            output = root / "output"
+            def fail_unexpected_pilot(_project, _geometry, _trajectory, scene_id):
+                if scene_id != recovery_runner.REQUIRED_PILOT_SCENE:
+                    raise AssertionError(f"unexpected required pilot scene: {scene_id}")
+                return {"scene_id": scene_id, "passed": False, "comparison_count": 145}
+
+            with patch.object(
+                recovery_runner,
+                "_pilot",
+                side_effect=fail_unexpected_pilot,
+            ):
+                with self.assertRaisesRegex(ValueError, "required GSV pilot failed"):
+                    recovery_runner._run_full(
+                        root,
+                        root / "missing_geometry.csv",
+                        root / "missing_trajectory.csv",
+                        output,
+                    )
+
+            self.assertFalse(output.exists())
+
+    def test_gsv_validation_pilot_rejects_invalid_measured_elevation(self):
+        with self.assertRaisesRegex(ValueError, "invalid measured GSV elevation"):
+            recovery_runner.validate_gsv_pilot(
+                [geometry_row("run-a", "1", status="GSV_MATCHED", elevation="NaN")],
+                [trajectory_row("run-a", "1")],
+                [],
+                "scene-a",
+            )
+
+    def test_gsv_validation_pilot_binds_metrics_to_compared_window_identities(self):
+        result = recovery_runner.validate_gsv_pilot(
+            [geometry_row("run-a", "1", status="GSV_MATCHED", elevation="42")],
+            [trajectory_row("run-a", "1")],
+            [self.ephemeris],
+            "scene-a",
+        )
+
+        self.assertEqual(result["comparison_count"], 1)
+        self.assertEqual(result["comparison_identity_count"], 1)
+        self.assertEqual(
+            result["comparison_identity_sha256"],
+            "9c1aad927adf677430492c32f0093467bdbe09729104d8c572d004f0b8d51a85",
+        )
+
+    def test_full_audit_records_passing_pilot_metrics_and_identity_hash(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            geometry_path = root / "geometry.csv"
+            trajectory_path = root / "trajectory.csv"
+            geometry_path.write_text("synthetic geometry input\n", encoding="utf-8")
+            trajectory_path.write_text("synthetic trajectory input\n", encoding="utf-8")
+            output = root / "recovery-output"
+            nav_paths = {}
+            nmea_paths = {}
+            for scene in recovery_runner.EXPECTED_SCENES:
+                nav_paths[scene] = root / f"{scene}.nav"
+                nmea_paths[scene] = root / f"{scene}.nmea"
+                nav_paths[scene].write_text("synthetic nav pin\n", encoding="ascii")
+                nmea_paths[scene].write_text("synthetic nmea pin\n", encoding="ascii")
+
+            geometry = []
+            trajectory = []
+            for index in range(recovery_runner.EXPECTED_WINDOWS):
+                scene = recovery_runner.EXPECTED_SCENES[index % len(recovery_runner.EXPECTED_SCENES)]
+                matched = index < 5128
+                geometry.append(
+                    geometry_row(
+                        f"run-{index}",
+                        "1",
+                        scene_id=scene,
+                        status="GSV_MATCHED" if matched else "MISSING",
+                        elevation="42" if matched else "",
+                    )
+                )
+                trajectory.append(
+                    trajectory_row(
+                        f"run-{index}",
+                        "1",
+                        scene_id=scene,
+                        status="OUTSIDE_OBSERVED_ROUTE_COVERAGE",
+                    )
+                )
+
+            pilot = {
+                "scene_id": recovery_runner.REQUIRED_PILOT_SCENE,
+                "passed": True,
+                "comparison_count": 145,
+                "comparison_identity_count": 145,
+                "comparison_identity_sha256": "a" * 64,
+            }
+            def passing_pilot(_project, _geometry, _trajectory, scene_id):
+                return {**pilot, "scene_id": scene_id}
+
+            with (
+                patch.object(recovery_runner, "_pilot", side_effect=passing_pilot),
+                patch.object(recovery_runner, "_load_overlays", return_value=(geometry, trajectory)),
+                patch.object(
+                    recovery_runner,
+                    "_load_scene_navigation",
+                    side_effect=lambda _root, scene: (nav_paths[scene], []),
+                ),
+                patch.object(
+                    recovery_runner,
+                    "_load_scene_nmea",
+                    side_effect=lambda _root, scene: (nmea_paths[scene], ""),
+                ),
+                patch.object(recovery_runner, "build_exact_gga_height_index", return_value=({}, {})),
+            ):
+                recovery_runner._run_full(root, geometry_path, trajectory_path, output)
+
+            audit = json.loads(
+                (output / "geometry_ephemeris_recovery_audit.json").read_text(encoding="utf-8")
+            )
+
+        self.assertEqual(audit["required_gsv_pilot"]["scene_id"], recovery_runner.REQUIRED_PILOT_SCENE)
+        self.assertEqual(audit["required_gsv_pilot"]["comparison_count"], 145)
+        self.assertEqual(audit["required_gsv_pilot"]["comparison_identity_sha256"], "a" * 64)
 
     def test_overlay_requires_exact_unique_identity_and_consistent_metadata(self):
         geom = geometry_row("run-a", "1")

@@ -195,6 +195,28 @@ def _write_csv(path: Path, fields: Sequence[str], rows: Sequence[Mapping[str, ob
         writer.writerows(rows)
 
 
+def _validate_private_output_dir(project_root: Path, output_dir: Path) -> Path:
+    root = project_root.resolve()
+    candidate = output_dir if output_dir.is_absolute() else root / output_dir
+    candidate = candidate.resolve()
+    allowed_root = (root / "dataset_generation_logs" / "channel_modeling").resolve()
+    try:
+        relative = candidate.relative_to(allowed_root)
+    except ValueError as exc:
+        raise ValueError(
+            "PVT recovery output must be a new child of the ignored runtime namespace "
+            "dataset_generation_logs/channel_modeling"
+        ) from exc
+    if len(relative.parts) != 1:
+        raise ValueError(
+            "PVT recovery output must be a unique top-level run directory below "
+            "dataset_generation_logs/channel_modeling"
+        )
+    if candidate.exists():
+        raise FileExistsError(f"output directory already exists: {candidate}")
+    return candidate
+
+
 def build_outputs(
     project_root: Path,
     geometry_path: Path,
@@ -203,6 +225,7 @@ def build_outputs(
     *,
     max_position_delta_seconds: float = 0.5,
 ) -> dict[str, object]:
+    output_dir = _validate_private_output_dir(project_root, output_dir)
     geometry, _ = _read_csv(geometry_path, GEOMETRY_FIELDS)
     trajectory, trajectory_header = _read_csv(trajectory_path, TRAJECTORY_REQUIRED_FIELDS)
     if len(geometry) != EXPECTED_WINDOWS:
@@ -318,8 +341,6 @@ def build_outputs(
         "gnss_sdr_rerun": False,
     }
 
-    if output_dir.exists():
-        raise FileExistsError(f"output directory already exists: {output_dir}")
     output_dir.mkdir(parents=True, exist_ok=False)
     _write_csv(output_dir / "trajectory_pvt_recovery_overlay.csv", PVT_OVERLAY_FIELDS, overlay)
     _write_csv(output_dir / "trajectory_pvt_recovery_by_scene.csv", SUMMARY_FIELDS, summary)

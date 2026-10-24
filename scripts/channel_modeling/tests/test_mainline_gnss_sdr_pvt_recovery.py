@@ -1,8 +1,12 @@
 from __future__ import annotations
 
 import struct
+import tempfile
 import unittest
 from datetime import datetime, timezone
+from pathlib import Path
+
+import scripts.channel_modeling.run_mainline_gnss_sdr_pvt_recovery as pvt_runner
 
 from scripts.channel_modeling.mainline_gnss_sdr_pvt_recovery import (
     PVT_RECORD,
@@ -125,6 +129,33 @@ class MainlineGnssSdrPvtDumpTests(unittest.TestCase):
 
 
 class MainlineGnssSdrPvtOverlayTests(unittest.TestCase):
+    def test_coordinate_output_is_restricted_to_ignored_runtime_namespace(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            with self.assertRaisesRegex(ValueError, "ignored runtime namespace"):
+                pvt_runner.build_outputs(
+                    root,
+                    root / "missing_geometry.csv",
+                    root / "missing_trajectory.csv",
+                    root / "reports" / "coordinates",
+                )
+
+            self.assertFalse((root / "reports").exists())
+            with self.assertRaises(FileNotFoundError):
+                pvt_runner.build_outputs(
+                    root,
+                    root / "missing_geometry.csv",
+                    root / "missing_trajectory.csv",
+                    root / "dataset_generation_logs" / "channel_modeling" / "run-a",
+                )
+            with self.assertRaisesRegex(ValueError, "top-level run directory"):
+                pvt_runner.build_outputs(
+                    root,
+                    root / "missing_geometry.csv",
+                    root / "missing_trajectory.csv",
+                    root / "dataset_generation_logs" / "channel_modeling" / "old-run" / "new-child",
+                )
+
     def test_fills_only_missing_positions_at_direct_epoch_and_preserves_existing_nmea(self):
         time = "2026-01-21T11:17:30.100Z"
         geometry = [geometry_row("1", time), geometry_row("2", time)]

@@ -133,6 +133,25 @@ Pilot 与同 scene 已有 GSV 仰角比较 145 个同时具备 GSV 和有效位�
 - No raw IQ content was read or hashed; no MAT/HDF5 payload was opened; no GNSS-SDR, MATLAB, SAGE, or CIR production was run.
 - The 9 frozen missing-elevation task classifications, Stage2 MPC inclusion, frozen elevation categories, Gate F, and model claims remain unchanged. `EPHEMERIS_DERIVED` is a derived geometry feature only, not a GSV measurement and not a reason to rewrite the frozen task classification.
 
+## 5. 独立代码审查后的 fail-closed 修正
+
+独立审查指出旧星历选择器会把 RINEX GPS 连续周号折叠到相邻周，导致恰好早一周且 TOW 相同的记录看起来像当前记录。RINEX 3.05 明确规定导航文件中的 GPS 周号连续、无周回绕（§4.1.1，[官方规范](https://files.igs.org/pub/data/format/rinex305.pdf)）。选择器和审计龄期字段现均按完整周号计算，不再折周。
+
+对此既有 1,665 条 `EPHEMERIS_DERIVED` 记录做了只读影响核查：用 `window_utc + GPS-UTC offset` 与输出绑定的 `nav_week/nav_toe_seconds` 重算，最大绝对龄期为 6,072 秒，超过 7,200 秒的行数为 0。因此当前已生成的 overlay 没有受此修正影响；没有重写或重新生成旧输出。
+
+全量 runner 现在必须先对冻结 pilot `F1023_V120_D0121_P2` 执行 GSV 对照，通过后才会创建全 cohort 输出；pilot 的比较数、比较窗口身份 SHA-256 和指标写入新审计 JSON。旧 audit JSON 是修正前生成，`required_gsv_pilot` 字段为空；本轮以修正后代码对同一输入重新做了只读 pilot：**PASS，145/145**，MAE 0.269477°、P95 绝对误差 0.448884°、最大绝对误差 0.491844°、signed bias −0.195293°，比较身份 SHA-256=`89b63379672dbdbb1e62bbeafe9f779eeb11d7e7a52e66fbf0b3a3584337eeda`。这不等于重跑全量 overlay，原 overlay/audit 均保持原字节。
+
+另外，恢复层和 pilot 入口现在拒绝非有限或超出 `[0,90]°` 的 `GSV_MEASURED`；既有 overlay 的 5,128 条实测值只读检查为 0 条非法。坐标型 PVT overlay 写入路径现限定为 Git 忽略目录 `dataset_generation_logs/channel_modeling` 下的一个新建顶层 run 目录，避免写入 tracked 文档、任意路径或旧 run 子目录。
+
+### 审查修正后的针对性验证
+
+- `python -m unittest scripts.channel_modeling.tests.test_mainline_rinex_ephemeris_geometry scripts.channel_modeling.tests.test_mainline_gnss_sdr_pvt_recovery scripts.channel_modeling.tests.test_mainline_stage2_geometry -v`：**60/60 PASS**。
+- 新增回归覆盖：整周旧星历拒绝、真实周末 rollover 保留、失败 pilot 阻止创建输出、pilot 比较身份哈希进入审计、实测仰角有限值/范围检查、PVT 输出路径隔离。
+- 修正后实现源码 SHA-256：`mainline_rinex_ephemeris_geometry.py`=`9fc79b64014e976471849792933710ae5512b114a90360a3c5fb7043d5b22769`；`run_mainline_gnss_sdr_pvt_recovery.py`=`3e8b06d86dcc7bd42780d92661145e2098a6a338c22ddd0ecd5777b185c9b80f`；`run_mainline_rinex_ephemeris_recovery.py`=`9fa2346757c857bd1bccaea6c63380cab238a8c47ee8424f9d3ab9168d190911`。
+- 修正后实际 read-only pilot：PASS（指标和身份 SHA 如上）。没有重跑完整 13-scene overlay，因为既有数据龄期核查证明没有行受到周号修正影响，且避免与 Task 5 在 E: 盘争用 I/O。
+- Task 5 保持未触碰。2026-10-24 16:07:17 +08 只读进程快照中，MATLAB PID 50112/45984 仍存在，命令行指向 `run_20261003_F1023_V120_D0121_P2_G25_ch5`；本次没有读取其阶段/调度任务、日志或产物，也没有控制进程。该快照不构成之后的持续运行结论。
+- 没有读取 raw IQ、MAT/HDF5 payload；没有运行 GNSS-SDR、MATLAB、SAGE 或 CIR 生产；没有修改 Task 5、Task 6、Stage2 ledger、既有 overlays 或科学输出。
+
 ### Targeted verification
 
 - `python -m unittest scripts.channel_modeling.tests.test_mainline_rinex_ephemeris_geometry -v`: **17/17 PASS**.
