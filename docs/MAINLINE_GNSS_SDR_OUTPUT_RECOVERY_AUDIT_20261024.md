@@ -121,6 +121,7 @@ Pilot 与同 scene 已有 GSV 仰角比较 145 个同时具备 GSV 和有效位�
 - 两个输出均写入新的隔离 namespace：
   - `E:\GNSS_Multipath_Project\dataset_generation_logs\channel_modeling\mainline_1023_pvt_recovery_20261024T054408Z\`
   - `E:\GNSS_Multipath_Project\dataset_generation_logs\channel_modeling\mainline_1023_ephemeris_recovery_pvt_gga_20261024T072315Z\`
+- PVT 恢复输出的 SHA-256：位置 overlay `1F7385663341D89CDB42C459C1E9D8C36A0EF4CA6F5D6A4F0C667944DE0F0C93`；PVT audit `B41015DD79F72E4FA58381F303AF1ECCF7FCE1BB83E74B29B32CAC7F79C5DD54`。
 - 最终仰角 overlay、scene summary、missing-reason summary 与 audit 的 SHA-256：
   - overlay `A553280900046E0E1EA5A57E30B504A82453F44BDFBADC29F279E4196CA0A912`
   - by-scene `B7719A00A20D6811DEB9D56F19C5C52905E1C035DB91E1A4C8878AA3B5819D6B`

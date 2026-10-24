@@ -64,10 +64,11 @@
 
 **Files:**
 - Runtime only: `E:\GNSS_Multipath_Project\dataset_generation_logs\channel_modeling\mainline_1023_ephemeris_recovery_<UTC>\`
-- Git: the two new Python files, their test, this spec/plan, and a sanitized aggregate report.
+- Git: RINEX ephemeris and PVT recovery implementation/runners, their focused tests, this spec/plan, a sanitized aggregate report, and the engineering/paper handoff updates.
 
 - [x] Run the pilot for `F1023_V120_D0121_P2`; review its audit before any full run.
 - [x] After pilot acceptance, run the full 13-scene overlay once to a new namespace.
 - [x] Verify 7,847 exact unique identities; reconcile all existing GSV and position counts; summarize measured, derived, and still-missing elevations separately by scene/environment.
 - [x] Verify no coordinate/raw sentence appears in the output audit or Git artifacts; verify old overlays and Stage2 ledger remain unchanged. Task 5 was only sampled read-only (batch/G25 tasks Running, monitor Ready); no release content, stage, process control, or output changes were made.
-- [x] Run the new focused tests after final edits. Commit only this scope and push to the existing Draft PR branch without merging (delivery step remains pending until completed).
+- [x] Run the focused test modules after final edits.
+- [ ] Commit only this scope and push to the existing Draft PR branch without merging.
