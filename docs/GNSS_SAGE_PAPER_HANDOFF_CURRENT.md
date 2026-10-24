@@ -1495,3 +1495,25 @@ MATLAB_EXECUTED = NO
 SAGE_EXECUTED = NO
 NEXT_ACTION = AUTHOR_REVIEW_OF_ISOLATED_DOPPLER_REVISION
 ```
+
+## 24. GNSS-SDR historical geometry coverage recovery (2026-10-24; review-only evidence)
+
+- The 13-scene Stage2 cohort remains 7,847 windows / 16,761 paths; all 8,914 MPC records remain in the unchanged Task 6 ledger. Existing measured GSV elevation remains 5,128 windows. A separate, coordinate-free audit overlay adds 1,665 `EPHEMERIS_DERIVED` elevations and retains 1,054 explicitly missing rows. It does not rewrite the frozen High/Mid/Low labels or the nine task-level missing-elevation classifications.
+- Saved GNSS-SDR PVT dumps add 1,480 direct-epoch positions to the earlier 5,540 NMEA matches, yielding 7,020/7,847 located windows. The combined elevation/position support is 6,791/7,847 (86.54%), not an independent-observation count: Stage2 windows overlap, and 622 derived-elevation rows share 55 exact-time GGA height records. 1,043 other derived rows use a disclosed zero-height assumption.
+- Per-scene/environment support and detailed limitations are in `docs/MAINLINE_GNSS_SDR_OUTPUT_RECOVERY_AUDIT_20261024.md`. The new result is geometry enrichment only; no Stage2 MPC was removed and no statistical-model fit or Gate F validation was performed. Treat GSV as measured and ephemeris results as derived, never interchangeable.
+- The pilot compared 145 existing GSV values against same-scene broadcast ephemeris geometry (MAE 0.2695°, maximum absolute error 0.4918°). This is a bounded consistency check and does not establish independent truth or cohort-wide accuracy. Six scenes now have complete position/elevation coverage for this objective; seven retain evidence gaps. Raw-IQ contents and integrity remain unverified, so no GNSS-SDR rerun is recommended or authorized.
+
+```text
+GEOMETRY_RECOVERY = SEPARATE_OVERLAY_WITH_LIMITATIONS
+GSV_MEASURED = 5128
+EPHEMERIS_DERIVED = 1665
+ELEVATION_MISSING = 1054
+POSITION_MATCHED = 7020/7847
+JOINT_ELEVATION_POSITION = 6791/7847
+TASK6_MPC_ROWS_REMOVED = 0
+GATE_F = PENDING
+FORMAL_MODEL_FIT = NOT_RUN
+RAW_IQ_CONTENT_READ = NO
+GNSS_SDR_RERUN = NO
+NEXT_ACTION = AUTHOR_REVIEW_OF_BOUNDED_GEOMETRY_RECOVERY_EVIDENCE
+```

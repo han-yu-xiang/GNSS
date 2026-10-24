@@ -2359,3 +2359,27 @@ TASK5_MODIFIED=NO
 GATE_F=PENDING
 FORMAL_MODEL_FIT=NOT_RUN
 ```
+
+## 98. Historical GNSS-SDR output audit and separate geometry recovery overlay (2026-10-24)
+
+- Completed a read-only inventory of all 13 frozen scenes. NMEA, RINEX OBS/NAV, configuration/status/logs and PVT dump outputs exist in each scene; saved satellite-elevation CSVs are derivatives of the NMEA stream. Duplicate NMEA/RINEX copies and two historical snapshots added no independent coverage. The configs already enable NMEA/RINEX and a 1 Hz PVT dump; GPX/KML/GeoJSON/XML are disabled.
+- Recovered 1,480 additional Stage2 position matches from direct epochs in saved GNSS-SDR PVT `.dat` dumps (no interpolation/extrapolation): 5,540 -> 7,020 of 7,847. A new separate RINEX GPS-LNAV geometry overlay preserves 5,128 `GSV_MEASURED` rows, adds 1,665 explicitly `EPHEMERIS_DERIVED` values, and leaves 1,054 missing. Joint elevation/position support is 6,791/7,847 (86.54%). In the derived set, 622 window identities reuse only 55 exact-time GGA height records; 1,043 use an explicit zero-height assumption.
+- The GSV cross-check pilot for V120/D0121/P2 passed 145 existing GSV+position comparisons (MAE 0.2695°, maximum absolute error 0.4918°). This is a limited consistency check, not an independent truth source. Seven scenes retain coverage gaps; raw IQ presence/size was observed but content and completeness were not verified, so no GNSS-SDR rerun is recommended or authorized. Six scenes have complete position/elevation coverage for this objective.
+- The 9 frozen missing-target-elevation classifications and Task 6 Stage2 ledger remain unchanged. Task 5 was inspected read-only at 2026-10-24 15:48:39 +08: batch and G25/ch5 scheduled tasks were `Running`; MATLAB process pair 50112/45984 existed (creation 13:46:35 +08); the existing monitor was `Ready` (last 15:35:01, next 16:05:00). No Task 5 stage/release content was read and no process/task/output was controlled or modified; this is a point-in-time sample. No raw IQ, MAT/HDF5, MATLAB, GNSS-SDR, SAGE, or CIR production was run by this audit.
+- Sanitized report: `docs/MAINLINE_GNSS_SDR_OUTPUT_RECOVERY_AUDIT_20261024.md`. Private runtime outputs are under `dataset_generation_logs/channel_modeling/mainline_1023_pvt_recovery_20261024T054408Z/` and `mainline_1023_ephemeris_recovery_pvt_gga_20261024T072315Z/`.
+
+```text
+GNSS_SDR_OUTPUT_INVENTORY = 13_SCENES_COMPLETE_WITH_DUPLICATE_COPIES
+PVT_POSITION_MATCHES = 7020/7847 (1480_ADDED; 827_MISSING)
+GSV_MEASURED_ELEVATION = 5128
+EPHEMERIS_DERIVED_ELEVATION = 1665
+ELEVATION_STILL_MISSING = 1054 (825_NO_POSITION; 229_NO_HEALTHY_SAME_SCENE_EPHEMERIS)
+JOINT_ELEVATION_POSITION = 6791/7847 (86.54_PERCENT)
+TASK6_MPC_LEDGER_MODIFIED = NO
+TASK5_CIR_TOUCHED = NO
+RAW_IQ_CONTENT_READ = NO
+MAT_HDF5_PAYLOAD_OPENED = NO
+GNSS_SDR_RERUN = NO
+GATE_F = PENDING
+NEXT_ACTION = REVIEW_SANITIZED_AUDIT; NO_RERUN_UNTIL_RAW_INTEGRITY_AND_EXPECTED_GAIN_ARE_ESTABLISHED
+```
