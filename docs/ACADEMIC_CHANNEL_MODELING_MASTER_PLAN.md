@@ -2,7 +2,7 @@
 
 **唯一长期建模路线与工作包状态来源：** 本文件。
 
-**最新主线状态核实：** 2026-10-24（Asia/Shanghai）；Task 5 的状态样本见工程交接手册第101节。
+**最新主线状态核实：** 2026-10-25（Asia/Shanghai）；Task 5 的最新恢复后只读状态样本见工程交接手册第103节。
 
 **状态职责：** 工程执行、release、QA、receipt 和生产状态以 `docs/GNSS_SAGE_ENGINEERING_HANDOFF_CURRENT.md` 为唯一工程来源；论文事实与科学解释以 `docs/GNSS_SAGE_PAPER_HANDOFF_CURRENT.md` 为唯一论文来源。本文件负责最终研究目标、长期路线、WP0–WP6、依赖及其状态；其他文件只链接本文件或记录执行细节，不建立竞争性的总计划。
 
@@ -70,18 +70,70 @@ operational decision.
 |---|---|---|---|
 | WP0 — Data baseline and production-state management | `IN_PROGRESS` (continuous) | Maintain identity-frozen SAGE cohort, CIR queue, exclusions, Stage2 ledger, geometry/trajectory overlays, provenance, hashes and independently accepted QA. Keep SAGE and CIR denominators distinct. | Foundation for WP1–WP6. Each result must resolve to the exact dataset/version and task identity; production status is timestamped from current receipts/snapshots, never inferred from an old handoff. |
 | WP1 — Layer 1 SAGE parameter statistics V0 | `COMPLETED_WITH_LIMITATIONS` | Real-data exploratory V0 retains 8,914 MPC from 83 runs / 13 scenes and 7,847 selected windows. Global scene-LOSO favored Lognormal among tested delay marginals; Normal/Student-t remain competitive for signed Doppler and relative power. A negative pooled power-delay association is present, but low linear R² and scene heterogeneity do not establish a universal law. Urban-specific gains were not supported by paired same-scene comparisons. | Keep the V0 report, tables, fit failures and support-limited folds immutable. This status is only the authorized exploratory baseline; formal Gate G and the complete channel model are not passed. |
-| WP2 — Layer 1 robustness and statistical closure | `IN_PROGRESS` | V0 already supplies scene-level LOSO, whole-scene bootstrap for the power-delay slope, marginal comparisons, count summaries and initial association checks. Remaining work is a bounded robustness closure: sensitivity to scene support and tails, parameter dependence, count-model candidates and uncertainty/model-rank stability. | Uses the frozen Stage2-selected population; can proceed before CIR completion. Do not treat 8,914 paths or overlapping windows as independent scenes; retain failed fits and unsupported folds. |
+| WP2 — Layer 1 robustness and statistical closure | `COMPLETED_WITH_LIMITATIONS` | Bounded closure completed 2026-10-25 from pinned V0 MPC/window extracts and saved LOSO folds; no V0 refit. Global Lognormal delay ranked first in 13/13 held-out scenes; Doppler/power ranks varied by held-out scene. Held-out tail support is limited for 324/1,026 family/scene/quantile records. Negative power-delay slope direction held in 13/13 training folds, but the conditional model did not improve scene-out prediction. Stage2-selected count candidates did not justify replacing the empirical count table; truncated-NB2 likelihood reached the mean-at-infinity boundary in all 13 folds. | Evidence: `reports/data_consolidation_20261003/mainline_1023_model_v1/wp2_20261025T074332Z/`. Results are descriptive and conditional on Stage2 selection; 8,914 paths and overlapping windows are not independent scenes. Formal Gate G/model acceptance is not granted. |
 | WP3 — Layer 2 environment, geometry and motion conditions | `IN_PROGRESS` | Initial overlays and descriptions distinguish GSV measured from ephemeris-derived elevation, GGA height from zero-height assumptions, and position-source coverage. Existing 36 spatial summaries remain insufficient to support an independent spatial range/segment claim. Formal condition models are not complete. | Can proceed on existing Stage2 data without waiting for WP4. Use scene-held-out evaluation; preserve missingness, provenance and support. Do not extrapolate missing angles/positions or create separate environment models without held-out benefit and adequate scene support. |
-| WP4 — CIR/PDP production and quality acceptance | `IN_PROGRESS` | The latest hourly snapshot at 2026-10-24 22:10 +08 recorded Task 5 and audit `RUNNING`, 9/80 complete, 0 newly reported PASS in the prior hour, current `run_20261003_F1023_V120_D0121_P2_G28_ch6`, elapsed 4,350 s, 362 GiB free, monitor `FRESH` with age 5 min at collection, zero reported storage errors in the prior hour, and no completion or stop receipt. MATLAB/Coordinator status booleans and last-PASS identity were null; the snapshot listed MATLAB PIDs 42528/47340 but supplied no Coordinator PID. The last valid progress timestamp was 20:57:42 +08 and excludes MAT/HDF5 file times. An adjacent 21:10 snapshot had recorded G25/ch5 as the last PASS at 20:57:24 +08. This is a timestamped sample, not a fresh process-owner check or a stall finding. | Preserve the immutable serial release, successful outputs and receipts; never rerun accepted pilots or silently retry failures. Gate E requires reconciliation of the frozen 83-identity cohort, the three retained PASS pilots, all 80 serial-batch task receipts, the batch audit and its completion receipt. Gate F then requires exact run/window identity, retention of all Stage2 MPC, HDF5 read-back and independent SAGE/CIR/PDP consistency checks. Task 5 completion alone passes neither gate automatically. |
+| WP4 — CIR/PDP production and quality acceptance | `IN_PROGRESS` | The prior release remains terminal `FAILED_NO_RETRY` at 12/80 due to a false monitor-task collision. Separately authorized Task 5 recovery created a new immutable 68-task successor, with the 12 old PASS tasks and three pilot PASS tasks pinned and skipped. Recovery-after-launch read-only sample at 2026-10-25 22:18 +08: new Coordinator/one worker/MATLAB are running G32/ch7, cumulative 12/80, fresh monitor, no new stop receipt or matching storage error. See handoff §103 and the private new release for the exact request SHA; this is not G32 scientific PASS. WP2 did not modify or invoke that production. | Preserve both releases and all historical receipts; the new release is serial, fail-stop and no-retry. Gate E requires reconciliation of the frozen 83-identity cohort, three retained PASS pilots, 12 old-batch PASS tasks, 68 successor tasks, both audits and the new completion receipt. Gate F then requires exact run/window identity, retention of all Stage2 MPC, HDF5 read-back and independent SAGE/CIR/PDP checks. Task 5 completion alone passes neither gate automatically. |
 | WP5 — Complex alpha and path-attribute integration | `IN_PROGRESS` (preparation only; real batch delivery unverified) | Candidate `scripts/channel_modeling/export_stage2_complex_alpha.m` and its test file exist in the isolated worktree but are untracked; their existence is not release-pinned implementation, production output, or QA evidence. No accepted batch alpha receipt or independently verified alpha dataset was found in the authoritative status record reviewed for this update. | May progress alongside WP2/WP3 where it does not contend with Task 5 resources. Bind run/window/path identity and source hashes; validate complex values, ordering and provenance. Keep window-normalized alpha and receiver-calibration limitations explicit. |
 | WP6 — Integrated channel model and final independent validation | `PENDING_DEPENDENCY` | No Mainline integrated model, complete CIR feature association or final Gate G acceptance is claimed. The older Stage3 r3 Phase-1 model remains a separate completed-with-limitations population and is not a substitute for this Mainline model. | Requires WP1 plus accepted WP2–WP5 evidence. Select final model only after support and diagnostics; validate by holding out entire scenes, preserve uncertainty, and document what the model cannot establish. Phase-2 generative AI is a separate planned-only decision. |
+
+### WP2 robustness closure evidence (2026-10-25)
+
+Prepared evidence for Commander review is the bounded report package at
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp2_20261025T074332Z/`.
+The CSV-only runner reused the pinned V0 fold table and input extracts
+(8,914 MPC, 7,847 Stage2-selected windows, 83 runs, 13 scenes); it did not
+repeat the V0 distribution fits. Independent recount verified the 0–3 selected
+window count histogram `{0: 3574, 1: 1412, 2: 1081, 3: 1780}`, all 8,914 MPC
+to selected-window count links, output hashes and all three pinned input hashes.
+Six runs have selected windows but no MPC rows; their selected-window counts
+remain represented. The 7,847 windows are conditional on Stage2 selection from
+285,752 Stage0-valid windows; unselected Stage0 windows were never assigned
+zero MPC.
+
+- **Scene sensitivity:** Global excess-delay Lognormal ranked first in 13/13
+  held-out scenes; Urban Lognormal ranked first in 6/6. Doppler ranks varied
+  (global Normal 6/13, Student-t 5/13, Laplace 2/13); power ranks also varied
+  (global Student-t 8/13, Normal 3/13, Laplace 2/13). The per-held-out-scene
+  winners and all fit-parameter quartiles are in the result tables. As one
+  instability example, global relative-power Student-t degrees-of-freedom
+  estimates ranged from 7.60 to 5,393.86 (median 2,897.24), so its frequent
+  wins do not establish a stable finite tail parameter. These are sensitivity
+  summaries across overlapping LOSO training sets, not independent fits.
+- **Held-out tails:** p01/p05/p10/p90/p95/p99 diagnostics use each saved
+  training-fold fit. 324 of 1,026 family/scene/quantile records have fewer
+  than 10 expected observations in the relevant tail. Tail adequacy is
+  therefore unresolved for those records; no tail pass is claimed.
+- **Power-delay:** The fitted training-fold slope is negative in all 13/13
+  global LOSO folds (median -2.506 dB/chip; range -10.525 to -2.260). But the
+  scene-macro conditional-minus-marginal held-out log-score delta is -0.0605
+  (whole-scene bootstrap 95% interval [-0.2100, 0.0174]) and RMSE worsens by
+  0.183 dB. Direction is stable in these folds; out-of-scene predictive gain
+  is not demonstrated. The pooled V0 slope is not reinterpreted as causal or
+  universal.
+- **Selected-window counts:** The empirical scene-balanced categorical
+  baseline outscored truncated Poisson by 0.1716 mean log-score units per
+  scene (95% scene-bootstrap interval [-0.2501, -0.0881]). Truncated NB2 was
+  close but did not establish a gain (-0.0183; interval [-0.0492, 0.0140]);
+  it reached the mean-to-infinity likelihood boundary in 13/13 folds, with no
+  finite mean MLE. The evidence does not justify a separate parametric count
+  model now; retain the descriptive empirical count table as Stage2-selection
+  conditional, not as an unconditional occurrence model.
+
+Targeted WP2 tests passed 11/11; py_compile and an independent output recount
+passed. No MATLAB/SAGE/CIR, raw IQ, MAT/HDF5 payload, Task 5 production, or real
+alpha export was run. The earlier preliminary output
+`wp2_20261025T073915Z/` is superseded; its NB2 finite-bound report was caught
+by independent review and replaced by the explicit boundary analysis in the
+accepted `wp2_20261025T074332Z/` package. The one next priority is Commander
+review of this WP2 evidence; Task 5 recovery and alpha export remain separate
+decisions/dependencies.
 
 ## Work-package dependencies and concurrency
 
 - WP0 supplies identity, source/version and status controls for every package.
 - WP1 provides the exploratory baseline used by WP2, WP3 and ultimately WP6.
 - WP2 and WP3 can proceed in parallel on the existing Stage2 cohort; neither must wait for the entire CIR batch.
-- WP4 proceeds under its already-authorized serial release. WP4's real CIR/PDP associations and acceptance evidence feed WP6 only after independent Gate E/F checks.
+- WP4 resumed under a separately authorized, immutable partial-successor release after its preserved `FAILED_NO_RETRY` stop receipt. Its real CIR/PDP associations and acceptance evidence feed WP6 only after independent Gate E/F checks; WP2 did not change or resume that production.
 - WP5 may proceed alongside WP2/WP3 when input provenance and storage/compute resources permit; its real outputs need their own independent acceptance before WP6 consumes them.
 - WP6 starts only when the required WP2–WP5 inputs and validation evidence are available. Dependencies are evidence gates, not a requirement to serialize unrelated analysis.
 

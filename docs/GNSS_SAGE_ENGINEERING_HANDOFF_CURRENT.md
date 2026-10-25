@@ -2444,3 +2444,131 @@ The older Stage3 r3 Phase-1 model remains a separate completed-with-limitations 
 ### Handoff record
 
 For every new substantial task, read the Master Plan, this current Engineering Handoff and the relevant evidence before acting. At completion, record actual paths, identities/versions, checks, QA, scientific limitations, status and the next dependency in the affected authoritative documents. Do not claim production or scientific completion from a plan, code artifact, stale process sample or exit code alone. The latest Task 5 record above is a timestamped sample, not a live assertion.
+
+## 102. WP2 robustness closure and current Task 5 status (2026-10-25)
+
+This entry supersedes the Task 5 and WP2 status samples in §101. It records a
+read-only Task 5 inspection at 2026-10-25 15:44 Asia/Shanghai and the accepted
+WP2 evidence. The sole long-term route and status vocabulary remain in the
+[Master Plan](ACADEMIC_CHANNEL_MODELING_MASTER_PLAN.md).
+
+### Task 5 — stopped, no recovery performed
+
+- Latest hourly snapshot:
+  `C:\Users\Public\Documents\GNSS_Multipath_Project\Task5HourlyStatus\output\latest_status.json`,
+  sampled 15:10:02 +08; it reads `NEEDS_ATTENTION`, 12/80, 0 new PASS in the
+  previous hour, current process absent, Coordinator `Ready`, no valid
+  progress timestamp, E: 343.9 GiB free, no new storage errors, completion
+  receipt absent and stop receipt `FAILED_NO_RETRY`.
+- Latest 30-minute monitor report:
+  `dataset_generation_logs/batch_sage_execution/codex_monitor_83task/20261025T073508371Z_CIR_Task5_30m.json`,
+  sampled 15:35:02 +08. It independently reports `NEEDS_ATTENTION`, 12/80,
+  current `run_20261003_F1023_V120_D0121_P2_G32_ch7`, 37,174 s at the
+  preceding recorded sample, 0 PASS in the prior 30 minutes, null progress,
+  Coordinator `Ready`, all listed worker tasks `Ready`, and empty MATLAB and
+  Runner process lists. Its exception is a schedule collision naming
+  `GNSS CIR Task 5 serial batch monitor`; `new_storage_events` is empty.
+- Stop evidence:
+  `dataset_generation_logs/channel_modeling/mainline_1023_cir_v1_20261023T123208572Z_task5batch_takeover/cir_batch_stop_receipt.json`.
+  Status `FAILED_NO_RETRY`, stopped 08:05:04.727 +08, G32/ch7, completed count
+  12, `automatic_retry=false`, `attempt_preserved=true`; recorded error:
+  `Another SAGE/CIR scheduled task is running: GNSS CIR Task 5 serial batch monitor.`
+  No completion receipt exists. The last PASS is G29/ch3 at 08:04:57 +08.
+- A direct process/task read at 15:44:09 +08 found no Task 5 production
+  Coordinator/Runner/MATLAB process (the only matching shell was this
+  inspection). The existing 30-minute monitor was `Ready`, last result 0 at
+  15:35, next run 16:05; the hourly status task was `Ready`, last result 0 at
+  15:10, next run 16:10. These are monitor-task results, not production
+  completion. E: free space was 369,208,328,192 bytes (343.9 GiB).
+- No process, task, release, queue, stop receipt or scientific output was
+  changed. Do not restart or retry Task 5 from this WP2 delivery; recovery
+  requires a separate Commander decision. The recorded collision explains
+  the stop receipt, but this check did not independently establish that two
+  production Coordinators actually ran concurrently.
+
+### WP2 — bounded robustness closure completed with limitations
+
+- Reproducible runner and tests:
+  `scripts/channel_modeling/run_mainline_stage2_wp2.py`,
+  `scripts/channel_modeling/mainline_stage2_wp2.py`,
+  `scripts/channel_modeling/tests/test_run_mainline_stage2_wp2.py`, and
+  `scripts/channel_modeling/tests/test_mainline_stage2_wp2.py`.
+- Accepted output package:
+  `reports/data_consolidation_20261003/mainline_1023_model_v1/wp2_20261025T074332Z/`.
+  It contains eight aggregate CSV tables, a report and a hash manifest. Inputs
+  were the pinned 8,914-row MPC extract, 7,847 Stage2-selected-window rows and
+  saved V0 scene-fold scores. Input and output SHA-256 values passed an
+  independent recount. No V0 refit, MATLAB/SAGE/CIR, raw-IQ read, MAT/HDF5
+  payload read or real alpha export occurred.
+- Population: 8,914 MPC / 7,847 selected windows / 83 runs / 13 scenes. The
+  selected-window MPC count histogram is 0:3,574, 1:1,412, 2:1,081, 3:1,780;
+  six runs have selected windows but no MPC rows. Counts are explicitly
+  conditional on Stage2 selection from 285,752 Stage0-valid windows; no
+  unselected Stage0 window was converted to zero.
+- Scene sensitivity: global Lognormal delay ranks first in 13/13 held-out
+  scenes (Urban 6/6). Doppler ranks vary: Normal 6/13, Student-t 5/13,
+  Laplace 2/13. Relative-power ranks vary: Student-t 8/13, Normal 3/13,
+  Laplace 2/13. Full per-held-out-scene ranking and parameter quartiles are
+  in the package. Global relative-power Student-t df ranges 7.60–5,393.86
+  (median 2,897.24), a strong parameter-sensitivity warning despite frequent
+  wins.
+- Tail diagnostics use saved training-only fold fits at p01/p05/p10/p90/p95/p99.
+  324/1,026 family/scene/quantile records have fewer than 10 expected tail
+  observations, so tail reliability remains unresolved for those records.
+- Power-delay slope is negative in 13/13 global LOSO training fits, median
+  -2.506 dB/chip (range -10.525 to -2.260). Conditional-minus-marginal
+  held-out log-score delta is -0.0605, with a whole-scene bootstrap 95%
+  interval [-0.2100, 0.0174]; RMSE is worse by 0.183 dB. Negative direction
+  is stable in these folds, but scene-out predictive improvement is not
+  demonstrated.
+- Count candidates are evaluated only on Stage2-selected windows. Empirical
+  categorical is the best observed baseline. Truncated Poisson loses 0.1716
+  macro log-score units (95% scene interval [-0.2501, -0.0881]); truncated
+  NB2 delta is -0.0183 ([-0.0492, 0.0140]) and has a mean-to-infinity
+  likelihood boundary in all 13 folds, so no finite NB2 mean MLE is claimed.
+  Current evidence does not justify a separate parametric count model.
+- Verification: 11/11 targeted synthetic/integration tests passed;
+  `py_compile`, immutable-input rehashes, independent output hashes, row,
+  histogram, scene-fold and PMF-normalization recounts passed. The preliminary
+  output `wp2_20261025T073915Z/` is superseded because its boundary fit was
+  initially represented as a finite upper-bound mean; the corrected and
+  independently checked package is `wp2_20261025T074332Z/`.
+
+At the original 15:44 sample, the Master Plan marked WP2
+`COMPLETED_WITH_LIMITATIONS` and WP4 `BLOCKED`; the later separately authorized
+Task 5 recovery is recorded in §103 and updates WP4 to `IN_PROGRESS`.
+The single next priority is Commander review of the WP2 package. Task 5
+recovery, Gate E/F execution and any alpha pilot remain separate decisions;
+no large CIR production or formal integrated model fitting is authorized by
+this WP2 result.
+
+## 103. Task 5 recovery status addendum to the WP2 handoff (2026-10-25)
+
+After the WP2 analysis and its 15:44 read-only inspection, the user directly
+authorized diagnosing the accidental E: removal and restoring Task 5 if stopped.
+The removal did not stop active science: the previous release had already
+reached `FAILED_NO_RETRY` at 08:05, after 12 PASS tasks and before G32/ch7
+worker dispatch. That old release, stop receipt and 12 outputs remain preserved.
+
+A separate isolated `codex/task5-cir-recovery-20261025` branch corrected the
+false classification of the exact read-only 30-minute monitor as a competing
+producer and created a new 68-task immutable successor. Request SHA:
+`30b2c8a5f46a97fc25be8d3d8f1ee84e5a0a5cc56327b74d50c453de3d86c2ac`.
+The new release is
+`dataset_generation_logs/channel_modeling/mainline_1023_cir_v1_20261025T141055Z_task5partial68/`.
+Its no-raw `ValidateBatchOnly` passed; the normal-user serial Coordinator
+`GNSS-CIR-Batch1023-20261025T141358076Z` started. At the 22:18 +08 read-only
+monitor sample, Task 5 was `RUNNING`, cumulative 12/80, current G32/ch7, with
+one worker and MATLAB present, no new stop receipt or matching System storage
+event. Both **existing** 30-minute and hourly read-only monitors were rebound
+and manually tested; no duplicate monitor was created. E: remains exFAT
+Dirty/Warning/Full Repair Needed, an accepted but not independently repaired
+or verified risk. This is a timestamped start/progress sample, not a claim that
+G32/ch7 has passed science QA.
+
+WP2 code, outputs and tests were completed before the recovery. This WP2
+branch only records the new operational status; the recovery source and
+production release are separate and are **not** delivered as part of PR #2's
+WP2 code. Continue the serial Task 5 release without WP2 interference; Gate
+E/F and real alpha export remain pending. The single WP2 next action remains
+Commander review of the bounded robustness package.
