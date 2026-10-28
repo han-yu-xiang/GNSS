@@ -1,0 +1,10 @@
+WP3_ANALYSIS_COMMAND=["C:\\Users\\Jing_\\AppData\\Local\\Programs\\Python\\Python312\\python.exe", "C:\\Users\\Jing_\\.codex\\worktrees\\gnss-cir\\GNSS_Multipath_Project\\scripts\\channel_modeling\\run_mainline_stage2_wp3.py", "--output-dir", "C:\\Users\\Jing_\\.codex\\worktrees\\gnss-cir\\GNSS_Multipath_Project\\reports\\data_consolidation_20261003\\mainline_1023_model_v1\\wp3_20261028T140100Z"]
+WP3_ANALYSIS_STARTED_UTC=2026-10-28T14:01:13+00:00
+PROCESS_PRIORITY=BELOW_NORMAL
+THREAD_LIMITS=1
+WP3_OUTPUT=C:\Users\Jing_\.codex\worktrees\gnss-cir\GNSS_Multipath_Project\reports\data_consolidation_20261003\mainline_1023_model_v1\wp3_20261028T140100Z
+POPULATION={'selected_window_runs': 83, 'runs_with_mpc': 77, 'scenes': 13, 'selected_windows': 7847, 'MPC': 8914, 'core_scenes': 9, 'core_MPC': 6335}
+OUTPUT_FILES=22
+STATUS=ANALYSIS_COMPLETED_NEEDS_COMMANDER_REVIEW
+WP3_ANALYSIS_EXIT_CODE=0
+WP3_ANALYSIS_ENDED_UTC=2026-10-28T14:04:03+00:00

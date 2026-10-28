@@ -1,0 +1,244 @@
+{
+  "schema_version": "mainline-stage2-wp3-v1",
+  "status": "ANALYSIS_COMPLETED_NEEDS_COMMANDER_REVIEW",
+  "created_utc": "2026-10-28T14:04:02+00:00",
+  "analysis_execution": {
+    "status": "COMPLETED",
+    "command": [
+      "C:\\Users\\Jing_\\.codex\\worktrees\\gnss-cir\\GNSS_Multipath_Project\\scripts\\channel_modeling\\run_mainline_stage2_wp3.py",
+      "--output-dir",
+      "C:\\Users\\Jing_\\.codex\\worktrees\\gnss-cir\\GNSS_Multipath_Project\\reports\\data_consolidation_20261003\\mainline_1023_model_v1\\wp3_20261028T140100Z"
+    ],
+    "python_executable": "C:\\Users\\Jing_\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "started_utc": "2026-10-28T14:01:16+00:00",
+    "completed_utc": "2026-10-28T14:04:02+00:00",
+    "exit_code": 0,
+    "console_log_expected_at": "C:\\Users\\Jing_\\.codex\\worktrees\\gnss-cir\\GNSS_Multipath_Project\\reports\\data_consolidation_20261003\\mainline_1023_model_v1\\wp3_run_20261028T140100Z_console.txt",
+    "console_log": {
+      "path": "analysis_execution.txt",
+      "sha256": "4eb21e1913aa6d55840586ed042a5efe804618cab89c67881fcc472567fce510",
+      "size_bytes": 945
+    }
+  },
+  "superseded_preliminary_runs": [
+    {
+      "output_dir": "wp3_20261028T134000Z",
+      "reason": "The static Normal, Lognormal and Laplace optimizers had avoidable line-search failures; exact weighted MLEs were implemented before final recomputation."
+    },
+    {
+      "output_dir": "wp3_20261028T134900Z",
+      "reason": "Pre-final report/audit-harness iteration; preserved as-is, with its failed first-pass audit explicitly attributable to the validator's overly strict assumptions, not a scientific-output mutation."
+    }
+  ],
+  "repository_branch_expected": "review/gnss-mainline-cir-model-20261022",
+  "git_head_at_run": "e2ef9a3fe7eb2de613154e64977d171958d5c0e6",
+  "input_sha256": {
+    "mpc_rows": {
+      "path": "C:\\Users\\Jing_\\.codex\\worktrees\\gnss-cir\\GNSS_Multipath_Project\\dataset_generation_logs\\channel_modeling\\mainline_1023_stage2_v0_20261024T132210Z\\analysis_mpc_rows.csv",
+      "sha256": "a2c26d0de655e0f6cf4a60cf2906bf4cfff7aa16bbc5f74bffb4e9b80dab306c",
+      "size_bytes": 2550478
+    },
+    "selected_windows": {
+      "path": "C:\\Users\\Jing_\\.codex\\worktrees\\gnss-cir\\GNSS_Multipath_Project\\dataset_generation_logs\\channel_modeling\\mainline_1023_stage2_v0_20261024T132210Z\\selected_window_rows.csv",
+      "sha256": "fbc784ff169fca6d95907e39a56510d9be0b61ec3c1ef42e15235002be40061c",
+      "size_bytes": 1859274
+    },
+    "stage2_artifact_manifest": {
+      "path": "C:\\Users\\Jing_\\.codex\\worktrees\\gnss-cir\\GNSS_Multipath_Project\\dataset_generation_logs\\channel_modeling\\mainline_1023_stage2_v0_20261024T132210Z\\artifact_manifest.json",
+      "sha256": "a47b056e8764e70987e9df733fa9855955fa4dade7e782f3fdd5c394c3200da6",
+      "size_bytes": 5255
+    },
+    "wp1_scene_fold_scores": {
+      "path": "C:\\Users\\Jing_\\.codex\\worktrees\\gnss-cir\\GNSS_Multipath_Project\\reports\\data_consolidation_20261003\\mainline_1023_model_v1\\v0_20261024T132210Z\\scene_fold_scores.csv",
+      "sha256": "faad49468cb7d36ed070e54a8b9fdc564cdaa9bc3f682fed1eb391cfebbf03ca",
+      "size_bytes": 38524
+    },
+    "wp1_report": {
+      "path": "C:\\Users\\Jing_\\.codex\\worktrees\\gnss-cir\\GNSS_Multipath_Project\\reports\\data_consolidation_20261003\\mainline_1023_model_v1\\v0_20261024T132210Z\\v0_model_report.md",
+      "sha256": "41f4711790823bcfa0fe8c7bece68bbc40c492b086cfd7349984e2153400356d",
+      "size_bytes": 21041
+    },
+    "wp2_marginal_summary": {
+      "path": "C:\\Users\\Jing_\\.codex\\worktrees\\gnss-cir\\GNSS_Multipath_Project\\reports\\data_consolidation_20261003\\mainline_1023_model_v1\\wp2_20261025T074332Z\\marginal_stability_summary.csv",
+      "sha256": "5439b0c7e3d8df2ee97b06c04b5b67c14180c6a5a480fb1fafd9175e0df00db5",
+      "size_bytes": 11081
+    },
+    "wp2_power_delay_summary": {
+      "path": "C:\\Users\\Jing_\\.codex\\worktrees\\gnss-cir\\GNSS_Multipath_Project\\reports\\data_consolidation_20261003\\mainline_1023_model_v1\\wp2_20261025T074332Z\\power_delay_loso_summary.csv",
+      "sha256": "295f84904aaadbb8f9b5b1562f361a6cfbb475b51f4dc7b6d8d0067f6c1e7922",
+      "size_bytes": 700
+    },
+    "wp3_plan": {
+      "path": "C:\\Users\\Jing_\\.codex\\worktrees\\gnss-cir\\GNSS_Multipath_Project\\docs\\superpowers\\plans\\2026-10-28-mainline-stage2-wp3-environment-geometry-modeling.md",
+      "sha256": "4245ca034114ff982df8e835a6be052e8725f9280bf012ca8169da47785714a1",
+      "size_bytes": 7168
+    },
+    "trajectory_overlay": {
+      "path": "E:\\GNSS_Multipath_Project\\dataset_generation_logs\\channel_modeling\\mainline_1023_pvt_recovery_20261024T054408Z\\trajectory_window_overlay_pvt_recovered.csv",
+      "sha256": "1f7385663341d89cdb42c459c1e9d8c36a0ef4ca6f5d6a4f0c667944de0f0c93",
+      "size_bytes": 2655875
+    }
+  },
+  "code_sha256": {
+    "model_module": "67651a6cea536df1f0d7dcd61b8da034fcc196f903b12250427fc7f1f726ac3b",
+    "runner": "8e4d7859473c984f4ab652b89c09ca4f4e06c59d8d7ab1a127b3ec2628c6b884",
+    "independent_validator": "8452f4c554124011b1e44722db04152f539d855b5c66234e565620d274bff2a1",
+    "focused_test_model": "e4ce0ef72bead17c8c25e370ac4ff8de4a3f2a042d86123197c47a05ab5b8547",
+    "focused_test_runner": "1f40075e5c7ccc4c039d9885fcffe749c9fafe4bb8491f86d5fd3586128ef40e"
+  },
+  "population_counts": {
+    "selected_window_runs": 83,
+    "runs_with_mpc": 77,
+    "scenes": 13,
+    "selected_windows": 7847,
+    "MPC": 8914,
+    "core_scenes": 9,
+    "core_MPC": 6335
+  },
+  "core_environment_MPC": {
+    "Urban": 3698,
+    "Mountain/Valley": 2637
+  },
+  "model_design": {
+    "M0": "core-only global marginal; scene/window-balanced pseudo-likelihood",
+    "M1": "core environment-specific marginal parameters",
+    "M2": "environment plus continuous elevation slope, separately by GSV, ephemeris/GGA, and ephemeris/zero-height source strata",
+    "M3": "not fitted; motion remains descriptive due source-record reuse/coverage concerns",
+    "families": {
+      "excess_delay_chips": [
+        "gamma",
+        "lognormal",
+        "weibull"
+      ],
+      "doppler_offset_hz": [
+        "normal",
+        "laplace",
+        "student_t"
+      ],
+      "relative_power_db": [
+        "normal",
+        "laplace",
+        "student_t"
+      ]
+    },
+    "outer_validation": "9 complete core scenes; each fold excludes its held scene",
+    "uncertainty": "no path-level CI/p-values; equal-scene fold summaries are descriptive with overlapping training sets",
+    "supplement": "Highway/Open and Special Reflective descriptive/core-trained applicability only"
+  },
+  "execution_boundary": "CSV-only; no MATLAB/SAGE/CIR/GNSS-SDR; no MAT/HDF5/raw IQ/CIR payload read; Task5 untouched",
+  "outputs_sha256": {
+    "analysis_execution.txt": {
+      "sha256": "4eb21e1913aa6d55840586ed042a5efe804618cab89c67881fcc472567fce510",
+      "size_bytes": 945
+    },
+    "condition_support_by_scene.csv": {
+      "sha256": "6169b27b8e29e6932d28d3c40576a85018d35bc695805436ea924ff39530a6e8",
+      "size_bytes": 1290
+    },
+    "condition_support_by_scene_source.csv": {
+      "sha256": "12721b2bf77ae680aa5a6f91ec6af8d2225b9537eccafcdf417d7b748e53b8a3",
+      "size_bytes": 3384
+    },
+    "descriptive_by_environment.csv": {
+      "sha256": "42e4f2be79c3d9c0d3f6aa6af6c510b0024b0027c7db5d3353c418efc55bd2f8",
+      "size_bytes": 2230
+    },
+    "descriptive_by_scene.csv": {
+      "sha256": "1d53465eb46c5a6c55ef3b7a4368e5a5e139c6132a8001ceced4a861d902ef33",
+      "size_bytes": 6187
+    },
+    "external_13scene_baseline_context.csv": {
+      "sha256": "977664fd473f25a5cbb7d1a4e69c0f6ae85f9399df570b5a5dcff1519011feaf",
+      "size_bytes": 1597
+    },
+    "figures\\core_environment_scene_medians.png": {
+      "sha256": "cfa002266592bd16f5e6ac064b4ee92ceb24d3e21d38d054610e17d7f5988bf1",
+      "size_bytes": 121031
+    },
+    "figures\\gsv_elevation_window_medians.png": {
+      "sha256": "e9bc4e359fad5eb55400ef4f8dc596d1bae6e253f58bc2ed392bb31edcfdbb5e",
+      "size_bytes": 340461
+    },
+    "figures\\loso_paired_score_deltas.png": {
+      "sha256": "a975488cc402b90060132b0c2819d243202986d131c88dd453ae3e16a1bc8432",
+      "size_bytes": 443254
+    },
+    "focused_test_execution.txt": {
+      "sha256": "c2bff7f17f796ed0a70a6e47cf4883b98a10e92a477c4bb0e33da5f3ae4991a7",
+      "size_bytes": 4468
+    },
+    "full_data_model_parameters.csv": {
+      "sha256": "90ad0520db9ca19488c83cfe680426307bcceb2e603d0a879bac5272e8696aa3",
+      "size_bytes": 63911
+    },
+    "independent_validation_console.txt": {
+      "sha256": "355b13f78fb729556cc7641bdf7b854454186fa10632694a278371c0132f67a6",
+      "size_bytes": 1210
+    },
+    "independent_validation_final.json": {
+      "sha256": "b37f2a2e3f7ea1415439f41d57a76ad8733ffd00699790c8656cf8c038864ce0",
+      "size_bytes": 1187
+    },
+    "loso_equal_scene_macro_scores.csv": {
+      "sha256": "07fb40f3b39f0a090ec7134044afda5d1d4cbfcaab46fd043f364e897a0a4a16",
+      "size_bytes": 20587
+    },
+    "loso_family_ranks_by_scene.csv": {
+      "sha256": "8ba848b986581dc1f07911abe86d373a708e17883e5d149916e42d6794fc5d01",
+      "size_bytes": 151446
+    },
+    "loso_fold_manifest.csv": {
+      "sha256": "8561205a6df8b38e482d8bba6b875aea785f8c823ace041ef672b487865f4050",
+      "size_bytes": 129576
+    },
+    "loso_fold_scores.csv": {
+      "sha256": "1c14a3017fe2f34ec063561010038441824759d460e84d5fc906052394e0b01d",
+      "size_bytes": 577972
+    },
+    "loso_paired_delta_macro.csv": {
+      "sha256": "af13577d446d5d8978e1e50e6cac2596d7460051ee99fa138d965add2dff0547",
+      "size_bytes": 36467
+    },
+    "loso_paired_deltas.csv": {
+      "sha256": "8f0892768e197fcfcbd79e9b21f4312a65ab274a375adb3ee3b0c3c9313e7836",
+      "size_bytes": 193204
+    },
+    "loso_parameter_stability.csv": {
+      "sha256": "0f1cc24fd52f9ce7bf70e8e756c4e7a99df2be37e01047554794772e753340fe",
+      "size_bytes": 83088
+    },
+    "loso_tail_diagnostics.csv": {
+      "sha256": "ad31378ebaf37aaae3d936ee551c32742a446f5857afa9c78b686a8e5de51c33",
+      "size_bytes": 1057675
+    },
+    "m1_environment_parameter_contrasts.csv": {
+      "sha256": "b903720b6705cf51cc1d31beed33ca052cd9dc0b12a7b6e948246d97b57eb21c",
+      "size_bytes": 4875
+    },
+    "motion_source_support_by_scene.csv": {
+      "sha256": "9d94c11a6a6195b93a0f07b65f7c692478ffe2dea94db4dbabbcc398a7e39df1",
+      "size_bytes": 1510
+    },
+    "supplement_applicability_scores.csv": {
+      "sha256": "3d89a00d540d48e666e831f1c1c533609880d824b93702b19d30b88d4fe0cb7f",
+      "size_bytes": 272873
+    },
+    "window_mpc_count_support_by_scene.csv": {
+      "sha256": "caebf518a3e34ce5675d95340f63ac16d9ac43917aacf2816e9750e73961f2a7",
+      "size_bytes": 1980
+    },
+    "WP3_正式科研报告.md": {
+      "sha256": "316c3f6a4abc5bfa34f1593d1512cce424591a45366c9e8e5281ab8fbdf769b5",
+      "size_bytes": 16494
+    }
+  },
+  "test_execution_evidence": {
+    "command": "python -m py_compile scripts/channel_modeling/mainline_stage2_wp3.py scripts/channel_modeling/run_mainline_stage2_wp3.py scripts/channel_modeling/verify_mainline_stage2_wp3.py scripts/channel_modeling/tests/test_mainline_stage2_wp3.py scripts/channel_modeling/tests/test_run_mainline_stage2_wp3.py; python -m unittest scripts.channel_modeling.tests.test_mainline_stage2_wp3 scripts.channel_modeling.tests.test_run_mainline_stage2_wp3 -v",
+    "started_utc": "2026-10-28T14:04:50.4007344Z",
+    "ended_utc": "2026-10-28T14:04:54.2155934Z",
+    "exit_code": 0,
+    "output_log": "focused_test_execution.txt",
+    "output_sha256": "c2bff7f17f796ed0a70a6e47cf4883b98a10e92a477c4bb0e33da5f3ae4991a7",
+    "interpretation": "focused_behavioral_tests_only;_not_scientific_acceptance"
+  }
+}

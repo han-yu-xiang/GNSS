@@ -1,0 +1,31 @@
+{
+  "status": "PASS",
+  "result_dir": "C:\\Users\\Jing_\\.codex\\worktrees\\gnss-cir\\GNSS_Multipath_Project\\reports\\data_consolidation_20261003\\mainline_1023_model_v1\\wp3_20261028T140100Z",
+  "checks": {
+    "manifested_output_hashes_match": true,
+    "pinned_input_hashes_match": true,
+    "input_population_identities_reconcile": true,
+    "support_tables_reconcile_to_selected_windows_and_paths": true,
+    "folds_are_complete_scene_partitions": true,
+    "macro_scores_recompute_from_fold_scores": true,
+    "paired_deltas_use_same_test_identity_and_recompute": true,
+    "paired_macro_recomputes_from_matched_fold_deltas": true,
+    "tail_records_match_heldout_identity_and_exclude_held_scene": true
+  },
+  "counts": {
+    "MPC": 8914,
+    "unique_MPC_ids": 8914,
+    "selected_windows": 7847,
+    "unique_selected_window_ids": 7847,
+    "selected_window_runs": 83,
+    "runs_with_MPC": 77,
+    "scenes": 13,
+    "core_scenes": 9,
+    "fold_rows": 324,
+    "fold_score_rows": 891,
+    "paired_fold_rows": 810,
+    "tail_rows": 2268
+  },
+  "findings": [],
+  "validator_sha256": "8452f4c554124011b1e44722db04152f539d855b5c66234e565620d274bff2a1"
+}

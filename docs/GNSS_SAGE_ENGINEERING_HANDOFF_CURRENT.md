@@ -2,9 +2,9 @@
 
 **项目根目录：** `E:\GNSS_Multipath_Project`  
 **工程状态唯一来源：** 本文件  
-**最后审计时点：** 2026-10-24（Asia/Shanghai；长期路线与WP状态见第101节；Task 5最新可用快照为22:10，非实时进程核查）
+**最后审计时点：** 2026-10-28 23:30（Asia/Shanghai；WP3独立科学审阅及Task 5只读进程/audit样本见第106–107节；Task 5记录均为时间点样本）
 **面向对象：** Codex、AI Agent、开发人员、实验执行人员  
-**当前 Mainline 新增状态：** SAGE-only Stage2 参数探索V0为 `COMPLETED_WITH_LIMITATIONS`；三层路线及WP0–WP6唯一权威计划为 `docs/ACADEMIC_CHANNEL_MODELING_MASTER_PLAN.md`。Task5最新本地快照（22:10 +08）记录 `RUNNING, 9/80, G28/ch6`，但进程布尔字段为空，故不是实时进程确认；详见第101节。Gate E/F、完整CIR结构模型及正式Gate G仍待验收；不将旧Stage3 r3与新Stage2总体合并。
+**当前 Mainline 新增状态：** Stage2 WP3 有界真实数据分析完成，独立科学审阅为 `PASS_WITH_LIMITATIONS`；建议 per-parameter global M0 工作基线，M1 不作为已验证预测增益，GSV 相对功率 M2 仅探索性保留。报告见第106–107节。Task 5 在 2026-10-28 23:30 +08 的只读样本为 `RUNNING, 44/80`，当前 G26/ch6，Coordinator/worker/MATLAB 进程与 audit 相符；这只是时间点样本。Gate E/F、完整 CIR 结构模型、WP6 及正式 Gate G 仍待验收；不将旧 Stage3 r3 与新 Stage2 总体合并。
 **当前阶段：** accuracy-first full SAGE 主线的冻结 unattended batch 已完成并通过独立批后 QA：57/57 task-level QA ACCEPTED、0 REJECTED；其中 A validation batch 40 个保持 VALIDATED，B/C 正式生产 batch 17 个计入 formal accepted production。当前 formal accepted production 为 26/67（历史 A3 G16 仍为 REJECTED_PROTECTED，不计入）；SAGE 不再自动续跑，database schema/enum/label/derivation v1 已冻结，64-run event/path audit ingest、modeling-context alignment overlay 和 Stage4 path-parameter derivation 已完成并通过独立 QA。G06 legacy 已保留审计但排除建模输入；canonical r3 traditional channel model 及 Phase-1 scientific closure 已完成并通过独立 QA（带明确限制），Phase 2 仍为 planned-only。
 
 > 本文只负责工程事实、文件、输入输出、执行、QA、hash、provenance 和下一步操作。论文科学叙事的唯一状态来源是 `docs/GNSS_SAGE_PAPER_HANDOFF_CURRENT.md`。其他 handoff、设计稿、诊断稿和日报均为历史/专题参考，不再作为独立的当前工程状态源。
@@ -2572,3 +2572,303 @@ production release are separate and are **not** delivered as part of PR #2's
 WP2 code. Continue the serial Task 5 release without WP2 interference; Gate
 E/F and real alpha export remain pending. The single WP2 next action remains
 Commander review of the bounded robustness package.
+
+## 104. WP2 independent scientific acceptance and Task 5 live sample (2026-10-25)
+
+### WP2 independent acceptance
+
+The final WP2 package was independently checked at
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp2_20261025T074332Z/`.
+The audit verified 15/15 pinned input/source/output hashes; recomputed 171
+saved-fold distribution scores/ranks, 1,026 tail records, 13 power-delay
+folds, and 39 selected-count folds; and found no numerical mismatch. The
+8,914 `(run_id, window_id, path_id)` MPC rows and 7,847 unique
+`(run_id, window_id)` Stage2-selected windows remained identity-consistent.
+No original output was modified or recalculated.
+
+Each of the four analysis areas is `PASS_WITH_LIMITATIONS` for computational
+correctness, not formal Gate G acceptance:
+
+- Delay Lognormal ranks first in 13/13 global saved V0 folds; Doppler and
+  relative-power rankings vary by held-out scene. The sensitivity table
+  summarizes saved V0 fold fits; it is not an independent refit. Row-wise MLE
+  estimates are conditional descriptive summaries, not estimates based on
+  independent path observations.
+- Tail quantiles use training-fold parameters and are compared with held-out
+  empirical quantiles/coverage. 324/1,026 cases have fewer than 10 expected
+  tail observations and remain evidence-limited; none is silently promoted
+  to a tail pass.
+- Power-delay slopes are negative in 13/13 folds, median -2.50632 and range
+  -10.52476 to -2.25958 dB/chip. Conditional prediction does not improve the
+  held-out macro log score (-0.06050) and worsens RMSE (+0.18262 dB). Scene-
+  resampled intervals describe fold sensitivity only: LOSO training sets
+  overlap, so they are not intervals from 13 independent experiments.
+- Count comparisons are restricted to Stage2-selected windows. The empirical
+  categorical baseline beats truncated Poisson; NB2 reaches a mean-at-
+  infinity boundary in all 13 folds, with no finite interior mean MLE. The
+  evidence does not justify a separate parametric count model and says
+  nothing about unselected Stage0 windows.
+
+Targeted tests were freshly executed on 2026-10-25 23:22:31–23:22:34 +08:
+11/11 passed, exit code 0. The exact command and stdout are preserved in
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp2_independent_acceptance_20261025T151500Z/`.
+Testing is distinct from scientific acceptance. No numerical error requiring
+local recalculation was found; no alpha pilot, MAT/HDF5 payload read, Task 5
+interference, or formal Gate G/model acceptance occurred. Full audit and
+limitations are in the referenced acceptance report.
+
+### Task 5 — read-only status at 2026-10-25 23:23 Asia/Shanghai
+
+- The latest 30-minute monitor file was
+  `dataset_generation_logs/batch_sage_execution/codex_monitor_83task/20261025T150505123Z_CIR_Task5_30m.json`, sampled 23:05:01 +08 (about 18 minutes old at the direct check). It reports `RUNNING`, 12/80, current
+  `run_20261003_F1023_V120_D0121_P2_G32_ch7`, and zero new PASS in that
+  30-minute interval.
+- The active successor release is
+  `dataset_generation_logs/channel_modeling/mainline_1023_cir_v1_20261025T141055Z_task5partial68/`;
+  request SHA-256 is
+  `30b2c8a5f46a97fc25be8d3d8f1ee84e5a0a5cc56327b74d50c453de3d86c2ac`.
+  Its small `cir_batch_audit.json` says `RUNNING`, 68 new-required tasks,
+  current G32/ch7 started 22:14:21 +08, no completed task in the successor
+  audit yet, and no completion or stop receipt.
+- At the 23:13:41 and 23:23:03 direct reads, scheduled Coordinator and worker tasks were
+  `Running`; Coordinator PID 33124, Runner PID 30072, MATLAB launcher PID
+  31032 and MATLAB worker PID 26016 were present. The worker PID/creation time
+  remained unchanged; cumulative CPU increased by 280.39 seconds over 9m22s,
+  confirming ongoing computation activity. The monitor's latest stdout
+  progress was 22:15:04 +08; that timestamp excludes HDF5/MAT metadata and is
+  not itself a stall criterion. The last PASS receipt is G29/ch3 at 08:04:47.
+- At that same read, the existing 30-minute monitor task was `Ready`, last
+  result 0 at 23:05, next run 23:35; the hourly status task was `Ready`, last
+  result 0 at 23:10, next run 00:10. These are monitor-task states, not
+  production completion.
+- The monitor reports no new System storage event; it reports E: free
+  367,457,730,560 bytes, while the direct disk query at 23:13 returned
+  366,938,685,440 bytes (about 341.8 GiB). A bounded System event query found
+  no matching storage event after 23:05. No Task 5 file, process, release,
+  queue, log, receipt or monitor was changed.
+
+The sole next WP2 priority is Commander review of the independent acceptance
+and a decision whether the descriptive evidence suffices or a new inferential
+analysis should be separately scoped. Continue to treat Task 5 as an
+independent running production; do not infer G32/ch7 PASS from its live
+process state. Gate E/F, alpha export and formal model fitting remain pending.
+
+## 105. WP2 continuation and Task 5 G18/ch9 stop investigation (2026-10-26)
+
+### WP2 — resumed independent acceptance checkpoint
+
+The expected isolated worktree was confirmed at
+`C:/Users/Jing_/.codex/worktrees/gnss-cir/GNSS_Multipath_Project`, branch
+`review/gnss-mainline-cir-model-20261022`, HEAD
+`e2ef9a3fe7eb2de613154e64977d171958d5c0e6`; local `origin` tracking ref is
+equal. The accepted result package is
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp2_20261025T074332Z/`.
+Its three inputs, three source files and nine result outputs independently
+matched all 15 recorded SHA-256 values (the manifest itself is not recursively
+hashed). A separate read-only reconciliation found 7,847 unique selected
+`(run_id, window_id)` windows, 8,914 unique MPC identities, zero window-count
+mismatches, and counts 0/1/2/3 = 3,574/1,412/1,081/1,780. The 285,752 Stage0
+valid windows remain outside the count-model denominator; no unselected
+window was assigned zero MPC.
+
+The four analyses remain `PASS_WITH_LIMITATIONS` for computational correctness:
+delay Lognormal ranked first in 13/13 global saved folds; Doppler/power ranks
+vary; 324/1,026 tail diagnostics are low-support; power-delay slopes are
+negative in 13/13 scenes but conditional prediction did not improve held-out
+scores; selected-window count fits do not justify a separate parametric model,
+and NB2 reached the mean-at-infinity boundary in every fold. These are
+descriptive, Stage2-selection-conditional results, not independent path-level
+inference or formal Gate G acceptance. No numerical error or local recalculation
+was required.
+
+The preserved test record in
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp2_independent_acceptance_20261025T151500Z/wp2_independent_acceptance.md`
+contains the actual command, full stdout, timestamps and exit code: 11/11
+targeted synthetic tests passed on 2026-10-25 23:22:31–23:22:34 +08, exit 0.
+The tests use in-memory synthetic inputs or `TemporaryDirectory`; no production
+MAT/HDF5 payload was read. No alpha export pilot was started. WP2 remains
+`COMPLETED_WITH_LIMITATIONS`; Gate G, alpha export and formal fitting remain
+pending.
+
+### Task 5 — nonterminal stop, read-only check at 2026-10-26 16:45 +08
+
+The 16:35 +08 local 30-minute report is
+`dataset_generation_logs/batch_sage_execution/codex_monitor_83task/20261026T083506395Z_CIR_Task5_30m.json`.
+At the direct check, the current release
+`dataset_generation_logs/channel_modeling/mainline_1023_cir_v1_20261025T141055Z_task5partial68/`
+has request SHA-256
+`30b2c8a5f46a97fc25be8d3d8f1ee84e5a0a5cc56327b74d50c453de3d86c2ac`, audit
+`RUNNING`, 25 of 68 new-required tasks PASS, plus 12 prior PASS, totaling
+37/80. Current task is exactly
+`run_20261003_F1023_V70_D0120_P8_G18_ch9`; last PASS is G16/ch4 at 11:04:14
++08. No Coordinator, Runner or MATLAB process is active. The scheduled G18
+worker is `Ready`, LastRunTime 14:26:06 +08, LastTaskResult 1; the batch
+Coordinator task is also `Ready` with LastTaskResult 1. No completion or stop
+receipt exists.
+
+**Time basis and causation:** the task launch record is 11:04:34 +08
+(03:04:34Z). The audit's `current_task_started_utc` field actually carries
+`+08:00` and was interpreted by offset, not field name. Windows System records
+critical battery at 13:11:27 +08 and sleep at 13:11:29; it later records
+sleep/Modern Standby and wake around 14:26:06–14:26:10 +08. The G18 task's
+LastRunTime falls on the wake transition. This makes battery-critical sleep
+the most likely interruption trigger, but does not prove the worker's internal
+exception or exact exit time. Task Scheduler Operational history is disabled;
+the only current run task record is the small dispatch JSON. No current-release
+G18 run directory, `execution_started.json`, MATLAB exit receipt or CIR
+output exists. The older log/receipt with the same SAGE run identity belongs
+to the separate October 18 49-task SAGE plan (exit 0) and is not evidence of a
+CIR attempt. No matching MATLAB Application Error or new disk/USB I/O error
+was found. Event 225 at 14:45 is a blocked USB-eject warning, not a confirmed
+disconnect. E: free space was about 300.3 GiB; the accepted drive health
+warning was not repaired.
+
+The Coordinator source's normal fail-stop catch writes
+`cir_batch_stop_receipt.json` and changes the audit to `FAILED_NO_RETRY`.
+Neither occurred. Therefore the release remained nonterminal because the
+normal catch/closure path did not finish, or a failure occurred outside that
+path; available evidence cannot distinguish abrupt process termination from
+an unhandled/pre-try error or a failed receipt write. The cohort active-lock
+file still names the former Coordinator PID, but a read-only exclusive-open
+probe acquired the file with no live OS handle. Do not delete or modify it.
+
+The release pins the runner at
+`71d49ec0127aa3d254455abbbe39ceb8770cf7e99eb9fcfb2cdc55bd401a59e9`; current
+runner hash is
+`622629588a2552ae150149d5860abc6102fc0b2dadc60bdcb5f2e3643bcb5692`, with a
+recorded last-write time 16:18:14 +08, later than the worker task result.
+This drift is not the cause of the earlier G18 failure on the recorded
+timeline, but makes the old immutable release unsafe to invoke now. Keep its
+37 PASS receipts and G18 evidence untouched. No production process, release,
+audit, receipt, lock, queue or monitor was changed during this investigation.
+
+**Single next action:** do not relaunch the old request. After explicit
+Commander authorization, prepare and validate one source-pinned no-retry
+successor that formally closes the orphaned nonterminal audit, preserves and
+skips the 37 verified PASS identities, and starts only the exact unfinished
+G18/ch9 identity from a new Stage0 attempt; stop if the old output namespace,
+source pins or receipt state cannot be proven safe.
+
+## 106. Mainline WP3 execution and current Task 5 sample (2026-10-28)
+
+### WP3 — bounded real-data analysis and independent scientific review complete with limitations
+
+WP3 used pinned small CSV extracts only. It completed scene/window-balanced
+M0 global, M1 environment-conditioned and source-separated M2 elevation
+analyses with complete-scene LOSO over nine core scenes. Population identity
+checks reconcile 8,914 unique MPC, 7,847 unique Stage2-selected windows, 83
+runs and 13 scenes. Core support is Urban 6 scenes (2,927 windows/3,698 MPC)
+and Mountain/Valley 3 scenes (1,974 windows/2,637 MPC); selected windows in
+six runs with zero MPC remain in the window denominator.
+
+The bounded findings and caveats are in
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp3_20261028T140100Z/WP3_正式科研报告.md`.
+Delay Lognormal ranks first in 9/9 core LOSO folds; Doppler and relative-power
+ranks vary. M1 does not show a stable held-out gain. GSV-source M2 improves
+relative-power macro score versus M1 in the combined core comparison, but
+M2-versus-M0 and environment-specific results are mixed. No causal or
+universal condition effect is claimed. Tail diagnostics retain 279 unavailable
+fits and 579 low nominal-tail-support records out of 2,268. Motion remains
+descriptive because a small set of NMEA records is reused across windows.
+Repeated paths/windows and overlapping LOSO training folds are not independent
+replicates; the result is conditional on Stage2 selection and is not Gate G,
+WP6, alpha, CIR association, or a complete physical channel model.
+
+Independent output validator: `PASS`, no findings. Focused tests: 18/18 on
+Python 3.12, exit code 0; exact command and full output are in
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp3_20261028T140100Z/focused_test_execution.txt`.
+The run manifest, `analysis_execution.txt`, independent-validation record,
+tables and three figures are co-located in that package. The execution record
+is `docs/superpowers/plans/2026-10-28-mainline-stage2-wp3-execution-record.md`;
+the approved specification remains unchanged at
+`docs/superpowers/plans/2026-10-28-mainline-stage2-wp3-environment-geometry-modeling.md`.
+No MATLAB, SAGE,
+GNSS-SDR, CIR production, raw IQ, or MAT/HDF5 scientific payload was accessed.
+WP3 is `COMPLETED_WITH_LIMITATIONS`; independent review outcome is
+`PASS_WITH_LIMITATIONS`. The recommended core M0 working families are delay
+Lognormal, Doppler Student-t and relative-power Student-t (the latter near-ties
+Normal and is provisional). Do not adopt M1 as a stable scene-out gain; retain
+GSV relative-power M2 only as an exploratory candidate. Full parameter values,
+model equations, pairwise score evidence and the explicit delta-sign reading
+are documented in the independent review report at §107.
+
+### Task 5 — read-only live sample at 2026-10-28 22:11:31 +08
+
+The active release is
+`E:\GNSS_Multipath_Project\dataset_generation_logs\channel_modeling\mainline_1023_cir_v1_20261028T120447205Z_task5successor43r1`,
+request SHA-256
+`1b95146f42a2383f26bbef0bfc1679f9096f3778e67c51fa765af953f04474df`.
+Its audit says `RUNNING`, with four new PASS receipts plus 37 inherited PASS
+(41/80 cumulative, 4/43 new, 39 new tasks remaining). The four new PASS
+identities are G18/ch9, G23/ch11, G26/ch3 and G05/ch10. Current identity is
+`run_20261003_F1023_V70_D0120_P9_G16_ch9`, started 21:49:33 +08.
+
+At the check, Coordinator PowerShell PID 17124 (created 20:13:08 +08), worker
+PowerShell PID 23592 (21:49:37 +08), MATLAB launcher PID 39444 and MATLAB
+worker PID 31756 (both 21:49:45 +08) were present and command lines bound to
+the active release/current identity. Coordinator scheduled task
+`GNSS-CIR-Batch1023-20261028T121305602Z` was Running (LastTaskResult 267009,
+active instance). The existing 30-minute monitor last ran at 22:05 +08 with
+result 0 and next run 22:35; the hourly status task last ran at 22:10 with
+result 0 and next run 23:10. No completion receipt exists because the batch is
+still active. No production process, task, release, audit, monitor, lock, or
+output was changed during WP3. This is a timestamped sample only; obtain a new
+check before any operational decision.
+
+**Follow-up sample at 2026-10-28 22:20:11 +08:** the same release audit
+remained `RUNNING`; five new tasks were PASS (42/80 cumulative, 5/43 new,
+38 new tasks remaining). The fifth new PASS is G16/ch9. Current task advanced
+to `run_20261003_F1023_V70_D0120_P9_G18_ch1`, audit start 22:12:48 +08.
+Coordinator PID 17124, worker PowerShell PID 29820, MATLAB launcher PID 34664
+and MATLAB worker PID 9748 were present; the MATLAB worker had accumulated
+213 CPU seconds. The batch scheduled task was Running with LastTaskResult
+267009. The 30-minute monitor was Ready (last result 0 at 22:05, next 22:35),
+and hourly status monitor Ready (last result 0 at 22:10, next 23:10). No
+production control or mutation occurred. This follow-up supersedes the 22:11
+sample for the current operational state only.
+
+## 107. WP3 independent scientific review and Task 5 point sample (2026-10-28)
+
+### WP3 scientific disposition
+
+The independent review report is
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp3_independent_review_20261028/WP3_独立科学审阅与模型选型报告.md`;
+overall result is `PASS_WITH_LIMITATIONS`. The recommended nine-core-scene
+working baselines are Lognormal excess delay, Student-t Doppler, and Student-t
+relative power (the last near-ties Normal and is provisional). Core M1 does not
+show a stable scene-out gain; GSV M2 is exploratory only for relative power and
+does not reliably beat M0. No environment-specific final parameter model,
+causal elevation effect, universal tail pass, Gate G, or WP6 completion is
+claimed. The nine-scene core fit is not a replacement for the WP1 13-scene
+baseline.
+
+The audit covered the pinned final report/code/tables, WP1 and WP2 baselines,
+source support, tail records, and the original 18/18 test record. Direct
+read-only reconciliation of 891 fold scores and 810 paired deltas found zero
+test-identity mismatches, zero recomputed-delta mismatches and zero held-out
+scenes in their training lists. No numerical re-fit/recalculation was needed.
+The review notes an ambiguous “right/left model” sentence in the WP3 report;
+the implementation and values are correct, with `M1-M0` explicitly meaning
+`score(M1)−score(M0)` and positive favoring M1. Use that definition in paper
+text. WP3 output and approved plan files remain unchanged; review is a separate
+artifact.
+
+No MATLAB, SAGE/CIR computation, alpha export, active HDF5/MAT or raw-IQ data
+was accessed. The master-plan WP3 state, this engineering handoff and the Paper
+Handoff have been synchronized to this review. WP4/Gate E/F remains dependent
+on the independent CIR completion/QA workflow; WP5 real alpha and WP6 remain
+pending.
+
+### Task 5 — read-only process/audit sample at 2026-10-28 23:30:40 +08
+
+Release `mainline_1023_cir_v1_20261028T120447205Z_task5successor43r1`, request
+SHA-256 `1b95146f42a2383f26bbef0bfc1679f9096f3778e67c51fa765af953f04474df`.
+Audit was `RUNNING`, with seven new PASS plus 37 inherited, 44/80 cumulative.
+Current run was exactly `run_20261003_F1023_V70_D0120_P9_G26_ch6`, started
+23:01:45 +08. Coordinator PID 17124, worker PowerShell PID 20688 and MATLAB
+launcher/worker PIDs 8812/21660 were present. The batch scheduled task was
+Running (LastTaskResult 267009); the 30-minute monitor was Ready (last result
+0 at 23:05, next 23:35) and hourly status task Ready (last result 0 at 23:10,
+next 00:10). This check did not sample CPU/file progress or new System storage
+events; it is not a completion or storage-health assertion. No process, task,
+release, audit, receipt or output was changed.

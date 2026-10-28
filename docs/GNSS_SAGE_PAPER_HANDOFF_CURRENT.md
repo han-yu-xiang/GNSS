@@ -3,9 +3,9 @@
 **项目根目录：** `E:\GNSS_Multipath_Project`  
 **论文状态唯一来源：** 本文件  
 **长期建模路线与 WP0–WP6 状态权威来源：** `docs/ACADEMIC_CHANNEL_MODELING_MASTER_PLAN.md`（本文件继续负责论文事实、科学解释和论文状态）
-**最后审计时点：** 2026-10-24（Asia/Shanghai；Mainline Stage2探索V0见第25节，历史Stage3结果口径保留）
+**最后审计时点：** 2026-10-28（Asia/Shanghai；Mainline Stage2 WP3独立科学审阅见第26节，历史Stage3与WP1 V0口径保留）
 **面向对象：** 论文写作者、科研人员、方法分析人员  
-**当前 Mainline 新增研究状态：** 经Commander授权，已在CIR未完工时完成SAGE-only Stage2探索V0；限于筛选后候选参数总体。完整CIR关联、Gate E/F、正式模型验收和Phase-2仍未完成，不能据V0宣称完整信道生成模型。
+**当前 Mainline 新增研究状态：** Stage2探索V0、WP2稳健性分析及WP3 Urban/Mountain-Valley与仰角条件化分析均已完成并带限制。WP3独立审阅为 `PASS_WITH_LIMITATIONS`：建议保留逐参数全局M0工作基线，M1无稳定场景外收益，GSV相对功率M2只作探索性关联。总体限于Stage2筛选候选总体。完整CIR关联、Gate E/F、WP6完整模型和Phase-2仍未完成，不得据此宣称完整信道生成模型。
 **研究阶段：** accuracy-first full SAGE 冻结批次及独立批后 QA 已完成；Phase-1 的 Stage3 传统统计建模和 scientific closure 已完成并通过 QA（带明确限制）。coverage-complete event/path database、通用 channel-parameter database、Phase-2 AI 和完整暗室生成器仍是独立后续范围。
 
 > 本文只负责科学问题、贡献、实验解释、论文可写事实、图表、限制和未来路线。工程文件路径、执行门禁、hash和receipt的唯一状态源是 `docs/GNSS_SAGE_ENGINEERING_HANDOFF_CURRENT.md`。本文不得把设计、计划或gold前预测写成实验结果。
@@ -1567,3 +1567,62 @@ Methods, actual fit parameters, folds and real-data plots:
 `reports/data_consolidation_20261003/mainline_1023_model_v1/v0_20261024T132210Z/v0_model_report.md`.
 Literature-method links in that report distinguish verified author abstracts
 from unavailable full-text details; no published parameter is transplanted.
+
+## 26. Mainline Stage2 WP3 environment-conditioned analysis (2026-10-28)
+
+The bounded WP3 analysis and independent scientific review are complete with
+limitations (`PASS_WITH_LIMITATIONS`). It is a new Stage2-selected population analysis, not a revision of the
+older Stage3 r3 canonical model, a causal explanation, or a complete physical
+channel model. The exact report is
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp3_20261028T140100Z/WP3_正式科研报告.md`;
+machine-readable folds, scores, paired deltas, parameters, tails, support,
+figures, execution manifest and independent validation are in the same
+directory. The execution record is
+`docs/superpowers/plans/2026-10-28-mainline-stage2-wp3-execution-record.md`;
+the run-pinned approved specification remains unchanged at
+`docs/superpowers/plans/2026-10-28-mainline-stage2-wp3-environment-geometry-modeling.md`.
+
+- The nine-scene core contains Urban (6 scenes, 3,698 MPC) and
+  Mountain/Valley (3 scenes, 2,637 MPC). All 8,914 MPC and 7,847 selected
+  windows across 13 scenes were retained and identity-reconciled; six runs
+  with selected windows but zero MPC remain represented. Inference is
+  conditional on Stage2 selection, not all Stage0-valid windows.
+- In complete-scene LOSO, Lognormal excess delay ranked first in 9/9 folds.
+  Doppler rankings varied (Student-t 6/9, Normal 2/9, Laplace 1/9); relative
+  power had a tie in top-fold counts between Normal and Student-t (4/9 each).
+  These ranks describe successful candidates on this population and do not
+  establish one universal law.
+- Environment-specific M1 did not demonstrate a stable out-of-scene gain over
+  global M0. GSV-measured elevation M2 improved the combined core relative-power
+  macro comparison versus M1, while M2-vs-M0 and per-environment results were
+  mixed. GSV, ephemeris/GGA-height and ephemeris/zero-height fits remain
+  separate. Slopes are observational associations; no causal interpretation
+  is warranted.
+- The review recommends per-parameter core M0 working baselines: excess-delay
+  Lognormal (`shape=0.4659688`, `scale=0.1914930 chips`), Doppler Student-t
+  (`df=8.97753`, `loc=−0.4420 Hz`, `scale=62.9264 Hz`), and relative-power
+  Student-t (`df=7.72049`, `loc=−8.90584 dB`, `scale=5.97587 dB`). Relative
+  power is a near tie with Normal, so Student-t is provisional, not a unique
+  winner. These are nine-core-scene pseudo-likelihood estimates, not a
+  replacement for the WP1 13-scene global baseline.
+- There are 2,268 held-out tail diagnostics: 279 have unavailable fits and
+  579 have fewer than ten nominal target-tail path rows. The latter are not
+  effective independent sample sizes because windows and paths are clustered.
+  No overall tail-calibration pass is claimed. Motion is descriptive only due
+  to reused NMEA source records; no M3 or spatial-independence claim was made.
+- The independent artifact validator passed with no findings, and 18/18
+  focused code tests passed. These checks support code/output reproducibility,
+  not statistical significance or independent-scene replication. Nine core
+  scenes include only three Mountain/Valley scenes; LOSO training sets overlap.
+
+No alpha export pilot, Task 5 change, CIR feature join, MATLAB/SAGE/GNSS-SDR
+execution, or MAT/HDF5/raw-IQ payload access occurred. Gate G, Gate E/F and
+WP6 remain pending. The full independent review, including exact equations,
+M1/M2 paired scores, environmental support, rejected claims and the explicit
+score-difference sign convention, is at
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp3_independent_review_20261028/WP3_独立科学审阅与模型选型报告.md`.
+Paper claims may report WP3 as exploratory scene-LOSO evidence conditional on
+Stage2 selection; do not claim that separate environments are required, that
+elevation causally changes relative power, that M2 universally improves M0,
+or that tails are globally calibrated. Preserve the three-scene limit for
+Mountain/Valley and the overlap among LOSO training sets.
