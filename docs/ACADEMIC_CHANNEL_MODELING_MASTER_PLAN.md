@@ -2,7 +2,7 @@
 
 **唯一长期建模路线与工作包状态来源：** 本文件。
 
-**最新主线状态核实：** 2026-10-29 13:15 +08（Asia/Shanghai）；WP2、WP3 状态仍为 `COMPLETED_WITH_LIMITATIONS`，WP3 独立审阅为 `PASS_WITH_LIMITATIONS`。Task 5 successor batch audit `COMPLETE`、43/43 新任务 PASS 加 37 项继承 PASS 共 80/80，completion receipt `PASS`。WP5 两组 MATLAB 定向测试 7/7 PASS；G32/ch11 单 run 真实 alpha 试点独立核验 PASS：344/344 路径有有效 alpha，包含 227/227 MPC，未发现身份/顺序错位，344/344 相对功率比较通过。WP5 全量 83-run 导出尚未执行；Gate E/F 及 WP6 仍待独立验收。详见工程交接第111节和报告 `reports/data_consolidation_20261003/mainline_1023_model_v1/wp5_alpha_G32ch11_20261029T050432Z/WP5_G32ch11_alpha_pilot_acceptance.md`。
+**最新主线状态核实：** 2026-10-29 14:14 +08（Asia/Shanghai）；WP2、WP3 仍为 `COMPLETED_WITH_LIMITATIONS`，WP3 独立审阅为 `PASS_WITH_LIMITATIONS`。Task 5 的最新已记录只读终态为 80/80 PASS、audit `COMPLETE`、completion receipt `PASS`（13:12 +08 点核）；本轮未修改或重跑 CIR。WP5 83/83 run 全量 alpha 导出及独立验收 PASS：16,761/16,761 Stage2 路径保留，8,914 MPC 与 7,847 直达参考均有有效 alpha，缺失/非有限/功率不一致/身份错误均为 0。提交前定向测试复核为 MATLAB 9/9、Python 5/5 PASS。WP5=`COMPLETED_WITH_LIMITATIONS`；5 个 MAT 缺少历史逐文件 SHA pin，且系数为窗口归一化、跨窗口相位相干未验证。WP4 Gate E/F 与 WP6 仍待独立验收。报告见工程交接第112节及 `reports/data_consolidation_20261003/mainline_1023_model_v1/wp5_alpha_full_83run_20261029T055629Z/WP5_83run_alpha_full_acceptance.md`。
 
 **状态职责：** 工程执行、release、QA、receipt 和生产状态以 `docs/GNSS_SAGE_ENGINEERING_HANDOFF_CURRENT.md` 为唯一工程来源；论文事实与科学解释以 `docs/GNSS_SAGE_PAPER_HANDOFF_CURRENT.md` 为唯一论文来源。本文件负责最终研究目标、长期路线、WP0–WP6、依赖及其状态；其他文件只链接本文件或记录执行细节，不建立竞争性的总计划。
 
@@ -72,7 +72,7 @@ sample; recheck before any later operational decision.
 | WP2 — Layer 1 robustness and statistical closure | `COMPLETED_WITH_LIMITATIONS` | Bounded closure completed 2026-10-25 from pinned V0 MPC/window extracts and saved LOSO folds; no V0 refit. Independent scientific acceptance on 2026-10-25 recomputed saved-fold scores/ranks, tail diagnostics, all power-delay folds and all selected-count folds with no numerical mismatch. Global Lognormal delay ranked first in 13/13 held-out scenes; Doppler/power ranks varied. Tail support is limited for 324/1,026 records. Negative power-delay slope direction held in 13/13 folds, but conditional prediction did not improve. Count candidates do not justify replacing the empirical table; NB2 reaches a mean-at-infinity boundary in all 13 folds. | Results: `reports/data_consolidation_20261003/mainline_1023_model_v1/wp2_20261025T074332Z/`; acceptance: `reports/data_consolidation_20261003/mainline_1023_model_v1/wp2_independent_acceptance_20261025T151500Z/`. All four analyses pass computational checks with limitations; overlapping LOSO training sets mean scene-resampled intervals are descriptive fold-sensitivity summaries, not independent-experiment confidence intervals. Results remain descriptive and conditional on Stage2 selection; formal Gate G/model acceptance is not granted. |
 | WP3 — Layer 2 environment, geometry and motion conditions | `COMPLETED_WITH_LIMITATIONS` (independent review `PASS_WITH_LIMITATIONS`) | Bounded M0/M1/M2 scene-LOSO reconciled 8,914 MPC / 7,847 selected windows / 13 scenes; core Urban 6 scenes and Mountain/Valley 3. Lognormal delay ranked first 9/9; Doppler Student-t 6/9; relative-power Student-t and Normal 4/9 each. Independent review recommends per-parameter global M0 baselines; M1 is not a stable out-of-scene gain; GSV elevation is retained only as an exploratory relative-power candidate. | Analysis: `reports/data_consolidation_20261003/mainline_1023_model_v1/wp3_20261028T140100Z/`; independent review: `reports/data_consolidation_20261003/mainline_1023_model_v1/wp3_independent_review_20261028/WP3_独立科学审阅与模型选型报告.md`. Validator PASS; focused tests 18/18; direct review checked 891 score rows / 810 pairs with zero identity, delta, or fold-leakage mismatches. Stage2-selection conditional; nine core scenes (three Mountain/Valley), overlapping LOSO training, clustered paths/windows and incomplete tails limit inference. Not Gate G/WP6 or a causal/complete physical model. |
 | WP4 — CIR/PDP production and quality acceptance | `IN_PROGRESS` (production batch `COMPLETE`; independent Gate E/F pending; read-only verification 2026-10-29 10:24 +08) | Release `mainline_1023_cir_v1_20261028T120447205Z_task5successor43r1`, request SHA-256 `1b95146f42a2383f26bbef0bfc1679f9096f3778e67c51fa765af953f04474df`. Audit `COMPLETE`; 43/43 successor PASS plus 37 inherited PASS = 80/80. Completion receipt `PASS`, expected and completed counts were 43/43, SHA-256 `c1206c5e900e12db932eefa2b629b051a1efac9013917149f7c166532b8415d8`; all 43 current receipt identities/order/hashes and all 37 inherited receipt hashes were checked against request/audit. Final task `run_20261003_F1023_v90_D0117_P7_G32_ch5` has PASS receipt SHA-256 `3040c7bfcc58ef52bb749b8824d112ea2828534ce5d393e62d43bc47039e6efa`; MATLAB exit receipt is code 0. At 10:24:49 +08 no matching production Coordinator/worker/MATLAB process was running; batch and both monitor tasks were Ready with LastTaskResult 0. Hourly snapshot at 10:10:03 reported `TASK5_COMPLETE`, 80/80, E: free 268.3 GiB, no new storage event in its prior-hour window; snapshot age at direct check was about 14.8 minutes. | This establishes batch completion and receipts, not independent Gate E/F acceptance. CIR/HDF5 scientific payload was not opened in this check. Independently verify exact run/window associations and output QA before Gate E/F; preserve accepted E: exFAT dirty/full-repair-needed risk as a separate storage limitation. |
-| WP5 — Complex alpha and path-attribute integration | `IN_PROGRESS` (G32/ch11 single-run real pilot `PASS`; 83-run export pending) | MATLAB R2025a targeted tests: 7/7 PASS. Pilot run `run_20261003_F1023_V70_D0117_P2_G32_ch11`: source has 344 path rows / 117 windows, 227 MPC and 117 direct references; independent mapping verifies 344/344 valid complex alpha, 227/227 MPC alpha, zero missing/invalid, 344/344 relative-power checks PASS, zero changed Stage2 attributes and no identity/order mismatch. | Pilot report and reproducible independent validator: `reports/data_consolidation_20261003/mainline_1023_model_v1/wp5_alpha_G32ch11_20261029T050432Z/`. This supports proceeding to controlled 83-run export, not declaring WP5 complete. Keep alpha defined relative to each separately mean-removed/RMS-normalized 40 ms window and the local replica reference; it is not calibrated gain, and cross-window phase coherence remains unestablished. WP4 Gate E/F and WP6 are not implied by this pilot. |
+| WP5 — Complex alpha and path-attribute integration | `COMPLETED_WITH_LIMITATIONS` (83/83 full export and independent validation PASS) | 16,761/16,761 Stage2 paths retained: 8,914 MPC + 7,847 direct references; all have finite alpha, zero missing/nonfinite, zero identity/order or source-attribute mismatches, and 16,761/16,761 relative-power checks PASS. Independent reconstruction maximum complex-component absolute difference `4.9960e-16`. | Full report and compact per-run output/hash manifest: `reports/data_consolidation_20261003/mainline_1023_model_v1/wp5_alpha_full_83run_20261029T055629Z/`; full CSVs/logs remain in the E: result namespace. 78 MAT SHA were receipt-pinned; 5 historic receipts lacked per-file pins and their source SHA were recomputed for this batch. Alpha is relative to mean-removed/RMS-normalized 40 ms windows and a local replica reference; it is not calibrated gain, and cross-window phase coherence is unverified. Suitable as a WP6 candidate per-window complex path input after Commander review, but does not pass WP4 Gate E/F or complete WP6. |
 | WP6 — Integrated channel model and final independent validation | `PENDING_DEPENDENCY` | No Mainline integrated model, complete CIR feature association or final Gate G acceptance is claimed. The older Stage3 r3 Phase-1 model remains a separate completed-with-limitations population and is not a substitute for this Mainline model. | Requires WP1 plus accepted WP2–WP5 evidence. Select final model only after support and diagnostics; validate by holding out entire scenes, preserve uncertainty, and document what the model cannot establish. Phase-2 generative AI is a separate planned-only decision. |
 
 ### WP2 robustness closure evidence (2026-10-25)
@@ -773,3 +773,64 @@ and a PASS completion receipt at the final read-only check; no CIR production
 process was started. This does not pass WP4 Gate E/F or WP6. The sole next
 priority is controlled 83-run export and independent completeness/provenance
 acceptance; do not start other modeling work before resolving that dataset.
+
+## 112. WP5 full 83-run complex-alpha export and independent acceptance (2026-10-29)
+
+The controlled export and independent full-cohort validation completed. WP5 is
+`COMPLETED_WITH_LIMITATIONS`; this does not pass WP4 Gate E/F or start WP6.
+The scientific report is
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp5_alpha_full_83run_20261029T055629Z/WP5_83run_alpha_full_acceptance.md`.
+The compact Git-tracked delivery contains the 83-row
+`per_run_output_manifest.csv` and `wp5_alpha_full_summary.json`. The complete
+per-run and combined CSV dataset, source preflight, execution and independent
+validation logs remain in the separate E: namespace
+`E:\GNSS_Multipath_Project\dataset_generation_logs\channel_modeling\mainline_1023_wp5_alpha_full_83run_20261029T055629Z\`;
+the full data bundle is 52,927,454 bytes (180 files) and is not committed.
+
+- The manifest SHA-256 is
+  `9a914f93ae0dd4aa5c75c53928d89a69ec8bdab685fd739e1355b635b5926b50`;
+  it binds the 83-run input identities to cohort SHA
+  `287e891fae0cd294a85c073080611a19b7389ece46240b89cb1d5dab4df90229`,
+  Stage2 ledger SHA
+  `bbb8cac8338194b5527e00812a6547129a58466cc5fdd7db36b8c44bba01e551`,
+  Stage4 pin manifest SHA
+  `32c10789efefe4e87cabee4ac8978cd36a4a132f4d3b5640c8e4b8b0851a635d`,
+  and frozen SAGE source SHA
+  `bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c`.
+  Preflight accepted 83/83 runs. Historical receipt-level MAT SHA pins exist
+  for 78 runs; five old receipts had no per-MAT SHA, so their current source
+  MAT bytes were hashed and bound in this export manifest. No source mismatch
+  was found, but historical pinning cannot be claimed for those five.
+- Serial MATLAB export completed 83/83, with 16,761 paths (8,914 MPC and
+  7,847 direct references), 7,847 windows, 16,761 valid alpha, and zero
+  missing, nonfinite or relative-power mismatch rows. Batch result:
+  `COMPLETE`; per-run recorded processing spans 2026-10-29 05:58:38.232Z to
+  06:00:04.610Z, with 81.189 s summed run elapsed time.
+- The independent validator reconstructs alpha from each source MAT's
+  `stage2Fits` without calling the exporter, checks every
+  `(run_id,window_id,path_id)` identity and source row order against the
+  frozen Stage2 ledger, and compares source attributes and combined/per-run
+  tables. Result: 83/83 PASS; zero identity/order, source-SHA, nonfinite,
+  numeric or power mismatches; Stage2 attribute max difference 0 and maximum
+  independently reconstructed complex-component absolute difference
+  `4.9960036108132044e-16`.
+- Final MATLAB targeted tests passed 9/9 (exporter 4, ledger 3, batch and
+  validator integration 2); the Python preflight and compact-summary tests
+  passed 5/5. Logs and exact output summaries are retained in the full E:
+  namespace. The first validator invocation used an incorrect ledger path and
+  failed before validation; it made no output changes. The corrected actual
+  frozen-ledger path produced the PASS report; the failed invocation remains
+  preserved and is not counted as a pass.
+- Alpha is the complex least-squares coefficient from the frozen SAGE
+  `stage2Fits`, for a navigation-wiped, mean-removed and RMS-normalized 40 ms
+  window and local code-delay/Doppler replica reference. It is not absolute
+  calibrated gain. The per-window relationship to Stage2 relative power was
+  checked for all rows. Cross-window phase coherence, continuous physical
+  path tracking and absolute receiver calibration remain unproven.
+
+**WP5 disposition:** the full Stage2 path-level alpha dataset is accepted as
+a candidate WP6 input after scientific review; no complete CIR/PDP feature
+join or integrated model is claimed. **Next and only priority:** Commander
+reviews the full export and validation evidence and then decides whether to
+authorize WP6 alpha/CIR association. WP4 Gate E/F remains an independent
+pending gate; do not start WP6 automatically.

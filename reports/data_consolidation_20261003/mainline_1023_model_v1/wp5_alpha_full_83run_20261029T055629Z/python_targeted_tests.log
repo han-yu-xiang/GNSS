@@ -1,0 +1,13 @@
+command=py -3 -m unittest scripts.channel_modeling.tests.test_summarize_wp5_alpha_full_batch scripts.channel_modeling.tests.test_prepare_wp5_alpha_full_cohort -v
+started_utc=2026-10-29T06:11:18.3389932Z
+test_binds_per_run_outputs_to_input_and_independent_validation (scripts.channel_modeling.tests.test_summarize_wp5_alpha_full_batch.SummarizeWp5AlphaFullBatchTests.test_binds_per_run_outputs_to_input_and_independent_validation) ... ok
+test_refuses_to_overwrite_existing_report_directory (scripts.channel_modeling.tests.test_summarize_wp5_alpha_full_batch.SummarizeWp5AlphaFullBatchTests.test_refuses_to_overwrite_existing_report_directory) ... ok
+test_builds_identity_bound_manifest_from_receipts_and_ledger (scripts.channel_modeling.tests.test_prepare_wp5_alpha_full_cohort.PrepareWp5AlphaFullCohortTests.test_builds_identity_bound_manifest_from_receipts_and_ledger) ... ok
+test_records_one_run_pin_failure_without_rewriting_its_source (scripts.channel_modeling.tests.test_prepare_wp5_alpha_full_cohort.PrepareWp5AlphaFullCohortTests.test_records_one_run_pin_failure_without_rewriting_its_source) ... ok
+test_rejects_wrong_global_ledger_pin_before_creating_output (scripts.channel_modeling.tests.test_prepare_wp5_alpha_full_cohort.PrepareWp5AlphaFullCohortTests.test_rejects_wrong_global_ledger_pin_before_creating_output) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.397s
+
+OK
+exit_code=0 finished_utc=2026-10-29T06:11:19.0497226Z

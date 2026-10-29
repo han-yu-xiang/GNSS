@@ -3,9 +3,9 @@
 **项目根目录：** `E:\GNSS_Multipath_Project`  
 **论文状态唯一来源：** 本文件  
 **长期建模路线与 WP0–WP6 状态权威来源：** `docs/ACADEMIC_CHANNEL_MODELING_MASTER_PLAN.md`（本文件继续负责论文事实、科学解释和论文状态）
-**最后审计时点：** 2026-10-28（Asia/Shanghai；Mainline Stage2 WP3独立科学审阅见第26节，历史Stage3与WP1 V0口径保留）
+**最后审计时点：** 2026-10-29 14:14 +08（Asia/Shanghai；WP5 全量复数 alpha 导出及独立验收见第28节；早期试点记录见第27节）
 **面向对象：** 论文写作者、科研人员、方法分析人员  
-**当前 Mainline 新增研究状态：** Stage2探索V0、WP2稳健性分析及WP3 Urban/Mountain-Valley与仰角条件化分析均已完成并带限制。WP3独立审阅为 `PASS_WITH_LIMITATIONS`：建议保留逐参数全局M0工作基线，M1无稳定场景外收益，GSV相对功率M2只作探索性关联。总体限于Stage2筛选候选总体。完整CIR关联、Gate E/F、WP6完整模型和Phase-2仍未完成，不得据此宣称完整信道生成模型。
+**当前 Mainline 新增研究状态：** Stage2探索V0、WP2稳健性分析、WP3有界条件化分析均已完成并带限制；WP3独立审阅为 `PASS_WITH_LIMITATIONS`。WP5全量复数 alpha 导出及独立验收为83/83 run PASS，16,761/16,761路径均有有效 alpha，8,914 MPC及7,847直达参考均保留；仍受Stage2选择、窗口归一化和未验证跨窗口相位相干限制。此结果仅为后续WP6候选路径级输入，不等于完整CIR关联、Gate E/F或WP6完整模型。Phase-2仍未开展，不得宣称完整信道生成模型。
 **研究阶段：** accuracy-first full SAGE 冻结批次及独立批后 QA 已完成；Phase-1 的 Stage3 传统统计建模和 scientific closure 已完成并通过 QA（带明确限制）。coverage-complete event/path database、通用 channel-parameter database、Phase-2 AI 和完整暗室生成器仍是独立后续范围。
 
 > 本文只负责科学问题、贡献、实验解释、论文可写事实、图表、限制和未来路线。工程文件路径、执行门禁、hash和receipt的唯一状态源是 `docs/GNSS_SAGE_ENGINEERING_HANDOFF_CURRENT.md`。本文不得把设计、计划或gold前预测写成实验结果。
@@ -1645,3 +1645,42 @@ coherence remains unverified. The 83-run export and independent full-coverage
 acceptance remain pending. Do not add this pilot's coefficient magnitudes or
 phases to pooled scientific model estimates or claim a complete CIR/PDP
 feature join on this evidence alone.
+
+## 28. WP5 full Stage2 complex-alpha dataset and scientific boundary (2026-10-29)
+
+The 83-run Stage2 complex-alpha export and independent validation passed for
+the frozen 13-scene cohort. Across 7,847 Stage2-selected windows, all 16,761
+path rows were preserved: 8,914 MPCs and 7,847 direct-reference paths. All
+16,761 have finite complex alpha; no missing/invalid coefficients, path-key
+identity/order errors, Stage2 attribute changes, or within-window
+relative-power mismatches were found. Independent reconstruction from the
+source MATs had maximum absolute real/imaginary component difference
+`4.9960e-16`. The full acceptance report and compact per-run hash/status
+manifest are at
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp5_alpha_full_83run_20261029T055629Z/`.
+
+These results establish a reproducible data-integrity result for exporting
+the stored Stage2 coefficients; they are not an estimate of a new population
+distribution and do not establish a physical model. Each complex coefficient
+is the frozen SAGE least-squares coefficient relative to a local
+code-delay/Doppler replica and an individually navigation-wiped,
+mean-removed, RMS-normalized 40 ms window. Therefore:
+
+- coefficient magnitude can describe relative complex path strength within
+  the represented normalized window, but not absolute calibrated receive
+  gain or power;
+- principal phase is recorded in radians and is valid as a per-window complex
+  descriptor, but cross-window phase coherence, continuity, and physical
+  reflector tracking have not been established;
+- Stage2 relative power agrees with the same-window squared-alpha ratio for
+  these records, but remains relative rather than absolute;
+- the population is conditional on Stage2 selection; unselected Stage0
+  windows are not represented as zero-path observations.
+
+WP5 is `COMPLETED_WITH_LIMITATIONS` for full-cohort alpha extraction and
+path-level provenance. Seventy-eight MAT hashes were pinned by historical
+receipts; five older receipts lack a per-file MAT pin, so those source bytes
+were rehashed and bound only for this export. WP4 Gate E/F remains independent
+and pending, and no CIR/PDP join or WP6 model has been accepted. Do not pool
+the coefficients as calibrated amplitudes, infer coherent evolution, or
+claim a complete channel-generation model from this export alone.
