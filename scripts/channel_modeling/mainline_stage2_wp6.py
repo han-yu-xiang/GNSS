@@ -7,6 +7,7 @@ It is not a model of all Stage0 windows.
 from __future__ import annotations
 
 import hashlib
+import json
 from pathlib import Path
 import sys
 
@@ -22,6 +23,7 @@ from mainline_stage2_wp3 import (  # noqa: E402
     _distribution_logpdf as _wp3_distribution_logpdf,
     _distribution_ppf as _wp3_distribution_ppf,
     _fit_static as _wp3_fit_static,
+    make_scene_folds as _wp3_make_scene_folds,
     scene_window_weights as _wp3_scene_window_weights,
 )
 
@@ -51,7 +53,7 @@ WINDOW_REQUIRED = {
 }
 MPC_REQUIRED = {
     "run_id", "window_id", "path_id", "scene_id", "is_multipath",
-    "modeling_role", "excess_delay_chips", "doppler_offset_hz",
+    "modeling_role", "excess_delay_samples", "excess_delay_chips", "doppler_offset_hz",
     "relative_power_db",
 }
 
@@ -154,6 +156,11 @@ def validate_wp6_population(windows, mpcs, expected_contract=None):
 
     for column in ("excess_delay_chips", "doppler_offset_hz", "relative_power_db"):
         _numeric(mpcs, column, "MPCs")
+    delay_samples = _numeric(mpcs, "excess_delay_samples", "MPCs")
+    delay_chips = _numeric(mpcs, "excess_delay_chips", "MPCs")
+    if not np.allclose(delay_samples.to_numpy(), 10.0 * delay_chips.to_numpy(),
+                       rtol=1e-9, atol=1e-8):
+        raise ValueError("excess_delay_samples does not match the frozen 10 samples/chip conversion")
     multipath = pd.to_numeric(mpcs["is_multipath"], errors="coerce")
     if multipath.isna().any() or not multipath.eq(1).all():
         raise ValueError("MPC input includes a row not identified as a multipath path")
@@ -710,3 +717,270 @@ def evaluate_nested_mark_loso(mpcs):
         "copula_diagnostics": pd.DataFrame(copula_rows),
         "inner_scores": pd.concat(inner_frames, ignore_index=True) if inner_frames else pd.DataFrame(),
     }
+
+
+def derive_window_delay_summaries(windows, mpcs):
+    """Derive relative-power delay moments and retain every Stage2 window.
+
+    The direct reference contributes unit relative power at zero excess delay.
+    MPC delay uses the frozen Stage2 sample coordinate (10 samples/chip), and
+    relative dB power is converted to linear power relative to that reference.
+    """
+    required_windows = set(WINDOW_KEY) | {
+        "scene_id", "stage2_mpc_count", "pdp_peak_at_grid_boundary",
+        "pdp_rms_width_code_delay_samples", "pdp_peak_minus_sage_direct_delay_samples",
+    }
+    _require_columns(windows, required_windows, "window PDP table")
+    _require_columns(mpcs, set(MPC_KEY) | {
+        "scene_id", "excess_delay_samples", "excess_delay_chips", "relative_power_db",
+    }, "MPC delay table")
+    result = _canonicalize_keys(windows, (*WINDOW_KEY, "scene_id"), "window PDP table")
+    paths = _canonicalize_keys(mpcs, (*MPC_KEY, "scene_id"), "MPC delay table")
+    if result.duplicated(list(WINDOW_KEY)).any():
+        raise ValueError("duplicate selected-window identity in PDP table")
+    if paths.duplicated(list(MPC_KEY)).any():
+        raise ValueError("duplicate MPC identity in delay table")
+    counts = _numeric(result, "stage2_mpc_count", "window PDP table")
+    if not np.array_equal(counts.to_numpy(), np.rint(counts.to_numpy())) or (counts < 0).any():
+        raise ValueError("stage2_mpc_count must be a nonnegative integer")
+    delay_samples = _numeric(paths, "excess_delay_samples", "MPC delay table").to_numpy()
+    delay_chips = _numeric(paths, "excess_delay_chips", "MPC delay table").to_numpy()
+    relative_db = _numeric(paths, "relative_power_db", "MPC delay table").to_numpy()
+    if not np.allclose(delay_samples, 10.0 * delay_chips, rtol=1e-9, atol=1e-8):
+        raise ValueError("MPC delay samples disagree with the frozen 10 samples/chip conversion")
+    path_keys = paths.set_index(list(WINDOW_KEY)).index
+    window_keys = result.set_index(list(WINDOW_KEY)).index
+    extra = path_keys.difference(window_keys)
+    if len(extra):
+        raise ValueError(f"MPC rows reference unknown selected windows: {list(extra[:3])}")
+    window_scene = result.set_index(list(WINDOW_KEY))["scene_id"]
+    path_scene = paths.set_index(list(WINDOW_KEY))["scene_id"]
+    scene_join = path_scene.to_frame("path_scene").join(window_scene.rename("window_scene"), how="left")
+    if not scene_join.path_scene.eq(scene_join.window_scene).all():
+        raise ValueError("MPC scene identity disagrees with Stage2 window scene")
+    observed_counts = paths.groupby(list(WINDOW_KEY), sort=False).size().reindex(window_keys, fill_value=0)
+    declared_counts = counts.astype(int).to_numpy()
+    if not np.array_equal(observed_counts.to_numpy(dtype=int), declared_counts):
+        raise ValueError("MPC path rows do not reconcile with stage2_mpc_count")
+
+    linear_power = np.power(10.0, relative_db / 10.0)
+    if not np.isfinite(linear_power).all() or (linear_power < 0).any():
+        raise ValueError("relative MPC powers cannot be represented as finite linear weights")
+    paths = paths.copy()
+    paths["_delay_samples"] = delay_samples
+    paths["_relative_power"] = linear_power
+    grouped = {identity: group for identity, group in paths.groupby(list(WINDOW_KEY), sort=False)}
+
+    centroids, spreads, power_sums, statuses = [], [], [], []
+    for row in result.itertuples(index=False):
+        identity = (getattr(row, "run_id"), getattr(row, "window_id"))
+        group = grouped.get(identity)
+        if group is None or group.empty:
+            centroid = spread = 0.0
+            total_power = 1.0
+            status = "DIRECT_ONLY_STAGE2_SELECTED_WINDOW"
+        else:
+            delays = np.concatenate(([0.0], group["_delay_samples"].to_numpy(dtype=float)))
+            powers = np.concatenate(([1.0], group["_relative_power"].to_numpy(dtype=float)))
+            total_power = float(powers.sum())
+            if not np.isfinite(total_power) or total_power <= 0:
+                raise ValueError(f"nonpositive/nonfinite relative power sum for window {identity}")
+            centroid = float(np.dot(powers, delays) / total_power)
+            spread = float(np.sqrt(np.dot(powers, (delays - centroid) ** 2) / total_power))
+            status = "SAGE_RELATIVE_DELAY_MOMENTS_DERIVED"
+        centroids.append(centroid)
+        spreads.append(spread)
+        power_sums.append(total_power)
+        statuses.append(status)
+    result["sage_relative_power_delay_centroid_samples"] = centroids
+    result["sage_relative_power_delay_rms_samples"] = spreads
+    result["sage_direct_plus_mpc_relative_power_sum"] = power_sums
+    result["sage_delay_summary_status"] = statuses
+    result["sage_delay_summary_semantics"] = (
+        "DIRECT_REFERENCE_UNIT_POWER_AT_ZERO_PLUS_MPC_RELATIVE_POWER; STAGE2_SELECTED WINDOWS")
+    return result
+
+
+def make_wp6_scene_folds(windows, mpcs):
+    """Apply the WP3 complete-scene fold helper to all selected windows.
+
+    Environment labels are mapped from the frozen MPC table at scene level;
+    zero-MPC selected windows stay in the window table and fold denominator.
+    """
+    _require_columns(mpcs, {"scene_id", "environment_class"}, "MPC scene labels")
+    mapping = mpcs[["scene_id", "environment_class"]].drop_duplicates().copy()
+    mapping["scene_id"] = mapping["scene_id"].astype("string").str.strip()
+    mapping["environment_class"] = mapping["environment_class"].astype("string").str.strip()
+    if mapping.scene_id.duplicated().any():
+        raise ValueError("a scene_id maps to multiple environment classes")
+    enriched = windows.copy()
+    if "environment_class" in enriched.columns:
+        enriched = enriched.drop(columns="environment_class")
+    enriched = enriched.merge(mapping, on="scene_id", how="left", validate="many_to_one")
+    if enriched.environment_class.isna().any():
+        missing = sorted(enriched.loc[enriched.environment_class.isna(), "scene_id"].astype(str).unique())
+        raise ValueError(f"selected windows lack an MPC-derived scene environment: {missing}")
+    return _wp3_make_scene_folds(enriched)
+
+
+def _normalise_boundary_flags(values):
+    result = []
+    for value in values:
+        if isinstance(value, (bool, np.bool_)):
+            result.append(bool(value))
+        elif isinstance(value, (int, np.integer, float, np.floating)) and value in (0, 1):
+            result.append(bool(value))
+        elif str(value).strip().lower() in {"true", "1"}:
+            result.append(True)
+        elif str(value).strip().lower() in {"false", "0"}:
+            result.append(False)
+        else:
+            raise ValueError(f"invalid PDP boundary flag: {value!r}")
+    return np.asarray(result, dtype=bool)
+
+
+def _fit_window_regression(train, target, predictor):
+    y = pd.to_numeric(train[target], errors="coerce").to_numpy(dtype=float)
+    x = pd.to_numeric(train[predictor], errors="coerce").to_numpy(dtype=float)
+    valid = np.isfinite(x) & np.isfinite(y)
+    if not valid.any():
+        return {"status": "NO_FINITE_TRAINING_RESPONSE", "training_n": 0}
+    x_fit, y_fit = x[valid], y[valid]
+    baseline_mean = float(y_fit.mean())
+    fit = {"status": "PASS", "training_n": int(len(y_fit)), "baseline_mean": baseline_mean,
+           "training_response_missing_n": int(len(y) - len(y_fit))}
+    if len(y_fit) < 2 or np.ptp(x_fit) <= np.finfo(float).eps * max(1.0, float(np.max(np.abs(x_fit)))):
+        fit.update(linear_status="UNIDENTIFIABLE_CONSTANT_OR_SMALL_TRAINING_PREDICTOR",
+                   linear_intercept=np.nan, linear_slope=np.nan)
+        return fit
+    design = np.column_stack((np.ones(len(x_fit)), x_fit))
+    coefficients, _, rank, _ = np.linalg.lstsq(design, y_fit, rcond=None)
+    if rank < 2 or not np.isfinite(coefficients).all():
+        fit.update(linear_status="UNIDENTIFIABLE_RANK_DEFICIENT_TRAINING_DESIGN",
+                   linear_intercept=np.nan, linear_slope=np.nan)
+    else:
+        fit.update(linear_status="PASS", linear_intercept=float(coefficients[0]),
+                   linear_slope=float(coefficients[1]))
+    return fit
+
+
+def evaluate_cir_pdp_loso(windows_with_summaries, scene_folds):
+    """Predict accepted CIR/PDP window features from SAGE moments by held scene."""
+    required = set(WINDOW_KEY) | {
+        "scene_id", "stage2_mpc_count", "pdp_peak_at_grid_boundary",
+        "sage_relative_power_delay_centroid_samples", "sage_relative_power_delay_rms_samples",
+        "pdp_rms_width_code_delay_samples", "pdp_peak_minus_sage_direct_delay_samples",
+    }
+    _require_columns(windows_with_summaries, required, "CIR/PDP LOSO windows")
+    frame = _canonicalize_keys(windows_with_summaries, (*WINDOW_KEY, "scene_id"), "CIR/PDP LOSO windows")
+    if frame.duplicated(list(WINDOW_KEY)).any():
+        raise ValueError("duplicate selected-window identity in CIR/PDP LOSO input")
+    frame["_boundary_flag"] = _normalise_boundary_flags(frame.pdp_peak_at_grid_boundary)
+    targets = {
+        "pdp_rms_width_code_delay_samples": "sage_relative_power_delay_rms_samples",
+        "pdp_peak_minus_sage_direct_delay_samples": "sage_relative_power_delay_centroid_samples",
+    }
+    for target in targets:
+        frame[target] = pd.to_numeric(frame[target], errors="coerce")
+        finite = frame[target].dropna().to_numpy(dtype=float)
+        if not np.isfinite(finite).all():
+            raise ValueError(f"{target} contains non-finite response")
+        if target == "pdp_rms_width_code_delay_samples" and (finite < 0).any():
+            raise ValueError("PDP RMS width cannot be negative")
+    for predictor in targets.values():
+        values = pd.to_numeric(frame[predictor], errors="coerce").to_numpy(dtype=float)
+        if not np.isfinite(values).all():
+            raise ValueError(f"SAGE window predictor {predictor} is non-finite")
+
+    expected_keys = set(map(tuple, frame[list(WINDOW_KEY)].itertuples(index=False, name=None)))
+    held_scenes = []
+    tested_keys = []
+    prediction_frames, score_rows = [], []
+    for fold in scene_folds:
+        held_scene = str(fold["held_out_scene_id"])
+        train = _canonicalize_keys(fold["train"], (*WINDOW_KEY, "scene_id"), "LOSO training windows")
+        test = _canonicalize_keys(fold["test"], (*WINDOW_KEY, "scene_id"), "LOSO test windows")
+        if train.duplicated(list(WINDOW_KEY)).any() or test.duplicated(list(WINDOW_KEY)).any():
+            raise ValueError("duplicate window key within a LOSO fold")
+        train_scenes = set(train.scene_id.astype(str))
+        test_scenes = set(test.scene_id.astype(str))
+        if test_scenes != {held_scene}:
+            raise ValueError(f"LOSO fold {held_scene} does not contain exactly its held-out scene")
+        if train_scenes.intersection(test_scenes):
+            raise ValueError(f"scene leakage in CIR/PDP fold {held_scene}")
+        test_keys = list(map(tuple, test[list(WINDOW_KEY)].itertuples(index=False, name=None)))
+        expected_test = set(map(tuple, frame.loc[frame.scene_id.astype(str).eq(held_scene),
+                                                list(WINDOW_KEY)].itertuples(index=False, name=None)))
+        if set(test_keys) != expected_test:
+            raise ValueError(f"held-out fold {held_scene} omits or adds selected windows")
+        expected_train = expected_keys.difference(expected_test)
+        train_keys = set(map(tuple, train[list(WINDOW_KEY)].itertuples(index=False, name=None)))
+        if train_keys != expected_train:
+            raise ValueError(f"training fold {held_scene} omits or adds selected windows")
+        if train_keys.intersection(test_keys):
+            raise ValueError(f"window identity leakage in CIR/PDP fold {held_scene}")
+        held_scenes.append(held_scene)
+        tested_keys.extend(test_keys)
+
+        train_data = frame.merge(train[[*WINDOW_KEY]], on=list(WINDOW_KEY), how="inner", validate="one_to_one")
+        test_data = frame.merge(test[[*WINDOW_KEY]], on=list(WINDOW_KEY), how="inner", validate="one_to_one")
+        for target, predictor in targets.items():
+            model_fit = _fit_window_regression(train_data, target, predictor)
+            x_test = test_data[predictor].to_numpy(dtype=float)
+            baseline = np.full(len(test_data), model_fit.get("baseline_mean", np.nan), dtype=float)
+            if model_fit.get("linear_status") == "PASS":
+                linear = model_fit["linear_intercept"] + model_fit["linear_slope"] * x_test
+            else:
+                linear = np.full(len(test_data), np.nan, dtype=float)
+            y_test = test_data[target].to_numpy(dtype=float)
+            boundary = test_data["_boundary_flag"].to_numpy(dtype=bool)
+            prediction_frames.append(pd.DataFrame({
+                "outer_held_out_scene_id": held_scene,
+                "run_id": test_data.run_id.to_numpy(),
+                "window_id": test_data.window_id.to_numpy(),
+                "scene_id": test_data.scene_id.to_numpy(),
+                "target": target, "predictor": predictor,
+                "stage2_mpc_count": test_data.stage2_mpc_count.to_numpy(),
+                "pdp_peak_at_grid_boundary": boundary,
+                "observed": y_test,
+                "predictor_value": x_test,
+                "baseline_training_mean": model_fit.get("baseline_mean", np.nan),
+                "baseline_prediction": baseline,
+                "linear_intercept": model_fit.get("linear_intercept", np.nan),
+                "linear_slope": model_fit.get("linear_slope", np.nan),
+                "linear_prediction": linear,
+                "baseline_fit_status": model_fit["status"],
+                "linear_fit_status": model_fit.get("linear_status", "NOT_FIT"),
+                "training_scene_ids": json.dumps(
+                    sorted(train.scene_id.astype(str).unique().tolist()), separators=(",", ":")),
+                "training_window_n": int(len(train_data)),
+                "heldout_response_status": np.where(np.isfinite(y_test), "OBSERVED", "MISSING_RESPONSE_RETAINED"),
+            }))
+            for model_name, predicted in (("INTERCEPT", baseline), ("LINEAR", linear)):
+                valid = np.isfinite(y_test) & np.isfinite(predicted)
+                if valid.any():
+                    residual = predicted[valid] - y_test[valid]
+                    status = "SCORED"
+                    mae = float(np.mean(np.abs(residual)))
+                    rmse = float(np.sqrt(np.mean(residual ** 2)))
+                else:
+                    status, mae, rmse = "NO_SCORABLE_HELDOUT_RESPONSE", np.nan, np.nan
+                score_rows.append({
+                    "outer_held_out_scene_id": held_scene, "scene_id": held_scene,
+                    "target": target, "model": model_name,
+                    "window_n": int(len(test_data)),
+                    "scored_window_n": int(valid.sum()),
+                    "missing_or_unscorable_window_n": int(len(test_data) - valid.sum()),
+                    "boundary_peak_window_n": int(boundary.sum()),
+                    "status": status, "mae": mae, "rmse": rmse,
+                    "training_scene_ids": sorted(train.scene_id.astype(str).unique().tolist()),
+                    "training_window_n": int(len(train_data)),
+                    "uncertainty_claim": "PER_SCENE_DESCRIPTIVE; WINDOWS MAY OVERLAP",
+                })
+    if len(held_scenes) != len(set(held_scenes)) or set(held_scenes) != set(frame.scene_id.astype(str).unique()):
+        raise ValueError("scene folds must hold out every selected scene exactly once")
+    if len(tested_keys) != len(expected_keys) or set(tested_keys) != expected_keys:
+        raise ValueError("scene folds do not partition all selected Stage2 windows exactly once")
+    predictions = pd.concat(prediction_frames, ignore_index=True) if prediction_frames else pd.DataFrame()
+    scores = pd.DataFrame(score_rows)
+    return predictions, scores
