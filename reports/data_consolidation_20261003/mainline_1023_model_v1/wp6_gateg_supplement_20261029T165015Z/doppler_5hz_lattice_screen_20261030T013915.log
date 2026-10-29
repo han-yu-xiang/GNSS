@@ -1,0 +1,38 @@
+**********************
+PowerShell transcript start
+Start time: 20261030013929
+Username: TJ-CHANNEL\Jing_
+RunAs User: TJ-CHANNEL\Jing_
+Configuration Name:
+Machine: TJ-CHANNEL (Microsoft Windows NT 10.0.26200.0)
+Host Application: C:\Users\Jing_\.cache\codex-runtimes\codex-primary-runtime\dependencies\native\powershell\pwsh.dll -Command try { [Console]::OutputEncoding=[System.Text.Encoding]::UTF8 } catch {}
+$log="reports/data_consolidation_20261003/mainline_1023_model_v1/wp6_gateg_supplement_20261029T165015Z/doppler_5hz_lattice_screen_20261030T013915.log"; if(Test-Path -LiteralPath $log){throw "Refusing to overwrite diagnostic log"}; Start-Transcript -LiteralPath $log | Out-Null; $screenExit=0; try { "START local=$((Get-Date).ToString("o")) utc=$([DateTimeOffset]::UtcNow.ToString("o"))"; "Method: Import-Csv; group by (run_id,window_id); compare doppler_offset_hz differences to nearest 5-Hz multiple within 1e-6 Hz, using first value per window only as a diagnostic phase."; $csv="reports/data_consolidation_20261003/mainline_1023_model_v1/wp4_gate_ef_final_20261029T181100/stage2_mpc_cir_alpha_linkage.csv"; $rows=Import-Csv -LiteralPath $csv; $groups=$rows | Group-Object run_id,window_id; $multi=$groups | Where-Object {$_.Count -gt 1}; $aligned=0; $bad=0; foreach($g in $multi){$v=@($g.Group | ForEach-Object {[double]::Parse($_.doppler_offset_hz,[Globalization.CultureInfo]::InvariantCulture)});$origin=$v[0];$ok=$true;foreach($x in $v){$d=$x-$origin;$res=$d-5*[math]::Round($d/5);if([math]::Abs($res) -gt 1e-6){$ok=$false;break}};if($ok){$aligned++}else{$bad++}}; [pscustomobject]@{MpcRows=$rows.Count;Windows=$groups.Count;MultiPathWindows=$multi.Count;FullWithinWindowLattice=$aligned;NotFullyAligned=$bad;Percent=[math]::Round(100*$aligned/$multi.Count,3);GridHz=5;ToleranceHz=1e-6}|Format-List; "Source configuration line: "+(Get-Content scripts/sage_pipeline/core/default_sage_configuration.m | Select-String "localDopplerStepHz = 5").Line; "END local=$((Get-Date).ToString("o")) utc=$([DateTimeOffset]::UtcNow.ToString("o"))" } catch { $screenExit=1; $_ | Out-String | Write-Error } finally { Stop-Transcript | Out-Null }; if($screenExit -ne 0){exit $screenExit}
+Process ID: 27832
+PSVersion: 7.6.5
+PSEdition: Core
+GitCommitId: 7.6.5
+OS: Microsoft Windows 10.0.26200
+Platform: Win32NT
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1, 6.0, 7.0
+PSRemotingProtocolVersion: 2.4
+SerializationVersion: 1.1.0.1
+WSManStackVersion: 3.0
+**********************
+START local=2026-10-30T01:39:29.2095855+08:00 utc=2026-10-29T17:39:29.2126124+00:00
+Method: Import-Csv; group by (run_id,window_id); compare doppler_offset_hz differences to nearest 5-Hz multiple within 1e-6 Hz, using first value per window only as a diagnostic phase.
+
+MpcRows                 : 8914
+Windows                 : 4273
+MultiPathWindows        : 2861
+FullWithinWindowLattice : 2753
+NotFullyAligned         : 108
+Percent                 : 96.225
+GridHz                  : 5
+ToleranceHz             : 1E-06
+
+Source configuration line: cfg.localDopplerStepHz = 5;
+END local=2026-10-30T01:39:30.9896696+08:00 utc=2026-10-29T17:39:30.9901192+00:00
+**********************
+PowerShell transcript end
+End time: 20261030013930
+**********************

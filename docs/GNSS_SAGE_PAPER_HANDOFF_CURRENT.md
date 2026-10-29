@@ -3,7 +3,7 @@
 **项目根目录：** `E:\GNSS_Multipath_Project`  
 **论文状态唯一来源：** 本文件  
 **长期建模路线与 WP0–WP6 状态权威来源：** `docs/ACADEMIC_CHANNEL_MODELING_MASTER_PLAN.md`（本文件继续负责论文事实、科学解释和论文状态）
-**最后科学状态更新：** 2026-10-29 23:52 +08（Asia/Shanghai；WP6 最终图表/回归闭合、真实数据重跑与独立复核见第31节。此时点不等于 Task 5 实时进程核查。）
+**最后科学状态更新：** 2026-10-30 01:39 +08（Asia/Shanghai；Gate G 补充科学审阅、独立数值复核与 Doppler 格点筛查见第32节。此时点不等于 Task 5 实时进程核查。）
 **面向对象：** 论文写作者、科研人员、方法分析人员  
 **当前 Mainline 新增研究状态：** Stage2探索V0、WP2稳健性、WP3条件分析、WP4 Gate E/F 和 WP5 全量 alpha 均已完成并带限制；WP3独立审阅=`PASS_WITH_LIMITATIONS`，WP4 Gate E/F=`PASS_WITH_LIMITATIONS`。WP6 已在 83 run/13 scene 的 Stage2总体上完成候选统计分析与独立数值/代码审阅，状态为 `COMPLETED_WITH_LIMITATIONS`，Gate G 仍 `PENDING`。计数结论仅条件于 Stage2 已选窗口；时延 ties 使当前连续 Copula 评分不适用；相对功率家族和计数—标记条件独立性未定。结果不证明完整物理信道、绝对增益、跨窗相位相干或反射体跟踪。Phase-2仍未开展。
 **研究阶段：** accuracy-first full SAGE 冻结批次及独立批后 QA 已完成；Phase-1 的 Stage3 传统统计建模和 scientific closure 已完成并通过 QA（带明确限制）。coverage-complete event/path database、通用 channel-parameter database、Phase-2 AI 和完整暗室生成器仍是独立后续范围。
@@ -1884,3 +1884,40 @@ the joint-model acceptance criterion is explicitly satisfied. No causal,
 universal scene-general dependence, absolute calibrated gain, cross-window
 alpha phase coherence or physical reflector-tracking claim is supported.
 Phase-2 remains `PLANNED_ONLY`; Task 5 was not rechecked or touched.
+
+### Gate G supplemental scientific review (2026-10-30)
+
+The new review preserved the 83-run/13-scene Stage2 population (7,847 selected
+windows, 8,914 MPC) and found useful but bounded count-stratum evidence. The
+count-conditional marginal model cannot select an excess-delay family for
+N=1 in any outer scene fold; its apparent overall paired improvement excludes
+those 1,412 MPC. N=2 is effectively flat relative to M0, while N=3 shows a
+positive descriptive scene-macro difference but has a minimum of only three
+windows in one scene. Path-ID order is algorithmic delay rank: neighboring
+delay ranks are separated by the estimator's 0.1-chip minimum and relative
+power is consistently lower at later ranks. These observations do not support
+an unqualified exchangeable/conditional-iid path-set generator.
+
+The revised delay score correctly uses mass over each 0.01-chip cell,
+conditional on the 0.10-chip minimum. However, source/data inspection found a
+material unresolved issue for Doppler: the SAGE local refinement uses a 5-Hz
+step; 2,753/2,861 multi-path windows show a window-shifted 5-Hz lattice in
+relative Doppler (1e-6 Hz tolerance), while 108 do not fully align. Since the
+current mixed Copula score still treats Doppler as continuous and exact
+window-specific cells are not independently identified, its held-out values
+are diagnostic only. They establish neither a Copula gain nor no gain. This
+review therefore does not accept a scene-out joint generator and keeps Gate G
+`PENDING`; WP6 remains `COMPLETED_WITH_LIMITATIONS`.
+
+**Paper boundary:** report the Stage2-selection-conditional empirical count,
+supported marginal-family frequencies, count-stratum fit failures, path-rank
+diagnostics, and the Copula score limitation. Do not present current Copula
+ranking as a confirmed predictive comparison; do not claim Stage0-unconditional
+multipath rates, iid path marks, physical path identity, absolute gain,
+cross-window alpha coherence, or a validated time-varying physical channel.
+The sole next priority is to recover exact per-window Doppler score cells from
+frozen SAGE metadata/source and re-evaluate the same nested scene-LOSO pairs;
+if that cannot be established independently, keep dependence unverified.
+
+Full review and reproducibility evidence:
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp6_gateg_supplement_20261029T165015Z/WP6_GateG最终科学审阅报告.md`.

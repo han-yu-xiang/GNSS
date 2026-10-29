@@ -1,0 +1,29 @@
+{
+  "diagnostic": "within-window shifted 5-Hz lattice alignment screen",
+  "performed_at_local": "2026-10-30T01:39:29.2095855+08:00",
+  "console_log": "doppler_5hz_lattice_screen_20261030T013915.log",
+  "input": {
+    "file": "reports/data_consolidation_20261003/mainline_1023_model_v1/wp4_gate_ef_final_20261029T181100/stage2_mpc_cir_alpha_linkage.csv",
+    "sha256": "8db941db20e684108d13583d67ee20cde543bf2a36ca01013d1288b48231c80b",
+    "rows": 8914,
+    "group_key": ["run_id", "window_id"],
+    "field": "doppler_offset_hz"
+  },
+  "screen": {
+    "step_hz": 5.0,
+    "tolerance_hz": 1e-6,
+    "phase_origin_rule": "first observed relative-Doppler value in each window; this is a diagnostic alignment origin, not an independently known estimator grid origin",
+    "windows_with_multiple_mpc": 2861,
+    "all_values_aligned_to_window_shifted_lattice": 2753,
+    "not_fully_aligned": 108,
+    "aligned_percent": 96.225
+  },
+  "inspected_repository_source": {
+    "scripts/sage_pipeline/core/default_sage_configuration.m": "eb2a5503675501d1ba8e69db5d5fc365ee4dbf8dab5780de070a8b053e35b2bb",
+    "scripts/sage_pipeline/core/run_sage_stage1_stage4_core.m": "8fd899a29cc52a8d864d52d570f6fbdf1eefde2545c4ffd7c23f3579612601e8",
+    "configuration_value": "cfg.localDopplerStepHz = 5",
+    "provenance_note": "These are the inspected repository source hashes; this screen does not independently establish that each historical run used these exact source-file hashes."
+  },
+  "interpretation": "The data show a material within-window lattice pattern consistent with 5-Hz search quantization, but the window-specific scoring cells and exact grid origin are not independently identified. The 108 non-aligning windows also require explanation. Do not use a phase inferred from held-out path marks as their scoring origin.",
+  "production_data_modified": false
+}

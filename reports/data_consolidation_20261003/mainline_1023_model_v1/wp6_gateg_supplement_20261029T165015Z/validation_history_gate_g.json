@@ -1,0 +1,41 @@
+{
+  "note": "Sanitized summary of early failed validation attempts retained in the local analysis package; the raw local-path records remain there unchanged.",
+  "failed_attempts": [
+    {
+      "record": "validation_record.json",
+      "status": "FAIL",
+      "validated_at_utc": "2026-10-29T17:07:06.789436Z",
+      "exit_code": 1,
+      "error": "AttributeError: Pandas row object lacked expected excess_delay_chips attribute"
+    },
+    {
+      "record": "validation_attempt_20261029T170838690072Z.json",
+      "status": "FAIL",
+      "validated_at_local": "2026-10-30T01:10:44+08:00",
+      "exit_code": 1,
+      "error": "C1 score recomputation produced zero compared rows; saved NaN/expected-NaN cells disagreed for selected held-out N strata"
+    },
+    {
+      "record": "validation_attempt_20261029T171238703464Z.json",
+      "status": "FAIL",
+      "validated_at_local": "2026-10-30T01:15:00+08:00",
+      "exit_code": 1,
+      "error": "Held-out window score identity/count reconciliation failed"
+    }
+  ],
+  "subsequent_successful_attempts": [
+    {
+      "record": "validation_attempt_20261029T171552706465Z.json",
+      "status": "PASS_WITH_LIMITATIONS",
+      "validated_at_local": "2026-10-30T01:18:18+08:00",
+      "failed_checks": 0
+    },
+    {
+      "record": "validation_attempt_20261029T172834757521Z.json",
+      "status": "PASS_WITH_LIMITATIONS",
+      "validated_at_local": "2026-10-30T01:30:58+08:00",
+      "failed_checks": 0
+    }
+  ],
+  "interpretation": "The final successful validators do not erase the failed attempts; the early defects were corrected and the complete 39-check validation was rerun against the same frozen input hashes."
+}
