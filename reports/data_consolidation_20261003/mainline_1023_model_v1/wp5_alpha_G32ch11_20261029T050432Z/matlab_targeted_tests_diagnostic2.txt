@@ -1,0 +1,198 @@
+MATLAB_VERSION=25.1.0.2973910 (R2025a) Update 1
+正在运行 test_export_stage2_complex_alpha
+
+================================================================================
+test_export_stage2_complex_alpha/testKeepsEveryStage2PathAndMarksUnavailableAlpha 中出现错误并且未运行完毕。
+    --------
+    错误 ID:
+    --------
+    'MATLAB:UndefinedFunction'
+    -----------
+    错误详细信息:
+    -----------
+    未定义与 'struct' 类型的输入参数相对应的函数 'export_stage2_complex_alpha'。
+
+    出错 test_export_stage2_complex_alpha>testKeepsEveryStage2PathAndMarksUnavailableAlpha (第 44 行)
+    export_stage2_complex_alpha(stage2MatPath, selectedPathsPath, ...
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+================================================================================
+.
+================================================================================
+test_export_stage2_complex_alpha/testRetainsNonfiniteAlphaWithExplicitReason 中出现错误并且未运行完毕。
+    --------
+    错误 ID:
+    --------
+    'MATLAB:UndefinedFunction'
+    -----------
+    错误详细信息:
+    -----------
+    未定义与 'struct' 类型的输入参数相对应的函数 'export_stage2_complex_alpha'。
+
+    出错 test_export_stage2_complex_alpha>testRetainsNonfiniteAlphaWithExplicitReason (第 108 行)
+    export_stage2_complex_alpha(stage2MatPath, selectedPathsPath, ...
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+================================================================================
+.
+================================================================================
+test_export_stage2_complex_alpha/testRejectsDuplicateOrIncompleteSelectedPathIdentity 中验证失败。
+    --------
+    框架诊断:
+    --------
+    verifyError 失败。
+    --> 该函数引发错误的异常。
+
+        实际异常:
+            'MATLAB:UndefinedFunction'
+        预期的异常:
+            'GNSS:SAGE:DuplicateSelectedPathIdentity'
+    --> 实际错误报告:
+            未定义与 'struct' 类型的输入参数相对应的函数 'export_stage2_complex_alpha'。
+
+            出错 test_export_stage2_complex_alpha>@()export_stage2_complex_alpha(stage2MatPath,selectedPathsPath,fullfile(tempRoot,'alpha.csv'),sampleProvenance()) (第 129 行)
+            testCase.verifyError(@() export_stage2_complex_alpha( ...
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    计算的函数:
+      包含以下值的 function_handle:
+
+        @()export_stage2_complex_alpha(stage2MatPath,selectedPathsPath,fullfile(tempRoot,'alpha.csv'),sampleProvenance())
+    --------
+    堆栈信息:
+    --------
+    位置: C:\Users\Jing_\.codex\worktrees\gnss-cir\GNSS_Multipath_Project\scripts\channel_modeling\tests\test_export_stage2_complex_alpha.m (testRejectsDuplicateOrIncompleteSelectedPathIdentity)，位置: 129
+================================================================================
+.
+================================================================================
+test_export_stage2_complex_alpha/testRefusesToOverwriteExistingOutput 中验证失败。
+    --------
+    框架诊断:
+    --------
+    verifyError 失败。
+    --> 该函数引发错误的异常。
+
+        实际异常:
+            'MATLAB:UndefinedFunction'
+        预期的异常:
+            'GNSS:SAGE:AlphaOutputCollision'
+    --> 实际错误报告:
+            未定义与 'struct' 类型的输入参数相对应的函数 'export_stage2_complex_alpha'。
+
+            出错 test_export_stage2_complex_alpha>@()export_stage2_complex_alpha(stage2MatPath,selectedPathsPath,outputCsvPath,sampleProvenance()) (第 149 行)
+            testCase.verifyError(@() export_stage2_complex_alpha( ...
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    计算的函数:
+      包含以下值的 function_handle:
+
+        @()export_stage2_complex_alpha(stage2MatPath,selectedPathsPath,outputCsvPath,sampleProvenance())
+    --------
+    堆栈信息:
+    --------
+    位置: C:\Users\Jing_\.codex\worktrees\gnss-cir\GNSS_Multipath_Project\scripts\channel_modeling\tests\test_export_stage2_complex_alpha.m (testRefusesToOverwriteExistingOutput)，位置: 149
+================================================================================
+.
+已完成 test_export_stage2_complex_alpha
+__________
+
+正在运行 test_build_mpc_modeling_ledger
+
+================================================================================
+test_build_mpc_modeling_ledger/testKeepsDirectTransientPersistentAndConfirmedClasses 中出现错误并且未运行完毕。
+    --------
+    错误 ID:
+    --------
+    'MATLAB:UndefinedFunction'
+    -----------
+    错误详细信息:
+    -----------
+    未定义与 'struct' 类型的输入参数相对应的函数 'build_mpc_modeling_ledger'。
+
+    出错 test_build_mpc_modeling_ledger>testKeepsDirectTransientPersistentAndConfirmedClasses (第 50 行)
+    build_mpc_modeling_ledger(stage2Path, stage3Path, reliablePath, ...
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+================================================================================
+.
+================================================================================
+test_build_mpc_modeling_ledger/testRetainsStage2PathWhenAlphaIsMissing 中出现错误并且未运行完毕。
+    --------
+    错误 ID:
+    --------
+    'MATLAB:UndefinedFunction'
+    -----------
+    错误详细信息:
+    -----------
+    未定义与 'struct' 类型的输入参数相对应的函数 'build_mpc_modeling_ledger'。
+
+    出错 test_build_mpc_modeling_ledger>testRetainsStage2PathWhenAlphaIsMissing (第 119 行)
+    result = build_mpc_modeling_ledger(paths{1}, paths{2}, paths{3}, ...
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+================================================================================
+.
+================================================================================
+test_build_mpc_modeling_ledger/testRejectsAmbiguousStage3Identity 中验证失败。
+    --------
+    框架诊断:
+    --------
+    verifyError 失败。
+    --> 该函数引发错误的异常。
+
+        实际异常:
+            'MATLAB:UndefinedFunction'
+        预期的异常:
+            'GNSS:SAGE:AmbiguousStage3Mapping'
+    --> 实际错误报告:
+            未定义与 'struct' 类型的输入参数相对应的函数 'build_mpc_modeling_ledger'。
+
+            出错 test_build_mpc_modeling_ledger>@()build_mpc_modeling_ledger(paths{1},paths{2},paths{3},paths{4},paths{5},paths{6},outputPath,provenance) (第 175 行)
+            testCase.verifyError(@() build_mpc_modeling_ledger( ...
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    计算的函数:
+      包含以下值的 function_handle:
+
+        @()build_mpc_modeling_ledger(paths{1},paths{2},paths{3},paths{4},paths{5},paths{6},outputPath,provenance)
+    --------
+    堆栈信息:
+    --------
+    位置: C:\Users\Jing_\.codex\worktrees\gnss-cir\GNSS_Multipath_Project\scripts\channel_modeling\tests\test_build_mpc_modeling_ledger.m (testRejectsAmbiguousStage3Identity)，位置: 175
+================================================================================
+.
+已完成 test_build_mpc_modeling_ledger
+__________
+
+失败摘要:
+
+     Name                                                                                   Failed  Incomplete  原因
+    ======================================================================================================================
+     test_export_stage2_complex_alpha/testKeepsEveryStage2PathAndMarksUnavailableAlpha        X         X       出错。
+    ----------------------------------------------------------------------------------------------------------------------
+     test_export_stage2_complex_alpha/testRetainsNonfiniteAlphaWithExplicitReason             X         X       出错。
+    ----------------------------------------------------------------------------------------------------------------------
+     test_export_stage2_complex_alpha/testRejectsDuplicateOrIncompleteSelectedPathIdentity    X                 验证失败。
+    ----------------------------------------------------------------------------------------------------------------------
+     test_export_stage2_complex_alpha/testRefusesToOverwriteExistingOutput                    X                 验证失败。
+    ----------------------------------------------------------------------------------------------------------------------
+     test_build_mpc_modeling_ledger/testKeepsDirectTransientPersistentAndConfirmedClasses     X         X       出错。
+    ----------------------------------------------------------------------------------------------------------------------
+     test_build_mpc_modeling_ledger/testRetainsStage2PathWhenAlphaIsMissing                   X         X       出错。
+    ----------------------------------------------------------------------------------------------------------------------
+     test_build_mpc_modeling_ledger/testRejectsAmbiguousStage3Identity                        X                 验证失败。
+                                              Name                                               Passed    Failed    Incomplete    Duration      Details
+    _________________________________________________________________________________________    ______    ______    __________    ________    ____________
+
+    {'test_export_stage2_complex_alpha/testKeepsEveryStage2PathAndMarksUnavailableAlpha'    }    false     true        true         1.3075     {1×1 struct}
+    {'test_export_stage2_complex_alpha/testRetainsNonfiniteAlphaWithExplicitReason'         }    false     true        true        0.18738     {1×1 struct}
+    {'test_export_stage2_complex_alpha/testRejectsDuplicateOrIncompleteSelectedPathIdentity'}    false     true        false        4.3238     {1×1 struct}
+    {'test_export_stage2_complex_alpha/testRefusesToOverwriteExistingOutput'                }    false     true        false       0.94749     {1×1 struct}
+    {'test_build_mpc_modeling_ledger/testKeepsDirectTransientPersistentAndConfirmedClasses' }    false     true        true        0.74475     {1×1 struct}
+    {'test_build_mpc_modeling_ledger/testRetainsStage2PathWhenAlphaIsMissing'               }    false     true        true        0.27097     {1×1 struct}
+    {'test_build_mpc_modeling_ledger/testRejectsAmbiguousStage3Identity'                    }    false     true        false       0.71435     {1×1 struct}
+
+{错误使用 assert
+测试会话中有至少一个测试失败。
+
+出错 matlab.unittest.internal.BaseTestResult/assertSuccess (第 126 行)
+             assert(~any([resultArray.Failed]),message('MATLAB:unittest:TestResult:UnsuccessfulRun'));
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+}
+ERROR: MATLAB error Exit Status: 0x00000001

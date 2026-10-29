@@ -2,9 +2,9 @@
 
 **项目根目录：** `E:\GNSS_Multipath_Project`  
 **工程状态唯一来源：** 本文件  
-**最后审计时点：** 2026-10-28 23:30（Asia/Shanghai；WP3独立科学审阅及Task 5只读进程/audit样本见第106–107节；Task 5记录均为时间点样本）
+**最后审计时点：** 2026-10-29 13:15（Asia/Shanghai；Task 5 successor audit `COMPLETE`、80/80 PASS、completion receipt `PASS`；WP5 定向 MATLAB 测试 7/7 PASS，G32/ch11 单 run alpha pilot 独立验收 PASS，详见第111节。所有运行状态均为时间点证据。）
 **面向对象：** Codex、AI Agent、开发人员、实验执行人员  
-**当前 Mainline 新增状态：** Stage2 WP3 有界真实数据分析完成，独立科学审阅为 `PASS_WITH_LIMITATIONS`；建议 per-parameter global M0 工作基线，M1 不作为已验证预测增益，GSV 相对功率 M2 仅探索性保留。报告见第106–107节。Task 5 在 2026-10-28 23:30 +08 的只读样本为 `RUNNING, 44/80`，当前 G26/ch6，Coordinator/worker/MATLAB 进程与 audit 相符；这只是时间点样本。Gate E/F、完整 CIR 结构模型、WP6 及正式 Gate G 仍待验收；不将旧 Stage3 r3 与新 Stage2 总体合并。
+**当前 Mainline 新增状态：** Stage2 WP3 有界真实数据分析完成，独立科学审阅为 `PASS_WITH_LIMITATIONS`；建议 per-parameter global M0 工作基线，M1 不作为已验证预测增益，GSV 相对功率 M2 仅探索性保留。报告见第106–107节。Task 5 于 2026-10-29 13:12 +08 复核仍为 COMPLETE、80/80 PASS、completion receipt PASS。WP5 两组 MATLAB 定向测试 7/7 PASS；G32/ch11 真实 alpha 导出 344/344 路径成功，227/227 MPC 有效，独立数值与身份验收 PASS。83-run 全量 alpha 导出尚未执行；alpha 校准/跨窗口相位限制、Gate E/F、完整 CIR 结构模型、WP6 及正式 Gate G 仍待验收；不将旧 Stage3 r3 与新 Stage2 总体合并。
 **当前阶段：** accuracy-first full SAGE 主线的冻结 unattended batch 已完成并通过独立批后 QA：57/57 task-level QA ACCEPTED、0 REJECTED；其中 A validation batch 40 个保持 VALIDATED，B/C 正式生产 batch 17 个计入 formal accepted production。当前 formal accepted production 为 26/67（历史 A3 G16 仍为 REJECTED_PROTECTED，不计入）；SAGE 不再自动续跑，database schema/enum/label/derivation v1 已冻结，64-run event/path audit ingest、modeling-context alignment overlay 和 Stage4 path-parameter derivation 已完成并通过独立 QA。G06 legacy 已保留审计但排除建模输入；canonical r3 traditional channel model 及 Phase-1 scientific closure 已完成并通过独立 QA（带明确限制），Phase 2 仍为 planned-only。
 
 > 本文只负责工程事实、文件、输入输出、执行、QA、hash、provenance 和下一步操作。论文科学叙事的唯一状态来源是 `docs/GNSS_SAGE_PAPER_HANDOFF_CURRENT.md`。其他 handoff、设计稿、诊断稿和日报均为历史/专题参考，不再作为独立的当前工程状态源。
@@ -2425,10 +2425,10 @@ The sole long-term route and WP0–WP6 acceptance plan is [`docs/ACADEMIC_CHANNE
 |---|---|---|
 | WP0 data/provenance/state | `IN_PROGRESS` (continuous) | Frozen cohort, Stage2 ledger, geometry and trajectory overlays remain the versioned sources. Keep SAGE cohort and CIR production queue denominators distinct; refresh status from current receipts/snapshots before action. |
 | WP1 SAGE statistics V0 | `COMPLETED_WITH_LIMITATIONS` | 8,914 MPC / 83 runs / 13 scenes; scene-LOSO and whole-scene bootstrap are in the V0 package. Selection is conditional on Stage2; no formal Gate G. |
-| WP2 robustness and statistical closure | `IN_PROGRESS` | Initial LOSO, bootstrap, candidate marginals and count summaries exist. Tail/model-rank sensitivity, additional joint/count analysis and a scoped robustness closure remain. |
-| WP3 environment/geometry/motion conditions | `IN_PROGRESS` | GSV/ephemeris elevation and position overlays are available; initial coverage analyses are complete. Formal support-gated conditional models and spatial inference remain incomplete; 36 existing spatial summaries are insufficient for an independence/range claim. |
-| WP4 CIR/PDP batch and acceptance | `IN_PROGRESS` | Latest local snapshot 2026-10-24 22:10 +08: Task 5 and audit `RUNNING`, 9/80, 0 newly reported PASS in the prior hour, current `run_20261003_F1023_V120_D0121_P2_G28_ch6`, elapsed 4,350 s, monitor `FRESH` (age 5 minutes at collection), E: free 362 GiB, zero newly reported storage errors in the prior hour, and no completion/stop receipt. MATLAB/Coordinator status booleans and last-PASS identity were null; MATLAB PIDs 42528/47340 were listed, Coordinator PID was null. Latest valid progress was 20:57:42 +08; monitor metadata excludes MAT/HDF5 timestamps, so this alone does not establish a stall. The adjacent 21:10 snapshot identified the prior PASS as G25/ch5 at 20:57:24 +08; the 22:10 snapshot retained the completion time but omitted its task identity. Obtain a current process/receipt check before any operational decision. |
-| WP5 complex alpha/path attributes | `IN_PROGRESS` (preparation only) | Candidate files `scripts/channel_modeling/export_stage2_complex_alpha.m` and `scripts/channel_modeling/tests/test_export_stage2_complex_alpha.m` are present as untracked worktree files, but their source pins, tests, real batch output and independent QA were not verified as accepted evidence. No batch alpha delivery is claimed. |
+| WP2 robustness and statistical closure | `COMPLETED_WITH_LIMITATIONS` | Independent acceptance recomputed saved-fold distribution rankings, tail diagnostics, all power-delay folds and selected-window count folds without numerical mismatch. Delay Lognormal ranked first in 13/13 folds; 324/1,026 tail records remain low-support; conditional power-delay model did not improve scene-out prediction; NB2 hit a mean-at-infinity boundary in all folds. See the dated WP2 report/acceptance in the master plan; inference remains descriptive and Stage2-selection conditional. |
+| WP3 environment/geometry/motion conditions | `COMPLETED_WITH_LIMITATIONS` (independent review `PASS_WITH_LIMITATIONS`) | Bounded M0/M1/M2 analysis and direct reconciliation of 891 fold scores/810 paired deltas found no identity, delta or fold-leakage mismatch. Per-parameter global M0 is recommended; M1 has no stable scene-out gain and elevation M2 remains exploratory for relative power. Three Mountain/Valley scenes and clustered/overlapping observations limit inference. See master plan sections 106–107 and WP3 review. |
+| WP4 CIR/PDP batch and acceptance | `IN_PROGRESS` (Task 5 production batch `COMPLETE`; independent Gate E/F pending) | Release `mainline_1023_cir_v1_20261028T120447205Z_task5successor43r1`, request SHA-256 `1b95146f42a2383f26bbef0bfc1679f9096f3778e67c51fa765af953f04474df`; audit `COMPLETE`, 43/43 new PASS plus 37 inherited = 80/80. Completion receipt `PASS`, SHA-256 `c1206c5e900e12db932eefa2b629b051a1efac9013917149f7c166532b8415d8`. The 2026-10-29 13:12 +08 check found no matching production Coordinator/worker/MATLAB; this does not itself complete independent Gate E/F. |
+| WP5 complex alpha/path attributes | `IN_PROGRESS` (G32/ch11 real pilot `PASS`; full 83-run export pending) | MATLAB R2025a targeted tests 7/7 PASS. Independent pilot verification found 344/344 valid alpha (227/227 MPC), 344/344 relative-power checks PASS, no identity/order or Stage2 attribute mismatch. Report and evidence: `reports/data_consolidation_20261003/mainline_1023_model_v1/wp5_alpha_G32ch11_20261029T050432Z/`. Coefficients are window-normalized, not calibrated gain; cross-window phase comparability is unvalidated. |
 | WP6 integrated channel model | `PENDING_DEPENDENCY` | Full CIR feature association, final Gate E/F, validated alpha/path attributes and remaining WP2/WP3 evidence are prerequisites. No complete Mainline channel model or Gate G pass is claimed. |
 
 The older Stage3 r3 Phase-1 model remains a separate completed-with-limitations population. Do not transfer its sample estimates to this 83-run Stage2 V0. Stage3/Stage4 remain attributes, not filters. All 8,914 Stage2 MPC remain in the modeling candidate population; 7,847 selected windows represent 2.746% of 285,752 Stage0-valid windows and do not establish unconditional multipath occurrence.
@@ -2792,6 +2792,72 @@ GSV relative-power M2 only as an exploratory candidate. Full parameter values,
 model equations, pairwise score evidence and the explicit delta-sign reading
 are documented in the independent review report at §107.
 
+## 108. WP5 complex-alpha export preparation and Task 5 process sample (2026-10-29)
+
+WP5 is `IN_PROGRESS` at static implementation-preparation stage only. Review
+of the frozen Stage2 implementation in
+`scripts/sage_pipeline/run_nav_sage_pipeline.m` confirms the candidate
+exporter should read complex coefficients from
+`stage2Fits.models{selectedOrder}.paths(path_id).alpha`; it does not reconstruct
+alpha from relative power. In the frozen Stage2 source, alpha is the complex
+least-squares coefficient against local code-delay/Doppler replicas and
+mean-removed, per-window RMS-normalized 40 ms IQ. Consequently it is not an
+absolute calibrated receive voltage/power. `angle(alpha)` is a principal-value
+radian phase; local window references and independent normalization do not
+establish cross-window or cross-run coherence.
+
+- **Candidate code:** `scripts/channel_modeling/export_stage2_complex_alpha.m`
+  preserves each selected-path input row and Stage2 attribute. It emits finite
+  complex components, magnitude and phase when available; otherwise it keeps
+  NaNs with an explicit missing reason. It records run/scene/PRN/channel,
+  frozen SAGE SHA, Stage2 MAT and selected-path CSV paths plus caller-pinned
+  source-file SHA values. Relative-power consistency is recorded as a check
+  status and does not edit the original Stage2 value or discard rows.
+- **MPC ledger adapter:** `scripts/channel_modeling/build_mpc_modeling_ledger.m`
+  keeps all input Stage2 MPCs and validates their run/source provenance and
+  exact `(window_id,path_id)` keys. Direct-path alpha rows may be included as
+  within-window relative-power references; other unexplained extra identities
+  are rejected. Missing alpha and check status are passed through. The
+  independent selected-window table remains necessary to retain Stage2-selected
+  zero-MPC windows; no Stage0-unselected window is filled with a zero count.
+- **Candidate pilot:** run
+  `run_20261003_F1023_V70_D0117_P2_G32_ch11` has a completed relocation
+  receipt and Stage2 outputs. Its path CSV has 344 rows / 117 windows (31
+  single-path and 86 multi-path); its 227 MPC keys match the multipath rows.
+  Window 38 is selected order 1 with zero MPC; window 1007 is order 4 with
+  three MPCs. Receipt-declared MAT/CSV SHA values and exact sample selections
+  are in the preparation report. The receipt values were not recomputed and
+  no MAT payload was read; this remains a pilot candidate, not alpha evidence.
+- **Tests:** four exporter and three ledger MATLAB test functions are present
+  in `scripts/channel_modeling/tests/`. They cover missing/nonfinite alpha,
+  multiple paths/windows, algebraic checks, identity conservation,
+  provenance, output collision, and missing-row retention. They were not run
+  because Task 5 MATLAB was active; no MATLAB validation pass is claimed.
+- **Task 5 observation:** at 2026-10-29 09:10:01 +08 the hourly status
+  snapshot was `FRESH` (monitor report 09:05:01, age 5 minutes), reporting
+  `RUNNING`, audit `RUNNING`, 79/80 PASS (37 inherited), current
+  `run_20261003_F1023_v90_D0117_P7_G32_ch5`, next G18/ch9, three new PASS in
+  the last-hour window, and latest PASS G29/ch11 at 09:04:26 +08. It reported
+  E: free 268.7 GiB, zero storage errors in the last hour, and no completion
+  or stop receipt. At 09:14:25, process inspection confirmed Coordinator
+  PowerShell PID 17124, worker PID 33048, MATLAB launcher/worker PIDs
+  17628/47344 and the same current run. No production action was taken; this
+  point sample does not replace final independent receipts/QA.
+- **Git state:** isolated worktree branch remains
+  `review/gnss-mainline-cir-model-20261022`, HEAD
+  `c748c2554ba09eff4dc3653d813ff92bead9599c`, tracking origin with no
+  ahead/behind commit difference. The WP5 candidate files and other WP2/WP3
+  artifacts remain untracked; all are preserved, and no commit/push occurred.
+- **Report:**
+  `reports/data_consolidation_20261003/mainline_1023_model_v1/wp5_alpha_preparation_20261029T010747Z/WP5_alpha_preparation.md`.
+
+**Next action:** after Task 5 MATLAB is confirmed idle, run the focused MATLAB
+tests, revalidate the selected run's receipt and source hashes, then produce
+one new-namespace real alpha pilot and independently check row conservation,
+missingness, coefficient algebra, relative-power consistency and identity
+receipt. No real alpha pilot, batch export, WP6 fitting or production was run
+in this preparation step.
+
 ### Task 5 — read-only live sample at 2026-10-28 22:11:31 +08
 
 The active release is
@@ -2872,3 +2938,153 @@ Running (LastTaskResult 267009); the 30-minute monitor was Ready (last result
 next 00:10). This check did not sample CPU/file progress or new System storage
 events; it is not a completion or storage-health assertion. No process, task,
 release, audit, receipt or output was changed.
+
+## 109. WP5 gate check and Task 5 queue cross-check (2026-10-29)
+
+### Task 5 live point check — 2026-10-29 09:22:04 +08:00
+
+Read-only verification used the local hourly snapshot, the current immutable
+successor request/audit, the G18 receipt, live process command lines and Task
+Scheduler state. No production process, task, release, audit, receipt, queue,
+MATLAB input or scientific output was modified.
+
+- Release: `mainline_1023_cir_v1_20261028T120447205Z_task5successor43r1`;
+  request SHA-256 and audit-pinned SHA-256 both equal
+  `1b95146f42a2383f26bbef0bfc1679f9096f3778e67c51fa765af953f04474df`.
+- Audit: `RUNNING`; 43 expected successor tasks, 42 PASS records, current run
+  `run_20261003_F1023_v90_D0117_P7_G32_ch5`; start time
+  `2026-10-29 09:04:43 +08:00`. With 37 inherited PASS, the cumulative status
+  is 79/80. Completion and stop receipt fields are empty.
+- Live processes at 09:22: Coordinator PowerShell PID 17124 (created
+  2026-10-28 20:13:08 +08), worker PowerShell PID 33048 (created
+  2026-10-29 09:04:48 +08), MATLAB launcher/worker PIDs 17628/47344 (created
+  09:04:56 +08). The successor batch scheduled task was `Running` (last
+  result 267009). No task was triggered or otherwise changed.
+- The 09:10 hourly snapshot reported `RUNNING`, 79/80, G32/ch5, last PASS
+  G29/ch11 at 09:04:26 +08, +3 PASS in its preceding-hour interval, no new
+  storage errors in that interval, no completion/stop receipt, and 268.7 GiB
+  free. Direct `E:` free-space query at 09:22 returned 268.3 GiB. The
+  30-minute monitor task was Ready (last result 0 at 09:05:01; next 09:35);
+  the hourly status task was Ready (last result 0 at 09:10:01; next 10:10).
+  Monitor/storage values are point-in-time observations, not a health or
+  completion certification.
+- Queue discrepancy resolved from immutable request and audit, not by
+  changing either: the request has 43 tasks; G18/ch9 is item 1 and has audit
+  PASS plus a matching on-disk receipt (SHA-256
+  `341ddea20d4d3b354a4a4af6ebf96f4f6a275a583fcc43bd96e1010a9d699dba`).
+  The audit's 42 PASS run IDs exactly match queue items 1–42 in order;
+  G32/ch5 is item 43/43 and is current. Thus `next_task_run_id=G18/ch9` in
+  the hourly snapshot is an erroneous monitor field, not evidence of a real
+  queue re-dispatch in this check. Do not rely on that field for dispatch
+  validation; investigate the monitor calculation only after Task 5 is idle.
+
+### WP5 execution gate
+
+The focused MATLAB tests (`test_export_stage2_complex_alpha.m` and
+`test_build_mpc_modeling_ledger.m`) and the G32/ch11 real alpha pilot remain
+`NOT_RUN`: Task 5 MATLAB scientific computation was active at the live check.
+No Stage2 MAT/HDF5/raw-IQ payload was read and no pilot output was created.
+The existing WP5 candidate code, tests and preparation report remain
+uncommitted and untouched by this status-only check. Resume with MATLAB tests
+only after a fresh check confirms the Task 5 Coordinator, worker and MATLAB
+have all exited; then independently verify batch terminal receipts before
+selecting the real G32/ch11 pilot input.
+
+**Follow-up process/audit check at 2026-10-29 09:24:50 +08:00:** Coordinator
+PID 17124 and batch worker PowerShell PID 33048 remained present; the batch
+scheduled task remained `Running` (LastTaskResult 267009). No process command
+line matching the active successor release was returned for MATLAB. Audit
+remained `RUNNING`, 42/43 successor PASS records, current G32/ch5, with no
+completion or stop receipt. The worker wrapper had 10.9 cumulative CPU seconds
+at this sample. This mixed state is not normal batch completion; whether MATLAB
+exited normally and the wrapper is finalizing, or exited unexpectedly, is
+unknown from the evidence read. Do not start the WP5 MATLAB tests or alpha pilot
+based on this partial process view. Wait for native Task 5 status/audit to
+settle, then recheck all Coordinator, worker and MATLAB processes plus receipts.
+
+## 110. Task 5 final completion and WP5 gate decision (2026-10-29)
+
+### Task 5 read-only verification — 2026-10-29 10:24:49 +08:00
+
+Release `mainline_1023_cir_v1_20261028T120447205Z_task5successor43r1`, request
+SHA-256
+`1b95146f42a2383f26bbef0bfc1679f9096f3778e67c51fa765af953f04474df`.
+The batch audit was `COMPLETE`; all 43 successor queue identities had PASS
+receipts and the 37 inherited PASS identities remained verified, for 80/80
+cumulative PASS. Completion receipt status was `PASS`, counts 43/43, SHA-256
+`c1206c5e900e12db932eefa2b629b051a1efac9013917149f7c166532b8415d8`.
+The successor receipts matched audit/request identity, order and hashes; the
+37 inherited receipt hashes and PASS status matched their pinned source
+receipts. No stop receipt was present, consistent with normal completion.
+
+The last queue item was
+`run_20261003_F1023_v90_D0117_P7_G32_ch5`; its PASS receipt SHA-256 is
+`3040c7bfcc58ef52bb749b8824d112ea2828534ce5d393e62d43bc47039e6efa`.
+Its MATLAB exit receipt recorded code 0 and 1,168.469 seconds. Bounded stdout
+reported 1,590 Stage0 windows, 63,600 CIR snapshots, 451 delay bins, 1,590
+PDP windows and 40 PDP snapshots/window; exact PDP recomputation had maximum
+difference 0 and the G32/ch5 pilot QA result was PASS. The HDF5 output was
+checked only by filename, size and timestamp; no HDF5/MAT/raw-IQ scientific
+payload was opened. The MATLAB stderr log was empty.
+
+At 10:24:49 +08 there were no matching Task 5 Coordinator, worker, or MATLAB
+processes. The batch scheduled task, the 30-minute monitor and the hourly
+status task were `Ready`, each with LastTaskResult 0. The latest hourly status
+snapshot was collected 10:10:03 +08 and reported `TASK5_COMPLETE`, 80/80,
+completion receipt PASS, 268.3 GiB free on E:, and no newly reported storage
+event in its preceding-hour interval; it was approximately 14.8 minutes old
+at the direct check. These are point-in-time observations, not a guarantee of
+future state or an independent Gate E/F result.
+
+### WP5 G32/ch11 pilot result
+
+This later execution supersedes the preceding WP5 readiness note. MATLAB
+R2025a Update 1 executed both focused test files: 7/7 PASS, 0 failed or
+incomplete. One syntax error in the alpha-consistency assertion in
+`scripts/channel_modeling/build_mpc_modeling_ledger.m` was corrected by
+adding the missing closing parenthesis; the full focused test command was
+rerun after the correction. The complete output is retained at
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp5_alpha_G32ch11_20261029T050432Z/matlab_targeted_tests_final.txt`.
+
+The G32/ch11 source MAT, selected-path CSV and frozen runner SHA-256 values
+matched the existing relocation receipt. Their source bytes were not
+modified. A real export was written only to a new isolated report directory;
+it contains 344 path rows across 117 selected windows (227 MPC candidates and
+117 direct references). An independent verifier re-read the source MAT and
+CSV and mapped each exported complex coefficient to exact
+`(window_id,path_id)`: 344/344 alpha values were valid, including 227/227
+MPCs; no row was missing, nonfinite, duplicated or reordered. All 344
+relative-power checks passed; source delay/Doppler/power attributes had zero
+numeric difference. Candidate window 38 is single-path; window 1007 has four
+paths, three of them MPCs. Full machine-readable statistics, hashes, run
+times, logs and the independent verifier are in
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp5_alpha_G32ch11_20261029T050432Z/`.
+
+The Stage2 coefficient is a complex LS fit against local code-delay/Doppler
+replicas using the nav-wiped, mean-removed and RMS-normalized 40 ms IQ window.
+It is not an absolute calibrated channel gain. The principal phase in radians
+is relative to the per-window local replica reference; cross-window coherent
+phase comparability remains unverified. WP5 is `IN_PROGRESS`: this pilot
+supports entering a controlled 83-run alpha-export stage but does not
+complete it. No full export, Gate E/F, or WP6 was run here. Task 5 remained
+audit `COMPLETE`, 80/80 cumulative PASS, with a PASS completion receipt; this
+was read-only, and no CIR production was started.
+
+**Next engineering priority:** run and independently reconcile the controlled
+83-run alpha export with complete Stage2 path-key conservation and explicit
+missingness/provenance. Do not proceed to full alpha/PDP association or WP6
+claims until that dataset is accepted.
+
+## 111. WP5 G32/ch11 alpha pilot execution record (2026-10-29)
+
+See the complete scientific acceptance report at
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp5_alpha_G32ch11_20261029T050432Z/WP5_G32ch11_alpha_pilot_acceptance.md`.
+The new alpha CSV is 263,959 bytes with SHA-256
+`4b786b762216da16e0196bf5965de34c5e481116a74184e7ed9dd75b7625c7ed`.
+The independent validation JSON is
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp5_alpha_G32ch11_20261029T050432Z/independent_validation.json`.
+
+Test run: 2026-10-29 13:10:11.820–13:10:52.766 +08, command
+`matlab.exe -batch "addpath('<repo>/scripts/channel_modeling'); addpath('<repo>/scripts/channel_modeling/tests'); results=runtests({'test_export_stage2_complex_alpha.m','test_build_mpc_modeling_ledger.m'}); disp(table(results)); assertSuccess(results);"`, exit code 0; 7 passed, 0 failed, 0 incomplete. Pilot export: 13:13:05.314–13:13:27.853 +08, exit 0, 344 rows. Independent validation: 13:14:03.377–13:14:23.046 +08, exit 0. Logs preserve the corrected rerun and earlier diagnostic failures; earlier failures are not counted as passes.
+
+Task 5 was rechecked read-only at 2026-10-29 13:12 +08: audit `COMPLETE`, 43 successor PASS plus 37 inherited PASS, completion receipt `PASS` with request SHA-256 `1b95146f42a2383f26bbef0bfc1679f9096f3778e67c51fa765af953f04474df`; the process query found only its own PowerShell inspection process and no MATLAB/Coordinator/worker. This point check does not certify Gate E/F. No production process, release, queue, receipt or CIR output was changed.

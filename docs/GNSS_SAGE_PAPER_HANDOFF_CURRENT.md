@@ -1626,3 +1626,22 @@ Stage2 selection; do not claim that separate environments are required, that
 elevation causally changes relative power, that M2 universally improves M0,
 or that tails are globally calibrated. Preserve the three-scene limit for
 Mountain/Valley and the overlap among LOSO training sets.
+
+## 27. WP5 single-run complex-alpha pilot status (2026-10-29)
+
+After the WP3 review above, the focused WP5 MATLAB tests passed 7/7 and one
+completed Stage2 run (`run_20261003_F1023_V70_D0117_P2_G32_ch11`) was exported
+and independently checked: 344/344 selected-path alpha values were valid,
+including 227 MPC rows; path identity/order and Stage2 attributes were
+preserved, and 344/344 within-window relative-power comparisons passed. The
+scientific report and auditable output are at
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp5_alpha_G32ch11_20261029T050432Z/WP5_G32ch11_alpha_pilot_acceptance.md`.
+
+This is a one-run pipeline/data-integrity pilot, not a population estimate or
+a paper-ready full alpha dataset. Coefficients are relative to each
+nav-wiped, mean-removed and RMS-normalized 40 ms window and its local replica
+reference; they are not calibrated channel gains. Cross-window phase
+coherence remains unverified. The 83-run export and independent full-coverage
+acceptance remain pending. Do not add this pilot's coefficient magnitudes or
+phases to pooled scientific model estimates or claim a complete CIR/PDP
+feature join on this evidence alone.
