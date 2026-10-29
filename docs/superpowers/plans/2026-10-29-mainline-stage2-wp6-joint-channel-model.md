@@ -120,7 +120,7 @@
 - [x] **Step 3: Obtain an independent scientific/code review**; correct the count-scene key binding and PDP score-validation gaps test-first. Copula continuous scoring with quantized/tied delay is disqualified from model ranking; keep its raw output as diagnostics only.
 - [x] **Step 4: Update** the master plan and engineering/paper handoffs with actual status, results, limitations, tests, review, and one next decision; Gate G remains pending.
 - [x] **Step 5: Verify** focused WP6 tests 33/33, full channel-modeling tests 216/216, `py_compile`, pinned inputs, enhanced validator, and result-relative links; final diff/Git checks remain part of final delivery.
-- [ ] **Step 6: Stage only WP6-specific files**, commit the final WP6 study, push normally to `origin/review/gnss-mainline-cir-model-20261022`, update Draft PR #2 without merging, and verify remote HEAD and PR state.
+- [x] **Step 6: Stage only WP6-specific files**, commit the final WP6 study, push normally to `origin/review/gnss-mainline-cir-model-20261022`, update Draft PR #2 without merging, and verify remote HEAD and PR state.
 
 ### Scientific review disposition (2026-10-29)
 
@@ -148,7 +148,13 @@
 - [x] **Step 3: Implement the selected-window factorized count + product-mark score**: exactly one row per Stage2-selected window, count log score plus the sum of path mark product log densities, empty mark contribution 0 for selected zero-MPC windows, and scene-equal macro summaries. Do not create a Copula joint score because tied/quantized delay invalidates the current continuous Copula point-density comparison.
 - [x] **Step 4: Independently reconcile retained mark failures and tail-support records** against the nested inner-family and outer-fold tables, including exact expected key/support counts and summary totals; retain low-support rows rather than filtering them.
 - [x] **Step 5: Run focused tests, rerun real analysis into a new create-only output directory, independently validate the new package, and update reports/provenance and authoritative docs.** Final package is `wp6_20261029T154500Z_final/`; earlier packages remain unchanged.
-- [ ] **Step 6: Run the complete channel-modeling suite and compile checks, request one fresh-context whole-branch review, address findings, then stage only WP6 files, commit, push normally, update Draft PR #2 and verify the remote/PR.** Test, compile and review portions are complete; only final Git/PR delivery remains.
+- [x] **Step 6: Run the complete channel-modeling suite and compile checks, request one fresh-context whole-branch review, address findings, then stage only WP6 files, commit, push normally, update Draft PR #2 and verify the remote/PR.** Full channel-modeling suite 222/222, compile and diff checks passed; independent review findings are closed. Commit `d4770a36efadefddba4533fb8fd6f9a25b799e48` was pushed normally, PR #2 was updated and remains Draft/unmerged. Final remote/PR verification follows the delivery record below.
+
+## Final Git/PR delivery record
+
+- 2026-10-30: WP6 implementation, final result package, validation evidence and synchronized plans/handoffs committed as `d4770a36efadefddba4533fb8fd6f9a25b799e48` (`feat: complete WP6 joint channel model study`) and pushed normally to `origin/review/gnss-mainline-cir-model-20261022`.
+- Existing Draft PR #2 description now contains a WP6 section that supersedes the earlier pending-status text. It remains open, Draft, targets `main`, and is not merged.
+- Only WP6 source, evidence, final and reviewed analysis packages, and the four WP6/authoritative-document paths were included. Other work-package files remain untouched and unstaged.
 
 ### Final review closure (2026-10-29)
 
