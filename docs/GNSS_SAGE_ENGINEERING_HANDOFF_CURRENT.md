@@ -2,9 +2,9 @@
 
 **项目根目录：** `E:\GNSS_Multipath_Project`  
 **工程状态唯一来源：** 本文件  
-**最后审计时点：** 2026-10-29 14:14（Asia/Shanghai；本轮 WP5 全量 alpha 83/83 导出及独立验证 PASS，最终 MATLAB 9/9 与 Python 5/5 定向测试通过，详见第112节。Task 5 最后一次只读核验于13:12 +08：80/80 PASS、audit `COMPLETE`、completion receipt `PASS`；这些运行状态均为时间点证据。）
+**最后审计时点：** 2026-10-29 14:44（Asia/Shanghai；WP5 全量数据未重导；独立复核补上冻结 cohort/顺序守卫及合并账本全列比较，分项回归3/3、2/2 PASS，最终组合定向套件12/12 PASS，详见第113节。Task 5 最后一次只读核验仍为13:12 +08：80/80 PASS、audit `COMPLETE`、completion receipt `PASS`；该生产状态仅为时间点证据。）
 **面向对象：** Codex、AI Agent、开发人员、实验执行人员  
-**当前 Mainline 新增状态：** Stage2 WP3 有界分析及独立审阅仍为 `PASS_WITH_LIMITATIONS`（见第106–107节）。Task 5 最近一次只读核验（2026-10-29 13:12 +08）为 COMPLETE、80/80 PASS、completion receipt PASS。WP5 全量 83-run alpha 导出及独立验证为 83/83 PASS：16,761/16,761 Stage2 路径、8,914 MPC、7,847直达参考均保留且有有效 alpha；身份/顺序、源属性、相对功率均无不一致。WP5=`COMPLETED_WITH_LIMITATIONS`；窗口归一化系数不是绝对校准增益，跨窗相位相干未验证，且5个旧 MAT 收据没有逐文件 SHA pin。WP4 Gate E/F及WP6未因此通过或启动；不将旧 Stage3 r3 与新 Stage2 总体合并。
+**当前 Mainline 新增状态：** Stage2 WP3 有界分析及独立审阅仍为 `PASS_WITH_LIMITATIONS`（见第106–107节）。Task 5 最近一次只读核验（2026-10-29 13:12 +08）为 COMPLETE、80/80 PASS、completion receipt PASS；本轮未核验其实时状态。WP5 全量 83-run alpha 导出及独立数据验证为 83/83 PASS：16,761/16,761 Stage2 路径、8,914 MPC、7,847直达参考均保留且有有效 alpha；身份/顺序、源属性、相对功率均无不一致。审查后冻结范围守卫回归3/3、账本全列比较2/2 PASS，最终组合定向 MATLAB 套件12/12 PASS，没有重新导出。WP5=`COMPLETED_WITH_LIMITATIONS`；窗口归一化系数不是绝对校准增益，跨窗相位相干未验证，5个旧 MAT 收据没有逐文件 SHA pin，且原运行期间没有记录源码 SHA（仅有晚于运行的源码快照绑定）。WP4 Gate E/F及WP6未因此通过或启动；不将旧 Stage3 r3 与新 Stage2 总体合并。
 **当前阶段：** accuracy-first full SAGE 主线的冻结 unattended batch 已完成并通过独立批后 QA：57/57 task-level QA ACCEPTED、0 REJECTED；其中 A validation batch 40 个保持 VALIDATED，B/C 正式生产 batch 17 个计入 formal accepted production。当前 formal accepted production 为 26/67（历史 A3 G16 仍为 REJECTED_PROTECTED，不计入）；SAGE 不再自动续跑，database schema/enum/label/derivation v1 已冻结，64-run event/path audit ingest、modeling-context alignment overlay 和 Stage4 path-parameter derivation 已完成并通过独立 QA。G06 legacy 已保留审计但排除建模输入；canonical r3 traditional channel model 及 Phase-1 scientific closure 已完成并通过独立 QA（带明确限制），Phase 2 仍为 planned-only。
 
 > 本文只负责工程事实、文件、输入输出、执行、QA、hash、provenance 和下一步操作。论文科学叙事的唯一状态来源是 `docs/GNSS_SAGE_PAPER_HANDOFF_CURRENT.md`。其他 handoff、设计稿、诊断稿和日报均为历史/专题参考，不再作为独立的当前工程状态源。
@@ -3100,8 +3100,10 @@ work. The complete science report and compact, reviewable delivery are at
 - E: full output namespace:
   `E:\GNSS_Multipath_Project\dataset_generation_logs\channel_modeling\mainline_1023_wp5_alpha_full_83run_20261029T055629Z\`.
   It contains 83 per-run alpha/ledger outputs, combined outputs, preflight,
-  audit, tests and validation evidence (180 files, 52,927,454 bytes). It was
-  not staged or committed.
+  audit, tests and validation evidence (180 files, 52,927,454 bytes at the
+  original delivery). A later 3,236-byte provenance sidecar brings the
+  current namespace to 181 files, 52,930,690 bytes. It was not staged or
+  committed.
 - Frozen input identities: cohort SHA-256
   `287e891fae0cd294a85c073080611a19b7389ece46240b89cb1d5dab4df90229`;
   Task6 Stage2 ledger SHA
@@ -3149,3 +3151,56 @@ path tracking, and receiver calibration are not established. The population
 is conditional on Stage2 selection. The only next engineering priority is
 Commander review of this dataset and acceptance evidence; do not auto-start
 WP6 or claim Gate E/F.
+
+## 113. WP5 independent implementation-review follow-up (2026-10-29 14:44 +08)
+
+This was a targeted code/data acceptance follow-up; the 83-run alpha export,
+Stage2 MAT sources, combined CSVs, batch audit, independent-validation files,
+Task 5 release and CIR production were not modified or rerun.
+
+The independent reviewer found that the original runner checked the manifest
+against its adjacent preflight digest/counts but did not independently bind
+those files to the frozen cohort, Stage2 ledger and Stage4 pins or exact run
+sequence. A regression reproduced acceptance of a reordered manifest after
+rehashing its preflight. The runner now calls
+`scripts/channel_modeling/assert_wp5_alpha_full_frozen_scope.m` before any
+batch output write. It verifies fixed cohort/ledger/Stage4/SAGE SHA pins and
+counts, exact ordered cohort run IDs, scene/PRN/channel identity, per-run
+Stage2 row/window/MPC/direct counts and source CSV SHA against the frozen
+ledger, canonical source paths, and Stage4 summary paths/pins. The run-scope
+regression is 3/3 PASS; its successful branch sets all 83 rows to
+`REJECTED` in a temporary fixture, so it creates only isolated audit/summary
+metadata and invokes no exporter or MAT load. Reordered runs and a changed
+ledger pin fail before audit/summary creation.
+
+The independent validator now calls
+`scripts/channel_modeling/assert_wp5_ledger_rows_equal.m` for each run and
+compares every integrated-ledger column with the matching combined-ledger
+rows, including Stage3/Stage4 and modeling attributes. Its focused comparison
+tests are 2/2 PASS, including rejection of a changed `stage4_mapping_status`.
+A fresh consolidated MATLAB run passed 12/12 tests (4 exporter, 3 ledger
+builder, 3 batch-scope and 2 ledger-column comparison; 0 failures, 0
+incomplete; exit code 0). The log is
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp5_alpha_full_83run_20261029T055629Z/validation_followup/matlab_wp5_final_targeted_20261029.txt`;
+the file was created at 14:42:22 and last written at 14:43:14 +08 on
+2026-10-29. MATLAB reports 29.0683 seconds of test time. Focused red/green
+logs are retained in the same `validation_followup/` directory.
+
+The exact execution output has not been regenerated. The data-directory
+sidecar `source_code_provenance.json` (SHA-256
+`54b7136ac9c4db33569bd4a43308c4571429e228dcaf441d2ee6c546ae72d89b`) and committed copy
+`wp5_alpha_full_code_provenance.json` bind output hashes and frozen inputs to
+source commit `4f219e46045d124c42224c8d26d8562451e30ced`, with per-file
+SHA-256 values computed from the Git objects. This commit postdates the run;
+the historical runner did not record source hashes at process start. The
+sidecar is explicitly retrospective and cannot prove the exact bytes loaded
+at runtime. That provenance limit remains open; it does not change the
+independently checked output bytes or imply that the post-run guard executed
+during the original export.
+
+Final disposition stays `WP5=COMPLETED_WITH_LIMITATIONS`. No Stage2 MAT,
+HDF5, raw IQ or CIR payload was read in this follow-up. No MATLAB batch
+export, SAGE, CIR, or Task 5 process was started. WP4 Gate E/F remains
+pending, WP6 was not started, and main was not modified. The only next
+research action remains Commander review of the full dataset/evidence and a
+separate decision after WP4 Gate E/F on whether to begin WP6.

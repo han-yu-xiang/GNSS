@@ -3,7 +3,7 @@
 **项目根目录：** `E:\GNSS_Multipath_Project`  
 **论文状态唯一来源：** 本文件  
 **长期建模路线与 WP0–WP6 状态权威来源：** `docs/ACADEMIC_CHANNEL_MODELING_MASTER_PLAN.md`（本文件继续负责论文事实、科学解释和论文状态）
-**最后审计时点：** 2026-10-29 14:14 +08（Asia/Shanghai；WP5 全量复数 alpha 导出及独立验收见第28节；早期试点记录见第27节）
+**最后审计时点：** 2026-10-29 14:44 +08（Asia/Shanghai；WP5 全量复数 alpha 数据验收及独立代码复核见第28节；早期试点记录见第27节）
 **面向对象：** 论文写作者、科研人员、方法分析人员  
 **当前 Mainline 新增研究状态：** Stage2探索V0、WP2稳健性分析、WP3有界条件化分析均已完成并带限制；WP3独立审阅为 `PASS_WITH_LIMITATIONS`。WP5全量复数 alpha 导出及独立验收为83/83 run PASS，16,761/16,761路径均有有效 alpha，8,914 MPC及7,847直达参考均保留；仍受Stage2选择、窗口归一化和未验证跨窗口相位相干限制。此结果仅为后续WP6候选路径级输入，不等于完整CIR关联、Gate E/F或WP6完整模型。Phase-2仍未开展，不得宣称完整信道生成模型。
 **研究阶段：** accuracy-first full SAGE 冻结批次及独立批后 QA 已完成；Phase-1 的 Stage3 传统统计建模和 scientific closure 已完成并通过 QA（带明确限制）。coverage-complete event/path database、通用 channel-parameter database、Phase-2 AI 和完整暗室生成器仍是独立后续范围。
@@ -1676,6 +1676,21 @@ mean-removed, RMS-normalized 40 ms window. Therefore:
   these records, but remains relative rather than absolute;
 - the population is conditional on Stage2 selection; unselected Stage0
   windows are not represented as zero-path observations.
+
+The post-export implementation review added a fail-closed runner guard bound
+to the frozen cohort/ledger/Stage4/SAGE pins and exact 83-run order, and the
+independent validator now compares all per-run integrated-ledger columns to
+the combined ledger. Focused MATLAB regressions passed 3/3 for scope checking
+and 2/2 for complete ledger-column comparison; a fresh consolidated targeted
+suite passed 12/12 (4 exporter, 3 ledger builder, 3 scope guard, 2 ledger
+comparison; exit code 0). The export was not rerun and no source MAT was
+opened during this follow-up. The sidecars
+`wp5_alpha_full_code_provenance.json` (report package) and
+`source_code_provenance.json` (E: result namespace) record the post-run Git
+source snapshot and output hashes. Because source hashes were not captured
+when the original batch started, this is retrospective provenance, not proof
+of exact runtime code bytes. This implementation-review note does not extend
+the scientific claims above and does not pass WP4 Gate E/F or authorize WP6.
 
 WP5 is `COMPLETED_WITH_LIMITATIONS` for full-cohort alpha extraction and
 path-level provenance. Seventy-eight MAT hashes were pinned by historical

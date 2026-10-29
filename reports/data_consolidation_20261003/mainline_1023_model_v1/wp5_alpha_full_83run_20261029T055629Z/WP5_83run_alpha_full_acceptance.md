@@ -1,6 +1,6 @@
-# WP5 全量复数 alpha 导出与独立科学验收
+# WP5 全量复数 alpha 导出与独立技术/数据验收
 
-**状态：`COMPLETED_WITH_LIMITATIONS`（83-run 数据导出及本报告范围内的独立验收通过）**
+**状态：`COMPLETED_WITH_LIMITATIONS`（83-run 数据导出及本报告范围内的独立技术/数据验收通过；不等于完整科学模型验收）**
 **核验日期：** 2026-10-29（Asia/Shanghai）
 **全量数据目录：** `E:\GNSS_Multipath_Project\dataset_generation_logs\channel_modeling\mainline_1023_wp5_alpha_full_83run_20261029T055629Z\`
 
@@ -51,7 +51,7 @@
 
 验证器 `scripts/channel_modeling/validate_mainline_wp5_alpha_full_batch.m` 不调用 exporter；它逐 run 重新读取 source `stage2Fits` 并独立按 `(run_id, window_id, path_id)` 重建 alpha，再核对全量冻结 Stage2 ledger、每 run 输出、合并输出、顺序、源属性及 alpha 数值。全量机器可读独立摘要为 `independent_validation_summary.json`，逐 run 细项为 `independent_validation_per_run.csv`（E 盘数据目录）。
 
-报告仓库内的小型交付清单为本目录的 `per_run_output_manifest.csv` 和 `wp5_alpha_full_summary.json`。它们绑定每 run 输入身份、SHA pin 来源、行数、输出文件 SHA/字节数、alpha/功率状态及独立验证状态。组合 alpha CSV SHA-256 为 `eeb20d3f638cf937529922d2d932503e201ec92ba866eeb3d86e0dd3a91e97e9`（12,705,179 bytes）；组合属性账本 SHA-256 为 `def2e1e249af309a5114c100d0630299ebd955cefef6e051407fecb68e5493d7`（13,623,712 bytes）。E 盘完整 batch 目录共 180 个文件、52,927,454 bytes（约 50.48 MiB，包含逐 run 与合并 CSV、审计和日志）。
+报告仓库内的小型交付清单为本目录的 `per_run_output_manifest.csv` 和 `wp5_alpha_full_summary.json`。它们绑定每 run 输入身份、SHA pin 来源、行数、输出文件 SHA/字节数、alpha/功率状态及独立验证状态。组合 alpha CSV SHA-256 为 `eeb20d3f638cf937529922d2d932503e201ec92ba866eeb3d86e0dd3a91e97e9`（12,705,179 bytes）；组合属性账本 SHA-256 为 `def2e1e249af309a5114c100d0630299ebd955cefef6e051407fecb68e5493d7`（13,623,712 bytes）。原始交付时 E 盘 batch 目录为 180 个文件、52,927,454 bytes；随后增加 3,236-byte 回溯 provenance sidecar，当前目录共 181 个文件、52,930,690 bytes（约 50.48 MiB）。
 
 ## 执行与测试证据
 
@@ -60,6 +60,22 @@
 - 串行全量执行：MATLAB batch 入口 `run_mainline_wp5_alpha_full_batch(projectRoot, outputRoot)`；审计时间范围 2026-10-29 05:58:38.232Z–06:00:04.610Z（UTC，按 83 条逐 run 记录），83 条串行记录 elapsed 合计 81.189 s；batch 汇总生成于 06:00:17.349Z。最终状态 `COMPLETE`。
 - 独立验证：MATLAB batch 入口 `validate_mainline_wp5_alpha_full_batch(projectRoot, outputRoot, task6LedgerPath, expectedLedgerSha256)`，通过时生成 83/83 PASS；摘要时间 2026-10-29 06:04:30.691Z UTC。首次调用因命令传入的 ledger 路径错误而在读取输入时失败，未改动输出；纠正到实际冻结 ledger 路径后独立验收 PASS。两份日志均保留，失败调用不计作通过。
 - 本次 Python 清单/预检定向测试提交前最终重跑 5/5 PASS，`py_compile` 通过；命令、UTC 起止时间、结果和退出码在仓库报告目录 `python_targeted_tests_commit_final.log`。清单生成器只读取既有小型审计 JSON/CSV 和导出 CSV，拒绝覆盖已有报告目录；未读取 MAT/HDF5 载荷。
+
+## 独立复核补充（2026-10-29 14:44 +08）
+
+独立代码审查未否定已生成数据的实际核验结果，但指出批处理入口此前只把 manifest 与相邻 preflight 互相校验，没有再将其绑定到固定 cohort/Stage2 ledger/Stage4 pins 和冻结 run 顺序。为关闭该入口缺口，`run_mainline_wp5_alpha_full_batch.m` 现在在任何批次输出写入前调用冻结范围守卫：核对固定文件 SHA、全局计数、83 个 run 的顺序及 scene/PRN/channel、Stage2 ledger 的逐 run 行数/窗口数/MPC/direct 数和源 CSV SHA、Stage4 summary pin 路径与 SHA。独立验证器也新增完整逐列比较，确保每个 run 的集成账本与合并账本在全部 Stage3/Stage4/modeling 字段上相同。
+
+修复后的分项 MATLAB 回归为批次范围守卫 3/3 PASS、全列账本比较 2/2 PASS。2026-10-29 14:42:22–14:43:14 +08 是日志文件的创建/最后写入时间窗；新运行完整定向套件为 12/12 PASS、0 失败、0 未完成，MATLAB 退出码 0、测试计时 29.0683 秒。日志为 `validation_followup/matlab_wp5_final_targeted_20261029.txt`。工作目录是科研工作树根目录，实际命令如下：
+
+```powershell
+& 'D:\Program Files\Matlab\bin\matlab.exe' -logfile 'reports\data_consolidation_20261003\mainline_1023_model_v1\wp5_alpha_full_83run_20261029T055629Z\validation_followup\matlab_wp5_final_targeted_20261029.txt' -batch "addpath(genpath(fullfile(pwd,'scripts','channel_modeling'))); files={fullfile('scripts','channel_modeling','tests','test_export_stage2_complex_alpha.m'),fullfile('scripts','channel_modeling','tests','test_build_mpc_modeling_ledger.m'),fullfile('scripts','channel_modeling','tests','test_run_mainline_wp5_alpha_full_batch.m'),fullfile('scripts','channel_modeling','tests','test_assert_wp5_ledger_rows_equal.m')}; results=runtests(files); disp(results); assertSuccess(results);"
+```
+
+该套件仅在临时目录创建合成 MAT/CSV；批量入口集成测试将 83 行全设为 `REJECTED`，不调用 exporter、不载入真实 Stage2 MAT。相应红灯复现日志 `validation_followup/matlab_scope_guard_red2.log` 记录旧入口接受重排队列；`validation_followup/matlab_ledger_compare_red.log` 记录新增比较函数缺失时的失败。没有改写 E 盘既有 alpha 数据。
+
+本轮没有重新运行 83-run 导出，也没有更改既有输出 CSV/审计/独立验证文件。对原结果的复核仅增加独立的机器可读来源旁证：仓库副本 `wp5_alpha_full_code_provenance.json`（SHA-256 `54b7136ac9c4db33569bd4a43308c4571429e228dcaf441d2ee6c546ae72d89b`），E 盘数据目录 `source_code_provenance.json`。两份 sidecar 字节一致。它按 Git 对象字节记录交付实现快照 `4f219e46045d124c42224c8d26d8562451e30ced` 及六个生产/验收脚本 SHA，并绑定已交付 manifest、combined CSV 和独立验证摘要哈希。该 commit 晚于原批次结束，原运行日志未捕获启动时源码 SHA；因此这是**回溯代码快照**，不能单独证明进程启动时加载的逐文件字节。这个 provenance 边界作为限制保留，不把审查后代码说成原批次实际执行版本。
+
+本次复核不改变数据结果或科学范围：WP5 仍为 `COMPLETED_WITH_LIMITATIONS`；已证明的是复数 alpha 导出与路径属性的数据完整性/数值一致性，不是跨窗口相位相干、物理反射体连续跟踪、绝对接收增益或完整 CIR/PDP Gate E/F。WP6 未启动。
 
 ## 科学解释范围与后续
 
