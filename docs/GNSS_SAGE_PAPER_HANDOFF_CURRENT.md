@@ -3,9 +3,9 @@
 **项目根目录：** `E:\GNSS_Multipath_Project`  
 **论文状态唯一来源：** 本文件  
 **长期建模路线与 WP0–WP6 状态权威来源：** `docs/ACADEMIC_CHANNEL_MODELING_MASTER_PLAN.md`（本文件继续负责论文事实、科学解释和论文状态）
-**最后审计时点：** 2026-10-29 14:44 +08（Asia/Shanghai；WP5 全量复数 alpha 数据验收及独立代码复核见第28节；早期试点记录见第27节）
+**最后审计时点：** 2026-10-29 18:10 +08（Asia/Shanghai；WP4 CIR/PDP Gate E/F 全量独立科学验收见第29节；WP5 alpha 结果见第28节）
 **面向对象：** 论文写作者、科研人员、方法分析人员  
-**当前 Mainline 新增研究状态：** Stage2探索V0、WP2稳健性分析、WP3有界条件化分析均已完成并带限制；WP3独立审阅为 `PASS_WITH_LIMITATIONS`。WP5全量复数 alpha 导出及独立验收为83/83 run PASS，16,761/16,761路径均有有效 alpha，8,914 MPC及7,847直达参考均保留；仍受Stage2选择、窗口归一化和未验证跨窗口相位相干限制。此结果仅为后续WP6候选路径级输入，不等于完整CIR关联、Gate E/F或WP6完整模型。Phase-2仍未开展，不得宣称完整信道生成模型。
+**当前 Mainline 新增研究状态：** Stage2探索V0、WP2稳健性分析、WP3有界条件化分析均已完成并带限制；WP3独立审阅为 `PASS_WITH_LIMITATIONS`。WP4 CIR/PDP Gate E/F 已对83个run、7,847个Stage2窗口和8,914个MPC完成全量验收，结论为 `PASS_WITH_LIMITATIONS`；窗口级PDP特征和精确Stage2-alpha-CIR接口可供后续WP6决策使用。WP5全量复数alpha为83/83 run PASS、16,761/16,761路径均有有效alpha。上述结果仍受Stage2选择、窗口归一化、相对幅度、重叠窗口、code-delay特征解释和未验证跨窗口相位相干限制。WP6尚未启动；不得宣称完整物理信道或生成模型。Phase-2仍未开展。
 **研究阶段：** accuracy-first full SAGE 冻结批次及独立批后 QA 已完成；Phase-1 的 Stage3 传统统计建模和 scientific closure 已完成并通过 QA（带明确限制）。coverage-complete event/path database、通用 channel-parameter database、Phase-2 AI 和完整暗室生成器仍是独立后续范围。
 
 > 本文只负责科学问题、贡献、实验解释、论文可写事实、图表、限制和未来路线。工程文件路径、执行门禁、hash和receipt的唯一状态源是 `docs/GNSS_SAGE_ENGINEERING_HANDOFF_CURRENT.md`。本文不得把设计、计划或gold前预测写成实验结果。
@@ -1699,3 +1699,59 @@ were rehashed and bound only for this export. WP4 Gate E/F remains independent
 and pending, and no CIR/PDP join or WP6 model has been accepted. Do not pool
 the coefficients as calibrated amplitudes, infer coherent evolution, or
 claim a complete channel-generation model from this export alone.
+
+## 29. WP4 CIR/PDP Gate E/F independent scientific acceptance (2026-10-29)
+
+The 83-run CIR/PDP source and Stage2 linkage audit completed on 2026-10-29
+(Asia/Shanghai). Gate E and Gate F are both `PASS_WITH_LIMITATIONS`; WP4 is
+`COMPLETED_WITH_LIMITATIONS`. The final package is
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp4_gate_ef_final_20261029T181100/`.
+
+The accepted data-integrity scope contains 83 unique runs across 13 scenes.
+The 80 formal Task 5 passes are 43 current successor-release passes plus 37
+inherited passes; two pilots and one legacy baseline read-back remain separate
+evidence. All 7,847 Stage2 `(run_id,window_id)` windows link to verified
+window features. All 8,914 Stage2 MPCs are retained and linked using
+`(run_id,window_id,path_id)` to the alpha data; the 7,847 direct-reference
+paths remain a separate reference stratum. There are no unmatched windows,
+missing/unavailable alpha rows, relative-power mismatches, or final anomaly
+rows. Stored PDP equals the independent recomputation `mean(|CIR|^2)` over 40
+one-ms snapshots per window; the observed maximum absolute and relative
+differences are both zero. Sixty-three peaks on the frozen delay-grid
+boundary (0.803% of Stage2 windows) are kept and flagged.
+
+These results establish structural, numerical and key-based consistency of
+the saved code-domain CIR/PDP and Stage2/alpha records; they are not an
+independent propagation truth experiment. CIR uses shared raw-IQ and Stage0
+tracking inputs rather than being reconstructed from SAGE alpha. PDP is a
+noncoherent mean of snapshot powers. The exported RMS code-delay width is not
+a validated physical multipath RMS delay spread; relative amplitudes are not
+absolutely calibrated receive power. Overlapping windows are dependent, and
+the Stage2-selected population is conditional: a selected window with zero
+MPC ledger rows does not establish absence of physical multipath. Alpha
+identity linkage does not demonstrate cross-window phase coherence or
+continuous physical-reflector identity.
+
+Gate E retains one auditable legacy provenance limitation: the old
+G28/ch1 baseline has no historical Stage0/HDF5 SHA pins; the Stage0 sibling
+was observed and fully aligned, while the HDF5 hash is observed but unpinned.
+The full-cohort audit runner SHA was not captured at process start. Neither
+limitation is silently converted into a historical pin. Final run inventory,
+window features, MPC linkage, scene coverage, anomaly list, manifest, logs,
+and hashes are in the report package.
+
+The CIR/PDP and alpha tables are now available as candidate inputs for a
+future authorized WP6 analysis. WP6 has not started; this acceptance does not
+select a final model, establish physical gain/coherence, or claim a complete
+channel-generation model.
+
+Post-review validation follow-up: a missing required Stage2 CSV attribute
+could previously be skipped by the audit comparison. The shared comparison
+helper now fails closed for missing source or ledger columns. The corrected
+focused MATLAB regression passed 25/25 tests with `checkcode` reporting zero
+issues; the production helper also rechecked all 83 manifest-pinned source
+CSVs against the merged Stage2 ledger, 83/83 PASS with maximum attribute
+difference 0. This follow-up read only CSV/ledger data, did not reread
+MAT/HDF5/CIR payloads, and did not alter the accepted scientific tables. Exact
+execution details are recorded in the WP4 report package's
+`targeted_regression_evidence.md` and `stage2_csv_schema_recheck.json`.

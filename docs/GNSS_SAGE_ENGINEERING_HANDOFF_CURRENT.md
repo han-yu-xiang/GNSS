@@ -3204,3 +3204,124 @@ export, SAGE, CIR, or Task 5 process was started. WP4 Gate E/F remains
 pending, WP6 was not started, and main was not modified. The only next
 research action remains Commander review of the full dataset/evidence and a
 separate decision after WP4 Gate E/F on whether to begin WP6.
+
+## 114. WP4 Gate E/F full CIR/PDP independent acceptance (2026-10-29 18:10 +08)
+
+### Disposition
+
+WP4=`COMPLETED_WITH_LIMITATIONS`; Gate E=`PASS_WITH_LIMITATIONS` and Gate
+F=`PASS_WITH_LIMITATIONS`. The acceptance finalization completed at
+2026-10-29 18:10:07–18:10:11 +08 (10:10:07–10:10:11 UTC). No CIR or SAGE
+production was rerun, and no immutable release, receipt, source HDF5, MAT,
+Stage2 ledger, or WP5 alpha output was modified.
+
+Task 5 receipt accounting is 43 current successor release PASS + 37 inherited
+PASS = 80/80 formal production tasks. The separate evidence set contains two
+CIR pilots and one existing baseline read-back; these are not added to the
+formal 80. Audited source release:
+`mainline_1023_cir_v1_20261028T120447205Z_task5successor43r1`, request SHA-256
+`1b95146f42a2383f26bbef0bfc1679f9096f3778e67c51fa765af953f04474df`,
+completion receipt SHA-256
+`c1206c5e900e12db932eefa2b629b051a1efac9013917149f7c166532b8415d8`.
+The frozen cohort SHA is
+`287e891fae0cd294a85c073080611a19b7389ece46240b89cb1d5dab4df90229`.
+Stage2 ledger SHA is
+`bbb8cac8338194b5527e00812a6547129a58466cc5fdd7db36b8c44bba01e551`; WP5
+alpha ledger SHA is
+`def2e1e249af309a5114c100d0630299ebd955cefef6e051407fecb68e5493d7`.
+
+### Full-cohort findings
+
+- 83 unique runs across 13 scenes; Gate E per-run inventory is 82 PASS and
+  one `PASS_WITH_LIMITATIONS` (legacy `run_20261003_F1023_V70_D0117_P2_G28_ch1`).
+  Gate F per-run checks are PASS for 83/83.
+- Read-only chunked HDF5 audit covered 129,896,466,978 bytes (about 120.976
+  GiB), 285,752 Stage0 windows, 11,430,080 CIR snapshots and 451 delay bins.
+  Every Stage0 window has 40 ordered one-ms snapshots. Frozen delay axis is
+  `-5:0.1:40` `delay_samples`. All audited CIR real/imag values are finite;
+  sample/time/window IDs and PDP axes align.
+- Stage2 association has 7,847 unique `(run_id,window_id)` windows and
+  7,847/7,847 verified CIR/PDP feature rows. Full Stage2 path accounting is
+  16,761 unique keys: 7,847 direct-reference paths plus 8,914 MPCs. All
+  8,914 MPC rows remain present and keyed by `(run_id,window_id,path_id)`;
+  none were filtered due to alpha or CIR state.
+- Stored PDP was independently recomputed as the mean of 40 per-snapshot
+  `|CIR|^2` values. Across all run outputs, maximum absolute and relative
+  differences are both 0 (the frozen relative tolerance is `64*eps(1)`).
+  No unmatched windows, alpha-missing/unavailable rows, power mismatches, or
+  final anomaly rows. Independent CSV-level alpha checks across all 16,761
+  source paths found max magnitude difference `9.8533e-16`, max wrapped phase
+  difference `7.9936e-15 rad`; recomputed MPC relative-power maximum absolute
+  difference is `1.1369e-13 dB`, with zero mismatches.
+- There are 63/7,847 windows with a PDP peak on a delay-grid boundary
+  (0.8028546%). They are retained and flagged. Stage2 selected-window MPC
+  distribution is 0/1/2/3/4+ = 3,574/1,412/1,081/1,780/0; a zero means no MPC
+  recorded in that Stage2-selected window, not no physical multipath. No
+  Stage0-unselected windows were added as zero-MPC observations.
+
+### Legacy source and scientific limits
+
+The G28/ch1 historical baseline has no receipt-pinned cohort, Stage0, or HDF5
+SHA. Its run/request identity and frozen SAGE SHA match; the Stage2 CSV is
+manifest-pinned, its sibling Stage0 CSV was observed at SHA
+`0a285872f2f0707b0ce21d379c57df9a69737e4a49c02c1d7a3b7790c2cd8277` and
+fully aligned to HDF5, and the observed HDF5 SHA is
+`73fc44e2a6c550f86030fcc40d2ec5a0c4a3ad30f099286831fd212f821ac53c`. The
+HDF5 SHA remains observed-unpinned, not a historical pin. The full audit
+runner source SHA was not captured at process start and is explicitly marked
+`NOT_CAPTURED_AT_PROCESS_START`; the final manifest contains helper/source
+hashes and the supplement-runner hash, not a false retrospective assertion.
+
+CIR is code-domain correlation from shared raw-IQ and Stage0 tracking inputs,
+not an independent channel truth. PDP uses noncoherent 40-snapshot mean
+power. The exported RMS value is a signed code-delay correlation width, not a
+validated physical multipath RMS delay spread. Amplitudes are relative, and
+alpha identity linkage does not establish absolute gain, cross-window phase
+coherence, or physical reflector continuity. Stage0 windows overlap and are
+not independent. These limits are reasons for the controlled WP4 status, not
+reasons to discard otherwise valid records.
+
+### Deliverables and verification
+
+Report and compact deliverables:
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp4_gate_ef_final_20261029T181100/`
+with `WP4_Gate_EF_独立科学验收报告.md`, `gate_e_f_summary_git.json`,
+`execution_manifest_git.json`, `gate_e_run_inventory_git.csv`
+(path-sanitized shareable copies),
+`stage2_cir_pdp_window_features.csv`,
+`stage2_mpc_cir_alpha_linkage.csv`, `gate_f_scene_summary.csv`,
+`gate_e_f_anomalies.csv`, `stage2_csv_schema_recheck.json`,
+`targeted_regression_evidence.md`, and `gate_e_f_finalization_git.log`. Large HDF5/MAT
+payloads remain in their existing E: namespaces and are not committed.
+The local `execution_manifest.json`, raw summary/inventory, and raw MATLAB
+logs are preserved in the isolated worktree but excluded from Git because they
+contain absolute machine paths. Sanitized summary, inventory, manifest and
+reproducible regression evidence are included in the report directory. The
+original local `gate_e_f_finalization.log` is likewise preserved; its
+relative-path shared copy is the committed `gate_e_f_finalization_git.log`.
+
+The initial isolated MATLAB R2025a targeted regression at
+2026-10-29 18:15:41–18:16:07 +08 passed 22/22 tests. Independent review then
+found that a missing Stage2 attribute column could be silently skipped by the
+CSV comparison. The comparison is now a shared fail-closed helper, and a
+schema-guard test covers missing source and ledger columns. The corrected
+regression at 18:41:26–18:42:32 +08 passed 25/25 tests across six test files;
+`checkcode` over six implementation files reported 0 issues; exit code 0.
+The same helper was then applied read-only to all 83 frozen Stage2 source CSVs:
+83/83 hashes matched the WP5 input manifest, schemas were complete, and all
+83 attribute comparisons passed with maximum difference 0. No MAT/HDF5/CIR
+payload was reread in this follow-up. The reproducible command, results and
+machine summary are in `targeted_regression_evidence.md` and
+`stage2_csv_schema_recheck.json`; raw logs containing local paths remain
+untracked. The initial regression's raw log is also preserved locally at
+`targeted_regression_live_20261029.log`
+(SHA-256 `14245f3fb323ea0d57117f3d5f4fa28a310c04eb398d6e28106a2310b517e9f6`).
+The full audit began 17:06:05 +08 and finished 17:53:09 +08 with 82 HDF5
+audits completed; G28 was stopped before HDF5 read because old metadata
+lacked current pin fields. Its targeted read-back ran 17:59:05–17:59:10 +08;
+the original log and limitation remain preserved.
+
+WP6 data inputs are available as candidates, but WP6 remains
+`PENDING_AUTHORIZATION` and has not started. This acceptance does not fit a
+model, certify physical channel truth, or authorize automatic downstream
+analysis.

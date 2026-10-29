@@ -103,11 +103,13 @@
 - Reuse: `scripts/channel_modeling/Invoke-Mainline1023CIRSingle.ps1`、Task 3 MATLAB exporter/validator
 - Generate, new-only: 同版 `.../runs/<run_id>/`、`cir_run_receipts/<run_id>.json`、`cir_batch_audit.json`
 
-- [ ] 每轮只从冻结清单选择仍为 `NEW_REQUIRED` 且无成功 receipt 的下一个身份；最多一个 MATLAB worker，逐项 `ValidateOnly → export → chunked QA → receipt → publish`。不重跑先导/pilot，不覆盖已有输出。
-- [ ] 每项保存运行身份、Stage0窗口数、snapshot数、451-bin 网格、PDP误差、输入/代码/清单 SHA、E:空间前后、输出文件元数据及失败现场。异常停批；不自动重试。每次生产写入前确认无新 I/O/断连/校验失败。
-- [ ] 总验收：83项清单 = 1项既有 pilot + 82项新 CIR；每项都有有效 QA/receipt，缺项、重复、跨身份串用或 partial 一律 FAIL。汇总 Stage0↔CIR 覆盖和缺失，不把 Stage2 未选窗误称未导出。
+- [x] 每轮只从冻结清单选择仍为 `NEW_REQUIRED` 且无成功 receipt 的下一个身份；最多一个 MATLAB worker，逐项 `ValidateOnly → export → chunked QA → receipt → publish`。不重跑先导/pilot，不覆盖已有输出。
+- [x] 每项保存运行身份、Stage0窗口数、snapshot数、451-bin 网格、PDP误差、输入/代码/清单 SHA、E:空间前后、输出文件元数据及失败现场。异常停批；不自动重试。每次生产写入前确认无新 I/O/断连/校验失败。
+- [x] 总验收：冻结83项身份 = 80项正式 PASS + 2项既有 CIR pilot + 1项历史 baseline read-back；逐项 receipt/QA 与 run/window 来源已审计，不把旧失败 release 重复计入。Stage0↔CIR 按窗核验，不把 Stage2 未选窗口误称未导出。
 
 **Gate E:** 83/83 清单项 CIR 有证据且批次审计 PASS；仅此时将“批量 CIR 完成”写入 Engineering Handoff。失败则保留已成功项，不谎称全量完成。
+
+**Gate E 最终验收：`PASS_WITH_LIMITATIONS`（2026-10-29）。** 83 个 run 身份唯一；Task 5 的正式 80 项为 43 项当前 release PASS + 37 项继承 PASS；2 个 CIR pilot 与 1 个 baseline read-back 单列。独立输出 inventory 为 82 `PASS` + 1 个旧 G28/ch1 `PASS_WITH_LIMITATIONS`，该项无历史 Stage0/HDF5 SHA pin；full audit runner SHA 未在进程开始时记录。最终报告、inventory、执行 manifest 和 hashes 见 `reports/data_consolidation_20261003/mainline_1023_model_v1/wp4_gate_ef_final_20261029T181100/`。
 
 ### Task 6: 构建 Stage2 全MPC 数据账本与建模输入
 
@@ -117,12 +119,14 @@
 - Add: `scripts/channel_modeling/tests/test_mainline_1023_stage2_ledger.py`
 - Generate, new-only: `dataset_generation_logs/channel_modeling/mainline_1023_model_v1_<UTC>/stage2_ledger.csv`、`feature_audit.json`、per-run alpha sidecars/receipts as needed
 
-- [ ] 只读83项 Stage2/3/4 CSV，若需要 complex alpha 才通过受控路径读取相应 Stage2 MAT 的选中模型；alpha 不得作为 Stage2 MPC 纳入条件。保留 pilot 的窗口归一化 alpha 语义与接收机校准限制。
-- [ ] 新 ledger 每条选中路径恰好一行，以 `(run_id,window_id,path_id)` 唯一；`is_multipath=1` 的8,914条全部在候选总体，7,847直达单列参考。Stage3 persistent 与 Stage4 confirmed/unmapped 只作三态/多态标签，不把未映射当 NO。既有 Stage3-gated pilot ledger 保留不改。
-- [ ] 只在有可靠同 scene/PRN 元数据时联结仰角档，记录匹配来源、粒度和缺失；不用其他时间/PRN 猜测。CIR/PDP 特征必须按准确 Stage0 window_id 与 Stage2 window_id 对齐，并记录是否重叠或无选中路径。
-- [ ] 对行数守恒、有限值、单位、键唯一、直接/多径分离、alpha 对齐、CIR 对齐和缺失进行测试；产出机器可读 feature audit。若总数不等于16,761/7,847/8,914，或出现身份冲突，停止建模。
+- [x] 只读83项 Stage2/3/4 CSV及已验收 WP5 alpha 表；alpha 不作为 Stage2 MPC 纳入条件。保留窗口归一化 alpha 语义与接收机校准限制。
+- [x] 每条 Stage2 路径以 `(run_id,window_id,path_id)` 唯一，共16,761行；`is_multipath=1` 的8,914条全部保留，7,847直达路径单列参考。Stage3/Stage4 只作属性，不把未映射当 NO。
+- [x] Stage2 窗口与 CIR/PDP 以精确 `(run_id,window_id)` 关联；7,847/7,847 全覆盖，窗口表保留 0 MPC 已选窗口；重叠信息与 Stage2 条件总体限制均保留。
+- [x] 行数守恒、唯一键、有限 alpha、实虚/幅相一致、相对功率、PDP 重算、轴/窗口身份与缺失均经独立计算或定向测试；16,761 paths / 7,847 windows / 8,914 MPC 守恒，最终异常0。
 
 **Gate F:** 新输入表与冻结清单、Stage2 全 MPC 策略、CIR QA 一致；无泄漏或静默删行。
+
+**Gate F 最终验收：`PASS_WITH_LIMITATIONS`（2026-10-29）。** 83 个 HDF5 均经分块实际读取；285,752 Stage0 窗口对应11,430,080个40-snapshot CIR 行、451 bins。PDP=`mean(|CIR|²)` 的最大绝对/相对差均为0；Stage2 7,847窗口和8,914 MPC 精确关联，无缺失或异常。63 个边界峰保留。CIR是基于共享 raw-IQ/Stage0 输入的 code-domain correlation；code-delay RMS 宽度不是已验证物理 RMS delay spread，幅度相对未标定、跨窗相位未验证、重叠窗口不独立。完整科学边界与逐场景统计见 WP4 Gate E/F 报告。
 
 ### Task 7: 拟合、对照并独立验证新版本模型
 
@@ -160,3 +164,12 @@
 ## 本次交付边界
 
 截至2026-10-23 UTC：Task 1/Gate A、Task 2/Gate B、Task 3/Gate C 和 Task 4 baseline + G18/G23 pilot 验收已完成；Task 5 的80项 CIR serial batch 已获单独授权并开始生产，最新检查样本见工程交接手册第95节。Task 6 的 Stage2 全路径账本及83项统计已生成，16,761行守恒、7,847 direct reference、8,914 MPC候选，具体结果见 reports/data_consolidation_20261003/mainline_1023_model_v1/task6_stage2_ledger_summary_20261023.md。这只是 Stage2 ledger 的阶段性通过：CIR/PDP精确关联、HDF5 read-back 和 Gate F 仍待 Task 5 完成；本计划不表示 CIR 特征已齐或已建模。
+
+### Gate E/F superseding acceptance update (2026-10-29)
+
+The dated 2026-10-23 status above is retained as historical context and is
+superseded by the actual independent acceptance in sections Task 5 and Task 6
+above and the report
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp4_gate_ef_final_20261029T181100/WP4_Gate_EF_独立科学验收报告.md`.
+Gate E/F are `PASS_WITH_LIMITATIONS`; WP6 remains unstarted and requires
+separate Commander authorization.
