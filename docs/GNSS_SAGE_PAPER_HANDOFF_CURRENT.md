@@ -3,9 +3,9 @@
 **项目根目录：** `E:\GNSS_Multipath_Project`  
 **论文状态唯一来源：** 本文件  
 **长期建模路线与 WP0–WP6 状态权威来源：** `docs/ACADEMIC_CHANNEL_MODELING_MASTER_PLAN.md`（本文件继续负责论文事实、科学解释和论文状态）
-**最后审计时点：** 2026-10-29 18:10 +08（Asia/Shanghai；WP4 CIR/PDP Gate E/F 全量独立科学验收见第29节；WP5 alpha 结果见第28节）
+**最后科学状态更新：** 2026-10-29 23:52 +08（Asia/Shanghai；WP6 最终图表/回归闭合、真实数据重跑与独立复核见第31节。此时点不等于 Task 5 实时进程核查。）
 **面向对象：** 论文写作者、科研人员、方法分析人员  
-**当前 Mainline 新增研究状态：** Stage2探索V0、WP2稳健性分析、WP3有界条件化分析均已完成并带限制；WP3独立审阅为 `PASS_WITH_LIMITATIONS`。WP4 CIR/PDP Gate E/F 已对83个run、7,847个Stage2窗口和8,914个MPC完成全量验收，结论为 `PASS_WITH_LIMITATIONS`；窗口级PDP特征和精确Stage2-alpha-CIR接口可供后续WP6决策使用。WP5全量复数alpha为83/83 run PASS、16,761/16,761路径均有有效alpha。上述结果仍受Stage2选择、窗口归一化、相对幅度、重叠窗口、code-delay特征解释和未验证跨窗口相位相干限制。WP6尚未启动；不得宣称完整物理信道或生成模型。Phase-2仍未开展。
+**当前 Mainline 新增研究状态：** Stage2探索V0、WP2稳健性、WP3条件分析、WP4 Gate E/F 和 WP5 全量 alpha 均已完成并带限制；WP3独立审阅=`PASS_WITH_LIMITATIONS`，WP4 Gate E/F=`PASS_WITH_LIMITATIONS`。WP6 已在 83 run/13 scene 的 Stage2总体上完成候选统计分析与独立数值/代码审阅，状态为 `COMPLETED_WITH_LIMITATIONS`，Gate G 仍 `PENDING`。计数结论仅条件于 Stage2 已选窗口；时延 ties 使当前连续 Copula 评分不适用；相对功率家族和计数—标记条件独立性未定。结果不证明完整物理信道、绝对增益、跨窗相位相干或反射体跟踪。Phase-2仍未开展。
 **研究阶段：** accuracy-first full SAGE 冻结批次及独立批后 QA 已完成；Phase-1 的 Stage3 传统统计建模和 scientific closure 已完成并通过 QA（带明确限制）。coverage-complete event/path database、通用 channel-parameter database、Phase-2 AI 和完整暗室生成器仍是独立后续范围。
 
 > 本文只负责科学问题、贡献、实验解释、论文可写事实、图表、限制和未来路线。工程文件路径、执行门禁、hash和receipt的唯一状态源是 `docs/GNSS_SAGE_ENGINEERING_HANDOFF_CURRENT.md`。本文不得把设计、计划或gold前预测写成实验结果。
@@ -1755,3 +1755,132 @@ difference 0. This follow-up read only CSV/ledger data, did not reread
 MAT/HDF5/CIR payloads, and did not alter the accepted scientific tables. Exact
 execution details are recorded in the WP4 report package's
 `targeted_regression_evidence.md` and `stage2_csv_schema_recheck.json`.
+
+## 30. WP6 Mainline Stage2 joint statistical channel-model study (2026-10-29)
+
+The current WP6 result is a **candidate, Stage2-selection-conditional model**,
+not a validated complete channel generator. Its population comprises 7,847
+selected windows, 8,914 MPC, 83 runs and 13 scenes. The selected-window MPC
+count histogram is $N=0,1,2,3$: 3,574 / 1,412 / 1,081 / 1,780. Unselected
+Stage0 windows are outside the denominator; 63 PDP delay-grid boundary peaks
+remain retained.
+
+The model candidate can be written as
+
+\[
+P(N_w=n,\,\mathbf X_w\mid S_w=1)
+  = \hat p_{\mathrm{scene-bal}}(n\mid S_w=1)
+    \prod_{j=1}^{n} f_\tau(\tau_{wj})f_\nu(\nu_{wj})f_p(p_{wj}),
+\]
+
+where $S_w=1$ denotes a Stage2-selected window and
+$\mathbf X=(\tau,\nu,p)$ are excess delay (chips), signed relative Doppler
+(Hz), and relative power (dB). This product form imposes unverified count/mark
+factorization, common mark distributions across count categories, and
+exchangeable/conditional-iid marks. It is therefore a modular reference, not
+a validated full joint law.
+
+Nested scene-LOSO selected Lognormal delay in 13/13 folds and Student-t
+Doppler in 13/13; relative power selected Student-t in 8 folds and Normal in
+5. The full-data descriptive candidate parameters are: delay Lognormal
+shape `0.510756`, scale `0.192930` chips (loc fixed at zero); Doppler
+Student-t df `8.172952`, loc `0.759586` Hz, scale `61.776353` Hz; relative
+power Normal loc `−8.157576` dB and scale `6.826866` dB. The relative-power
+family is unstable across folds, so its full-data Normal fit is provisional.
+Six optimizer failures and 72/234 low-support tail diagnostics are retained.
+
+**Dependence is unresolved.** Excess delay has 128 stored floating values and
+127 values at 0.01-chip quantization. The current continuous Gaussian-Copula
+score uses a continuous tau transform and point density, not a proper
+mixed discrete/continuous likelihood. Its numeric score and per-scene signs
+are diagnostics only; they establish neither predictive gain nor no gain.
+No ties-aware replacement has been fitted.
+
+Separate CIR/PDP associations used the same windows and measurement chain,
+not an independent truth source. Scene-macro LOSO RMSE for PDP RMS code-delay
+width changed from `2.485324` (intercept) to `2.446555` (linear; −1.56%),
+better in 10/13 scenes. For PDP peak-minus-SAGE-direct delay it changed from
+`4.298158` to `4.290361` (−0.18%), better in 6/13. These small descriptive
+associations do not validate a physical RMS delay spread or SAGE-to-CIR
+reconstruction; windows overlap and LOSO training sets overlap.
+
+Independent table checks reconciled all 7,847 window/scene keys and
+recomputed 52/52 PDP scene/model/target score rows from window predictions
+(maximum error `1.78e−15`). Focused WP6 tests passed 33/33; the channel-modeling
+suite passed 216/216 after a test-first fix for the unscorable multi-path
+window branch. This supports reproducibility and arithmetic/key
+consistency, not inferential independence or the validity of the Copula
+likelihood. Full reports, tables, figures, source hashes and test logs are in
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp6_20261029T134821Z/`.
+
+**Paper disposition:** retain the Stage2-conditional empirical count table,
+Lognormal delay and Student-t Doppler as candidate components, and report
+relative power as family-uncertain. Do not claim a validated Copula,
+count-conditional mark law, universal dependence, absolute receive gain,
+cross-window alpha phase coherence, or physical reflector tracking. WP6 is
+`COMPLETED_WITH_LIMITATIONS`; Gate G remains `PENDING`. The one next decision
+is whether to authorize ties-aware dependence scoring plus a scene-level
+count-conditional mark-invariance assessment. Phase-2 remains
+`PLANNED_ONLY`.
+
+### WP6 post-review result closure (2026-10-29 23:29 +08)
+
+The 13-scene real analysis was rerun after correcting the count/mark joint
+score output and independent validation coverage. The earlier package remains
+unchanged; the current package is
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp6_20261029T152500Z_postreview/`.
+The new factorized count + product-mark scene-macro score is `−10.434219`
+nats per Stage2-selected window across 13/13 scenes. It assumes count-invariant
+mark distributions and within-window conditional-iid/exchangeability; these
+are not empirically verified, so this number is a candidate composite score,
+not a validated complete joint generator. The separate count score and
+product-mark scores remain available. If a Copula fit is unavailable, valid
+product marginal scores are retained; current continuous Copula values still
+cannot rank models with quantized/tied delay.
+
+The independent validator returned `PASS_WITH_LIMITATIONS`, reconciling
+7,847/7,847 selected windows, 8,914/8,914 MPC, all 13 joint-scored scenes,
+6 optimizer-failure records, 72/234 low-support tail records and all 52 PDP
+scene/model/target score rows. Focused WP6 tests passed 38/38; the full
+channel-modeling suite passed 221/221; `py_compile` exited 0. This establishes
+implementation and table consistency, not independent-scene replication,
+physical truth, Gate G or causal inference. Gate G remains `PENDING`; Phase-2
+remains `PLANNED_ONLY`.
+
+### Final WP6 review closure (2026-10-29 23:52 +08)
+
+The final current result package is
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp6_20261029T154500Z_final/`;
+prior packages remain unchanged. The fixed 83-run/13-scene population still
+contains 7,847 Stage2-selected windows and 8,914 MPC. Empirical count support
+is 0/1/2/3 = 3,574/1,412/1,081/1,780; unselected Stage0 windows are not
+treated as zero-MPC, and all 63 PDP boundary peaks remain retained.
+
+The new scene-equal count + product-mark factorized candidate scores
+`-10.4342187429` nats per selected window over 13/13 scenes. It assumes
+count-invariant marks and conditional iid/exchangeability within each window;
+these assumptions are unverified and the result is not a validated complete
+joint generator. Marginal fold-family results remain: delay Lognormal 13/13,
+Doppler Student-t 13/13, relative power Student-t 8/13 vs Normal 5/13. Six
+fit failures and 72/234 low-support tail records are preserved. Gaussian
+Copula continuous point-density values are diagnostic-only because tied and
+quantized delay invalidates their use for ranking.
+
+The final validator independently reports `PASS_WITH_LIMITATIONS`, reconciling
+7,847 window keys, 8,914 MPC, 13/13 joint scenes, zero unscorable joint
+windows, 52/52 PDP score rows and delay-moment arithmetic to floating-point
+roundoff. WP6 tests are 39/39 PASS; the full channel suite is 222/222 PASS;
+compile exit code is zero. An independent code/result follow-up found no
+remaining Critical/Important/Minor findings. Small PDP associations use
+shared measurement inputs; they are not independent physical truth, a
+validated physical RMS spread, or a propagation reconstruction.
+
+**Paper recommendation:** retain the Stage2-conditional empirical count,
+Lognormal delay and Student-t Doppler as candidate components; report
+relative-power family selection as unstable; do not rank or claim a Copula
+benefit, and describe the count-mark product only as a conditional composite
+candidate. WP6 is `COMPLETED_WITH_LIMITATIONS`; Gate G remains `PENDING` until
+the joint-model acceptance criterion is explicitly satisfied. No causal,
+universal scene-general dependence, absolute calibrated gain, cross-window
+alpha phase coherence or physical reflector-tracking claim is supported.
+Phase-2 remains `PLANNED_ONLY`; Task 5 was not rechecked or touched.

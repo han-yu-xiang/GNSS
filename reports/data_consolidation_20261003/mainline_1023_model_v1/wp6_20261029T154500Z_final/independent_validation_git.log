@@ -1,0 +1,10 @@
+WP6 independent validation (portable summary; raw console output remains local)
+Command: python scripts/channel_modeling/validate_mainline_stage2_wp6.py reports/data_consolidation_20261003/mainline_1023_model_v1/wp6_20261029T154500Z_final --features reports/data_consolidation_20261003/mainline_1023_model_v1/wp4_gate_ef_final_20261029T181100/stage2_cir_pdp_window_features.csv --mpcs reports/data_consolidation_20261003/mainline_1023_model_v1/wp4_gate_ef_final_20261029T181100/stage2_mpc_cir_alpha_linkage.csv
+Started UTC: 2026-10-29T15:50:09.3670503+00:00
+Ended UTC: 2026-10-29T15:50:41.9418016+00:00
+Exit code: 0
+Status: PASS_WITH_LIMITATIONS
+Windows: 7847/7847; MPC: 8914/8914; scenes: 13; count-mark scored scenes: 13/13; unscorable selected windows: 0
+PDP scene/model/target scores: 52/52; retained fit failures: 6; low-support tails: 72/234; boundary peaks retained: 63
+Maximum recomputed delay-centroid, delay-RMS, and relative-power-sum errors: 3.552713678800501e-15, 1.7763568394002505e-15, and 5.684341886080802e-14.
+Frozen input SHA-256 values are recorded in independent_validation_git.json.

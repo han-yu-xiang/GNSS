@@ -505,46 +505,67 @@ def score_mark_models(fitted_marginals, copula, test_mpcs):
     missing = [v for v in MARK_VARIABLES if v not in fitted_marginals]
     if missing:
         raise ValueError(f"fitted marginals missing variables: {missing}")
-    if copula is None:
-        raise ValueError("copula matrix is unavailable; retain fold as unscorable")
-    corr = np.asarray(copula, dtype=float)
-    if corr.shape != (len(MARK_VARIABLES), len(MARK_VARIABLES)):
+    corr = None if copula is None else np.asarray(copula, dtype=float)
+    if corr is not None and corr.shape != (len(MARK_VARIABLES), len(MARK_VARIABLES)):
         raise ValueError("copula matrix dimension does not match mark variables")
     product_rows = np.zeros(len(frame), dtype=float)
-    uniforms = np.zeros((len(frame), len(MARK_VARIABLES)), dtype=float)
+    uniforms = np.zeros((len(frame), len(MARK_VARIABLES)), dtype=float) if corr is not None else None
     for index, variable in enumerate(MARK_VARIABLES):
         fit = fitted_marginals[variable]
         if not _usable_fit(fit):
             raise ValueError(f"marginal fit unavailable for {variable}: {fit.get('status')}")
         family, parameters = fit["family"], fit["parameters"]
         product_rows += _wp3_distribution_logpdf(family, frame[variable].to_numpy(), parameters)
-        uniforms[:, index] = _distribution_cdf(family, frame[variable].to_numpy(), parameters)
-    copula_rows = gaussian_copula_log_density(uniforms, corr)
-    finite = np.isfinite(product_rows) & np.isfinite(copula_rows)
+        if uniforms is not None:
+            uniforms[:, index] = _distribution_cdf(family, frame[variable].to_numpy(), parameters)
+    product_finite = np.isfinite(product_rows)
+    copula_rows = (gaussian_copula_log_density(uniforms, corr)
+                   if corr is not None and product_finite.all() else None)
+    copula_finite = np.isfinite(copula_rows) if copula_rows is not None else np.zeros(len(frame), dtype=bool)
     work = frame[[*WINDOW_KEY, "scene_id"]].copy()
-    work["product_row_score"] = np.where(finite, product_rows, np.nan)
-    work["copula_row_score"] = np.where(finite, product_rows + copula_rows, np.nan)
-    work["row_status"] = np.where(finite, "SCORED", "UNSCORABLE_NONFINITE_DENSITY")
+    work["product_row_score"] = np.where(product_finite, product_rows, np.nan)
+    work["copula_row_score"] = (np.where(copula_finite, product_rows + copula_rows, np.nan)
+                                 if copula_rows is not None else np.nan)
+    work["product_row_status"] = np.where(product_finite, "SCORED", "UNSCORABLE_NONFINITE_DENSITY")
+    work["copula_row_status"] = np.where(copula_finite, "SCORED", "COPULA_UNAVAILABLE")
     rows = []
     for identity, group in work.groupby(list(WINDOW_KEY), sort=True, dropna=False):
-        status = "SCORED" if group.row_status.eq("SCORED").all() else "UNSCORABLE_NONFINITE_DENSITY"
+        product_status = ("SCORED" if group.product_row_status.eq("SCORED").all()
+                          else "UNSCORABLE_NONFINITE_DENSITY")
+        copula_status = ("SCORED" if group.copula_row_status.eq("SCORED").all()
+                         else "COPULA_UNAVAILABLE")
+        status = ("SCORED" if product_status == "SCORED" and copula_status == "SCORED"
+                  else "PRODUCT_ONLY_COPULA_UNAVAILABLE" if product_status == "SCORED"
+                  else "UNSCORABLE_NONFINITE_DENSITY")
         rows.append({
             "run_id": identity[0], "window_id": identity[1],
             "scene_id": group.scene_id.iloc[0], "path_n": int(len(group)), "status": status,
-            "product_marginal_log_score": float(group.product_row_score.sum()) if status == "SCORED" else np.nan,
-            "gaussian_copula_log_score": float(group.copula_row_score.sum()) if status == "SCORED" else np.nan,
+            "product_score_status": product_status, "copula_score_status": copula_status,
+            "product_marginal_log_score": (float(group.product_row_score.sum())
+                                            if product_status == "SCORED" else np.nan),
+            "gaussian_copula_log_score": (float(group.copula_row_score.sum())
+                                           if copula_status == "SCORED" else np.nan),
         })
     per_window = pd.DataFrame(rows)
     scene_rows = []
     for scene_id, group in per_window.groupby("scene_id", sort=True, dropna=False):
-        status = "SCORED" if group.status.eq("SCORED").all() else "UNSCORABLE_NONFINITE_DENSITY"
+        product_status = ("SCORED" if group.product_score_status.eq("SCORED").all()
+                          else "UNSCORABLE_NONFINITE_DENSITY")
+        copula_status = ("SCORED" if group.copula_score_status.eq("SCORED").all()
+                         else "COPULA_UNAVAILABLE")
+        status = ("SCORED" if product_status == "SCORED" and copula_status == "SCORED"
+                  else "PRODUCT_ONLY_COPULA_UNAVAILABLE" if product_status == "SCORED"
+                  else "UNSCORABLE_NONFINITE_DENSITY")
         scene_rows.append({
             "scene_id": scene_id, "window_n": int(len(group)),
-            "unscorable_window_n": int(group.status.ne("SCORED").sum()), "status": status,
+            "unscorable_window_n": int(group.product_score_status.ne("SCORED").sum()),
+            "unscorable_copula_window_n": int(group.copula_score_status.ne("SCORED").sum()),
+            "status": status, "product_score_status": product_status,
+            "copula_score_status": copula_status,
             "product_marginal_mean_window_log_score": (
-                float(group.product_marginal_log_score.mean()) if status == "SCORED" else np.nan),
+                float(group.product_marginal_log_score.mean()) if product_status == "SCORED" else np.nan),
             "gaussian_copula_mean_window_log_score": (
-                float(group.gaussian_copula_log_score.mean()) if status == "SCORED" else np.nan),
+                float(group.gaussian_copula_log_score.mean()) if copula_status == "SCORED" else np.nan),
         })
     return per_window, pd.DataFrame(scene_rows)
 
@@ -656,7 +677,9 @@ def evaluate_nested_mark_loso(mpcs):
                 "fit_failure_reason": fit.get("failure_reason", ""),
                 "boundary_parameters": fit.get("boundary_parameters", []),
             })
-            tail_frames.append(calibrate_mark_tails(fit, test, variable))
+            tail_rows = calibrate_mark_tails(fit, test, variable)
+            tail_rows.insert(0, "outer_held_out_scene_id", held_scene)
+            tail_frames.append(tail_rows)
         all_marginals_pass = all(_usable_fit(fit) for fit in fitted.values())
         corr = None
         copula_diag = {"status": "MARGINAL_FIT_UNAVAILABLE"}
@@ -670,13 +693,14 @@ def evaluate_nested_mark_loso(mpcs):
             "correlation_json": corr.tolist() if corr is not None else None,
             "diagnostics_json": copula_diag,
         })
-        if all_marginals_pass and corr is not None:
+        if all_marginals_pass:
             per_window, per_scene = score_mark_models(fitted, corr, test)
             per_window.insert(0, "outer_held_out_scene_id", held_scene)
             per_scene.insert(0, "outer_held_out_scene_id", held_scene)
             window_frames.append(per_window)
             scene_score_frames.append(per_scene)
             scene_score = per_scene.iloc[0]
+            copula_available = scene_score.copula_score_status == "SCORED"
             fold_rows.append({
                 "held_out_scene_id": held_scene,
                 "training_scene_ids": sorted(train.scene_id.astype(str).unique().tolist()),
@@ -684,15 +708,40 @@ def evaluate_nested_mark_loso(mpcs):
                 "test_window_n": int(test[list(WINDOW_KEY)].drop_duplicates().shape[0]),
                 "test_mpc_n": int(len(test)),
                 "selected_families": selected,
-                "fit_status": "PASS",
+                "fit_status": "PASS" if copula_available else "PRODUCT_ONLY_COPULA_UNAVAILABLE",
                 "copula_status": copula_diag.get("status"),
                 "product_marginal_mean_window_log_score": scene_score.product_marginal_mean_window_log_score,
                 "gaussian_copula_mean_window_log_score": scene_score.gaussian_copula_mean_window_log_score,
-                "copula_minus_product_score": scene_score.gaussian_copula_mean_window_log_score
-                    - scene_score.product_marginal_mean_window_log_score,
+                "copula_minus_product_score": (
+                    scene_score.gaussian_copula_mean_window_log_score
+                    - scene_score.product_marginal_mean_window_log_score if copula_available else np.nan),
                 "uncertainty_claim": "DESCRIPTIVE_LOSO_FOLDS; TRAINING SETS OVERLAP",
             })
         else:
+            path_counts = test.groupby(list(WINDOW_KEY), sort=True).size().rename("path_n").reset_index()
+            unscorable_windows = test[list(WINDOW_KEY + ("scene_id",))].drop_duplicates(
+                list(WINDOW_KEY)).merge(
+                    path_counts, on=list(WINDOW_KEY), how="left", sort=False,
+                    validate="one_to_one")
+            unscorable_windows["outer_held_out_scene_id"] = held_scene
+            unscorable_windows["status"] = "UNSCORABLE_MARGINAL_FIT"
+            unscorable_windows["product_score_status"] = "UNSCORABLE_MARGINAL_FIT"
+            unscorable_windows["copula_score_status"] = "NOT_EVALUATED"
+            unscorable_windows["product_marginal_log_score"] = np.nan
+            unscorable_windows["gaussian_copula_log_score"] = np.nan
+            window_frames.append(unscorable_windows)
+            scene_score_frames.append(pd.DataFrame([{
+                "outer_held_out_scene_id": held_scene,
+                "scene_id": held_scene,
+                "window_n": int(test[list(WINDOW_KEY)].drop_duplicates().shape[0]),
+                "unscorable_window_n": int(test[list(WINDOW_KEY)].drop_duplicates().shape[0]),
+                "unscorable_copula_window_n": int(test[list(WINDOW_KEY)].drop_duplicates().shape[0]),
+                "status": "UNSCORABLE_MARGINAL_FIT",
+                "product_score_status": "UNSCORABLE_MARGINAL_FIT",
+                "copula_score_status": "NOT_EVALUATED",
+                "product_marginal_mean_window_log_score": np.nan,
+                "gaussian_copula_mean_window_log_score": np.nan,
+            }]))
             fold_rows.append({
                 "held_out_scene_id": held_scene,
                 "training_scene_ids": sorted(train.scene_id.astype(str).unique().tolist()),

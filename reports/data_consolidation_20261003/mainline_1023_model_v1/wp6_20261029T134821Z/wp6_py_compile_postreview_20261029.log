@@ -1,0 +1,4 @@
+COMMAND: python -m py_compile scripts/channel_modeling/mainline_stage2_wp6.py scripts/channel_modeling/run_mainline_stage2_wp6.py scripts/channel_modeling/validate_mainline_stage2_wp6.py scripts/channel_modeling/tests/test_mainline_stage2_wp6.py
+START_UTC=2026-10-29T14:46:05.4803399Z
+END_UTC=2026-10-29T14:46:05.7199915Z
+EXIT_CODE=0

@@ -1,0 +1,32 @@
+{
+  "status": "PASS_WITH_LIMITATIONS",
+  "output_path": "reports/data_consolidation_20261003/mainline_1023_model_v1/wp6_20261029T154500Z_final",
+  "window_n": 7847,
+  "mpc_n": 8914,
+  "scene_n": 13,
+  "mpc_bearing_window_n": 4273,
+  "zero_mpc_selected_window_n": 3574,
+  "boundary_peak_window_n": 63,
+  "count_mark_joint_scene_macro_mean_log_score": -10.434218742947845,
+  "count_mark_joint_scorable_scene_n": 13,
+  "count_mark_joint_unscorable_window_n": 0,
+  "mark_failure_record_n": 6,
+  "mark_low_support_tail_record_n": 72,
+  "max_recomputed_delay_summary_abs_error": {
+    "sage_relative_power_delay_centroid_samples": 3.552713678800501e-15,
+    "sage_relative_power_delay_rms_samples": 1.7763568394002505e-15,
+    "sage_direct_plus_mpc_relative_power_sum": 5.684341886080802e-14
+  },
+  "source_sha256": {
+    "features": "258d5d70081d9ee6fd82a64b1a4f9c405180bc18cd49280b0e2b799d9a482bf4",
+    "mpcs": "8db941db20e684108d13583d67ee20cde543bf2a36ca01013d1288b48231c80b"
+  },
+  "code_sha256": {
+    "mainline_stage2_wp6.py": "a1fae7384c713067d82e67b60478a4d037e9a5825ff7d471bfdc536b0e37422a",
+    "mainline_stage2_wp3.py": "67651a6cea536df1f0d7dcd61b8da034fcc196f903b12250427fc7f1f726ac3b",
+    "run_mainline_stage2_wp6.py": "715650a82c073455f81704f6aaf284b4bf8d8c7c44164cd73f6a8eac9f92c49d",
+    "validate_mainline_stage2_wp6.py": "18bdfa3edf18d990dcac3d69a22f203738ba3aed76b726d9e60b0e21c5a0e141"
+  },
+  "validator_sha256": "18bdfa3edf18d990dcac3d69a22f203738ba3aed76b726d9e60b0e21c5a0e141",
+  "validation_scope": "Independent key/count/fold, count-mark joint score, retained nested-fit failures and mark-tail support, per-scene PDP score and summary, and direct-plus-MPC delay arithmetic; distribution-family/Copula method interpretation remains scientific review."
+}

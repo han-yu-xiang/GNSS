@@ -1,0 +1,64 @@
+{
+  "window_n": 7847,
+  "mpc_n": 8914,
+  "scene_n": 13,
+  "run_n": 83,
+  "zero_mpc_selected_window_n": 3574,
+  "selected_window_count_histogram": {
+    "0": 3574,
+    "1": 1412,
+    "2": 1081,
+    "3": 1780
+  },
+  "boundary_peak_window_n": 63,
+  "population_scope": "Stage2-selected windows only; conditional on Stage2 selection",
+  "count_scene_macro_mean_log_score": -1.297384763093341,
+  "count_scorable_scene_n": 13,
+  "mark_scorable_scene_n": 13,
+  "product_marginal_scene_macro_score": -16.189600656308468,
+  "copula_scene_macro_score": -16.29107061754208,
+  "copula_minus_product_scene_macro_score": -0.10146996123360957,
+  "mark_unscorable_scene_n": 0,
+  "mark_failure_record_n": 6,
+  "mark_low_support_tail_record_n": 72,
+  "pdp_scene_scores": {
+    "pdp_peak_minus_sage_direct_delay_samples": {
+      "INTERCEPT": {
+        "scene_macro_mae": 2.6717132062211255,
+        "scene_macro_rmse": 4.29815839594569,
+        "scored_scene_n": 13
+      },
+      "LINEAR": {
+        "scene_macro_mae": 2.6599985077615695,
+        "scene_macro_rmse": 4.290360743420023,
+        "scored_scene_n": 13
+      },
+      "linear_minus_intercept_rmse": -0.007797652525667331
+    },
+    "pdp_rms_width_code_delay_samples": {
+      "INTERCEPT": {
+        "scene_macro_mae": 2.2449961634469693,
+        "scene_macro_rmse": 2.4853244682137623,
+        "scored_scene_n": 13
+      },
+      "LINEAR": {
+        "scene_macro_mae": 2.179317373247005,
+        "scene_macro_rmse": 2.4465553321633235,
+        "scored_scene_n": 13
+      },
+      "linear_minus_intercept_rmse": -0.038769136050438746
+    }
+  },
+  "limitations": [
+    "Stage2-selected population only; no unconditional Stage0 count inference",
+    "scene-held-out folds overlap in their training sets; fold spread is descriptive",
+    "MPC marks are scored as an exchangeable conditional-iid composite model",
+    "CIR/PDP association shares measurement inputs and is not independent propagation truth",
+    "no absolute gain or cross-window alpha phase coherence claim"
+  ],
+  "figures": [
+    "wp6_selected_window_count.png",
+    "wp6_scene_heldout_copula_delta.png",
+    "wp6_scene_heldout_pdp_rmse_delta.png"
+  ]
+}
