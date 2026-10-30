@@ -1,0 +1,44 @@
+{
+  "status": "PASS_WITH_LIMITATIONS",
+  "validated_at_utc": "2026-10-30T12:43:28+00:00",
+  "independent_validator_sha256": "77c488ce38f135c0b321fd217e4ca3c58c76b96e77b75d1daa1faca221d3529b",
+  "input_sha256": {
+    "features": "258d5d70081d9ee6fd82a64b1a4f9c405180bc18cd49280b0e2b799d9a482bf4",
+    "mpcs": "8db941db20e684108d13583d67ee20cde543bf2a36ca01013d1288b48231c80b"
+  },
+  "input_rows": {
+    "selected_windows": 7847,
+    "mpcs": 8914,
+    "scenes": 13,
+    "stage2_run_ids": 83,
+    "mpc_bearing_run_ids": 77
+  },
+  "check_n": 116,
+  "failed_check_n": 0,
+  "score_sample_n": 9,
+  "max_abs_error_independent_quadrature_m0": 1.7763568394002505e-15,
+  "max_abs_error_independent_quadrature_c0": 7.105427357601002e-15,
+  "interpretation": "fixed-bin Stage2 mark distribution; not adaptive SAGE output likelihood, ordered path generator, or physical channel truth",
+  "limitation": "path rows within selected windows are not independent; Gate G requires broader scientific acceptance beyond numerical/identity checks",
+  "analysis_source_sha256": {
+    "scripts/channel_modeling/mainline_stage2_wp3.py": "67651a6cea536df1f0d7dcd61b8da034fcc196f903b12250427fc7f1f726ac3b",
+    "scripts/channel_modeling/mainline_stage2_wp6.py": "a1fae7384c713067d82e67b60478a4d037e9a5825ff7d471bfdc536b0e37422a",
+    "scripts/channel_modeling/mainline_stage2_wp6_gateg.py": "431513e4024bdb90f595965026dcc178a5ffcc864d63cc38b50a118584702cfc",
+    "scripts/channel_modeling/mainline_stage2_wp6_fixed_doppler.py": "de4c9fca1ac77593d87f6c285257a16ff2fa7adbf4b8b02e59e1d0e7782682f6",
+    "scripts/channel_modeling/run_mainline_stage2_wp6_fixed_doppler.py": "8eb8ef67718dc84a77fa71374cd7e8bb65e504ae03d5f1f256ff2889cf3851ea"
+  },
+  "result_file_sha256": {
+    "copula_diagnostics.csv": "1d66ce0d78b78fa066a28b28f906c40c3d3a48c51e3621a3650995493e0bdde0",
+    "fixed_bin_scene_summary.csv": "aaa1a7a597243bf898c9baf38ca735f3c38ef5595a201f21048e77527ce56634",
+    "folds.csv": "bd48d4462147c7359bcf6f2525550c956c78ed3fdcc17006587526f5a66d2695",
+    "heldout_path_scores.csv": "e928fee41c4110316a277679199659815322596298ae01fc038079c92cf2e344",
+    "heldout_window_scores.csv": "0988d1c9926c3e2694f24a11fc9d7bd01b86a7a6dc920eba6545c8eed71abfd7",
+    "inner_family_selection.csv": "9a3694ef34d31d7b77ac4d8660b4e567578f5f25fdd352ee234a2e5b0f0372da",
+    "input_code_manifest.json": "b1d04fe774be167b4657e3f96ebb0db06c4123bbcadaa9672ebb8a716d063e6b",
+    "observed_doppler_bin_support.csv": "f5d2dd4547228d2ad1dda701bba5a62e31976ea82df5def9d131fae916f65648",
+    "outer_fold_parameters.csv": "718c591c64dcd1ed558651416b2f46acc1ec689382fa1962a975da6dc2a18f69",
+    "paired_scene_score_comparisons.csv": "d0397c51c296bd7572ff49efa2dcca8a215a56eb552cee452da02f3a574d74ed",
+    "population_summary.json": "cd2a04e37eccd58cee2bc0c573bc53f594085d498c314e73b5f10a7c9ada800d",
+    "固定分箱Doppler_场景外评分报告.md": "8784c180fc6efa6210c0fbc5d2172b2fcaf833494dba633228e2834f204f69c1"
+  }
+}

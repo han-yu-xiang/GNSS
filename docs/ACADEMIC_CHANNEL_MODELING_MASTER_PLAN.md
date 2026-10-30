@@ -2,7 +2,7 @@
 
 **唯一长期建模路线与工作包状态来源：** 本文件。
 
-**最新研究状态核实：** 2026-10-30 01:39 +08（Gate G 补充分析、56 项定向测试、独立数值复核与多普勒格点筛查；不是 Task 5 实时进程核查）。WP2、WP3=`COMPLETED_WITH_LIMITATIONS`，WP3 独立审阅=`PASS_WITH_LIMITATIONS`；Task 5 最近已记录的生产证据为 80/80 PASS、audit `COMPLETE`、completion receipt `PASS`（此处不代表本次重新核查生产）。WP5 83/83 run 全量 alpha 验收=`COMPLETED_WITH_LIMITATIONS`；WP4 Gate E/F=`PASS_WITH_LIMITATIONS`。Gate G 补充对 0.01-chip 延迟使用 ties-aware 单元概率，并完成计数条件标记比较；但相对 Doppler 数据显示窗口内 5-Hz 格点迹象，现有评分仍按连续密度处理 Doppler，因此 Copula/相关条件标记分数不得用于定案。WP6=`COMPLETED_WITH_LIMITATIONS`，Gate G=`PENDING`。输入、结果、独立报告见第118节与 `reports/data_consolidation_20261003/mainline_1023_model_v1/wp6_gateg_supplement_20261029T165015Z/`。本轮未核查 Task 5 实时进程，亦未修改或启动任何生产。
+**最新研究状态核实：** 2026-10-30 20:48 +08（固定箱宽 Doppler 的 13-scene nested-LOSO 混合评分、定向测试及独立数值/科学审阅；不是 Task 5 实时进程核查）。WP2、WP3=`COMPLETED_WITH_LIMITATIONS`，WP3 独立审阅=`PASS_WITH_LIMITATIONS`；Task 5 最近已记录生产证据仍为 80/80 PASS、audit `COMPLETE`、completion receipt `PASS`（本轮未重新核查生产）。WP5 83/83 run 全量 alpha=`COMPLETED_WITH_LIMITATIONS`；WP4 Gate E/F=`PASS_WITH_LIMITATIONS`。固定分箱目标下的混合离散—连续场景外评分与 116 项独立验证通过，但 5/10/20 Hz 下 Copula−独立边际的场景平均差均略负；路径秩非交换性、计数条件标记不完整及复合评分的相关样本边界仍在。WP6=`COMPLETED_WITH_LIMITATIONS`，Gate G=`PENDING`。实际结果与独立审阅见第120节及 `reports/data_consolidation_20261003/mainline_1023_model_v1/wp6_gateg_fixed_doppler_bins_20261030T120121Z/`。本轮未重跑 SAGE/CIR/alpha，未改动生产。
 
 **状态职责：** 工程执行、release、QA、receipt 和生产状态以 `docs/GNSS_SAGE_ENGINEERING_HANDOFF_CURRENT.md` 为唯一工程来源；论文事实与科学解释以 `docs/GNSS_SAGE_PAPER_HANDOFF_CURRENT.md` 为唯一论文来源。本文件负责最终研究目标、长期路线、WP0–WP6、依赖及其状态；其他文件只链接本文件或记录执行细节，不建立竞争性的总计划。
 
@@ -1069,3 +1069,15 @@ Formal independent review: `reports/data_consolidation_20261003/mainline_1023_mo
 - 新专项审阅包 `reports/data_consolidation_20261003/mainline_1023_model_v1/wp6_gateg_doppler_grid_audit_20261030T153436/` 保存逐窗表、逐 scene 表、24-run 源文件 SHA manifest、配置快照、执行记录与独立校验。最终定向来源/身份/算术及交付完整性校验 18/18 PASS；它不验证预测性能或完整模型泛化。
 
 **最新判定：WP6=`COMPLETED_WITH_LIMITATIONS`，Gate G 继续 `PENDING`。** 不存在足够证据产生有效的自适应 Doppler 输出场景外概率评分，也没有完整联合生成器通过证据。唯一优先事项：若仍要验收依赖结构，先定义并记录不使用留出结果的自适应搜索状态/候选支持及对应输出概率测度；在此之前不再重算旧 LOSO 分数。正式审阅：`reports/data_consolidation_20261003/mainline_1023_model_v1/wp6_gateg_doppler_grid_audit_20261030T153436/WP6_GateG_Doppler观测机制专项审阅.md`。
+
+## 120. Gate G 固定箱宽 Doppler 的混合测度评分与独立审阅（2026-10-30）
+
+Commander 批准固定 0-Hz 箱中心与 `(k+1/2)w` 边界后，本次以预先固定 5 Hz 为主、10/20 Hz 为敏感性分辨率，对冻结 WP4 CSV 完成真实 13-scene nested LOSO；不再逆向恢复自适应历史格点，也未重跑 SAGE/CIR/alpha 或读取大载荷。冻结输入为 7,847 个 Stage2 选中窗口、8,914 条 MPC、83 个 Stage2 run、13 个 scene；path-mark 评分限定于 4,273 个含 MPC 的已选窗口。未选 Stage0 窗口未补成零。
+
+- 使用离散时延单元概率、固定 Doppler 箱概率和连续功率密度。Copula 联合部分为给定连续功率 latent PIT 后，对时延及 Doppler 两个离散 latent 区间进行二维正态概率积分。边际族仅在外层训练场景的内层 LOSO 中选择；Copula 参数仅在外层训练场景估计。每个箱宽 M0/C0 均在相同 13 个留出 scene、相同 4,273 个窗口及 8,914 MPC 上配对，未配对窗口为 0。
+- 场景平均 `C0−M0`（nats/mark）：5 Hz `-0.00768378`，10 Hz `-0.00864037`，20 Hz `-0.00820576`；三者均为 10 正、3 负 scene，5 Hz 中位数 `+0.0720679`、范围 `[-0.347325,+0.115527]`。三个显著负向 scene 抵消了其余十个较小正向差。没有把高度重叠的 LOSO 训练折当作独立重复来给出显著性或常规置信区间。因此未见可靠的总体场景外 Copula 收益；这不等于证明依赖不存在。
+- Lognormal 时延为 13/13 折；Doppler Student-t 为 5 Hz 下 11/13、10/20 Hz 下 13/13；功率每箱宽 Student-t 为 8/13、Normal 为 5/13，显示边际选择稳定性不同。训练折 latent 相关仅作描述：delay–Doppler 中位数 `+0.0403`，delay–power `-0.2780`，Doppler–power `+0.1253`；不能解释为因果或物理相关。
+- 训练候选拟合失败均保留：delay Gamma 100、Weibull 2；Doppler Normal 10/20 Hz 各 2、Student-t 5 Hz 2；power Student-t 2（均为内层候选记录）；最终 117/117 边际拟合与 39/39 Copula 拟合通过。
+- 真实分析耗时 41m49s（2026-10-30 12:01:21–12:43:10 UTC，即 20:01:21–20:43:10 +08）。定向测试 32/32 PASS，`py_compile` 退出码 0。独立验证 `PASS_WITH_LIMITATIONS`：116 项检查、0 失败；独立自适应积分复算 9 个样本，M0 最大误差 `1.78e-15`、C0 `7.11e-15`。这验证实现、数值与身份，不是独立传播真值。
+
+**Gate G 最终建议仍为 `PENDING`；WP6 仍为 `COMPLETED_WITH_LIMITATIONS`。** 本次支持“固定分箱后的 Stage2 Doppler 标记分布可作定义清楚的场景外预测评分”，不支持“Copula 稳健优于独立边际”，更不支持自适应 SAGE 输出精确似然、路径可交换/条件 iid、有序窗口联合生成器、绝对增益、跨窗 alpha 相位相干或物理传播路径跟踪。固定分箱模型的适用范围、逐场景结果、所有候选失败及数值边界详见 `reports/data_consolidation_20261003/mainline_1023_model_v1/wp6_gateg_fixed_doppler_bins_20261030T120121Z/WP6_GateG_固定箱宽Doppler独立科学审阅.md`；源代码、完整表格、输入 SHA、测试日志及独立验证均在同一目录或对应 `scripts/channel_modeling/` 文件中。

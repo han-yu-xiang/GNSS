@@ -3,12 +3,14 @@
 **项目根目录：** `E:\GNSS_Multipath_Project`  
 **论文状态唯一来源：** 本文件  
 **长期建模路线与 WP0–WP6 状态权威来源：** `docs/ACADEMIC_CHANNEL_MODELING_MASTER_PLAN.md`（本文件继续负责论文事实、科学解释和论文状态）
-**最后科学状态更新：** 2026-10-30 15:54 +08（Asia/Shanghai；Gate G 自适应 Doppler 搜索机制审阅与交付完整性复核见第31节。此时点不等于 Task 5 实时进程核查。）
+**最后科学状态更新：** 2026-10-30 20:48 +08（Asia/Shanghai；Gate G 固定箱宽 Doppler 的场景外混合评分及独立审阅见第32节。此时点不等于 Task 5 实时进程核查。）
 **面向对象：** 论文写作者、科研人员、方法分析人员  
-**当前 Mainline 新增研究状态：** Stage2探索V0、WP2稳健性、WP3条件分析、WP4 Gate E/F 和 WP5 全量 alpha 均已完成并带限制；WP3独立审阅=`PASS_WITH_LIMITATIONS`，WP4 Gate E/F=`PASS_WITH_LIMITATIONS`。WP6 已在 83 run/13 scene 的 Stage2总体上完成候选统计分析与独立审阅，状态为 `COMPLETED_WITH_LIMITATIONS`，Gate G 仍 `PENDING`。计数结论仅条件于 Stage2 已选窗口；Doppler 为依赖前序估计的自适应局部格点输出，最终 CSV 不足以恢复外生概率单元；此前把 Doppler 当连续密度的 Copula 和综合路径分数只能作为近似诊断，既不证明收益也不证明无收益。结果不证明完整物理信道、绝对增益、跨窗相位相干或反射体跟踪。Phase-2仍未开展。
+**当前 Mainline 新增研究状态：** Stage2探索V0、WP2稳健性、WP3条件分析、WP4 Gate E/F 和 WP5 全量 alpha 均已完成并带限制；WP3独立审阅=`PASS_WITH_LIMITATIONS`，WP4 Gate E/F=`PASS_WITH_LIMITATIONS`。WP6=`COMPLETED_WITH_LIMITATIONS`，Gate G 仍 `PENDING`。新增固定箱宽比较将目标明确限定为预先固定分箱后的 Stage2 Doppler 标记分布，并以 delay/Doppler 离散质量和连续功率密度进行混合评分；5/10/20 Hz 下 Gaussian Copula 相对独立边际均未显示稳健总体场景外收益。它不恢复自适应 SAGE 搜索器精确似然。结果仍不证明路径可交换/条件 iid、完整生成模型、物理信道、绝对增益、跨窗相位相干或反射体跟踪。Phase-2仍未开展。
 **研究阶段：** accuracy-first full SAGE 冻结批次及独立批后 QA 已完成；Phase-1 的 Stage3 传统统计建模和 scientific closure 已完成并通过 QA（带明确限制）。coverage-complete event/path database、通用 channel-parameter database、Phase-2 AI 和完整暗室生成器仍是独立后续范围。
 
 > 本文只负责科学问题、贡献、实验解释、论文可写事实、图表、限制和未来路线。工程文件路径、执行门禁、hash和receipt的唯一状态源是 `docs/GNSS_SAGE_ENGINEERING_HANDOFF_CURRENT.md`。本文不得把设计、计划或gold前预测写成实验结果。
+
+**最新 Gate G 论文边界：** 固定 5-Hz（10/20-Hz 敏感性）评分可以作为“Stage2 选中总体中，固定箱宽 Doppler 标记分布”的 13-scene 外层留出结果。它不是自适应 SAGE 搜索器的原始似然；三种宽度下 Copula−独立边际的 scene 平均 log-score 均略负，故不写成稳定预测改进。MPC 行在同一窗口内相关，路径秩也不具备未经检验的可交换性；计数条件标记的完整性未建立，Gate G 维持 `PENDING`。完整方法、逐场景数值与限制见第32节及其链接的正式审阅报告。
 
 ## Current Phase-1 status at a glance (2026-08-31)
 
@@ -1932,3 +1934,15 @@ Full review and reproducibility evidence:
 `reports/data_consolidation_20261003/mainline_1023_model_v1/wp6_gateg_doppler_grid_audit_20261030T153436/`。
 
 **论文边界：** 可以报告 Stage2 条件计数与有界边际统计；现有 Doppler 连续评分不得作为正式模型排名。N=1 计数条件时延拟合失败、路径秩非交换性、N=3 低场景支持和场景折间训练集重叠仍须披露。跨窗口 alpha 相干、绝对校准增益、物理反射路径连续跟踪及通过 Gate G 的完整场景外联合生成器均未建立。唯一后续优先事项是建立并记录不依赖留出值的自适应 SAGE 输出概率测度；没有该测度前不重算旧 Copula 场景留出分数。
+
+## 32. Gate G 固定箱宽 Doppler 的场景外混合评分（2026-10-30）
+
+在 0 Hz 为箱中心、边界 `(k+1/2)w` 下，5 Hz 为主分辨率、10/20 Hz 为预先声明的敏感性分析。只使用已冻结 WP4 轻量 CSV，不重跑 SAGE/CIR/alpha。目标限定为 Stage2 已选窗口中的固定分箱标记分布，而非原始自适应 SAGE 输出似然。场景外比较采用 13-scene LOSO，所有边际族选择和 Copula 参数估计均限于外层训练 scene。M0/C0 在每种箱宽都覆盖同一组 4,273 个含 MPC 选中窗口、8,914 条 MPC、13 个 scene。
+
+得分按 mixed measure 计算：时延格点单元质量 × Doppler 箱质量 × 连续相对功率密度；Gaussian Copula 联合部分对两个离散 latent 区间联合积分，并条件于连续功率 PIT。独立验证器以自适应数值积分复算 9 个样本，验证器总计 116 项检查、0 失败。它验证数值和冻结身份，不提供独立传播真值。
+
+`C0−M0` 的 scene 宏平均（nats/mark）分别为 5 Hz `-0.00768378`、10 Hz `-0.00864037`、20 Hz `-0.00820576`；每个箱宽均为 10 个正差、3 个负差。5 Hz 中位数为 `+0.0720679`，范围 `[-0.347325,+0.115527]`；三个较大的负差抵消十个较小正差。没有将高度重叠的 LOSO 训练集折当成独立重复，不报告常规显著性或置信区间。结论是不支持稳健 Copula 场景外收益，也不证明依赖不存在。不得横向比较不同箱宽的绝对分数。
+
+**可发表范围：** 可报告固定分箱后、Stage2 条件下的边际候选和配对场景外评分，并明确 Copula 未改善 scene 平均分。不能据此宣称路径可交换、条件 iid、完整有序路径联合生成器、绝对信道增益、跨窗 alpha 相位相干、物理路径跟踪，或对自适应 SAGE 算法输出似然的验证。Stage2 选择条件、窗口内多路径依赖、路径秩非交换性、功率族跨折不稳定和 count-conditioned marks 未完整验证必须继续披露。**Gate G 建议仍为 `PENDING`。**
+
+结果与科学审阅：`reports/data_consolidation_20261003/mainline_1023_model_v1/wp6_gateg_fixed_doppler_bins_20261030T120121Z/WP6_GateG_固定箱宽Doppler独立科学审阅.md`。

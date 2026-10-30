@@ -1,0 +1,14 @@
+{
+  "copula_diagnostics.csv": "1d66ce0d78b78fa066a28b28f906c40c3d3a48c51e3621a3650995493e0bdde0",
+  "fixed_bin_scene_summary.csv": "aaa1a7a597243bf898c9baf38ca735f3c38ef5595a201f21048e77527ce56634",
+  "folds.csv": "bd48d4462147c7359bcf6f2525550c956c78ed3fdcc17006587526f5a66d2695",
+  "heldout_path_scores.csv": "e928fee41c4110316a277679199659815322596298ae01fc038079c92cf2e344",
+  "heldout_window_scores.csv": "0988d1c9926c3e2694f24a11fc9d7bd01b86a7a6dc920eba6545c8eed71abfd7",
+  "inner_family_selection.csv": "9a3694ef34d31d7b77ac4d8660b4e567578f5f25fdd352ee234a2e5b0f0372da",
+  "input_code_manifest.json": "b1d04fe774be167b4657e3f96ebb0db06c4123bbcadaa9672ebb8a716d063e6b",
+  "observed_doppler_bin_support.csv": "f5d2dd4547228d2ad1dda701bba5a62e31976ea82df5def9d131fae916f65648",
+  "outer_fold_parameters.csv": "718c591c64dcd1ed558651416b2f46acc1ec689382fa1962a975da6dc2a18f69",
+  "paired_scene_score_comparisons.csv": "d0397c51c296bd7572ff49efa2dcca8a215a56eb552cee452da02f3a574d74ed",
+  "population_summary.json": "cd2a04e37eccd58cee2bc0c573bc53f594085d498c314e73b5f10a7c9ada800d",
+  "固定分箱Doppler_场景外评分报告.md": "8784c180fc6efa6210c0fbc5d2172b2fcaf833494dba633228e2834f204f69c1"
+}
