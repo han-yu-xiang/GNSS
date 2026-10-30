@@ -6,6 +6,8 @@
 
 **状态职责：** 工程执行、release、QA、receipt 和生产状态以 `docs/GNSS_SAGE_ENGINEERING_HANDOFF_CURRENT.md` 为唯一工程来源；论文事实与科学解释以 `docs/GNSS_SAGE_PAPER_HANDOFF_CURRENT.md` 为唯一论文来源。本文件负责最终研究目标、长期路线、WP0–WP6、依赖及其状态；其他文件只链接本文件或记录执行细节，不建立竞争性的总计划。
 
+**论文整理入口（2026-10-30，仅文档组织）：** 在 WP1–WP6 `COMPLETED_WITH_LIMITATIONS`、Gate E/F `PASS_WITH_LIMITATIONS`、Gate G `PENDING` 不变的条件下，Mainline Stage2 限定论文主线、证据矩阵、图表及缺口集中于 `docs/paper_draft/MAINLINE_STAGE2_PAPER_RESEARCH_SYNTHESIS_20261030.md` 与 `docs/paper_draft/MAINLINE_STAGE2_PAPER_EVIDENCE_AND_FIGURES_20261030.md`；论文状态入口见 Paper Handoff 第33节。此更新不新增模型实验或 Gate G 验收。
+
 WP编号是长期研究工作包编号，与 Mainline CIR 实施计划中的 Task 1–7、SAGE Stage 0–4 不是同一套编号。
 
 ## Mainline 10.23 MHz three-layer route (Commander authorization, 2026-10-24)
@@ -17,7 +19,7 @@ for their different population. Do not transfer their fitted parameters.
 | Layer | Question, output and status | Prerequisites and acceptance |
 |---|---|---|
 | 1: SAGE path-parameter statistics | Excess-delay, signed relative-Doppler and relative-power marginals; power-delay dependence, selected-window MPC counts and cross-scene baseline. **COMPLETED_WITH_LIMITATIONS** for exploratory V0 under explicit 2026-10-24 authorization. | Verified all-Stage2 ledger; preserve all 8,914 MPC; exact identities, quality/fit-failure accounting, scene-LOSO and whole-scene uncertainty, reproducible real-data tables/figures and independent review. Formal Gate G is not granted by the V0 execution status. |
-| 2: Environment, satellite geometry and vehicle-motion conditions | Global/Urban and other environment comparisons; continuous elevation and position descriptors, source/missingness/selection sensitivity. **IN_PROGRESS**: initial exploration only. | Distinguish GSV-measured and ephemeris-derived elevation, including GGA/zero-height sources. Scene support and held-out results must justify shared/hierarchical or environment-specific parameters; two-scene environments remain cautious/descriptive. |
+| 2: Environment, satellite geometry and vehicle-motion conditions | Global/Urban and other environment comparisons; continuous elevation and position descriptors, source/missingness/selection sensitivity. **COMPLETED_WITH_LIMITATIONS** for WP3's bounded M0/M1/M2 analysis; motion M3 was not fitted. | Distinguish GSV-measured and ephemeris-derived elevation, including GGA/zero-height sources. Scene support and held-out results do not justify adopting environment-specific M1 or a universal elevation M2; two-scene environments remain cautious/descriptive. |
 | 3: Channel structure, temporal evolution and CIR validation | Window CIR/PDP features, SAGE/CIR consistency, selected/nonselected-window differences, path counts/structure/clusters and temporal variation where supported. CIR/PDP Gate E/F is `PASS_WITH_LIMITATIONS`; WP6 candidate analysis is complete with limitations, while Gate G remains pending. | 83-run source/read-back audit, exact run/window association and Stage2-alpha links are available. Any structural or temporal interpretation must respect WP4/WP6 limitations; no physical path tracking, independent propagation truth, or random-cluster claim by inference. |
 
 The progression is one engineering objective: parameter baseline → conditional

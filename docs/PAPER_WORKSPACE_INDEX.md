@@ -1,5 +1,7 @@
 # Paper Workspace Index
 
+> **2026-10-30 Mainline Stage2 新论文入口：** `docs/paper_draft/MAINLINE_STAGE2_PAPER_RESEARCH_SYNTHESIS_20261030.md` 与 `docs/paper_draft/MAINLINE_STAGE2_PAPER_EVIDENCE_AND_FIGURES_20261030.md`。以下旧 Phase-1 Stage3 / VTC 状态表保留作历史工作区导航，不代表最新 Mainline Stage2 论文模型选型；最新科学边界见 `docs/GNSS_SAGE_PAPER_HANDOFF_CURRENT.md` 第33节，Gate G 仍 `PENDING`。
+
 ## Paper Status
 
 ### Current authoritative Phase-1 status (2026-08-31)
