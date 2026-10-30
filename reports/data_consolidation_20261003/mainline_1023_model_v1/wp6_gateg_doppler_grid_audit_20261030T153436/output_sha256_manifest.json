@@ -1,0 +1,51 @@
+{
+  "created_local": "2026-10-30T15:57:38.3987348+08:00",
+  "algorithm": "SHA-256",
+  "files": [
+    {
+      "file": "affected_run_input_manifest.csv",
+      "size_bytes": 23286,
+      "sha256": "2809087ccf2a380854598b96f7323808de1f297936fa1ec35f84b9bfa1ff9388"
+    },
+    {
+      "file": "analysis_summary.json",
+      "size_bytes": 74246,
+      "sha256": "2faec8aa1d7d8d8e2058af1f15299e0b80d6031c96657cbccff36ca3a94765b6"
+    },
+    {
+      "file": "doppler_nonaligned_scene_summary.csv",
+      "size_bytes": 513,
+      "sha256": "8b79c8d17aabf82a8cc991287b13fd4330204ef4450817086b75d7e5e10a75fa"
+    },
+    {
+      "file": "doppler_nonaligned_windows.csv",
+      "size_bytes": 76907,
+      "sha256": "2d4affc53585ad05d3358ac8bbd55921d0b57cd6ca2705645fb7cab946efa955"
+    },
+    {
+      "file": "doppler_sign_metadata.csv",
+      "size_bytes": 6718,
+      "sha256": "f597a77057f24e61d1c866ff819f0441e2c85bf04fda355576bf0f08a500e9d2"
+    },
+    {
+      "file": "execution_record.json",
+      "size_bytes": 2123,
+      "sha256": "ed34146c8dd35263b7c8e86010f5979e757240895649803c3e22209975f053d7"
+    },
+    {
+      "file": "independent_validation.json",
+      "size_bytes": 3334,
+      "sha256": "0efb5623c6a4398c2be8eeb973ebefd6c28d3b1d3e947d028265d3312802316f"
+    },
+    {
+      "file": "validation_attempt_20261030T154828_checker_syntax.json",
+      "size_bytes": 2283,
+      "sha256": "41337fd6aa84ce3e62865707721349fd943835c2b0a6903e687de65f26e0bbfa"
+    },
+    {
+      "file": "WP6_GateG_Doppler观测机制专项审阅.md",
+      "size_bytes": 14699,
+      "sha256": "71407e3beb9feb87e7d3608741d11dfa4de586597fe6d9f4b2ecec375cf1a28f"
+    }
+  ]
+}

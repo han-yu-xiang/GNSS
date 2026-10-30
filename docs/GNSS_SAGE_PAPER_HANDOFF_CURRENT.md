@@ -3,9 +3,9 @@
 **项目根目录：** `E:\GNSS_Multipath_Project`  
 **论文状态唯一来源：** 本文件  
 **长期建模路线与 WP0–WP6 状态权威来源：** `docs/ACADEMIC_CHANNEL_MODELING_MASTER_PLAN.md`（本文件继续负责论文事实、科学解释和论文状态）
-**最后科学状态更新：** 2026-10-30 01:39 +08（Asia/Shanghai；Gate G 补充科学审阅、独立数值复核与 Doppler 格点筛查见第32节。此时点不等于 Task 5 实时进程核查。）
+**最后科学状态更新：** 2026-10-30 15:54 +08（Asia/Shanghai；Gate G 自适应 Doppler 搜索机制审阅与交付完整性复核见第31节。此时点不等于 Task 5 实时进程核查。）
 **面向对象：** 论文写作者、科研人员、方法分析人员  
-**当前 Mainline 新增研究状态：** Stage2探索V0、WP2稳健性、WP3条件分析、WP4 Gate E/F 和 WP5 全量 alpha 均已完成并带限制；WP3独立审阅=`PASS_WITH_LIMITATIONS`，WP4 Gate E/F=`PASS_WITH_LIMITATIONS`。WP6 已在 83 run/13 scene 的 Stage2总体上完成候选统计分析与独立数值/代码审阅，状态为 `COMPLETED_WITH_LIMITATIONS`，Gate G 仍 `PENDING`。计数结论仅条件于 Stage2 已选窗口；时延 ties 使当前连续 Copula 评分不适用；相对功率家族和计数—标记条件独立性未定。结果不证明完整物理信道、绝对增益、跨窗相位相干或反射体跟踪。Phase-2仍未开展。
+**当前 Mainline 新增研究状态：** Stage2探索V0、WP2稳健性、WP3条件分析、WP4 Gate E/F 和 WP5 全量 alpha 均已完成并带限制；WP3独立审阅=`PASS_WITH_LIMITATIONS`，WP4 Gate E/F=`PASS_WITH_LIMITATIONS`。WP6 已在 83 run/13 scene 的 Stage2总体上完成候选统计分析与独立审阅，状态为 `COMPLETED_WITH_LIMITATIONS`，Gate G 仍 `PENDING`。计数结论仅条件于 Stage2 已选窗口；Doppler 为依赖前序估计的自适应局部格点输出，最终 CSV 不足以恢复外生概率单元；此前把 Doppler 当连续密度的 Copula 和综合路径分数只能作为近似诊断，既不证明收益也不证明无收益。结果不证明完整物理信道、绝对增益、跨窗相位相干或反射体跟踪。Phase-2仍未开展。
 **研究阶段：** accuracy-first full SAGE 冻结批次及独立批后 QA 已完成；Phase-1 的 Stage3 传统统计建模和 scientific closure 已完成并通过 QA（带明确限制）。coverage-complete event/path database、通用 channel-parameter database、Phase-2 AI 和完整暗室生成器仍是独立后续范围。
 
 > 本文只负责科学问题、贡献、实验解释、论文可写事实、图表、限制和未来路线。工程文件路径、执行门禁、hash和receipt的唯一状态源是 `docs/GNSS_SAGE_ENGINEERING_HANDOFF_CURRENT.md`。本文不得把设计、计划或gold前预测写成实验结果。
@@ -1921,3 +1921,14 @@ if that cannot be established independently, keep dependence unverified.
 
 Full review and reproducibility evidence:
 `reports/data_consolidation_20261003/mainline_1023_model_v1/wp6_gateg_supplement_20261029T165015Z/WP6_GateG最终科学审阅报告.md`.
+
+## 31. Gate G 自适应 Doppler 观测机制专项审阅（2026-10-30）
+
+冻结源码与每 run 配置快照显示，Stage2 Doppler 是按 Stage0 tracking reference、每窗 B 和逐路径迭代中心自适应搜索的输出；`makeGrid` 可在规则步长外单独追加裁剪后的 maximum。108 个非对齐窗口中，107 个符合初始化 `+B` 端点追加条件（105 个最终 offset 在 `±B`、2 个保留端点相位但没有完整迭代 trace），另 1 个初始未追加但最终到达真实全局上界。浮点误差、全局固定格点或直达路径相减都不能解释该结构；相减只平移格点相位，不改变窗内差值。
+
+保存的轻量 Stage0/Stage1/Stage2 资料不包含每路径每轮的搜索中心、候选向量、得分/胜出索引和停止轮次，故不能定义不使用留出 Doppler 的精确观测单元。不得用留出标记反推原点。所有包含连续 Doppler 密度的 M0/M1 路径综合评分与 C0/C1 Copula 比较仅保留为连续近似诊断；Stage2 条件计数及单独 delay/power 结果不受此项直接影响。Gate G 仍 `PENDING`，不支持确认性的 Copula 收益或完整联合生成器结论。
+
+正式审阅、逐窗口表、9-scene 汇总、源 hash、配置快照与 18/18 独立身份/算术/交付完整性校验：
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp6_gateg_doppler_grid_audit_20261030T153436/`。
+
+**论文边界：** 可以报告 Stage2 条件计数与有界边际统计；现有 Doppler 连续评分不得作为正式模型排名。N=1 计数条件时延拟合失败、路径秩非交换性、N=3 低场景支持和场景折间训练集重叠仍须披露。跨窗口 alpha 相干、绝对校准增益、物理反射路径连续跟踪及通过 Gate G 的完整场景外联合生成器均未建立。唯一后续优先事项是建立并记录不依赖留出值的自适应 SAGE 输出概率测度；没有该测度前不重算旧 Copula 场景留出分数。

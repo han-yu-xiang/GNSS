@@ -1058,3 +1058,14 @@ The approved supplement used only the frozen WP4 light CSV inputs (features SHA-
 **Gate G remains `PENDING`; WP6 remains `COMPLETED_WITH_LIMITATIONS`.** Current evidence supports the Stage2-selected empirical count table and bounded marginal/rank diagnostics; it does not validate a scene-out joint generator. The sole next priority is to identify the exact window-specific Doppler grid origin/cells from frozen algorithm and metadata, account for the 108 non-aligning windows, then rerun only the affected paired LOSO dependence comparisons with a ties-aware Doppler measure. Do not estimate held-out grid phase from held-out marks for scoring; if exact cells cannot be independently recovered, retain the dependence result as unverified.
 
 Formal independent review: `reports/data_consolidation_20261003/mainline_1023_model_v1/wp6_gateg_supplement_20261029T165015Z/WP6_GateG最终科学审阅报告.md`.
+
+## 119. Gate G 自适应 Doppler 搜索与评分单元专项审阅（2026-10-30）
+
+本次只读取冻结 Stage2 linkage、run inventory、108 个异常窗口对应的轻量 Stage0/Stage1/Stage2 CSV 和 24 个小型 Doppler sign/config 元数据文件；未读取大体量 MAT/HDF5/raw IQ，未重跑 SAGE、CIR、alpha 或 WP6。
+
+- 83/83 run 的 `frozen_sage_sha256` 均为 `bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c`，与历史冻结 runner 的 SHA 相符。108 个窗口跨 24 run、9 scene；相关 Stage0/Stage2 CSV pin 均匹配。24 份配置快照一致：局部 Doppler 步长 5 Hz、半宽 30 Hz、残差初始化步长 50 Hz、最多 10 次 SAGE 迭代，所有 sign 为 +1。
+- 2,861 个多路径窗口中 2,753 个满足窗口平移 5-Hz 差值格点筛查，108 个不满足（N=2 28、N=3 80）。源码 `makeGrid` 在末端余隙大于步长 1/4 时追加最大值；按实际 Stage0 tracking reference 与 B 重算，107 个异常窗口的初始 50-Hz 网格会追加 `+B`，其中 105 个最终 offset 有 `±B`；2 个保留端点相位但最终不在端点，精确迭代轨迹未保存；另 1 个初始网格不追加端点但最终到达真实全局上界，符合后续裁剪局部搜索的机制签名。不得将这些签名过度解释为逐路径迭代证明。
+- 因每路径/每轮搜索中心、裁剪候选向量、获胜索引/分数及停止历史未保存，且局部支持依赖前序数据估计，现有资料无法定义外生的 Doppler 单元概率。不得从留出标记估计格点原点。WP6 全标记连续 Doppler 分数、M0/M1 含 Doppler 的综合比较及 C0/C1 Copula 结果降为连续近似诊断；本轮没有重算这些分数，也没有证据支持或否定 Copula 收益。Stage2 条件计数、独立 delay 单元分数及单独 power-only 分析不受此问题直接影响。
+- 新专项审阅包 `reports/data_consolidation_20261003/mainline_1023_model_v1/wp6_gateg_doppler_grid_audit_20261030T153436/` 保存逐窗表、逐 scene 表、24-run 源文件 SHA manifest、配置快照、执行记录与独立校验。最终定向来源/身份/算术及交付完整性校验 18/18 PASS；它不验证预测性能或完整模型泛化。
+
+**最新判定：WP6=`COMPLETED_WITH_LIMITATIONS`，Gate G 继续 `PENDING`。** 不存在足够证据产生有效的自适应 Doppler 输出场景外概率评分，也没有完整联合生成器通过证据。唯一优先事项：若仍要验收依赖结构，先定义并记录不使用留出结果的自适应搜索状态/候选支持及对应输出概率测度；在此之前不再重算旧 LOSO 分数。正式审阅：`reports/data_consolidation_20261003/mainline_1023_model_v1/wp6_gateg_doppler_grid_audit_20261030T153436/WP6_GateG_Doppler观测机制专项审阅.md`。

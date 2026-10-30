@@ -1,0 +1,36 @@
+{
+  "command": "PowerShell 7 invoked inline Python 3 analysis; Python stdlib CSV/grouping/SHA plus scipy.io.loadmat only for the 24 affected runs tiny doppler_sign.mat metadata; no repository analysis source changed.",
+  "started_local": "2026-10-30T15:41:15.695665+08:00",
+  "started_utc": "2026-10-30T07:41:15.695665+00:00",
+  "finished_local": "2026-10-30T15:41:16.189591+08:00",
+  "finished_utc": "2026-10-30T07:41:16.189591+00:00",
+  "elapsed_seconds": 0.499,
+  "exit_code": 0,
+  "input_sha256": {
+    "linkage_csv": "8db941db20e684108d13583d67ee20cde543bf2a36ca01013d1288b48231c80b",
+    "inventory_csv": "da34edfa275d2a31f53ee377da24e3036f329efa9a08d8b1fb12f940d1f38322"
+  },
+  "source_sha256": "bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c",
+  "outputs": [
+    "affected_run_input_manifest.csv",
+    "analysis_summary.json",
+    "doppler_nonaligned_scene_summary.csv",
+    "doppler_nonaligned_windows.csv",
+    "doppler_sign_metadata.csv",
+    "independent_validation.json",
+    "validation_attempt_20261030T154828_checker_syntax.json",
+    "WP6_GateG_Doppler观测机制专项审阅.md",
+    "output_sha256_manifest.json"
+  ],
+  "notes": "Only light Stage0/Stage1/Stage2 CSVs for affected runs and 24 sign/config metadata MAT files totaling 29,979 bytes; no Stage2 science MAT, HDF5, CIR payload or raw IQ read. Preliminary wrong-reference check was discarded, corrected in this run. Per-run cfg snapshots were additionally decoded from the same 24 tiny doppler_sign.mat files and checked for a single consistent configuration; all source paths in committed summaries are project-relative.",
+  "final_independent_validation": {
+    "file": "independent_validation.json",
+    "passed": "18/18",
+    "exit_code": 0,
+    "performed_local": "2026-10-30T15:54:03+08:00"
+  },
+  "validation_harness_history": {
+    "preliminary_attempt_file": "validation_attempt_20261030T154828_checker_syntax.json",
+    "result": "9/12 apparent due malformed PowerShell Where-Object predicates; data tables were unchanged; corrected independent validator then passed 18/18"
+  }
+}

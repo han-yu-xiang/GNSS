@@ -3467,3 +3467,15 @@ This work used only the frozen Stage2/WP4 CSVs; it did not read MAT/HDF5/raw IQ,
 **Current disposition:** WP6=`COMPLETED_WITH_LIMITATIONS`; Gate G=`PENDING`. Arithmetic and identity validation pass, but no fully validated complete-scene joint generator is established. Sole next work is to derive window-specific Doppler cell origins from frozen algorithm/metadata, explain the 108 non-alignments, then re-score only the affected nested-LOSO dependence comparisons using a suitable discrete/continuous measure. If origins cannot be independently determined, leave Copula evidence unverified. No independent physical truth, universal path iid law, cross-window alpha phase coherence, absolute gain, or physical path tracking is supported.
 
 Formal review: `reports/data_consolidation_20261003/mainline_1023_model_v1/wp6_gateg_supplement_20261029T165015Z/WP6_GateG最终科学审阅报告.md`.
+
+## 119. Gate G 自适应 Doppler 格点根因审阅（2026-10-30）
+
+本节更新并取代第 118 节“从冻结 metadata 恢复固定格点并重新评分”的下一步假设。冻结 runner 为 `ab9dc4ee5f895a65ba3d5908ec666078d606d77c:scripts/sage_pipeline/run_nav_sage_pipeline.m`，SHA-256 `bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c`；库存 83/83 pin 一致，涉及 108 窗口的 24 份 `doppler_sign.mat` 配置快照均为 5-Hz 局部步长、30-Hz 半宽、50-Hz 残差初始化、最多 10 轮，并与来源 CSV hashes 对应。
+
+机制是按 Stage0 tracking reference 和每窗速度边界 B 自适应地初始化/细化：残差初始化以当前直达估计为中心按 50 Hz 搜索 `[-B,+B]`；`makeGrid` 在尾隙大于 0.25 步长时另加最大端点；`refinePath` 按路径、迭代围绕当前估计以 5 Hz 局部搜索并裁剪到全局边界；最终 offset 再减最终直达 Doppler。Stage4 `refineJointPath` 不是 Stage2 输出路径。
+
+108 个非对齐窗口的证据分类为：107 个满足初始化端点追加条件；其中 105 个最终相对 offset 达 `±B`，2 个呈现端点/规则双相位但精确迭代轨迹未保存；1 个不满足初始化追加条件却到达真实全局上界，符合局部裁剪端点签名。N=2 28、N=3 80，分布在 9 个 scene。相对路径整体减直达分量不会改变窗内路径间差值，因此不是 108 异常的根因。不存在可从最终 CSV 恢复外生、固定的概率单元；从留出 Doppler 推断相位属于结果泄漏。故不做离散 Doppler 评分，也不重算 M0/M1 含 Doppler 的综合对比或 C0/C1 Copula 比较；它们只可作为连续近似诊断。Stage2 条件计数和独立 delay/power-only 结果保留其原有范围。
+
+新结果包 `reports/data_consolidation_20261003/mainline_1023_model_v1/wp6_gateg_doppler_grid_audit_20261030T153436/`：108 条逐窗口证据、9-scene 汇总、24-run inputs/config SHA、source pin 和 18/18 独立算术/身份/交付完整性校验。未修改代码或冻结科研数据，未读大载荷，未重跑生产或全套 WP6。
+
+**Gate G 仍 `PENDING`；WP6 仍 `COMPLETED_WITH_LIMITATIONS`。** 下一唯一优先事项是为自适应 estimator 输出定义不依赖留出值的观测概率测度，并确保所需搜索状态在估计时保留；没有该测度前不得将连续 Doppler Copula 数值作确认性比较。正式报告：`reports/data_consolidation_20261003/mainline_1023_model_v1/wp6_gateg_doppler_grid_audit_20261030T153436/WP6_GateG_Doppler观测机制专项审阅.md`。

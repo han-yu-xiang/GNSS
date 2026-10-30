@@ -1,0 +1,72 @@
+{
+  "performed_local": "2026-10-30T15:48:06.4215058+08:00",
+  "performed_utc": "2026-10-30T07:48:06.4232242+00:00",
+  "command": "PowerShell 7 independent read-only validator over result CSV/JSON and rehashed only 24 runs small Stage0/Stage1/Stage2 CSVs and doppler_sign metadata files; recomputed endpoint and relative/global reference checks.",
+  "exit_code": 1,
+  "checks": [
+    {
+      "check": "108 row and key uniqueness",
+      "passed": true,
+      "observed": "108/108"
+    },
+    {
+      "check": "N=2/N=3 anomaly totals",
+      "passed": false,
+      "observed": "N2=0; N3=0"
+    },
+    {
+      "check": "makeGrid endpoint rule recomputation",
+      "passed": false,
+      "observed": "append=0; mismatches=0"
+    },
+    {
+      "check": "correct Stage2 global reference",
+      "passed": true,
+      "observed": "sign*Stage0 tracking mismatches=0"
+    },
+    {
+      "check": "regular and endpoint phase signatures",
+      "passed": true,
+      "observed": "108/108"
+    },
+    {
+      "check": "final relative endpoint and global boundary",
+      "passed": false,
+      "observed": "relative_pmB=0; global_bound=0"
+    },
+    {
+      "check": "Doppler absolute-relative arithmetic",
+      "passed": true,
+      "observed": "path arithmetic mismatch=0"
+    },
+    {
+      "check": "affected input files hash and inventory pins",
+      "passed": true,
+      "observed": "runs=24; source hash mismatch rows=0"
+    },
+    {
+      "check": "24 affected config snapshots consistent",
+      "passed": true,
+      "observed": "config mismatched fields=0; signs=+1"
+    },
+    {
+      "check": "historical source SHA matches cohort pin",
+      "passed": true,
+      "observed": "all inventory pins identical to historical source SHA"
+    },
+    {
+      "check": "scene table sums to 108",
+      "passed": true,
+      "observed": "scenes=9; total=108"
+    },
+    {
+      "check": "no unsupported score recomputation",
+      "passed": true,
+      "observed": "score cells not independently recoverable"
+    }
+  ],
+  "passed": 9,
+  "failed": 3,
+  "scope": "Source/identity/arithmetic validation only; no Doppler predictive likelihood or scene-out score is established.",
+  "production_data_modified": false
+}

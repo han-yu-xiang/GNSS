@@ -1,0 +1,102 @@
+{
+  "performed_local": "2026-10-30T15:54:03.9830021+08:00",
+  "performed_utc": "2026-10-30T07:54:03.9855420+00:00",
+  "command": "PowerShell 7 independent validator: recomputed source-table shifted-lattice screen, makeGrid endpoint criterion, source hashes, exact Stage2 path IDs and Doppler arithmetic; read only light source CSVs and small sign metadata.",
+  "exit_code": 0,
+  "checks": [
+    {
+      "check": "108 anomaly rows and unique window identity",
+      "passed": true,
+      "observed": "108 / 108"
+    },
+    {
+      "check": "N=2/N=3 anomaly totals",
+      "passed": true,
+      "observed": "N2=28; N3=80"
+    },
+    {
+      "check": "original shifted 5-Hz screen reconciles",
+      "passed": true,
+      "observed": "N>1=2861; nonaligned=108"
+    },
+    {
+      "check": "makeGrid initializer endpoint condition",
+      "passed": true,
+      "observed": "appended=107; mismatches=0"
+    },
+    {
+      "check": "actual Stage2 global reference sign*tracking",
+      "passed": true,
+      "observed": "reference mismatches=0"
+    },
+    {
+      "check": "regular and endpoint phase signatures",
+      "passed": true,
+      "observed": "108/108"
+    },
+    {
+      "check": "final offset endpoint and true global boundary counts",
+      "passed": true,
+      "observed": "relative +/-B=105; global bound=1"
+    },
+    {
+      "check": "relative-to-absolute Doppler arithmetic",
+      "passed": true,
+      "observed": "arithmetic mismatches=0"
+    },
+    {
+      "check": "Stage2 path identities match exact linkage path IDs",
+      "passed": true,
+      "observed": "path-list mismatches=0"
+    },
+    {
+      "check": "24 affected run source file SHA and release pins",
+      "passed": true,
+      "observed": "runs=24; mismatches=0"
+    },
+    {
+      "check": "24 affected config snapshots homogeneous",
+      "passed": true,
+      "observed": "config fields differing=0; all signs=+1"
+    },
+    {
+      "check": "83-run frozen SAGE pin is unique and matches known historical hash",
+      "passed": true,
+      "observed": "unique pins=1; hash=bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c"
+    },
+    {
+      "check": "9-scene summary totals reconcile",
+      "passed": true,
+      "observed": "scenes=9; total=108"
+    },
+    {
+      "check": "no row is labeled fully unexplained",
+      "passed": true,
+      "observed": "unclassified=0; exact per-iteration trace remains absent"
+    },
+    {
+      "check": "unsupported Doppler score recomputation withheld",
+      "passed": true,
+      "observed": "exact external score cells unavailable"
+    },
+    {
+      "check": "shared result package contains no machine-absolute E/C paths",
+      "passed": true,
+      "observed": "absolute-path files=0"
+    },
+    {
+      "check": "all declared Gate G audit deliverables exist",
+      "passed": true,
+      "observed": "missing=0"
+    },
+    {
+      "check": "result package excludes scientific MAT/HDF5 payload",
+      "passed": true,
+      "observed": "payload files=0"
+    }
+  ],
+  "passed": 18,
+  "failed": 0,
+  "scope": "Identity, source and arithmetic validation only. It does not validate a probability measure, predictive score, or full path history.",
+  "production_data_modified": false
+}
