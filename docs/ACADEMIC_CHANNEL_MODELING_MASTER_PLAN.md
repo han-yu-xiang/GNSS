@@ -8,6 +8,8 @@
 
 **论文整理入口（2026-10-30，仅文档组织）：** 在 WP1–WP6 `COMPLETED_WITH_LIMITATIONS`、Gate E/F `PASS_WITH_LIMITATIONS`、Gate G `PENDING` 不变的条件下，Mainline Stage2 限定论文主线、证据矩阵、图表及缺口集中于 `docs/paper_draft/MAINLINE_STAGE2_PAPER_RESEARCH_SYNTHESIS_20261030.md` 与 `docs/paper_draft/MAINLINE_STAGE2_PAPER_EVIDENCE_AND_FIGURES_20261030.md`；论文状态入口见 Paper Handoff 第33节。此更新不新增模型实验或 Gate G 验收。
 
+**论文写作 V0 入口（2026-10-30）：** 路线 A 已获批准；完整英文稿、文献对照、正式 F1/F2/F3/F4/F7、T1/T2 及来源 SHA 位于 `docs/paper_draft/mainline_stage2_v0/`，见 Paper Handoff 第34节。仅使用冻结轻量结果，没有重跑科学算法或提高 WP/Gate 状态；Gate G 仍 `PENDING`。下一步为作者逐段审阅与投稿格式选择。
+
 WP编号是长期研究工作包编号，与 Mainline CIR 实施计划中的 Task 1–7、SAGE Stage 0–4 不是同一套编号。
 
 ## Mainline 10.23 MHz three-layer route (Commander authorization, 2026-10-24)

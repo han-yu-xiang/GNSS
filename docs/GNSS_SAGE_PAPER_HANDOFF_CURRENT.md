@@ -4,7 +4,7 @@
 **论文状态唯一来源：** 本文件  
 **长期建模路线与 WP0–WP6 状态权威来源：** `docs/ACADEMIC_CHANNEL_MODELING_MASTER_PLAN.md`（本文件继续负责论文事实、科学解释和论文状态）
 **最后科学状态更新：** 2026-10-30 20:48 +08（Asia/Shanghai；Gate G 固定箱宽 Doppler 审阅见第32节）
-**最后论文组织更新：** 2026-10-30（Asia/Shanghai；Mainline Stage2 科研成果及论文定位见第33节；科学状态仍以第32节的 Gate G 审阅为准，不等于 Task 5 实时进程核查。）
+**最后论文组织更新：** 2026-10-30（Asia/Shanghai；Mainline Stage2 英文论文 V0、正式图表及文献对照见第34节；科学状态仍以第32节 Gate G 审阅为准，不等于 Task 5 实时进程核查。）
 **面向对象：** 论文写作者、科研人员、方法分析人员  
 **当前 Mainline 新增研究状态：** Stage2探索V0、WP2稳健性、WP3条件分析、WP4 Gate E/F 和 WP5 全量 alpha 均已完成并带限制；WP3独立审阅=`PASS_WITH_LIMITATIONS`，WP4 Gate E/F=`PASS_WITH_LIMITATIONS`。WP6=`COMPLETED_WITH_LIMITATIONS`，Gate G 仍 `PENDING`。新增固定箱宽比较将目标明确限定为预先固定分箱后的 Stage2 Doppler 标记分布，并以 delay/Doppler 离散质量和连续功率密度进行混合评分；5/10/20 Hz 下 Gaussian Copula 相对独立边际均未显示稳健总体场景外收益。它不恢复自适应 SAGE 搜索器精确似然。结果仍不证明路径可交换/条件 iid、完整生成模型、物理信道、绝对增益、跨窗相位相干或反射体跟踪。Phase-2仍未开展。
 **研究阶段：** accuracy-first full SAGE 冻结批次及独立批后 QA 已完成；Phase-1 的 Stage3 传统统计建模和 scientific closure 已完成并通过 QA（带明确限制）。coverage-complete event/path database、通用 channel-parameter database、Phase-2 AI 和完整暗室生成器仍是独立后续范围。
@@ -1958,3 +1958,11 @@ Full review and reproducibility evidence:
 **推荐主论文**研究 13 个真实测量场景的 NAV-aided SAGE Stage2 **估计参数**的条件统计与完整场景留出泛化；WP4 CIR/PDP 与 WP5 复数 alpha 的全量身份/数值关联作为辅证，不把共享测量链一致性说成独立物理真值。主张以简洁计数和边际基线、环境/仰角条件模型的有限收益、固定分箱 Copula 的负场景宏平均结果为核心。未经正式逐篇文献对照不称“首创”；旧 `docs/paper_draft/manuscript_outline.md` 及章节草稿是历史写作框架，含早期生产状态和已过时的潜在通道参数承诺，不可直接当作本 Mainline 成果正文。
 
 该新材料是**写作准备/作者审阅稿，不是科学结果重算或投稿完成**。WP1–WP6 保持 `COMPLETED_WITH_LIMITATIONS`，Gate E/F=`PASS_WITH_LIMITATIONS`，Gate G=`PENDING`；没有因论文组织提高验收等级。限定主线已有足够真实实验做正文写作；发表前仍需正式文献比较、图表科学 QA、同分母/同测度的 claim 核对和英文稿同步。当前无必须重跑 SAGE/CIR/alpha 的论文主线实验。下一步唯一优先事项：作者审阅并锁定上述限定主线，再据证据矩阵编写/核验正式英文稿与图表。
+
+## 34. Mainline Stage2 路线 A 英文论文 V0（2026-10-30）
+
+Commander 已验收上述科研成果整理并批准路线 A。本轮直接据冻结轻量结果与证据矩阵完成可逐段审阅的[完整英文论文 V0](paper_draft/mainline_stage2_v0/PAPER_V0.md)、[正式文献对照](paper_draft/mainline_stage2_v0/LITERATURE_AUDIT.md)、F1/F2/F3/F4/F7 图件及 T1/T2 表格。T1 正文与可机读[逐场景表](paper_draft/mainline_stage2_v0/figures_final/T1_scene_population.csv)同时保留；T2 在英文稿正文。图件通过[复现脚本](paper_draft/mainline_stage2_v0/make_figures.py)从冻结 CSV/JSON 渲染，[来源 SHA 和核对结果](paper_draft/mainline_stage2_v0/figures_final/figure_audit.json)随图保存；定向测试见同目录 `test_make_figures.py`。文献对照核查原始算法、实测 GNSS 与卫星信道先例，**不宣称 SAGE、实测统计或场景分组验证首创**。
+
+论文主结论只针对 13 个实测场景的 Stage2 **已选窗口中 SAGE 估计输出**：经验计数和简洁边际基线相对稳健；环境/仰角及功率—时延条件结构没有稳定场景外收益；固定 5/10/20 Hz 分箱下 Copula 在 10/13 场景虽为正，但等场景宏均均为负。图 F3 的全总体拟合仅为描述性曲线，不能代替留出预测；F4 的九场景环境比较与十三场景功率—时延比较不得混合分母；F7 的固定分箱分数不是 SAGE 自适应搜索输出的精确似然。WP4/5 只为共享测量链上的身份/数值支持，非独立物理真值。WP1–WP6、Gate E/F 与 Gate G 的既有状态**不因写稿改变**，Gate G 继续 `PENDING`。
+
+这是一份内容完整但**尚未排版投稿**的英文初稿。投稿前仍需作者审阅紧邻先例全文（尤其 Xie–Petovello）、逐句核实最终引用和图表授权、按目标期刊格式排版并完成外部稿件审读；这些事项不要求重跑冻结生产。下一步唯一优先事项是对 V0 的主张、图注和文献定位开展作者逐段审阅，确定投稿场所与篇幅。
