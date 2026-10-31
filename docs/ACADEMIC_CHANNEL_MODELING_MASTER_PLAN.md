@@ -1085,3 +1085,7 @@ Commander 批准固定 0-Hz 箱中心与 `(k+1/2)w` 边界后，本次以预先�
 - 真实分析耗时 41m49s（2026-10-30 12:01:21–12:43:10 UTC，即 20:01:21–20:43:10 +08）。定向测试 32/32 PASS，`py_compile` 退出码 0。独立验证 `PASS_WITH_LIMITATIONS`：116 项检查、0 失败；独立自适应积分复算 9 个样本，M0 最大误差 `1.78e-15`、C0 `7.11e-15`。这验证实现、数值与身份，不是独立传播真值。
 
 **Gate G 最终建议仍为 `PENDING`；WP6 仍为 `COMPLETED_WITH_LIMITATIONS`。** 本次支持“固定分箱后的 Stage2 Doppler 标记分布可作定义清楚的场景外预测评分”，不支持“Copula 稳健优于独立边际”，更不支持自适应 SAGE 输出精确似然、路径可交换/条件 iid、有序窗口联合生成器、绝对增益、跨窗 alpha 相位相干或物理传播路径跟踪。固定分箱模型的适用范围、逐场景结果、所有候选失败及数值边界详见 `reports/data_consolidation_20261003/mainline_1023_model_v1/wp6_gateg_fixed_doppler_bins_20261030T120121Z/WP6_GateG_固定箱宽Doppler独立科学审阅.md`；源代码、完整表格、输入 SHA、测试日志及独立验证均在同一目录或对应 `scripts/channel_modeling/` 文件中。
+
+## 121. Mainline Stage2 第一阶段静态统计建模总结报告（2026-10-31）
+
+新增中文综合报告：`docs/paper_draft/MAINLINE_STAGE2_STATIC_MODELING_PHASE1_FINAL_REPORT_CN.md`。报告统一记录冻结 Stage2 总体、估计流程与变量定义、WP1–WP6 的实际统计结果、CIR/PDP 与复数 alpha 的验证边界，以及 Gate E/F/G 和 Phase 2 状态；其中 Gate G 保持 `PENDING`，不宣称完整联合生成器已通过。该交付仅整理和交叉核对既有证据，未重跑 SAGE、CIR、alpha 或模型拟合；论文交接入口同步更新。
