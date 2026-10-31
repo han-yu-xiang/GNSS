@@ -1,0 +1,30 @@
+{
+  "cir_tasks_json_sha256": "2acbf20f64e961d9391550e3fcef3f3ee66d602f01c456e30c0a47a3c4c10d41",
+  "cohort_json_sha256": "287e891fae0cd294a85c073080611a19b7389ece46240b89cb1d5dab4df90229",
+  "eligible_count": 83,
+  "eligible_identity_set_matches_gate_a": true,
+  "excluded_count": 6,
+  "existing_pilot_occurrences": 1,
+  "gate_a_audit_sha256": "0e4a02ae7b0f51228e5f3f32678e73f85c5c2ce893a46b6f347c6dd606dceda0",
+  "gate_b_pass": true,
+  "hdf5_payload_opened": false,
+  "manifest_summary_identity_match_count": 89,
+  "mat_payload_opened": false,
+  "new_cir_required_count": 82,
+  "pilot_run_id": "run_20261003_F1023_V70_D0117_P2_G28_ch1",
+  "pilot_status": "EXISTING_VALIDATED",
+  "raw_iq_content_read": false,
+  "raw_iq_hash_recomputed": false,
+  "six_excluded_identity_set_matches_approved_set": true,
+  "status_counts": {
+    "ALREADY_COMPLETE": 1,
+    "COMPLETE": 82,
+    "FAILED": 2,
+    "IN_PROGRESS": 0,
+    "PENDING": 4
+  },
+  "unique_output_namespaces": true,
+  "unique_run_ids": true,
+  "validated_at_utc": "2026-10-22T08:25:20.799651Z",
+  "validation_status": "PASS"
+}

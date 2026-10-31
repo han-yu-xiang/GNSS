@@ -1,0 +1,21 @@
+MATLAB_VERSION=25.1.0.2973910 (R2025a) Update 1
+正在运行 test_export_stage2_complex_alpha
+....
+已完成 test_export_stage2_complex_alpha
+__________
+
+正在运行 test_build_mpc_modeling_ledger
+...
+已完成 test_build_mpc_modeling_ledger
+__________
+
+                                              Name                                               Passed    Failed    Incomplete    Duration      Details
+    _________________________________________________________________________________________    ______    ______    __________    ________    ____________
+
+    {'test_export_stage2_complex_alpha/testKeepsEveryStage2PathAndMarksUnavailableAlpha'    }    true      false       false        7.8246     {1×1 struct}
+    {'test_export_stage2_complex_alpha/testRetainsNonfiniteAlphaWithExplicitReason'         }    true      false       false       0.97743     {1×1 struct}
+    {'test_export_stage2_complex_alpha/testRejectsDuplicateOrIncompleteSelectedPathIdentity'}    true      false       false       0.46907     {1×1 struct}
+    {'test_export_stage2_complex_alpha/testRefusesToOverwriteExistingOutput'                }    true      false       false       0.10153     {1×1 struct}
+    {'test_build_mpc_modeling_ledger/testKeepsDirectTransientPersistentAndConfirmedClasses' }    true      false       false          2.41     {1×1 struct}
+    {'test_build_mpc_modeling_ledger/testRetainsStage2PathWhenAlphaIsMissing'               }    true      false       false       0.91841     {1×1 struct}
+    {'test_build_mpc_modeling_ledger/testRejectsAmbiguousStage3Identity'                    }    true      false       false       0.32775     {1×1 struct}

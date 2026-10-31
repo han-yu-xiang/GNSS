@@ -1,0 +1,28 @@
+{
+  "window_n": 7847,
+  "mpc_n": 8914,
+  "scene_n": 13,
+  "run_n": 77,
+  "scene_ids": [
+    "F1023_V120_D0121_P2",
+    "F1023_V70_D0117_P2",
+    "F1023_V70_D0117_P4",
+    "F1023_V70_D0120_P1",
+    "F1023_V70_D0120_P5",
+    "F1023_V70_D0120_P7",
+    "F1023_V70_D0120_P8",
+    "F1023_V70_D0120_P9",
+    "F1023_V70_D0122_P1",
+    "F1023_V70_D0122_P2",
+    "F1023_V80_D0117_P8",
+    "F1023_v50_D0127_P1",
+    "F1023_v90_D0117_P7"
+  ],
+  "selected_window_count_histogram": {
+    "0": 3574,
+    "1": 1412,
+    "2": 1081,
+    "3": 1780
+  },
+  "scope": "frozen Stage2-selected windows only; selected-window count marks are not unconditional Stage0 counts"
+}

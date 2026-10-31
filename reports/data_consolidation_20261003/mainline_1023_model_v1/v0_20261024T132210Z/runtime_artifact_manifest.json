@@ -1,0 +1,138 @@
+{
+  "analysis_mpc_rows.csv": {
+    "sha256": "a2c26d0de655e0f6cf4a60cf2906bf4cfff7aa16bbc5f74bffb4e9b80dab306c",
+    "size_bytes": 2550478
+  },
+  "descriptive_by_group.csv": {
+    "sha256": "730eb7bcc2b920c337f1a2c4ebaba45cd923857cd73ee038027af45313ff6c1f",
+    "size_bytes": 88463
+  },
+  "elevation_parameter_relations.csv": {
+    "sha256": "e1d603f76c2c79395dff49cbac17a19e31e812aaaedf077d43b6d398ef159ef8",
+    "size_bytes": 21036
+  },
+  "figures/environment_distributions.pdf": {
+    "sha256": "a7c340cb808e37645c198d8eaa5403f037f6810346f34674591f72a1a1aaa66d",
+    "size_bytes": 25772
+  },
+  "figures/environment_distributions.png": {
+    "sha256": "0a7234452c537b98c235bb59c05e7a407cb32d6ad5253223068d1f8a92b77dfa",
+    "size_bytes": 92712
+  },
+  "figures/marginal_doppler_offset_hz.pdf": {
+    "sha256": "c22ab5b2cc667f387dff86f1ec42b1a8019c600013add4d3aef689703b0022b8",
+    "size_bytes": 33002
+  },
+  "figures/marginal_doppler_offset_hz.png": {
+    "sha256": "6f23d1f482aa8204e44fc12f263e84f2e8f04e330ffc384f7a0e4f05bde2fb04",
+    "size_bytes": 126691
+  },
+  "figures/marginal_excess_delay_chips.pdf": {
+    "sha256": "423500177cbad66bd4f47eeb07816b5eacfbe9c2c4d0556c3afcd69a8a5b4006",
+    "size_bytes": 28154
+  },
+  "figures/marginal_excess_delay_chips.png": {
+    "sha256": "dd3b9f65dbbad65442fc176f9f88c7632ea17c2de4803576d1243a7b4f947a34",
+    "size_bytes": 112072
+  },
+  "figures/marginal_relative_power_db.pdf": {
+    "sha256": "970758e6bbe78d654a66add4b3199201b8ae3014d346070425fd9824e73227a0",
+    "size_bytes": 33104
+  },
+  "figures/marginal_relative_power_db.png": {
+    "sha256": "cff47b65086d37e3ba66d74711c9f580715cf5593fcc15c782d47b40fc7679aa",
+    "size_bytes": 146446
+  },
+  "figures/power_delay_scene_comparison.pdf": {
+    "sha256": "16536129b681f911d9ca2571cb43182cb3a9921231776de813e788e34213ebb6",
+    "size_bytes": 55041
+  },
+  "figures/power_delay_scene_comparison.png": {
+    "sha256": "07b2da5dc01c45a09aeed7da715336392a2fbb4c44754e90df77e8790e21c185",
+    "size_bytes": 223746
+  },
+  "figures/window_counts_and_elevation_sources.pdf": {
+    "sha256": "71ab006034bdd6df0fc29dd92f9c4fabc84d62141c07a8c6bf6b8f9dc6860d32",
+    "size_bytes": 48916
+  },
+  "figures/window_counts_and_elevation_sources.png": {
+    "sha256": "7e0158e0b9b828d85044e05ba21643435951239d15875417bf41f3117b242923",
+    "size_bytes": 223795
+  },
+  "geometry_condition_summary.csv": {
+    "sha256": "3f7ff44f7b23d21af0e53fd35b72aeed7e601828d1b6d86304ed657889839c06",
+    "size_bytes": 5221
+  },
+  "geometry_height_source_support.csv": {
+    "sha256": "6de60cc6189d8e6a3983ff0ed282725c60e29aa6c525b6c2d0c440b01c35c5ab",
+    "size_bytes": 1624
+  },
+  "marginal_fit_metrics.csv": {
+    "sha256": "8f665a9bc038e277b673df6362e0bf7ceafda55b7b7cda330625a62a923963e1",
+    "size_bytes": 23540
+  },
+  "model_summary.json": {
+    "sha256": "9a083c1a1c645e4a84dd7954a3e936d16f265d2c269e69234ba17c5b3f013957",
+    "size_bytes": 143053
+  },
+  "paired_environment_loso.csv": {
+    "sha256": "17c4f4dec7c83ca39fbe8beea48f91f5a6196c5ba98acbf11d746b2ed7cfe4eb",
+    "size_bytes": 2816
+  },
+  "paired_environment_scene_scores.csv": {
+    "sha256": "9f065397008e951b3f5ed5a28f273b555bd65d1134507ca166f9a74a0d0d9aee",
+    "size_bytes": 10794
+  },
+  "parameter_spearman_correlations.csv": {
+    "sha256": "68b0dcd8f5be9306837c7fde0d84302ae4cfc473432a2560f70357b20576d625",
+    "size_bytes": 4978
+  },
+  "population_support_by_scene.csv": {
+    "sha256": "aa2d3b8f7082e6653b3a4076fb77fe2e81cea380c4b1ca29e7707a2fde9f2901",
+    "size_bytes": 1256
+  },
+  "power_delay_relation.csv": {
+    "sha256": "373960f79e29bf43a094951c01611a672b691d9c2ab8358a69d5e1bd6064104d",
+    "size_bytes": 2925
+  },
+  "scene_fold_manifest.json": {
+    "sha256": "b7f3e0a944890c765ab2441cc72cca3f8d9a6fae116a2f7e157bce0294d42f73",
+    "size_bytes": 19210
+  },
+  "scene_fold_scores.csv": {
+    "sha256": "faad49468cb7d36ed070e54a8b9fdc564cdaa9bc3f682fed1eb391cfebbf03ca",
+    "size_bytes": 38524
+  },
+  "scene_loso_summary.csv": {
+    "sha256": "e3730d0387e4f81337ac906ea818f3d0333b2c9eaaad1f0bfef1dccb1b7388ff",
+    "size_bytes": 3601
+  },
+  "selected_window_rows.csv": {
+    "sha256": "fbc784ff169fca6d95907e39a56510d9be0b61ec3c1ef42e15235002be40061c",
+    "size_bytes": 1859274
+  },
+  "stage34_attribute_sensitivity.csv": {
+    "sha256": "34edf6ab3bc86d74fa3efae4de1c784295e7b3825538d91bda7d0e14de138f61",
+    "size_bytes": 5386
+  },
+  "task5_readonly_snapshot.json": {
+    "sha256": "8ac060768aa26366bab63001963b8eb1fde06dff593a3e4b80452d9a9f0a09b9",
+    "size_bytes": 10755
+  },
+  "v0_model_report.md": {
+    "sha256": "41f4711790823bcfa0fe8c7bece68bbc40c492b086cfd7349984e2153400356d",
+    "size_bytes": 21041
+  },
+  "variable_data_quality.csv": {
+    "sha256": "b4653351ee2adbf54ab9aa34d95ec6c64dba9785a3763ff62a98c2147366555a",
+    "size_bytes": 1904
+  },
+  "window_mpc_count_descriptive.csv": {
+    "sha256": "b06948056db38feb66e4c32db6bbfdfd969c749e26f98f0491e9125bfba55b69",
+    "size_bytes": 2594
+  },
+  "window_mpc_count_summary.csv": {
+    "sha256": "5a46b7674b90ac50ec0278942cd30595df17e8ad73623f62d3a3ca142059de6d",
+    "size_bytes": 4186
+  }
+}

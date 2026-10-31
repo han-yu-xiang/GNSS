@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "record_type": "RETROSPECTIVE_SOURCE_SNAPSHOT_BINDING",
+  "recorded_utc": "2026-10-29T06:38:00Z",
+  "dataset_output_root": "E:\\GNSS_Multipath_Project\\dataset_generation_logs\\channel_modeling\\mainline_1023_wp5_alpha_full_83run_20261029T055629Z",
+  "batch_execution": {
+    "audit_first_started_utc": "2026-10-29T05:58:38.232Z",
+    "audit_last_finished_utc": "2026-10-29T06:00:04.610Z",
+    "batch_summary_created_utc": "2026-10-29T06:00:17.349Z",
+    "independent_validation_created_utc": "2026-10-29T06:04:30.691Z",
+    "status": "COMPLETE",
+    "run_count": 83,
+    "stage2_path_count": 16761,
+    "stage2_window_count": 7847,
+    "stage2_mpc_count": 8914,
+    "stage2_direct_count": 7847
+  },
+  "source_code_snapshot": {
+    "commit": "4f219e46045d124c42224c8d26d8562451e30ced",
+    "commit_created_local": "2026-10-29T14:15:43+08:00",
+    "commit_created_after_batch": true,
+    "hash_method": "SHA-256 over exact Git object bytes from git show <commit>:<path>",
+    "runtime_source_hashes_were_captured": false,
+    "limitation": "This retrospective binding identifies the committed source snapshot corresponding to the delivered implementation. Existing execution logs do not contain code-file hashes captured at process start, so exact runtime source bytes cannot be independently proven from this record alone.",
+    "files": {
+      "scripts/channel_modeling/prepare_wp5_alpha_full_cohort.py": "1b30f99b25a618f09606c9e5e1ed16ad85545cf1595bb82a5e20662025971120",
+      "scripts/channel_modeling/run_mainline_wp5_alpha_full_batch.m": "dd3c43e4834407539ff9807c9c599286b4cbdf1199bd20d2eb239d7232439cee",
+      "scripts/channel_modeling/export_stage2_complex_alpha.m": "910566d635dac713d71bd869135dba529f8f4f866ebc14cf6bdfbbe81bff178b",
+      "scripts/channel_modeling/build_mpc_modeling_ledger.m": "8a6afad3f944bc48e29c58b3102a1ab97102e337cd56fed25f41b13452a86b50",
+      "scripts/channel_modeling/validate_mainline_wp5_alpha_full_batch.m": "c13aed5b2d1a029b69767c49cc57908c1f3ea03f81f2d81a8329f2eb6dddbd6c",
+      "scripts/channel_modeling/summarize_wp5_alpha_full_batch.py": "a4da06f3a28ac6133767f85f76a0c4af892d9831e4d5af1fb23447fc50e2a328"
+    }
+  },
+  "frozen_input_sha256": {
+    "cohort": "287e891fae0cd294a85c073080611a19b7389ece46240b89cb1d5dab4df90229",
+    "stage2_ledger": "bbb8cac8338194b5527e00812a6547129a58466cc5fdd7db36b8c44bba01e551",
+    "stage4_pin_manifest": "32c10789efefe4e87cabee4ac8978cd36a4a132f4d3b5640c8e4b8b0851a635d",
+    "frozen_sage_source": "bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c",
+    "input_manifest": "9a914f93ae0dd4aa5c75c53928d89a69ec8bdab685fd739e1355b635b5926b50"
+  },
+  "output_sha256": {
+    "stage2_alpha_all_paths.csv": "eeb20d3f638cf937529922d2d932503e201ec92ba866eeb3d86e0dd3a91e97e9",
+    "stage2_modeling_ledger_all_paths.csv": "def2e1e249af309a5114c100d0630299ebd955cefef6e051407fecb68e5493d7",
+    "per_run_output_manifest.csv": "628d743b734e6d007c39e86b1999e6f2200202624feaeb82d2d3441ad0263f8d",
+    "independent_validation_summary.json": "6c9200646e15fedf95d314266bdaf52e9b8da347f87c5b053f62c426524215ba",
+    "independent_validation_per_run.csv": "4eb7d673b94df2855b00ab691c09912aec404b4369da40268d61300199e8595e"
+  }
+}

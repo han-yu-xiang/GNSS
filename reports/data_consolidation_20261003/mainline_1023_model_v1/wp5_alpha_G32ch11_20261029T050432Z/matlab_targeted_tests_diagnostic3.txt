@@ -1,0 +1,103 @@
+MATLAB_VERSION=25.1.0.2973910 (R2025a) Update 1
+正在运行 test_export_stage2_complex_alpha
+....
+已完成 test_export_stage2_complex_alpha
+__________
+
+正在运行 test_build_mpc_modeling_ledger
+
+================================================================================
+test_build_mpc_modeling_ledger/testKeepsDirectTransientPersistentAndConfirmedClasses 中出现错误并且未运行完毕。
+    --------
+    错误 ID:
+    --------
+    'MATLAB:m_improper_grouping'
+    -----------
+    错误详细信息:
+    -----------
+    文件: C:\Users\Jing_\.codex\worktrees\gnss-cir\GNSS_Multipath_Project\scripts\channel_modeling\build_mpc_modeling_ledger.m 行: 140 列: 24
+    无效表达式。调用函数或对变量进行索引时，请使用圆括号。否则，请检查不匹配的分隔符。
+
+    出错 test_build_mpc_modeling_ledger>testKeepsDirectTransientPersistentAndConfirmedClasses (第 50 行)
+    build_mpc_modeling_ledger(stage2Path, stage3Path, reliablePath, ...
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+================================================================================
+.
+================================================================================
+test_build_mpc_modeling_ledger/testRetainsStage2PathWhenAlphaIsMissing 中出现错误并且未运行完毕。
+    --------
+    错误 ID:
+    --------
+    'MATLAB:m_improper_grouping'
+    -----------
+    错误详细信息:
+    -----------
+    文件: C:\Users\Jing_\.codex\worktrees\gnss-cir\GNSS_Multipath_Project\scripts\channel_modeling\build_mpc_modeling_ledger.m 行: 140 列: 24
+    无效表达式。调用函数或对变量进行索引时，请使用圆括号。否则，请检查不匹配的分隔符。
+
+    出错 test_build_mpc_modeling_ledger>testRetainsStage2PathWhenAlphaIsMissing (第 119 行)
+    result = build_mpc_modeling_ledger(paths{1}, paths{2}, paths{3}, ...
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+================================================================================
+.
+================================================================================
+test_build_mpc_modeling_ledger/testRejectsAmbiguousStage3Identity 中验证失败。
+    --------
+    框架诊断:
+    --------
+    verifyError 失败。
+    --> 该函数引发错误的异常。
+
+        实际异常:
+            'MATLAB:m_improper_grouping'
+        预期的异常:
+            'GNSS:SAGE:AmbiguousStage3Mapping'
+    --> 实际错误报告:
+            文件: C:\Users\Jing_\.codex\worktrees\gnss-cir\GNSS_Multipath_Project\scripts\channel_modeling\build_mpc_modeling_ledger.m 行: 140 列: 24
+            无效表达式。调用函数或对变量进行索引时，请使用圆括号。否则，请检查不匹配的分隔符。
+
+            出错 test_build_mpc_modeling_ledger>@()build_mpc_modeling_ledger(paths{1},paths{2},paths{3},paths{4},paths{5},paths{6},outputPath,provenance) (第 175 行)
+            testCase.verifyError(@() build_mpc_modeling_ledger( ...
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    计算的函数:
+      包含以下值的 function_handle:
+
+        @()build_mpc_modeling_ledger(paths{1},paths{2},paths{3},paths{4},paths{5},paths{6},outputPath,provenance)
+    --------
+    堆栈信息:
+    --------
+    位置: C:\Users\Jing_\.codex\worktrees\gnss-cir\GNSS_Multipath_Project\scripts\channel_modeling\tests\test_build_mpc_modeling_ledger.m (testRejectsAmbiguousStage3Identity)，位置: 175
+================================================================================
+.
+已完成 test_build_mpc_modeling_ledger
+__________
+
+失败摘要:
+
+     Name                                                                                  Failed  Incomplete  原因
+    =====================================================================================================================
+     test_build_mpc_modeling_ledger/testKeepsDirectTransientPersistentAndConfirmedClasses    X         X       出错。
+    ---------------------------------------------------------------------------------------------------------------------
+     test_build_mpc_modeling_ledger/testRetainsStage2PathWhenAlphaIsMissing                  X         X       出错。
+    ---------------------------------------------------------------------------------------------------------------------
+     test_build_mpc_modeling_ledger/testRejectsAmbiguousStage3Identity                       X                 验证失败。
+                                              Name                                               Passed    Failed    Incomplete    Duration      Details
+    _________________________________________________________________________________________    ______    ______    __________    ________    ____________
+
+    {'test_export_stage2_complex_alpha/testKeepsEveryStage2PathAndMarksUnavailableAlpha'    }    true      false       false        8.3235     {1×1 struct}
+    {'test_export_stage2_complex_alpha/testRetainsNonfiniteAlphaWithExplicitReason'         }    true      false       false        1.0508     {1×1 struct}
+    {'test_export_stage2_complex_alpha/testRejectsDuplicateOrIncompleteSelectedPathIdentity'}    true      false       false       0.50587     {1×1 struct}
+    {'test_export_stage2_complex_alpha/testRefusesToOverwriteExistingOutput'                }    true      false       false       0.13545     {1×1 struct}
+    {'test_build_mpc_modeling_ledger/testKeepsDirectTransientPersistentAndConfirmedClasses' }    false     true        true        0.39112     {1×1 struct}
+    {'test_build_mpc_modeling_ledger/testRetainsStage2PathWhenAlphaIsMissing'               }    false     true        true        0.25807     {1×1 struct}
+    {'test_build_mpc_modeling_ledger/testRejectsAmbiguousStage3Identity'                    }    false     true        false        2.3435     {1×1 struct}
+
+{错误使用 assert
+测试会话中有至少一个测试失败。
+
+出错 matlab.unittest.internal.BaseTestResult/assertSuccess (第 126 行)
+             assert(~any([resultArray.Failed]),message('MATLAB:unittest:TestResult:UnsuccessfulRun'));
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+}
+ERROR: MATLAB error Exit Status: 0x00000001

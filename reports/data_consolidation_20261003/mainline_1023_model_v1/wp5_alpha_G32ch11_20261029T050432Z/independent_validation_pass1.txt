@@ -1,0 +1,50 @@
+{
+  "run_id": "run_20261003_F1023_V70_D0117_P2_G32_ch11",
+  "path_rows": 344,
+  "unique_windows": 117,
+  "mpc_rows": 227,
+  "direct_reference_rows": 117,
+  "valid_alpha_rows": 344,
+  "missing_or_invalid_alpha_rows": 0,
+  "mpc_valid_alpha_rows": 227,
+  "mpc_missing_or_invalid_alpha_rows": 0,
+  "relative_power_check_pass": 344,
+  "relative_power_check_mismatch": 0,
+  "relative_power_check_not_checked": 0,
+  "real_max_abs_error": 4.9960036108132044E-16,
+  "imag_max_abs_error": 4.163336342344337E-16,
+  "magnitude_max_abs_error": 4.9960036108132044E-16,
+  "phase_max_wrapped_error_rad": 4.8849813083506888E-15,
+  "stage2_parameter_max_abs_errors": {
+    "selected_L": 0,
+    "is_multipath": 0,
+    "delay_samples": 0,
+    "excess_delay_samples": 0,
+    "excess_delay_chips": 0,
+    "excess_path_length_m": 0,
+    "doppler_hz": 0,
+    "doppler_offset_hz": 0,
+    "relative_power_db": 0
+  },
+  "candidate_windows": [
+    {
+      "window_id": 38,
+      "selected_L": 1,
+      "path_ids": 1,
+      "mpc_count": 0
+    },
+    {
+      "window_id": 1007,
+      "selected_L": 4,
+      "path_ids": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "mpc_count": 3
+    }
+  ],
+  "missing_reasons": [],
+  "independent_validation": "PASS"
+}

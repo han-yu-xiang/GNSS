@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "provenance_note": "Portable record of the final WP6 analysis. Local execution_record.json, input_code_manifest.json and independent_validation.json retain exact machine-local paths and are not included in the Git delivery; this sidecar records their relevant identities without workstation paths.",
+  "analysis": {
+    "status": "COMPLETE",
+    "started_utc": "2026-10-29T15:38:37.338492+00:00",
+    "ended_utc": "2026-10-29T15:43:01.742865+00:00",
+    "elapsed_seconds": 264.404373,
+    "python_version": "3.12.9",
+    "command": [
+      "python",
+      "scripts/channel_modeling/run_mainline_stage2_wp6.py",
+      "--output-dir",
+      "reports/data_consolidation_20261003/mainline_1023_model_v1/wp6_20261029T154500Z_final"
+    ]
+  },
+  "inputs": {
+    "features": {
+      "path": "reports/data_consolidation_20261003/mainline_1023_model_v1/wp4_gate_ef_final_20261029T181100/stage2_cir_pdp_window_features.csv",
+      "sha256": "258d5d70081d9ee6fd82a64b1a4f9c405180bc18cd49280b0e2b799d9a482bf4",
+      "rows": 7847
+    },
+    "mpcs": {
+      "path": "reports/data_consolidation_20261003/mainline_1023_model_v1/wp4_gate_ef_final_20261029T181100/stage2_mpc_cir_alpha_linkage.csv",
+      "sha256": "8db941db20e684108d13583d67ee20cde543bf2a36ca01013d1288b48231c80b",
+      "rows": 8914
+    }
+  },
+  "source_code_sha256": {
+    "mainline_stage2_wp6.py": "a1fae7384c713067d82e67b60478a4d037e9a5825ff7d471bfdc536b0e37422a",
+    "mainline_stage2_wp3.py": "67651a6cea536df1f0d7dcd61b8da034fcc196f903b12250427fc7f1f726ac3b",
+    "run_mainline_stage2_wp6.py": "715650a82c073455f81704f6aaf284b4bf8d8c7c44164cd73f6a8eac9f92c49d",
+    "validate_mainline_stage2_wp6.py": "18bdfa3edf18d990dcac3d69a22f203738ba3aed76b726d9e60b0e21c5a0e141",
+    "test_mainline_stage2_wp6.py": "069183c0451f6a0575e646c00e109070fe53bf34e6ae82fd9b05f489b0c3d2d6"
+  },
+  "population": {
+    "run_n": 83,
+    "scene_n": 13,
+    "selected_window_n": 7847,
+    "mpc_n": 8914,
+    "count_histogram_0_1_2_3": [3574, 1412, 1081, 1780],
+    "boundary_peak_window_n": 63,
+    "scope": "Stage2-selected windows only; unselected Stage0 windows are not zero-imputed"
+  },
+  "validation": {
+    "status": "PASS_WITH_LIMITATIONS",
+    "portable_summary": "independent_validation_git.json",
+    "portable_summary_sha256": "ad2928757f69fc7ed07547be4dce255e28023fcc6288a5b7237fcd64171d3fe8",
+    "summary_json_sha256": "efc7a5ff23802f3764e548f9bd662fda20a4fbdcd64db23e6c7b63b35f0fe80f",
+    "validator_exit_code": 0,
+    "validated_window_n": 7847,
+    "validated_mpc_n": 8914,
+    "pdp_scene_model_target_rows": "52/52",
+    "joint_scene_scored": "13/13",
+    "joint_window_unscorable_n": 0
+  },
+  "tests": {
+    "focused_wp6": {"passed": 39, "failed": 0, "exit_code": 0},
+    "channel_modeling_suite": {"passed": 222, "failed": 0, "exit_code": 0},
+    "py_compile_exit_code": 0,
+    "evidence": "targeted_regression_evidence.md"
+  }
+}

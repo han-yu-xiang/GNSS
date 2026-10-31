@@ -1,0 +1,70 @@
+{
+  "schema": "gate-g-portable-provenance-v1",
+  "analysis_started_at_utc": "2026-10-29T16:50:15Z",
+  "analysis_completed_at_utc": "2026-10-29T17:06:53Z",
+  "population": {
+    "selected_windows": 7847,
+    "mpc_paths": 8914,
+    "scenes": 13,
+    "runs": 83,
+    "scope": "Stage2-selected windows only"
+  },
+  "frozen_inputs": [
+    {
+      "path": "reports/data_consolidation_20261003/mainline_1023_model_v1/wp4_gate_ef_final_20261029T181100/stage2_cir_pdp_window_features.csv",
+      "rows": 7847,
+      "sha256": "258d5d70081d9ee6fd82a64b1a4f9c405180bc18cd49280b0e2b799d9a482bf4"
+    },
+    {
+      "path": "reports/data_consolidation_20261003/mainline_1023_model_v1/wp4_gate_ef_final_20261029T181100/stage2_mpc_cir_alpha_linkage.csv",
+      "rows": 8914,
+      "sha256": "8db941db20e684108d13583d67ee20cde543bf2a36ca01013d1288b48231c80b"
+    }
+  ],
+  "analysis_command": "python scripts/channel_modeling/run_mainline_stage2_wp6_gateg.py --randomized-pit-draws 32",
+  "analysis_code_sha256": [
+    {"path": "scripts/channel_modeling/mainline_stage2_wp3.py", "sha256": "67651a6cea536df1f0d7dcd61b8da034fcc196f903b12250427fc7f1f726ac3b"},
+    {"path": "scripts/channel_modeling/mainline_stage2_wp6.py", "sha256": "a1fae7384c713067d82e67b60478a4d037e9a5825ff7d471bfdc536b0e37422a"},
+    {"path": "scripts/channel_modeling/mainline_stage2_wp6_gateg.py", "sha256": "431513e4024bdb90f595965026dcc178a5ffcc864d63cc38b50a118584702cfc"},
+    {"path": "scripts/channel_modeling/run_mainline_stage2_wp6_gateg.py", "sha256": "fa3aa847a6cdf503b8798d3e7d90e06b2d99c967e9b645bc592602cc206a3132"},
+    {"path": "scripts/channel_modeling/validate_mainline_stage2_wp6_gateg.py", "sha256": "3463a82a795e3fd0816517dec92e99a17d0ce5466b026f2c0a1658b974cdfa99"},
+    {"path": "scripts/channel_modeling/tests/test_mainline_stage2_wp6_gateg.py", "sha256": "6ca0fa2bf1059c5d07fa3480dc7bfd58fb256896588ad863a913c5e290b44d23"},
+    {"path": "scripts/sage_pipeline/core/default_sage_configuration.m", "sha256": "eb2a5503675501d1ba8e69db5d5fc365ee4dbf8dab5780de070a8b053e35b2bb"},
+    {"path": "scripts/sage_pipeline/core/run_sage_stage1_stage4_core.m", "sha256": "8fd899a29cc52a8d864d52d570f6fbdf1eefde2545c4ffd7c23f3579612601e8"}
+  ],
+  "shared_result_files": [
+    {"path": "copula_diagnostics.csv", "bytes": 28595, "sha256": "155cd2176b55070d052f1f468e4a28c1c7945592915e5bac6736cac9abe83396"},
+    {"path": "count_scene_support.csv", "bytes": 5282, "sha256": "3eca9e929cdcb7530783f1756c6bd95c433cee0b858b2d291499446c9689cd73"},
+    {"path": "count_stratum_scene_comparisons.csv", "bytes": 1520, "sha256": "245df00a3d310d255567d0e0c50a5e98a40950aadc86a8453308545947fa97f1"},
+    {"path": "doppler_5hz_lattice_screen_20261030T013915.log", "bytes": 3262, "sha256": "cff8e7db11a8b1410118bbed8737dd46f69b8229335301a935e5d5f58a2afcc4"},
+    {"path": "doppler_5hz_lattice_screen.json", "bytes": 1854, "sha256": "12cf73ba2bb089597142787d82fcee0fd6fd208807e6be9227ed0e73af1b99c6"},
+    {"path": "execution.log", "bytes": 1528, "sha256": "6c3694cc05a67bf70d3abb976b4e5567cc36aa16acadf0a83f14f53e12a59e0f"},
+    {"path": "folds.csv", "bytes": 5774, "sha256": "83f5faa170374e10e70955ab23f5238c68c516a5e6bd6bb10b315cb4f96ae1ae"},
+    {"path": "gate_g_summary.json", "bytes": 16199, "sha256": "785178bec080b65985a76cb3ae24dd52d4b7a9c3fb3400b63a653d65a86cb08c"},
+    {"path": "gateg_count_condition_and_rank_diagnostics.png", "bytes": 99964, "sha256": "f9595cb07b7b1363d0db363dfcd63372e7269bdf67093b0662800791e37a34ba"},
+    {"path": "heldout_count_scene_scores.csv", "bytes": 6724, "sha256": "a2e7a7722ef2c15933c56fe238ad8dfefb28ae894b9776f78733400ca63deb14"},
+    {"path": "heldout_path_scores.csv", "bytes": 1410031, "sha256": "f8f089829cc5d8d4a0e22316f4433abf9b03a21c8b179f0cceee63a49992b1b3"},
+    {"path": "heldout_scene_scores.csv", "bytes": 6575, "sha256": "b74256900499955ca4af87594015e05364d8c5ff3e480666c6f23f7a5fcdec4c"},
+    {"path": "heldout_window_scores.csv", "bytes": 957444, "sha256": "d6751a8b68c43e0066c804fa5ba092607073e11831dbaea000b30d12ba0e996c"},
+    {"path": "independent_validation_gate_g.json", "bytes": 1835, "sha256": "d55c59e11be7b8a56860facad95ded9e76dbe6155143165b56669e843ef2f508"},
+    {"path": "inner_family_selection.csv", "bytes": 2222927, "sha256": "4db73b7f7fd43cbde2b60d40cfa4a8ddba4048759fe727c56145dd0a9c484bbc"},
+    {"path": "model_scene_score_summary.csv", "bytes": 595, "sha256": "c7c8ec366d8a5b9f6bd00ac7f7facdc6e84c7d50efc07fab14c24671385642a8"},
+    {"path": "outer_fold_parameters.csv", "bytes": 69717, "sha256": "1ad68ea4cfff4c13c6057a9af0474731fd17b6f3f528c3c393b3ee98eddd39a8"},
+    {"path": "outer_parameter_fold_stability.csv", "bytes": 4238, "sha256": "c5ed39397e9e017c3c07845ffecec5c8f195e0dce8ffa74022ec5e6dfe5f04d3"},
+    {"path": "paired_scene_score_comparisons.csv", "bytes": 790, "sha256": "f67608259d071e397459e1063f3e641ea2fd76bad46ebbd887744d1c94bc61a9"},
+    {"path": "path_rank_effect_summary.csv", "bytes": 858, "sha256": "7fb179f121afd511b7892f014040d6dddb1ecd039b1439589ba711caf43bb3a3"},
+    {"path": "path_rank_scene_contrasts.csv", "bytes": 18242, "sha256": "bcf5782e3ed6c2b70c1df686a11677f3b37792c1023fd9a54eec40ff3cec81c5"},
+    {"path": "path_rank_scene_summary.csv", "bytes": 6942, "sha256": "b0a6c04c1731c6d22c7d939499ca9abcf65c8c751073b57f80652dfe4211b21d"},
+    {"path": "population_summary.json", "bytes": 751, "sha256": "fac5d00bd535dcac6269ca2616c1ac5dbc6cc3a7a18c314601221f75cbd3daac"},
+    {"path": "randomized_pit_sensitivity.csv", "bytes": 127450, "sha256": "2ff55e185f89b49e4ffff52d3bc239a9ecff984370d661bae74ce45b8e51bef2"},
+    {"path": "selected_family_frequency.csv", "bytes": 754, "sha256": "8656915d6ef82e4250a17a6afa2ac974bef75babb585775d0bfc0e8882d647d0"},
+    {"path": "targeted_tests_20261030T013419_plus0800.log", "bytes": 12030, "sha256": "a9dd66bcca664f13ffa90f2ba21315ec84ca0c33862d22fde42544d9c8ce6fab"},
+    {"path": "validation_history_gate_g.json", "bytes": 1674, "sha256": "eca402f1d290f79072abfd8be2afe8337d77b15893d6ef311b71432bf6566eec"},
+    {"path": "WP6_GateG补充科学审阅报告.md", "bytes": 5932, "sha256": "8286bb459406b5cb696d291a5f6c2dcc3f6f9b800d915669dcf1acfb38bb021f"},
+    {"path": "WP6_GateG最终科学审阅报告.md", "bytes": 10070, "sha256": "6c7494c40bb05b5f8589d1050a2e1b1e99523938ae13827b9cfb39766f15d6e3"}
+  ],
+  "notes": [
+    "Machine-local execution/input/output manifests and raw validation attempts are retained locally but excluded from this portable list because they contain machine-specific paths.",
+    "The SAGE source hashes identify files inspected in this checkout; they do not independently establish historical per-run source pins."
+  ]
+}

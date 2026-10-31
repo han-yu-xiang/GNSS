@@ -2,11 +2,16 @@
 
 **项目根目录：** `E:\GNSS_Multipath_Project`  
 **论文状态唯一来源：** 本文件  
-**最后审计时点：** 2026-08-31（Asia/Shanghai）
+**长期建模路线与 WP0–WP6 状态权威来源：** `docs/ACADEMIC_CHANNEL_MODELING_MASTER_PLAN.md`（本文件继续负责论文事实、科学解释和论文状态）
+**最后科学状态更新：** 2026-10-30 20:48 +08（Asia/Shanghai；Gate G 固定箱宽 Doppler 审阅见第32节）
+**最后论文组织更新：** 2026-10-30（Asia/Shanghai；Mainline Stage2 英文论文 V0、正式图表及文献对照见第34节；科学状态仍以第32节 Gate G 审阅为准，不等于 Task 5 实时进程核查。）
 **面向对象：** 论文写作者、科研人员、方法分析人员  
+**当前 Mainline 新增研究状态：** Stage2探索V0、WP2稳健性、WP3条件分析、WP4 Gate E/F 和 WP5 全量 alpha 均已完成并带限制；WP3独立审阅=`PASS_WITH_LIMITATIONS`，WP4 Gate E/F=`PASS_WITH_LIMITATIONS`。WP6=`COMPLETED_WITH_LIMITATIONS`，Gate G 仍 `PENDING`。新增固定箱宽比较将目标明确限定为预先固定分箱后的 Stage2 Doppler 标记分布，并以 delay/Doppler 离散质量和连续功率密度进行混合评分；5/10/20 Hz 下 Gaussian Copula 相对独立边际均未显示稳健总体场景外收益。它不恢复自适应 SAGE 搜索器精确似然。结果仍不证明路径可交换/条件 iid、完整生成模型、物理信道、绝对增益、跨窗相位相干或反射体跟踪。Phase-2仍未开展。
 **研究阶段：** accuracy-first full SAGE 冻结批次及独立批后 QA 已完成；Phase-1 的 Stage3 传统统计建模和 scientific closure 已完成并通过 QA（带明确限制）。coverage-complete event/path database、通用 channel-parameter database、Phase-2 AI 和完整暗室生成器仍是独立后续范围。
 
 > 本文只负责科学问题、贡献、实验解释、论文可写事实、图表、限制和未来路线。工程文件路径、执行门禁、hash和receipt的唯一状态源是 `docs/GNSS_SAGE_ENGINEERING_HANDOFF_CURRENT.md`。本文不得把设计、计划或gold前预测写成实验结果。
+
+**最新 Gate G 论文边界：** 固定 5-Hz（10/20-Hz 敏感性）评分可以作为“Stage2 选中总体中，固定箱宽 Doppler 标记分布”的 13-scene 外层留出结果。它不是自适应 SAGE 搜索器的原始似然；三种宽度下 Copula−独立边际的 scene 平均 log-score 均略负，故不写成稳定预测改进。MPC 行在同一窗口内相关，路径秩也不具备未经检验的可交换性；计数条件标记的完整性未建立，Gate G 维持 `PENDING`。完整方法、逐场景数值与限制见第32节及其链接的正式审阅报告。
 
 ## Current Phase-1 status at a glance (2026-08-31)
 
@@ -1495,3 +1500,477 @@ MATLAB_EXECUTED = NO
 SAGE_EXECUTED = NO
 NEXT_ACTION = AUTHOR_REVIEW_OF_ISOLATED_DOPPLER_REVISION
 ```
+
+## 24. GNSS-SDR historical geometry coverage recovery (2026-10-24; review-only evidence)
+
+- The 13-scene Stage2 cohort remains 7,847 windows / 16,761 paths; all 8,914 MPC records remain in the unchanged Task 6 ledger. Existing measured GSV elevation remains 5,128 windows. A separate, coordinate-free audit overlay adds 1,665 `EPHEMERIS_DERIVED` elevations and retains 1,054 explicitly missing rows. It does not rewrite the frozen High/Mid/Low labels or the nine task-level missing-elevation classifications.
+- Saved GNSS-SDR PVT dumps add 1,480 direct-epoch positions to the earlier 5,540 NMEA matches, yielding 7,020/7,847 located windows. The combined elevation/position support is 6,791/7,847 (86.54%), not an independent-observation count: Stage2 windows overlap, and 622 derived-elevation rows share 55 exact-time GGA height records. 1,043 other derived rows use a disclosed zero-height assumption.
+- Per-scene/environment support and detailed limitations are in `docs/MAINLINE_GNSS_SDR_OUTPUT_RECOVERY_AUDIT_20261024.md`. The new result is geometry enrichment only; no Stage2 MPC was removed and no statistical-model fit or Gate F validation was performed. Treat GSV as measured and ephemeris results as derived, never interchangeable.
+- The pilot compared 145 existing GSV values against same-scene broadcast ephemeris geometry (MAE 0.2695°, maximum absolute error 0.4918°). This is a bounded consistency check and does not establish independent truth or cohort-wide accuracy. Six scenes now have complete position/elevation coverage for this objective; seven retain evidence gaps. Raw-IQ contents and integrity remain unverified, so no GNSS-SDR rerun is recommended or authorized.
+
+```text
+GEOMETRY_RECOVERY = SEPARATE_OVERLAY_WITH_LIMITATIONS
+GSV_MEASURED = 5128
+EPHEMERIS_DERIVED = 1665
+ELEVATION_MISSING = 1054
+POSITION_MATCHED = 7020/7847
+JOINT_ELEVATION_POSITION = 6791/7847
+TASK6_MPC_ROWS_REMOVED = 0
+GATE_F = PENDING
+FORMAL_MODEL_FIT = NOT_RUN
+RAW_IQ_CONTENT_READ = NO
+GNSS_SDR_RERUN = NO
+NEXT_ACTION = AUTHOR_REVIEW_OF_BOUNDED_GEOMETRY_RECOVERY_EVIDENCE
+```
+
+## 25. Mainline Stage2 exploratory statistics V0 (2026-10-24)
+
+The Commander authorized a SAGE-only exploratory model before CIR completion.
+This is a new Stage2-selected candidate population, not a revision of the old
+Stage3 r3 canonical model or a completed CIR/physical channel generator.
+
+- All 8,914 MPC from 83 runs and 13 scenes are retained; 7,847 reference rows
+  support relative-parameter checks. The 7,847 selected windows are only 2.746%
+  of 285,752 Stage0-valid windows. Unselected windows are not zero-MPC samples.
+- Global 13-scene LOSO favors Lognormal delay over Gamma/Weibull. Global
+  signed-Doppler Normal/Student-t are competitive. Power training AICc favors
+  Student-t, but scene-held-out mean slightly favors Normal; retain both rather
+  than claiming a unique law. Every held-out scene includes all its PRN/channel
+  runs and overlapping windows. No path/window random split was used.
+- Urban/global comparison is paired on the same six Urban held-out scenes;
+  all nine mean deltas favor the global baseline, so current evidence does not
+  justify a separate Urban parameter set. Two-scene environments remain
+  descriptive; their one-training-scene folds are explicitly unevaluable.
+- Power-delay pooled rho=-0.616410, slope=-8.209394 dB/chip, whole-scene
+  bootstrap95% interval [-14.288980,-3.852434]. Linear R²=0.055343 and scene
+  heterogeneity mean that negative association is supported but a universal
+  linear physical decay law is not. Relative power is not absolute receive
+  power; signed Doppler is not reflector velocity; path numbering does not
+  establish physical identity across windows.
+- Geometry remains source-marked: 5,128 GSV, 1,665 derived, 1,054 missing;
+  7,020 positions and 6,791 joint windows. Derived angles are finite and within
+  4.625576491°–82.630120842°; 622 GGA-height vs1,043 zero-height observations
+  remain distinct. Continuous-angle relations are exploratory and coverage-
+  conditional. Nine frozen missing classifications remain unchanged. Spatial
+  range/independent segment evidence remains insufficient.
+- Three numerical Student-t failures remain in output, as do36 unsupported
+  fold records. They do not remove observations. No new CIR/SAGE/GNSS-SDR or
+  raw-IQ/MAT/HDF5 read occurred. This does not admit a full Gate G claim.
+
+The authoritative three-layer long-term route and WP0–WP6 status/dependencies
+are maintained in `docs/ACADEMIC_CHANNEL_MODELING_MASTER_PLAN.md`. The route is:
+**SAGE parameter baseline → environment/geometry/motion explanation → channel
+structure/time evolution with CIR validation**. Layer1 exploratory V0 is
+complete with limitations; layer2 initial exploration continues only as scene
+support warrants; layer3 waits for Task5 and independent Gate E/F. This Paper
+Handoff remains the source for paper-facing facts and scientific interpretation;
+it does not create a second work-package status authority. Phase-2 AI remains
+planned-only.
+Methods, actual fit parameters, folds and real-data plots:
+`reports/data_consolidation_20261003/mainline_1023_model_v1/v0_20261024T132210Z/v0_model_report.md`.
+Literature-method links in that report distinguish verified author abstracts
+from unavailable full-text details; no published parameter is transplanted.
+
+## 26. Mainline Stage2 WP3 environment-conditioned analysis (2026-10-28)
+
+The bounded WP3 analysis and independent scientific review are complete with
+limitations (`PASS_WITH_LIMITATIONS`). It is a new Stage2-selected population analysis, not a revision of the
+older Stage3 r3 canonical model, a causal explanation, or a complete physical
+channel model. The exact report is
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp3_20261028T140100Z/WP3_正式科研报告.md`;
+machine-readable folds, scores, paired deltas, parameters, tails, support,
+figures, execution manifest and independent validation are in the same
+directory. The execution record is
+`docs/superpowers/plans/2026-10-28-mainline-stage2-wp3-execution-record.md`;
+the run-pinned approved specification remains unchanged at
+`docs/superpowers/plans/2026-10-28-mainline-stage2-wp3-environment-geometry-modeling.md`.
+
+- The nine-scene core contains Urban (6 scenes, 3,698 MPC) and
+  Mountain/Valley (3 scenes, 2,637 MPC). All 8,914 MPC and 7,847 selected
+  windows across 13 scenes were retained and identity-reconciled; six runs
+  with selected windows but zero MPC remain represented. Inference is
+  conditional on Stage2 selection, not all Stage0-valid windows.
+- In complete-scene LOSO, Lognormal excess delay ranked first in 9/9 folds.
+  Doppler rankings varied (Student-t 6/9, Normal 2/9, Laplace 1/9); relative
+  power had a tie in top-fold counts between Normal and Student-t (4/9 each).
+  These ranks describe successful candidates on this population and do not
+  establish one universal law.
+- Environment-specific M1 did not demonstrate a stable out-of-scene gain over
+  global M0. GSV-measured elevation M2 improved the combined core relative-power
+  macro comparison versus M1, while M2-vs-M0 and per-environment results were
+  mixed. GSV, ephemeris/GGA-height and ephemeris/zero-height fits remain
+  separate. Slopes are observational associations; no causal interpretation
+  is warranted.
+- The review recommends per-parameter core M0 working baselines: excess-delay
+  Lognormal (`shape=0.4659688`, `scale=0.1914930 chips`), Doppler Student-t
+  (`df=8.97753`, `loc=−0.4420 Hz`, `scale=62.9264 Hz`), and relative-power
+  Student-t (`df=7.72049`, `loc=−8.90584 dB`, `scale=5.97587 dB`). Relative
+  power is a near tie with Normal, so Student-t is provisional, not a unique
+  winner. These are nine-core-scene pseudo-likelihood estimates, not a
+  replacement for the WP1 13-scene global baseline.
+- There are 2,268 held-out tail diagnostics: 279 have unavailable fits and
+  579 have fewer than ten nominal target-tail path rows. The latter are not
+  effective independent sample sizes because windows and paths are clustered.
+  No overall tail-calibration pass is claimed. Motion is descriptive only due
+  to reused NMEA source records; no M3 or spatial-independence claim was made.
+- The independent artifact validator passed with no findings, and 18/18
+  focused code tests passed. These checks support code/output reproducibility,
+  not statistical significance or independent-scene replication. Nine core
+  scenes include only three Mountain/Valley scenes; LOSO training sets overlap.
+
+No alpha export pilot, Task 5 change, CIR feature join, MATLAB/SAGE/GNSS-SDR
+execution, or MAT/HDF5/raw-IQ payload access occurred. Gate G, Gate E/F and
+WP6 remain pending. The full independent review, including exact equations,
+M1/M2 paired scores, environmental support, rejected claims and the explicit
+score-difference sign convention, is at
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp3_independent_review_20261028/WP3_独立科学审阅与模型选型报告.md`.
+Paper claims may report WP3 as exploratory scene-LOSO evidence conditional on
+Stage2 selection; do not claim that separate environments are required, that
+elevation causally changes relative power, that M2 universally improves M0,
+or that tails are globally calibrated. Preserve the three-scene limit for
+Mountain/Valley and the overlap among LOSO training sets.
+
+## 27. WP5 single-run complex-alpha pilot status (2026-10-29)
+
+After the WP3 review above, the focused WP5 MATLAB tests passed 7/7 and one
+completed Stage2 run (`run_20261003_F1023_V70_D0117_P2_G32_ch11`) was exported
+and independently checked: 344/344 selected-path alpha values were valid,
+including 227 MPC rows; path identity/order and Stage2 attributes were
+preserved, and 344/344 within-window relative-power comparisons passed. The
+scientific report and auditable output are at
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp5_alpha_G32ch11_20261029T050432Z/WP5_G32ch11_alpha_pilot_acceptance.md`.
+
+This is a one-run pipeline/data-integrity pilot, not a population estimate or
+a paper-ready full alpha dataset. Coefficients are relative to each
+nav-wiped, mean-removed and RMS-normalized 40 ms window and its local replica
+reference; they are not calibrated channel gains. Cross-window phase
+coherence remains unverified. The 83-run export and independent full-coverage
+acceptance remain pending. Do not add this pilot's coefficient magnitudes or
+phases to pooled scientific model estimates or claim a complete CIR/PDP
+feature join on this evidence alone.
+
+## 28. WP5 full Stage2 complex-alpha dataset and scientific boundary (2026-10-29)
+
+The 83-run Stage2 complex-alpha export and independent validation passed for
+the frozen 13-scene cohort. Across 7,847 Stage2-selected windows, all 16,761
+path rows were preserved: 8,914 MPCs and 7,847 direct-reference paths. All
+16,761 have finite complex alpha; no missing/invalid coefficients, path-key
+identity/order errors, Stage2 attribute changes, or within-window
+relative-power mismatches were found. Independent reconstruction from the
+source MATs had maximum absolute real/imaginary component difference
+`4.9960e-16`. The full acceptance report and compact per-run hash/status
+manifest are at
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp5_alpha_full_83run_20261029T055629Z/`.
+
+These results establish a reproducible data-integrity result for exporting
+the stored Stage2 coefficients; they are not an estimate of a new population
+distribution and do not establish a physical model. Each complex coefficient
+is the frozen SAGE least-squares coefficient relative to a local
+code-delay/Doppler replica and an individually navigation-wiped,
+mean-removed, RMS-normalized 40 ms window. Therefore:
+
+- coefficient magnitude can describe relative complex path strength within
+  the represented normalized window, but not absolute calibrated receive
+  gain or power;
+- principal phase is recorded in radians and is valid as a per-window complex
+  descriptor, but cross-window phase coherence, continuity, and physical
+  reflector tracking have not been established;
+- Stage2 relative power agrees with the same-window squared-alpha ratio for
+  these records, but remains relative rather than absolute;
+- the population is conditional on Stage2 selection; unselected Stage0
+  windows are not represented as zero-path observations.
+
+The post-export implementation review added a fail-closed runner guard bound
+to the frozen cohort/ledger/Stage4/SAGE pins and exact 83-run order, and the
+independent validator now compares all per-run integrated-ledger columns to
+the combined ledger. Focused MATLAB regressions passed 3/3 for scope checking
+and 2/2 for complete ledger-column comparison; a fresh consolidated targeted
+suite passed 12/12 (4 exporter, 3 ledger builder, 3 scope guard, 2 ledger
+comparison; exit code 0). The export was not rerun and no source MAT was
+opened during this follow-up. The sidecars
+`wp5_alpha_full_code_provenance.json` (report package) and
+`source_code_provenance.json` (E: result namespace) record the post-run Git
+source snapshot and output hashes. Because source hashes were not captured
+when the original batch started, this is retrospective provenance, not proof
+of exact runtime code bytes. This implementation-review note does not extend
+the scientific claims above and does not pass WP4 Gate E/F or authorize WP6.
+
+WP5 is `COMPLETED_WITH_LIMITATIONS` for full-cohort alpha extraction and
+path-level provenance. Seventy-eight MAT hashes were pinned by historical
+receipts; five older receipts lack a per-file MAT pin, so those source bytes
+were rehashed and bound only for this export. WP4 Gate E/F remains independent
+and pending, and no CIR/PDP join or WP6 model has been accepted. Do not pool
+the coefficients as calibrated amplitudes, infer coherent evolution, or
+claim a complete channel-generation model from this export alone.
+
+## 29. WP4 CIR/PDP Gate E/F independent scientific acceptance (2026-10-29)
+
+The 83-run CIR/PDP source and Stage2 linkage audit completed on 2026-10-29
+(Asia/Shanghai). Gate E and Gate F are both `PASS_WITH_LIMITATIONS`; WP4 is
+`COMPLETED_WITH_LIMITATIONS`. The final package is
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp4_gate_ef_final_20261029T181100/`.
+
+The accepted data-integrity scope contains 83 unique runs across 13 scenes.
+The 80 formal Task 5 passes are 43 current successor-release passes plus 37
+inherited passes; two pilots and one legacy baseline read-back remain separate
+evidence. All 7,847 Stage2 `(run_id,window_id)` windows link to verified
+window features. All 8,914 Stage2 MPCs are retained and linked using
+`(run_id,window_id,path_id)` to the alpha data; the 7,847 direct-reference
+paths remain a separate reference stratum. There are no unmatched windows,
+missing/unavailable alpha rows, relative-power mismatches, or final anomaly
+rows. Stored PDP equals the independent recomputation `mean(|CIR|^2)` over 40
+one-ms snapshots per window; the observed maximum absolute and relative
+differences are both zero. Sixty-three peaks on the frozen delay-grid
+boundary (0.803% of Stage2 windows) are kept and flagged.
+
+These results establish structural, numerical and key-based consistency of
+the saved code-domain CIR/PDP and Stage2/alpha records; they are not an
+independent propagation truth experiment. CIR uses shared raw-IQ and Stage0
+tracking inputs rather than being reconstructed from SAGE alpha. PDP is a
+noncoherent mean of snapshot powers. The exported RMS code-delay width is not
+a validated physical multipath RMS delay spread; relative amplitudes are not
+absolutely calibrated receive power. Overlapping windows are dependent, and
+the Stage2-selected population is conditional: a selected window with zero
+MPC ledger rows does not establish absence of physical multipath. Alpha
+identity linkage does not demonstrate cross-window phase coherence or
+continuous physical-reflector identity.
+
+Gate E retains one auditable legacy provenance limitation: the old
+G28/ch1 baseline has no historical Stage0/HDF5 SHA pins; the Stage0 sibling
+was observed and fully aligned, while the HDF5 hash is observed but unpinned.
+The full-cohort audit runner SHA was not captured at process start. Neither
+limitation is silently converted into a historical pin. Final run inventory,
+window features, MPC linkage, scene coverage, anomaly list, manifest, logs,
+and hashes are in the report package.
+
+The CIR/PDP and alpha tables are now available as candidate inputs for a
+future authorized WP6 analysis. WP6 has not started; this acceptance does not
+select a final model, establish physical gain/coherence, or claim a complete
+channel-generation model.
+
+Post-review validation follow-up: a missing required Stage2 CSV attribute
+could previously be skipped by the audit comparison. The shared comparison
+helper now fails closed for missing source or ledger columns. The corrected
+focused MATLAB regression passed 25/25 tests with `checkcode` reporting zero
+issues; the production helper also rechecked all 83 manifest-pinned source
+CSVs against the merged Stage2 ledger, 83/83 PASS with maximum attribute
+difference 0. This follow-up read only CSV/ledger data, did not reread
+MAT/HDF5/CIR payloads, and did not alter the accepted scientific tables. Exact
+execution details are recorded in the WP4 report package's
+`targeted_regression_evidence.md` and `stage2_csv_schema_recheck.json`.
+
+## 30. WP6 Mainline Stage2 joint statistical channel-model study (2026-10-29)
+
+The current WP6 result is a **candidate, Stage2-selection-conditional model**,
+not a validated complete channel generator. Its population comprises 7,847
+selected windows, 8,914 MPC, 83 runs and 13 scenes. The selected-window MPC
+count histogram is $N=0,1,2,3$: 3,574 / 1,412 / 1,081 / 1,780. Unselected
+Stage0 windows are outside the denominator; 63 PDP delay-grid boundary peaks
+remain retained.
+
+The model candidate can be written as
+
+\[
+P(N_w=n,\,\mathbf X_w\mid S_w=1)
+  = \hat p_{\mathrm{scene-bal}}(n\mid S_w=1)
+    \prod_{j=1}^{n} f_\tau(\tau_{wj})f_\nu(\nu_{wj})f_p(p_{wj}),
+\]
+
+where $S_w=1$ denotes a Stage2-selected window and
+$\mathbf X=(\tau,\nu,p)$ are excess delay (chips), signed relative Doppler
+(Hz), and relative power (dB). This product form imposes unverified count/mark
+factorization, common mark distributions across count categories, and
+exchangeable/conditional-iid marks. It is therefore a modular reference, not
+a validated full joint law.
+
+Nested scene-LOSO selected Lognormal delay in 13/13 folds and Student-t
+Doppler in 13/13; relative power selected Student-t in 8 folds and Normal in
+5. The full-data descriptive candidate parameters are: delay Lognormal
+shape `0.510756`, scale `0.192930` chips (loc fixed at zero); Doppler
+Student-t df `8.172952`, loc `0.759586` Hz, scale `61.776353` Hz; relative
+power Normal loc `−8.157576` dB and scale `6.826866` dB. The relative-power
+family is unstable across folds, so its full-data Normal fit is provisional.
+Six optimizer failures and 72/234 low-support tail diagnostics are retained.
+
+**Dependence is unresolved.** Excess delay has 128 stored floating values and
+127 values at 0.01-chip quantization. The current continuous Gaussian-Copula
+score uses a continuous tau transform and point density, not a proper
+mixed discrete/continuous likelihood. Its numeric score and per-scene signs
+are diagnostics only; they establish neither predictive gain nor no gain.
+No ties-aware replacement has been fitted.
+
+Separate CIR/PDP associations used the same windows and measurement chain,
+not an independent truth source. Scene-macro LOSO RMSE for PDP RMS code-delay
+width changed from `2.485324` (intercept) to `2.446555` (linear; −1.56%),
+better in 10/13 scenes. For PDP peak-minus-SAGE-direct delay it changed from
+`4.298158` to `4.290361` (−0.18%), better in 6/13. These small descriptive
+associations do not validate a physical RMS delay spread or SAGE-to-CIR
+reconstruction; windows overlap and LOSO training sets overlap.
+
+Independent table checks reconciled all 7,847 window/scene keys and
+recomputed 52/52 PDP scene/model/target score rows from window predictions
+(maximum error `1.78e−15`). Focused WP6 tests passed 33/33; the channel-modeling
+suite passed 216/216 after a test-first fix for the unscorable multi-path
+window branch. This supports reproducibility and arithmetic/key
+consistency, not inferential independence or the validity of the Copula
+likelihood. Full reports, tables, figures, source hashes and test logs are in
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp6_20261029T134821Z/`.
+
+**Paper disposition:** retain the Stage2-conditional empirical count table,
+Lognormal delay and Student-t Doppler as candidate components, and report
+relative power as family-uncertain. Do not claim a validated Copula,
+count-conditional mark law, universal dependence, absolute receive gain,
+cross-window alpha phase coherence, or physical reflector tracking. WP6 is
+`COMPLETED_WITH_LIMITATIONS`; Gate G remains `PENDING`. The one next decision
+is whether to authorize ties-aware dependence scoring plus a scene-level
+count-conditional mark-invariance assessment. Phase-2 remains
+`PLANNED_ONLY`.
+
+### WP6 post-review result closure (2026-10-29 23:29 +08)
+
+The 13-scene real analysis was rerun after correcting the count/mark joint
+score output and independent validation coverage. The earlier package remains
+unchanged; the current package is
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp6_20261029T152500Z_postreview/`.
+The new factorized count + product-mark scene-macro score is `−10.434219`
+nats per Stage2-selected window across 13/13 scenes. It assumes count-invariant
+mark distributions and within-window conditional-iid/exchangeability; these
+are not empirically verified, so this number is a candidate composite score,
+not a validated complete joint generator. The separate count score and
+product-mark scores remain available. If a Copula fit is unavailable, valid
+product marginal scores are retained; current continuous Copula values still
+cannot rank models with quantized/tied delay.
+
+The independent validator returned `PASS_WITH_LIMITATIONS`, reconciling
+7,847/7,847 selected windows, 8,914/8,914 MPC, all 13 joint-scored scenes,
+6 optimizer-failure records, 72/234 low-support tail records and all 52 PDP
+scene/model/target score rows. Focused WP6 tests passed 38/38; the full
+channel-modeling suite passed 221/221; `py_compile` exited 0. This establishes
+implementation and table consistency, not independent-scene replication,
+physical truth, Gate G or causal inference. Gate G remains `PENDING`; Phase-2
+remains `PLANNED_ONLY`.
+
+### Final WP6 review closure (2026-10-29 23:52 +08)
+
+The final current result package is
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp6_20261029T154500Z_final/`;
+prior packages remain unchanged. The fixed 83-run/13-scene population still
+contains 7,847 Stage2-selected windows and 8,914 MPC. Empirical count support
+is 0/1/2/3 = 3,574/1,412/1,081/1,780; unselected Stage0 windows are not
+treated as zero-MPC, and all 63 PDP boundary peaks remain retained.
+
+The new scene-equal count + product-mark factorized candidate scores
+`-10.4342187429` nats per selected window over 13/13 scenes. It assumes
+count-invariant marks and conditional iid/exchangeability within each window;
+these assumptions are unverified and the result is not a validated complete
+joint generator. Marginal fold-family results remain: delay Lognormal 13/13,
+Doppler Student-t 13/13, relative power Student-t 8/13 vs Normal 5/13. Six
+fit failures and 72/234 low-support tail records are preserved. Gaussian
+Copula continuous point-density values are diagnostic-only because tied and
+quantized delay invalidates their use for ranking.
+
+The final validator independently reports `PASS_WITH_LIMITATIONS`, reconciling
+7,847 window keys, 8,914 MPC, 13/13 joint scenes, zero unscorable joint
+windows, 52/52 PDP score rows and delay-moment arithmetic to floating-point
+roundoff. WP6 tests are 39/39 PASS; the full channel suite is 222/222 PASS;
+compile exit code is zero. An independent code/result follow-up found no
+remaining Critical/Important/Minor findings. Small PDP associations use
+shared measurement inputs; they are not independent physical truth, a
+validated physical RMS spread, or a propagation reconstruction.
+
+**Paper recommendation:** retain the Stage2-conditional empirical count,
+Lognormal delay and Student-t Doppler as candidate components; report
+relative-power family selection as unstable; do not rank or claim a Copula
+benefit, and describe the count-mark product only as a conditional composite
+candidate. WP6 is `COMPLETED_WITH_LIMITATIONS`; Gate G remains `PENDING` until
+the joint-model acceptance criterion is explicitly satisfied. No causal,
+universal scene-general dependence, absolute calibrated gain, cross-window
+alpha phase coherence or physical reflector-tracking claim is supported.
+Phase-2 remains `PLANNED_ONLY`; Task 5 was not rechecked or touched.
+
+### Gate G supplemental scientific review (2026-10-30)
+
+The new review preserved the 83-run/13-scene Stage2 population (7,847 selected
+windows, 8,914 MPC) and found useful but bounded count-stratum evidence. The
+count-conditional marginal model cannot select an excess-delay family for
+N=1 in any outer scene fold; its apparent overall paired improvement excludes
+those 1,412 MPC. N=2 is effectively flat relative to M0, while N=3 shows a
+positive descriptive scene-macro difference but has a minimum of only three
+windows in one scene. Path-ID order is algorithmic delay rank: neighboring
+delay ranks are separated by the estimator's 0.1-chip minimum and relative
+power is consistently lower at later ranks. These observations do not support
+an unqualified exchangeable/conditional-iid path-set generator.
+
+The revised delay score correctly uses mass over each 0.01-chip cell,
+conditional on the 0.10-chip minimum. However, source/data inspection found a
+material unresolved issue for Doppler: the SAGE local refinement uses a 5-Hz
+step; 2,753/2,861 multi-path windows show a window-shifted 5-Hz lattice in
+relative Doppler (1e-6 Hz tolerance), while 108 do not fully align. Since the
+current mixed Copula score still treats Doppler as continuous and exact
+window-specific cells are not independently identified, its held-out values
+are diagnostic only. They establish neither a Copula gain nor no gain. This
+review therefore does not accept a scene-out joint generator and keeps Gate G
+`PENDING`; WP6 remains `COMPLETED_WITH_LIMITATIONS`.
+
+**Paper boundary:** report the Stage2-selection-conditional empirical count,
+supported marginal-family frequencies, count-stratum fit failures, path-rank
+diagnostics, and the Copula score limitation. Do not present current Copula
+ranking as a confirmed predictive comparison; do not claim Stage0-unconditional
+multipath rates, iid path marks, physical path identity, absolute gain,
+cross-window alpha coherence, or a validated time-varying physical channel.
+The sole next priority is to recover exact per-window Doppler score cells from
+frozen SAGE metadata/source and re-evaluate the same nested scene-LOSO pairs;
+if that cannot be established independently, keep dependence unverified.
+
+Full review and reproducibility evidence:
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp6_gateg_supplement_20261029T165015Z/WP6_GateG最终科学审阅报告.md`.
+
+## 31. Gate G 自适应 Doppler 观测机制专项审阅（2026-10-30）
+
+冻结源码与每 run 配置快照显示，Stage2 Doppler 是按 Stage0 tracking reference、每窗 B 和逐路径迭代中心自适应搜索的输出；`makeGrid` 可在规则步长外单独追加裁剪后的 maximum。108 个非对齐窗口中，107 个符合初始化 `+B` 端点追加条件（105 个最终 offset 在 `±B`、2 个保留端点相位但没有完整迭代 trace），另 1 个初始未追加但最终到达真实全局上界。浮点误差、全局固定格点或直达路径相减都不能解释该结构；相减只平移格点相位，不改变窗内差值。
+
+保存的轻量 Stage0/Stage1/Stage2 资料不包含每路径每轮的搜索中心、候选向量、得分/胜出索引和停止轮次，故不能定义不使用留出 Doppler 的精确观测单元。不得用留出标记反推原点。所有包含连续 Doppler 密度的 M0/M1 路径综合评分与 C0/C1 Copula 比较仅保留为连续近似诊断；Stage2 条件计数及单独 delay/power 结果不受此项直接影响。Gate G 仍 `PENDING`，不支持确认性的 Copula 收益或完整联合生成器结论。
+
+正式审阅、逐窗口表、9-scene 汇总、源 hash、配置快照与 18/18 独立身份/算术/交付完整性校验：
+`reports/data_consolidation_20261003/mainline_1023_model_v1/wp6_gateg_doppler_grid_audit_20261030T153436/`。
+
+**论文边界：** 可以报告 Stage2 条件计数与有界边际统计；现有 Doppler 连续评分不得作为正式模型排名。N=1 计数条件时延拟合失败、路径秩非交换性、N=3 低场景支持和场景折间训练集重叠仍须披露。跨窗口 alpha 相干、绝对校准增益、物理反射路径连续跟踪及通过 Gate G 的完整场景外联合生成器均未建立。唯一后续优先事项是建立并记录不依赖留出值的自适应 SAGE 输出概率测度；没有该测度前不重算旧 Copula 场景留出分数。
+
+## 32. Gate G 固定箱宽 Doppler 的场景外混合评分（2026-10-30）
+
+在 0 Hz 为箱中心、边界 `(k+1/2)w` 下，5 Hz 为主分辨率、10/20 Hz 为预先声明的敏感性分析。只使用已冻结 WP4 轻量 CSV，不重跑 SAGE/CIR/alpha。目标限定为 Stage2 已选窗口中的固定分箱标记分布，而非原始自适应 SAGE 输出似然。场景外比较采用 13-scene LOSO，所有边际族选择和 Copula 参数估计均限于外层训练 scene。M0/C0 在每种箱宽都覆盖同一组 4,273 个含 MPC 选中窗口、8,914 条 MPC、13 个 scene。
+
+得分按 mixed measure 计算：时延格点单元质量 × Doppler 箱质量 × 连续相对功率密度；Gaussian Copula 联合部分对两个离散 latent 区间联合积分，并条件于连续功率 PIT。独立验证器以自适应数值积分复算 9 个样本，验证器总计 116 项检查、0 失败。它验证数值和冻结身份，不提供独立传播真值。
+
+`C0−M0` 的 scene 宏平均（nats/mark）分别为 5 Hz `-0.00768378`、10 Hz `-0.00864037`、20 Hz `-0.00820576`；每个箱宽均为 10 个正差、3 个负差。5 Hz 中位数为 `+0.0720679`，范围 `[-0.347325,+0.115527]`；三个较大的负差抵消十个较小正差。没有将高度重叠的 LOSO 训练集折当成独立重复，不报告常规显著性或置信区间。结论是不支持稳健 Copula 场景外收益，也不证明依赖不存在。不得横向比较不同箱宽的绝对分数。
+
+**可发表范围：** 可报告固定分箱后、Stage2 条件下的边际候选和配对场景外评分，并明确 Copula 未改善 scene 平均分。不能据此宣称路径可交换、条件 iid、完整有序路径联合生成器、绝对信道增益、跨窗 alpha 相位相干、物理路径跟踪，或对自适应 SAGE 算法输出似然的验证。Stage2 选择条件、窗口内多路径依赖、路径秩非交换性、功率族跨折不稳定和 count-conditioned marks 未完整验证必须继续披露。**Gate G 建议仍为 `PENDING`。**
+
+结果与科学审阅：`reports/data_consolidation_20261003/mainline_1023_model_v1/wp6_gateg_fixed_doppler_bins_20261030T120121Z/WP6_GateG_固定箱宽Doppler独立科学审阅.md`。
+
+## 33. Mainline Stage2 科研成果总览与新论文写作入口（2026-10-30）
+
+已根据 WP1–WP6 最终报告、WP4 Gate E/F、WP5 全量 alpha、Gate G 计数条件/路径秩、自适应 Doppler 机制审阅、固定分箱 13-scene LOSO 结果及对应源码/表格，整理新的 Mainline 论文材料：
+
+- `docs/paper_draft/MAINLINE_STAGE2_PAPER_RESEARCH_SYNTHESIS_20261030.md`：论文定位 A/B 对照、数据与数学口径、可辩护贡献、完整章节结构、中文/英文标题与摘要初稿。
+- `docs/paper_draft/MAINLINE_STAGE2_PAPER_EVIDENCE_AND_FIGURES_20261030.md`：逐结论证据矩阵、实际源文件路径、正文/补充图表及 A/B/C 缺口。
+
+**推荐主论文**研究 13 个真实测量场景的 NAV-aided SAGE Stage2 **估计参数**的条件统计与完整场景留出泛化；WP4 CIR/PDP 与 WP5 复数 alpha 的全量身份/数值关联作为辅证，不把共享测量链一致性说成独立物理真值。主张以简洁计数和边际基线、环境/仰角条件模型的有限收益、固定分箱 Copula 的负场景宏平均结果为核心。未经正式逐篇文献对照不称“首创”；旧 `docs/paper_draft/manuscript_outline.md` 及章节草稿是历史写作框架，含早期生产状态和已过时的潜在通道参数承诺，不可直接当作本 Mainline 成果正文。
+
+该新材料是**写作准备/作者审阅稿，不是科学结果重算或投稿完成**。WP1–WP6 保持 `COMPLETED_WITH_LIMITATIONS`，Gate E/F=`PASS_WITH_LIMITATIONS`，Gate G=`PENDING`；没有因论文组织提高验收等级。限定主线已有足够真实实验做正文写作；发表前仍需正式文献比较、图表科学 QA、同分母/同测度的 claim 核对和英文稿同步。当前无必须重跑 SAGE/CIR/alpha 的论文主线实验。下一步唯一优先事项：作者审阅并锁定上述限定主线，再据证据矩阵编写/核验正式英文稿与图表。
+
+## 34. Mainline Stage2 路线 A 英文论文 V0（2026-10-30）
+
+Commander 已验收上述科研成果整理并批准路线 A。本轮直接据冻结轻量结果与证据矩阵完成可逐段审阅的[完整英文论文 V0](paper_draft/mainline_stage2_v0/PAPER_V0.md)、[正式文献对照](paper_draft/mainline_stage2_v0/LITERATURE_AUDIT.md)、F1/F2/F3/F4/F7 图件及 T1/T2 表格。T1 正文与可机读[逐场景表](paper_draft/mainline_stage2_v0/figures_final/T1_scene_population.csv)同时保留；T2 在英文稿正文。图件通过[复现脚本](paper_draft/mainline_stage2_v0/make_figures.py)从冻结 CSV/JSON 渲染，[来源 SHA 和核对结果](paper_draft/mainline_stage2_v0/figures_final/figure_audit.json)随图保存；定向测试见同目录 `test_make_figures.py`。文献对照核查原始算法、实测 GNSS 与卫星信道先例，**不宣称 SAGE、实测统计或场景分组验证首创**。
+
+论文主结论只针对 13 个实测场景的 Stage2 **已选窗口中 SAGE 估计输出**：经验计数和简洁边际基线相对稳健；环境/仰角及功率—时延条件结构没有稳定场景外收益；固定 5/10/20 Hz 分箱下 Copula 在 10/13 场景虽为正，但等场景宏均均为负。图 F3 的全总体拟合仅为描述性曲线，不能代替留出预测；F4 的九场景环境比较与十三场景功率—时延比较不得混合分母；F7 的固定分箱分数不是 SAGE 自适应搜索输出的精确似然。WP4/5 只为共享测量链上的身份/数值支持，非独立物理真值。WP1–WP6、Gate E/F 与 Gate G 的既有状态**不因写稿改变**，Gate G 继续 `PENDING`。
+
+这是一份内容完整但**尚未排版投稿**的英文初稿。投稿前仍需作者审阅紧邻先例全文（尤其 Xie–Petovello）、逐句核实最终引用和图表授权、按目标期刊格式排版并完成外部稿件审读；这些事项不要求重跑冻结生产。下一步唯一优先事项是对 V0 的主张、图注和文献定位开展作者逐段审阅，确定投稿场所与篇幅。
+
+## 35. 第一阶段静态统计建模中文总结报告（2026-10-31）
+
+已据最新冻结报告、逐场景结果、独立审阅和当前实现说明整理[第一阶段总结报告](paper_draft/MAINLINE_STAGE2_STATIC_MODELING_PHASE1_FINAL_REPORT_CN.md)，涵盖 83 run/13 scene 的 Stage2 估计总体、Stage0–4 处理链、统计口径、主要数值、场景外比较、Gate E/F/G 状态及 Phase 2 边界。报告明确区分估计器输出与物理传播真值，并注明历史冻结 runner SHA 与当前工作树源码 SHA 不同。WP1–WP6 与 Gate 状态未因总结文档改变；没有重跑科学计算。
+
+## 36. GNSS 项目阶段性研究总结入口（2026-10-31）
+
+面向项目成员和指导老师的[综合中文阶段总结](GNSS_SAGE_STATIC_MODELING_AND_NEXT_STAGE_SUMMARY_CN.md)已整理历史 SAGE 生产与 Mainline 统计研究的关系、Stage0–4 选择口径、参数模型及拟合/场景外结果、WP4/WP5 数据边界、Gate G 最新结论和后续研究顺序。它以冻结报告、轻量表和独立审阅为依据；不把 SAGE 估计值称作物理真值，也不把重叠历史总体相加。WP1–WP6 及 Gate 状态未因此改变；Gate G 仍为 `PENDING`。原有详细阶段报告 `MAINLINE_STAGE2_STATIC_MODELING_PHASE1_FINAL_REPORT_CN.md` 保留不变。

@@ -1,0 +1,35 @@
+{
+  "selected_windows": 7847,
+  "MPC_rows": 8914,
+  "scenes": [
+    "F1023_V120_D0121_P2",
+    "F1023_V70_D0117_P2",
+    "F1023_V70_D0117_P4",
+    "F1023_V70_D0120_P1",
+    "F1023_V70_D0120_P5",
+    "F1023_V70_D0120_P7",
+    "F1023_V70_D0120_P8",
+    "F1023_V70_D0120_P9",
+    "F1023_V70_D0122_P1",
+    "F1023_V70_D0122_P2",
+    "F1023_V80_D0117_P8",
+    "F1023_v50_D0127_P1",
+    "F1023_v90_D0117_P7"
+  ],
+  "window_key": [
+    "run_id",
+    "window_id"
+  ],
+  "MPC_key": [
+    "run_id",
+    "window_id",
+    "path_id"
+  ],
+  "selected_window_count_histogram": {
+    "0": 3574,
+    "1": 1412,
+    "2": 1081,
+    "3": 1780
+  },
+  "population_scope": "Stage2-selected windows only; conditional on Stage2 selection"
+}

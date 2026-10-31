@@ -1,0 +1,60 @@
+[警告: 为文件或文件夹指定的位置 perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LC_ALL = "C.UTF-8",
+	(possibly more locale environment variables)
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the system default locale ("Chinese (Simplified)_China.936").
+Locale 'Chinese (Simplified)_China.936' is unsupported, and may crash the interpreter.
+D:\Program Files\Matlab\toolbox\matlab\addons_common\matlab 无效。]
+[> 位置：restoredefaultpath (第 81 行)]
+{错误使用 matlab.unittest.internal.FunctionTestCase.fromFunction (第 31 行)
+位置 1 处的参数无效。 Function testProvenance must accept one input argument.
+
+出错 matlab.unittest.internal.FunctionTestCaseProvider>@(fcn)FunctionTestCase.fromFunction(fcn,varargin{:},FunctionTestCaseType=functionTestCase) (第 43 行)
+                testCaseCell = cellfun(@(fcn) FunctionTestCase.fromFunction(fcn, varargin{:}, FunctionTestCaseType=functionTestCase), testFcns, ...
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+出错 matlab.unittest.internal.FunctionTestCaseProvider (第 43 行)
+                testCaseCell = cellfun(@(fcn) FunctionTestCase.fromFunction(fcn, varargin{:}, FunctionTestCaseType=functionTestCase), testFcns, ...
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+出错 matlab.unittest.Test.fromFunctions (第 290 行)
+            test = Test.fromProvider(FunctionTestCaseProvider(fcns, testType, varargin{:}));
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+出错 functiontests (第 124 行)
+tests = Test.fromFunctions(testFcns, testType, paramValues{:});
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+出错 test_export_stage2_complex_alpha (第 2 行)
+tests = functiontests(localfunctions);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+出错 matlab.unittest.internal.FunctionTestFactory/createSuite (第 39 行)
+            suite = feval(factory.TestFunctionName);
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+出错 matlab.unittest.internal.MATLABCodeTestFactory/createSuiteExplicitly (第 20 行)
+            suite = factory.createSuite(modifier, parameters);
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+出错 matlab.unittest.internal.services.fileextension.MATLABCodeFileExtensionService/createSuiteExplicitly (第 33 行)
+                suite = factory.createSuiteExplicitly(modifier, externalParameters, varargin{:});
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+出错 matlab.unittest.TestSuite.fromFileCore_ (第 695 行)
+            suite = supportingService.createSuiteExplicitly(liaison, modifier, externalParameters);
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+出错 matlab.unittest.internal.services.informalsuite.MATLABCodeFileHandler/createSuiteForSingleTest (第 24 行)
+            suite = TestSuite.fromFileCore_(file, rejector, options.ExternalParameters);
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+出错 matlab.unittest.internal.services.informalsuite.SingleTestHandler/createSuite (第 19 行)
+                suites{idx} = handler.createSuiteForSingleTest(tests(idx), rejector, options);
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+出错 matlab.unittest.internal.createTestSuite (第 28 行)
+    suites{k} = uniqueHandlersToUse(k).createSuite(testsForHandler, options);
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+出错 testsuite (第 95 行)
+suite = matlab.unittest.internal.createTestSuite(tests, options);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+出错 matlab.unittest.internal.runtestsParser (第 47 行)
+suite = testsuiteCreatorFcn(results.TestsuiteInputs{:});
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+出错 runtests (第 108 行)
+[parseResults, suite] = matlab.unittest.internal.runtestsParser(@testsuite, varargin{:});
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+}
+ERROR: MATLAB error Exit Status: 0x00000001

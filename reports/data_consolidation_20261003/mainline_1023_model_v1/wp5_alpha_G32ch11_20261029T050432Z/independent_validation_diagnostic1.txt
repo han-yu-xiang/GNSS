@@ -1,0 +1,8 @@
+{错误使用 ==
+不支持在 double 和 string 之间进行比较。
+
+出错 validate_wp5_alpha_G32ch11_pilot (第 41 行)
+    && all(exported.prn == "32") ...
+                        ^
+}
+ERROR: MATLAB error Exit Status: 0x00000001

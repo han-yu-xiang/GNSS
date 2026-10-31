@@ -1,0 +1,37 @@
+{
+  "status": "PASS",
+  "generated_from_existing_outputs_only": true,
+  "input_manifest_sha256": "9a914f93ae0dd4aa5c75c53928d89a69ec8bdab685fd739e1355b635b5926b50",
+  "cohort_sha256": "287e891fae0cd294a85c073080611a19b7389ece46240b89cb1d5dab4df90229",
+  "stage2_ledger_sha256": "bbb8cac8338194b5527e00812a6547129a58466cc5fdd7db36b8c44bba01e551",
+  "stage4_pin_manifest_sha256": "32c10789efefe4e87cabee4ac8978cd36a4a132f4d3b5640c8e4b8b0851a635d",
+  "frozen_sage_sha256": "bffc123c97af77f0a797f417d3866e9a34feab7729c5c1575352f53bc3571b9c",
+  "run_count": 83,
+  "stage2_path_count": 16761,
+  "stage2_window_count": 7847,
+  "stage2_mpc_count": 8914,
+  "stage2_direct_count": 7847,
+  "alpha_available_count": 16761,
+  "alpha_missing_count": 0,
+  "relative_power_pass_count": 16761,
+  "relative_power_mismatch_count": 0,
+  "mat_sha_receipt_pinned_run_count": 78,
+  "mat_sha_recomputed_without_historical_pin_run_count": 5,
+  "combined_alpha": {
+    "path": "stage2_alpha_all_paths.csv",
+    "sha256": "eeb20d3f638cf937529922d2d932503e201ec92ba866eeb3d86e0dd3a91e97e9",
+    "size_bytes": 12705179,
+    "rows": 16761
+  },
+  "combined_modeling_ledger": {
+    "path": "stage2_modeling_ledger_all_paths.csv",
+    "sha256": "def2e1e249af309a5114c100d0630299ebd955cefef6e051407fecb68e5493d7",
+    "size_bytes": 13623712,
+    "rows": 16761
+  },
+  "per_run_output_manifest": "per_run_output_manifest.csv",
+  "per_run_output_manifest_sha256": "628d743b734e6d007c39e86b1999e6f2200202624feaeb82d2d3441ad0263f8d",
+  "per_run_output_manifest_rows": 83,
+  "per_run_science_csv_bytes": 26411950,
+  "combined_science_csv_bytes": 26328891
+}

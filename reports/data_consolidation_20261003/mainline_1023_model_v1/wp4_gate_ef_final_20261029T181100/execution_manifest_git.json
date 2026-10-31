@@ -1,0 +1,79 @@
+{
+  "record_type": "SANITIZED_GIT_DISTRIBUTION_COPY",
+  "source_execution_manifest_sha256": "fc7032fe8749210f28671a08f87344320f7ba24e3c4c5856fea6cb8ce437d35d",
+  "note": "Absolute workstation paths from the local execution_manifest.json are omitted. Relative report locations and all scientific identities, source hashes, result counts and provenance limitations are retained. The unmodified source manifest remains in the local audit workspace.",
+  "release_id": "mainline_1023_cir_v1_20261028T120447205Z_task5successor43r1",
+  "release_request_sha256": "1b95146f42a2383f26bbef0bfc1679f9096f3778e67c51fa765af953f04474df",
+  "cohort_sha256": "287e891fae0cd294a85c073080611a19b7389ece46240b89cb1d5dab4df90229",
+  "stage2_ledger_sha256": "bbb8cac8338194b5527e00812a6547129a58466cc5fdd7db36b8c44bba01e551",
+  "alpha_ledger_sha256": "def2e1e249af309a5114c100d0630299ebd955cefef6e051407fecb68e5493d7",
+  "stage2_input_manifest_sha256": "9a914f93ae0dd4aa5c75c53928d89a69ec8bdab685fd739e1355b635b5926b50",
+  "wp5_provenance_sha256": "54b7136ac9c4db33569bd4a43308c4571429e228dcaf441d2ee6c546ae72d89b",
+  "matlab_version": "25.1.0.2973910 (R2025a) Update 1",
+  "chunk_rows": 64,
+  "batch_receipt": {
+    "formal_pass_count": 80,
+    "current_release_pass_count": 43,
+    "inherited_formal_pass_count": 37,
+    "pilot_count": 2,
+    "existing_baseline_readback_count": 1,
+    "completion_receipt_status": "PASS",
+    "completion_receipt_sha256": "c1206c5e900e12db932eefa2b629b051a1efac9013917149f7c166532b8415d8"
+  },
+  "audit_execution": {
+    "record_type": "FULL_AUDIT_WITH_TARGETED_LEGACY_BASELINE_SUPPLEMENT",
+    "base_audit_report_dir": "reports/data_consolidation_20261003/mainline_1023_model_v1/wp4_gate_ef_20261029T090700Z/",
+    "base_audit_log_sha256": "87e390534c5f343b76904bafbe96fc8ef92c4c08bdc5931734458e30a47181cb",
+    "base_audit_runner_source_sha256": "NOT_CAPTURED_AT_PROCESS_START",
+    "supplement_report_dir": "reports/data_consolidation_20261003/mainline_1023_model_v1/wp4_gate_ef_g28_legacy_supplement_20261029T180000/",
+    "supplement_audit_log_sha256": "5f6415ff7838bcba69a846a65b7cac0a2c6e5972e37bf555959fb8f54a5925c6",
+    "supplement_summary_sha256": "6068c8ce77306a6cdd65f7bcca2296847f816f7e6eea20a13c10382a145bf596",
+    "supplement_runner_source_sha256": "99f776d0303f6620dbf9b2f5b88fb15766075e7a2fc2248e31c5d8d90059fff6",
+    "baseline_run_id": "run_20261003_F1023_V70_D0117_P2_G28_ch1",
+    "baseline_receipt_sha256": "a566b4a70a23c85268f17189ebdc69d4ad8142bb3a9684f09fdf5efdb0752c60",
+    "baseline_hdf5_sha256_observed_unpinned": "73fc44e2a6c550f86030fcc40d2ec5a0c4a3ad30f099286831fd212f821ac53c",
+    "baseline_stage0_sha256_observed_unpinned": "0a285872f2f0707b0ce21d379c57df9a69737e4a49c02c1d7a3b7790c2cd8277",
+    "baseline_source_limitations": "Legacy receipt lacks historical cohort, Stage0 and HDF5 SHA pins. Run identity and frozen SAGE SHA match the cohort/WP5 manifest; Stage2 CSV is manifest-pinned; sibling Stage0 CSV was observed and aligned to HDF5; HDF5 hash is observed but not historically pinned."
+  },
+  "audit_source_sha256": {
+    "cir_pdp_auditor": "a5e9a7734093510ecdccc2a9df477fcf022ccf7ce05b69c97b0a779f1866462c",
+    "identity_linker": "48b9d048b511473a9ab8e3d7a9088606b36eab8f36413f50f201caa5eed31884",
+    "sha256_utility": "a0a9ea810b46f8bd709080f981e6b80ff4923ccf8d1019722788b5a95c7537ac",
+    "finalizer": "6ce105291ef05153822baee49674c184eb47b37d383f5f424fc1ca360beedec5"
+  },
+  "final_status": {
+    "gate_e": "PASS_WITH_LIMITATIONS",
+    "gate_f": "PASS_WITH_LIMITATIONS",
+    "run_count": 83,
+    "gate_e_run_status_counts": {
+      "PASS": 82,
+      "PASS_WITH_LIMITATIONS": 1
+    },
+    "gate_f_run_pass_count": 83,
+    "stage2_path_count": 16761,
+    "stage2_window_count": 7847,
+    "stage2_mpc_count": 8914,
+    "stage2_direct_reference_count": 7847,
+    "cir_linked_stage2_windows": 7847,
+    "unmatched_stage2_windows": 0,
+    "unmatched_mpc_alpha": 0,
+    "alpha_missing_stage2_path_rows": 0,
+    "alpha_unavailable_stage2_path_rows": 0,
+    "relative_power_recomputed_mismatch": 0,
+    "pdp_max_abs_difference": 0,
+    "pdp_max_relative_difference": 0,
+    "pdp_boundary_peak_windows": 63,
+    "final_anomaly_rows": 0
+  },
+  "final_artifact_sha256": {
+    "gate_e_f_summary.json": "1f10dca4be8f367f51790c770a1dcf6d822b6fd5f660c2f0c64ffcc7b5783b8d",
+    "gate_e_run_inventory.csv": "da34edfa275d2a31f53ee377da24e3036f329efa9a08d8b1fb12f940d1f38322",
+    "stage2_cir_pdp_window_features.csv": "258d5d70081d9ee6fd82a64b1a4f9c405180bc18cd49280b0e2b799d9a482bf4",
+    "stage2_mpc_cir_alpha_linkage.csv": "8db941db20e684108d13583d67ee20cde543bf2a36ca01013d1288b48231c80b",
+    "gate_f_scene_summary.csv": "5155602a058f83eb3147d5c1e6488346596753ecb21d72f726ba70ce3db35cd9",
+    "gate_e_f_anomalies.csv": "a593bf80ac7dcbb76636737109dd16c82a89ac8efeda4f92c4109fffe0c62b6a",
+    "gate_e_f_finalization.log": "8c552c7b60bf6a9707a055487001a0c67530649bfab4aeb9257b8094aa7ed03b"
+  },
+  "source_completion_time_utc": "2026-10-29T10:10:07.261Z",
+  "source_completion_time_local": "2026-10-29 18:10:07.261 +08:00"
+}

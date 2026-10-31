@@ -1,0 +1,107 @@
+{
+  "created_utc": "2026-10-25T07:43:35.065210+00:00",
+  "inputs": {
+    "analysis_mpc_rows.csv": {
+      "path": "dataset_generation_logs/channel_modeling/mainline_1023_stage2_v0_20261024T132210Z/analysis_mpc_rows.csv",
+      "sha256": "a2c26d0de655e0f6cf4a60cf2906bf4cfff7aa16bbc5f74bffb4e9b80dab306c",
+      "size_bytes": 2550478
+    },
+    "scene_fold_scores.csv": {
+      "path": "reports/data_consolidation_20261003/mainline_1023_model_v1/v0_20261024T132210Z/scene_fold_scores.csv",
+      "sha256": "faad49468cb7d36ed070e54a8b9fdc564cdaa9bc3f682fed1eb391cfebbf03ca",
+      "size_bytes": 38524
+    },
+    "selected_window_rows.csv": {
+      "path": "dataset_generation_logs/channel_modeling/mainline_1023_stage2_v0_20261024T132210Z/selected_window_rows.csv",
+      "sha256": "fbc784ff169fca6d95907e39a56510d9be0b61ec3c1ef42e15235002be40061c",
+      "size_bytes": 1859274
+    }
+  },
+  "manifest_self_hash": "omitted_to_avoid_recursive_hash",
+  "outputs": {
+    "marginal_stability_by_fold.csv": {
+      "sha256": "240a2bd1e50b7470f4806f981fe680d766baf40bc65a225d894fb60e3383ce50",
+      "size_bytes": 23688
+    },
+    "marginal_stability_summary.csv": {
+      "sha256": "5439b0c7e3d8df2ee97b06c04b5b67c14180c6a5a480fb1fafd9175e0df00db5",
+      "size_bytes": 11081
+    },
+    "power_delay_loso_by_scene.csv": {
+      "sha256": "a7dad482873599e2ad7b21e6a7326bb7014ecb55c4352e209be3edc8d5983583",
+      "size_bytes": 8634
+    },
+    "power_delay_loso_summary.csv": {
+      "sha256": "295f84904aaadbb8f9b5b1562f361a6cfbb475b51f4dc7b6d8d0067f6c1e7922",
+      "size_bytes": 700
+    },
+    "selected_count_loso_by_scene.csv": {
+      "sha256": "a9eca5bc932b53cd97fc33055f9e3d033764387ccbef571d6574af8bbd15287d",
+      "size_bytes": 25376
+    },
+    "selected_count_loso_summary.csv": {
+      "sha256": "6e711d4e457ba70de6f7fb1996e863a477fc93a7f519e415959320f4b88fea02",
+      "size_bytes": 1609
+    },
+    "tail_calibration_by_scene.csv": {
+      "sha256": "ddddb10298e485d9d9add0ebfef77da17f70ffda36d427b286fe3fb5256b3914",
+      "size_bytes": 200734
+    },
+    "tail_calibration_summary.csv": {
+      "sha256": "1bfdd4c49e93ecb5d5c51b02b64d30201def45005ff42f6537f267a85be33f32",
+      "size_bytes": 13312
+    },
+    "wp2_report.md": {
+      "sha256": "40be9c5c2ef6e1c6237c1562e8b9e50542c5de0162710ba46f9109e990350eed",
+      "size_bytes": 7593
+    }
+  },
+  "population": {
+    "mpc_count_histogram": {
+      "0": 3574,
+      "1": 1412,
+      "2": 1081,
+      "3": 1780
+    },
+    "mpc_n": 8914,
+    "run_n": 83,
+    "scene_n": 13,
+    "selected_window_n": 7847
+  },
+  "schema_version": 1,
+  "scope": "Stage2-selected SAGE-only WP2 robustness; no production or CIR payload access",
+  "selection_boundary": {
+    "count_support": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "stage0_valid_window_n": 285752,
+    "stage2_selected_window_n": 7847,
+    "unselected_stage0_windows_assigned_zero_mpc": false
+  },
+  "sources": {
+    "mainline_stage2_v0.py": {
+      "path": "scripts/channel_modeling/mainline_stage2_v0.py",
+      "sha256": "a30fa1656b9b3714e9bd3f9072d21c9f443202ca2c5fec5eeebb8377a1d163df"
+    },
+    "mainline_stage2_wp2.py": {
+      "path": "scripts/channel_modeling/mainline_stage2_wp2.py",
+      "sha256": "1aae0a2cbad9b259cb24a445bccb71d6ec1950f49361f751283622c70ad570fa"
+    },
+    "run_mainline_stage2_wp2.py": {
+      "path": "scripts/channel_modeling/run_mainline_stage2_wp2.py",
+      "sha256": "80eb4a2f9afb70ddd392c39f3f6282c43dce383307409a620aaf889f50f057db"
+    }
+  },
+  "status": "WP2_ROBUSTNESS_COMPLETE_WITH_LIMITATIONS",
+  "validation": {
+    "bootstrap_iterations": 2000,
+    "outer_unit": "whole_scene_id",
+    "row_level_p_values": false,
+    "seed": 20261025,
+    "training_scene_weight": "each training scene has total weight one",
+    "uncertainty_unit": "whole_scene_with_multiplicity"
+  }
+}

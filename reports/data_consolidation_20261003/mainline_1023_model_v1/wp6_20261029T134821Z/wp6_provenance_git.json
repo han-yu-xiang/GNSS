@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "provenance_note": "Path-sanitized shareable summary. The original local execution_record.json and input_code_manifest.json are preserved locally and excluded from Git because they contain machine-specific absolute paths.",
+  "analysis": {
+    "status": "COMPLETE",
+    "started_utc": "2026-10-29T13:48:24.153637+00:00",
+    "ended_utc": "2026-10-29T13:55:18.262968+00:00",
+    "elapsed_seconds": 414.109331,
+    "python_version": "3.12.9",
+    "command": [
+      "python",
+      "scripts/channel_modeling/run_mainline_stage2_wp6.py",
+      "--output-dir",
+      "reports/data_consolidation_20261003/mainline_1023_model_v1/wp6_20261029T134821Z"
+    ]
+  },
+  "inputs": {
+    "features": {
+      "path": "reports/data_consolidation_20261003/mainline_1023_model_v1/wp4_gate_ef_final_20261029T181100/stage2_cir_pdp_window_features.csv",
+      "sha256": "258d5d70081d9ee6fd82a64b1a4f9c405180bc18cd49280b0e2b799d9a482bf4",
+      "rows": 7847
+    },
+    "mpcs": {
+      "path": "reports/data_consolidation_20261003/mainline_1023_model_v1/wp4_gate_ef_final_20261029T181100/stage2_mpc_cir_alpha_linkage.csv",
+      "sha256": "8db941db20e684108d13583d67ee20cde543bf2a36ca01013d1288b48231c80b",
+      "rows": 8914
+    }
+  },
+  "analysis_time_code_sha256_from_original_manifest": {
+    "mainline_stage2_wp6.py": "10c895536d4e07ed6346932b9f1270a7152f5fccf70eee41ac1c52ff9e97d0a6",
+    "mainline_stage2_wp3.py": "67651a6cea536df1f0d7dcd61b8da034fcc196f903b12250427fc7f1f726ac3b",
+    "run_mainline_stage2_wp6.py": "912535d060440196d86283c75b3fe645c1ee5f20982949227f54fe3caa2761ed",
+    "validate_mainline_stage2_wp6.py": "912faf3a01351c4448c88eabe36f436cba0d32747379b4bafa2ff70f35360f81"
+  },
+  "supplemental_validator_sha256": "0325b8e754dd8596ecbfb1a2ecd764a7be4bab22a6daee2be82f9d559061a64a",
+  "post_review_code_sha256": {
+    "mainline_stage2_wp6.py": "41004109d676b84a937f723df929aa5534ab4f3106275ab8540a4d800c985443",
+    "meaning": "Final source after the failure-only unscorable multi-path window-row fix; saved 13-fold outputs remain unchanged because all real outer folds were scoreable."
+  },
+  "population": {
+    "run_n": 83,
+    "scene_n": 13,
+    "selected_window_n": 7847,
+    "mpc_n": 8914,
+    "scope": "Stage2-selected windows only"
+  }
+}

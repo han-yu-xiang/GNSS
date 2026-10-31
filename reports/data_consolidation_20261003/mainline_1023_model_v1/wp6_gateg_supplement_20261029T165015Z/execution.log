@@ -1,0 +1,15 @@
+[2026-10-30T00:50:24+08:00] Validated frozen input: 7847 selected windows; 8914 MPCs; 13 scenes; 8914 ranked MPC rows.
+[2026-10-30T00:52:06+08:00] Completed outer LOSO fold 1/13; held out F1023_V120_D0121_P2.
+[2026-10-30T00:53:16+08:00] Completed outer LOSO fold 2/13; held out F1023_V70_D0117_P2.
+[2026-10-30T00:54:27+08:00] Completed outer LOSO fold 3/13; held out F1023_V70_D0117_P4.
+[2026-10-30T00:55:42+08:00] Completed outer LOSO fold 4/13; held out F1023_V70_D0120_P1.
+[2026-10-30T00:56:56+08:00] Completed outer LOSO fold 5/13; held out F1023_V70_D0120_P5.
+[2026-10-30T00:58:08+08:00] Completed outer LOSO fold 6/13; held out F1023_V70_D0120_P7.
+[2026-10-30T00:59:21+08:00] Completed outer LOSO fold 7/13; held out F1023_V70_D0120_P8.
+[2026-10-30T01:00:34+08:00] Completed outer LOSO fold 8/13; held out F1023_V70_D0120_P9.
+[2026-10-30T01:01:42+08:00] Completed outer LOSO fold 9/13; held out F1023_V70_D0122_P1.
+[2026-10-30T01:02:57+08:00] Completed outer LOSO fold 10/13; held out F1023_V70_D0122_P2.
+[2026-10-30T01:04:12+08:00] Completed outer LOSO fold 11/13; held out F1023_V80_D0117_P8.
+[2026-10-30T01:05:30+08:00] Completed outer LOSO fold 12/13; held out F1023_v50_D0127_P1.
+[2026-10-30T01:06:43+08:00] Completed outer LOSO fold 13/13; held out F1023_v90_D0117_P7.
+[2026-10-30T01:06:53+08:00] Analysis outputs written; independent validation pending: C:\Users\Jing_\.codex\worktrees\gnss-cir\GNSS_Multipath_Project\reports\data_consolidation_20261003\mainline_1023_model_v1\wp6_gateg_supplement_20261029T165015Z

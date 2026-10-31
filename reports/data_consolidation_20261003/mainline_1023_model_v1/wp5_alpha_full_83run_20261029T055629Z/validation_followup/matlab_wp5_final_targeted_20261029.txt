@@ -1,0 +1,32 @@
+正在运行 test_export_stage2_complex_alpha
+....
+已完成 test_export_stage2_complex_alpha
+__________
+
+正在运行 test_build_mpc_modeling_ledger
+...
+已完成 test_build_mpc_modeling_ledger
+__________
+
+正在运行 test_run_mainline_wp5_alpha_full_batch
+...
+已完成 test_run_mainline_wp5_alpha_full_batch
+__________
+
+正在运行 test_assert_wp5_ledger_rows_equal
+..
+已完成 test_assert_wp5_ledger_rows_equal
+__________
+
+  1×12 TestResult 数组 - 属性:
+
+    Name
+    Passed
+    Failed
+    Incomplete
+    Duration
+    Details
+
+总计:
+   12 Passed, 0 Failed, 0 Incomplete.
+   29.0683 秒测试时间。

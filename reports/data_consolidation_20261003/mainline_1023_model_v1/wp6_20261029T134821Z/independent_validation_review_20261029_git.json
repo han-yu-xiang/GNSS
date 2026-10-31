@@ -1,0 +1,25 @@
+{
+  "status": "PASS_WITH_LIMITATIONS",
+  "output_path": "reports/data_consolidation_20261003/mainline_1023_model_v1/wp6_20261029T134821Z",
+  "window_n": 7847,
+  "mpc_n": 8914,
+  "scene_n": 13,
+  "mpc_bearing_window_n": 4273,
+  "zero_mpc_selected_window_n": 3574,
+  "boundary_peak_window_n": 63,
+  "max_recomputed_delay_summary_abs_error": {
+    "sage_relative_power_delay_centroid_samples": 3.552713678800501e-15,
+    "sage_relative_power_delay_rms_samples": 1.7763568394002505e-15,
+    "sage_direct_plus_mpc_relative_power_sum": 5.684341886080802e-14
+  },
+  "source_sha256": {
+    "features": "258d5d70081d9ee6fd82a64b1a4f9c405180bc18cd49280b0e2b799d9a482bf4",
+    "mpcs": "8db941db20e684108d13583d67ee20cde543bf2a36ca01013d1288b48231c80b"
+  },
+  "count_scene_identity_rows_reconciled": 7847,
+  "pdp_scene_model_target_score_rows_recomputed": 52,
+  "max_pdp_score_abs_error": 1.7763568394002505e-15,
+  "code_file_n": 4,
+  "validator_sha256": "0325b8e754dd8596ecbfb1a2ecd764a7be4bab22a6daee2be82f9d559061a64a",
+  "validation_scope": "independent key/count/fold, per-scene PDP score and summary, and direct-plus-MPC delay arithmetic checks; distribution-family and Copula method interpretation remains human review"
+}

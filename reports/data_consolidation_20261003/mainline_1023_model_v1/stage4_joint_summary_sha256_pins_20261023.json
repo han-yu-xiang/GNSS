@@ -1,0 +1,339 @@
+{
+  "schema_version": 1,
+  "cohort_sha256": "287e891fae0cd294a85c073080611a19b7389ece46240b89cb1d5dab4df90229",
+  "task_count": 83,
+  "stage4_joint_summary_sha256_by_run_id": {
+    "run_20261003_F1023_V120_D0121_P2_G03_ch2": {
+      "path": "scenes/F1023_V120_D0121_P2/sage_results/rerun_20261003_frozen_v3/G03_ch2/stage4_joint_summary.csv",
+      "sha256": "527fbb1fb1da1b356018b6d49c37334764fad734fad3a98c07e3cb4b3f2c27cc"
+    },
+    "run_20261003_F1023_V120_D0121_P2_G06_ch9": {
+      "path": "scenes/F1023_V120_D0121_P2/sage_results/rerun_20261003_frozen_v3/G06_ch9/stage4_joint_summary.csv",
+      "sha256": "8d4610659bd8e3c52795d40337780661c6c4501d04ba6e840ffc5652d8354151"
+    },
+    "run_20261003_F1023_V120_D0121_P2_G11_ch0": {
+      "path": "scenes/F1023_V120_D0121_P2/sage_results/rerun_20261003_frozen_v3/G11_ch0/stage4_joint_summary.csv",
+      "sha256": "8d4610659bd8e3c52795d40337780661c6c4501d04ba6e840ffc5652d8354151"
+    },
+    "run_20261003_F1023_V120_D0121_P2_G12_ch11": {
+      "path": "scenes/F1023_V120_D0121_P2/sage_results/rerun_20261003_frozen_v3/G12_ch11/stage4_joint_summary.csv",
+      "sha256": "8d4610659bd8e3c52795d40337780661c6c4501d04ba6e840ffc5652d8354151"
+    },
+    "run_20261003_F1023_V120_D0121_P2_G19_ch0": {
+      "path": "scenes/F1023_V120_D0121_P2/sage_results/rerun_20261003_frozen_v3/G19_ch0/stage4_joint_summary.csv",
+      "sha256": "8d4610659bd8e3c52795d40337780661c6c4501d04ba6e840ffc5652d8354151"
+    },
+    "run_20261003_F1023_V120_D0121_P2_G19_ch1": {
+      "path": "scenes/F1023_V120_D0121_P2/sage_results/rerun_20261003_frozen_v3/G19_ch1/stage4_joint_summary.csv",
+      "sha256": "8d4610659bd8e3c52795d40337780661c6c4501d04ba6e840ffc5652d8354151"
+    },
+    "run_20261003_F1023_V120_D0121_P2_G19_ch3": {
+      "path": "scenes/F1023_V120_D0121_P2/sage_results/rerun_20261003_frozen_v3/G19_ch3/stage4_joint_summary.csv",
+      "sha256": "8d4610659bd8e3c52795d40337780661c6c4501d04ba6e840ffc5652d8354151"
+    },
+    "run_20261003_F1023_V120_D0121_P2_G24_ch2": {
+      "path": "scenes/F1023_V120_D0121_P2/sage_results/rerun_20261003_frozen_v3/G24_ch2/stage4_joint_summary.csv",
+      "sha256": "8d4610659bd8e3c52795d40337780661c6c4501d04ba6e840ffc5652d8354151"
+    },
+    "run_20261003_F1023_V120_D0121_P2_G25_ch5": {
+      "path": "scenes/F1023_V120_D0121_P2/sage_results/rerun_20261003_frozen_v3/G25_ch5/stage4_joint_summary.csv",
+      "sha256": "8d4610659bd8e3c52795d40337780661c6c4501d04ba6e840ffc5652d8354151"
+    },
+    "run_20261003_F1023_V120_D0121_P2_G28_ch6": {
+      "path": "scenes/F1023_V120_D0121_P2/sage_results/rerun_20261003_frozen_v3/G28_ch6/stage4_joint_summary.csv",
+      "sha256": "8d4610659bd8e3c52795d40337780661c6c4501d04ba6e840ffc5652d8354151"
+    },
+    "run_20261003_F1023_V120_D0121_P2_G29_ch10": {
+      "path": "scenes/F1023_V120_D0121_P2/sage_results/rerun_20261003_frozen_v3/G29_ch10/stage4_joint_summary.csv",
+      "sha256": "8d4610659bd8e3c52795d40337780661c6c4501d04ba6e840ffc5652d8354151"
+    },
+    "run_20261003_F1023_V120_D0121_P2_G29_ch3": {
+      "path": "scenes/F1023_V120_D0121_P2/sage_results/rerun_20261003_frozen_v3/G29_ch3/stage4_joint_summary.csv",
+      "sha256": "8d4610659bd8e3c52795d40337780661c6c4501d04ba6e840ffc5652d8354151"
+    },
+    "run_20261003_F1023_V120_D0121_P2_G32_ch7": {
+      "path": "scenes/F1023_V120_D0121_P2/sage_results/rerun_20261003_frozen_v3/G32_ch7/stage4_joint_summary.csv",
+      "sha256": "8d4610659bd8e3c52795d40337780661c6c4501d04ba6e840ffc5652d8354151"
+    },
+    "run_20261003_F1023_v50_D0127_P1_G11_ch10": {
+      "path": "scenes/F1023_v50_D0127_P1/sage_results/rerun_20261003_frozen_v3/G11_ch10/stage4_joint_summary.csv",
+      "sha256": "8d4610659bd8e3c52795d40337780661c6c4501d04ba6e840ffc5652d8354151"
+    },
+    "run_20261003_F1023_v50_D0127_P1_G25_ch0": {
+      "path": "scenes/F1023_v50_D0127_P1/sage_results/rerun_20261003_frozen_v3/G25_ch0/stage4_joint_summary.csv",
+      "sha256": "8d4610659bd8e3c52795d40337780661c6c4501d04ba6e840ffc5652d8354151"
+    },
+    "run_20261003_F1023_v50_D0127_P1_G28_ch4": {
+      "path": "scenes/F1023_v50_D0127_P1/sage_results/rerun_20261003_frozen_v3/G28_ch4/stage4_joint_summary.csv",
+      "sha256": "8d4610659bd8e3c52795d40337780661c6c4501d04ba6e840ffc5652d8354151"
+    },
+    "run_20261003_F1023_v50_D0127_P1_G29_ch9": {
+      "path": "scenes/F1023_v50_D0127_P1/sage_results/rerun_20261003_frozen_v3/G29_ch9/stage4_joint_summary.csv",
+      "sha256": "8d4610659bd8e3c52795d40337780661c6c4501d04ba6e840ffc5652d8354151"
+    },
+    "run_20261003_F1023_v50_D0127_P1_G31_ch5": {
+      "path": "scenes/F1023_v50_D0127_P1/sage_results/rerun_20261003_frozen_v3/G31_ch5/stage4_joint_summary.csv",
+      "sha256": "175b1dae00e75682b06d1a71805fd01b10fc62b47679e326a01accda63a57cb5"
+    },
+    "run_20261003_F1023_V70_D0117_P2_G06_ch4": {
+      "path": "scenes/F1023_V70_D0117_P2/sage_results/rerun_20261003_frozen_v3/G06_ch4/stage4_joint_summary.csv",
+      "sha256": "4cfddac68f056a74551ce0c420eb6164bc33de818752704c05c8a1e2d2855cd8"
+    },
+    "run_20261003_F1023_V70_D0117_P2_G11_ch5": {
+      "path": "scenes/F1023_V70_D0117_P2/sage_results/rerun_20261003_frozen_v3/G11_ch5/stage4_joint_summary.csv",
+      "sha256": "1c33150b7b4bc08e92fe2995fb64c1c72c4346c1935afcbc63cc357564f4f9b7"
+    },
+    "run_20261003_F1023_V70_D0117_P2_G12_ch6": {
+      "path": "scenes/F1023_V70_D0117_P2/sage_results/rerun_20261003_frozen_v3/G12_ch6/stage4_joint_summary.csv",
+      "sha256": "17b752cc57996a922d1aae96252d6d7d07ffb7c1f95d071a51f5485e8a79dc21"
+    },
+    "run_20261003_F1023_V70_D0117_P2_G25_ch0": {
+      "path": "scenes/F1023_V70_D0117_P2/sage_results/rerun_20261003_frozen_v3/G25_ch0/stage4_joint_summary.csv",
+      "sha256": "8d4610659bd8e3c52795d40337780661c6c4501d04ba6e840ffc5652d8354151"
+    },
+    "run_20261003_F1023_V70_D0117_P2_G28_ch1": {
+      "path": "scenes/F1023_V70_D0117_P2/sage_results/rerun_20261003_frozen_v3/G28_ch1/stage4_joint_summary.csv",
+      "sha256": "b7528ce96649915c41c7b03e9e050a05338b1edffadfc518c6765e2ebb606706"
+    },
+    "run_20261003_F1023_V70_D0117_P2_G29_ch7": {
+      "path": "scenes/F1023_V70_D0117_P2/sage_results/rerun_20261003_frozen_v3/G29_ch7/stage4_joint_summary.csv",
+      "sha256": "9ea22ccc83715b03b3266c024adb25cc0b3f01ef6a1afe76c3e4986905d16929"
+    },
+    "run_20261003_F1023_V70_D0117_P2_G32_ch11": {
+      "path": "scenes/F1023_V70_D0117_P2/sage_results/rerun_20261003_frozen_v3/G32_ch11/stage4_joint_summary.csv",
+      "sha256": "15c4044b4739cf7967329a4ecdfe7a817974199051f01bf203cec49439887c98"
+    },
+    "run_20261003_F1023_V70_D0117_P4_G11_ch2": {
+      "path": "scenes/F1023_V70_D0117_P4/sage_results/rerun_20261003_frozen_v3/G11_ch2/stage4_joint_summary.csv",
+      "sha256": "3faf642d8d4e0d7b547c8b8b382a927703feeef08a2943e823d07ed2eee283c0"
+    },
+    "run_20261003_F1023_V70_D0117_P4_G12_ch4": {
+      "path": "scenes/F1023_V70_D0117_P4/sage_results/rerun_20261003_frozen_v3/G12_ch4/stage4_joint_summary.csv",
+      "sha256": "d75176d1f83e7a92a21c9aeb4914aceb0f86c86aa56465fe77e9f841f6abbb91"
+    },
+    "run_20261003_F1023_V70_D0117_P4_G25_ch7": {
+      "path": "scenes/F1023_V70_D0117_P4/sage_results/rerun_20261003_frozen_v3/G25_ch7/stage4_joint_summary.csv",
+      "sha256": "df2177fd85e3fc09ecc3b40db9413463ee8a369adc45eec59c9aff8cfe91a765"
+    },
+    "run_20261003_F1023_V70_D0117_P4_G28_ch6": {
+      "path": "scenes/F1023_V70_D0117_P4/sage_results/rerun_20261003_frozen_v3/G28_ch6/stage4_joint_summary.csv",
+      "sha256": "c5ca5c8a5cae44f73d1b2cf94635e213c01aada92011670f7c40ad5acb53acd4"
+    },
+    "run_20261003_F1023_V70_D0117_P4_G29_ch9": {
+      "path": "scenes/F1023_V70_D0117_P4/sage_results/rerun_20261003_frozen_v3/G29_ch9/stage4_joint_summary.csv",
+      "sha256": "0041f255a4726236d148aca1834573f93b87d27382dbd9c1d8e8878c4c00d8ca"
+    },
+    "run_20261003_F1023_V70_D0117_P4_G31_ch1": {
+      "path": "scenes/F1023_V70_D0117_P4/sage_results/rerun_20261003_frozen_v3/G31_ch1/stage4_joint_summary.csv",
+      "sha256": "c1013b9958a9dbbb137a4044e2d37c985c0b5db35ea7a2b56e3486ac9c8f0504"
+    },
+    "run_20261003_F1023_V70_D0117_P4_G32_ch3": {
+      "path": "scenes/F1023_V70_D0117_P4/sage_results/rerun_20261003_frozen_v3/G32_ch3/stage4_joint_summary.csv",
+      "sha256": "7225e7a775021ac9c16abd9131bb50d13a1d9283382c00936464db024bfb4fd5"
+    },
+    "run_20261003_F1023_V70_D0120_P1_G18_ch2": {
+      "path": "scenes/F1023_V70_D0120_P1/sage_results/rerun_20261003_frozen_v3/G18_ch2/stage4_joint_summary.csv",
+      "sha256": "5b17678c3ede1c7cb04b5f3a217c307c52e03405ebb25cac89e192bccd108d1e"
+    },
+    "run_20261003_F1023_V70_D0120_P1_G29_ch5": {
+      "path": "scenes/F1023_V70_D0120_P1/sage_results/rerun_20261003_frozen_v3/G29_ch5/stage4_joint_summary.csv",
+      "sha256": "080b1e7dfa7810642e68e7ecaf831da604506669b9832b013d327760da32786a"
+    },
+    "run_20261003_F1023_V70_D0120_P1_G31_ch9": {
+      "path": "scenes/F1023_V70_D0120_P1/sage_results/rerun_20261003_frozen_v3/G31_ch9/stage4_joint_summary.csv",
+      "sha256": "e69347f2b0fc71883a1a88b43a1ebcd6351d4ad4d209b6bf366274944deb865d"
+    },
+    "run_20261003_F1023_V70_D0120_P5_G16_ch1": {
+      "path": "scenes/F1023_V70_D0120_P5/sage_results/rerun_20261003_frozen_v3/G16_ch1/stage4_joint_summary.csv",
+      "sha256": "a992e4f96378b7ba2699a273f049ec86a4661f1069675ba100d8cdc1008f3f28"
+    },
+    "run_20261003_F1023_V70_D0120_P5_G18_ch2": {
+      "path": "scenes/F1023_V70_D0120_P5/sage_results/rerun_20261003_frozen_v3/G18_ch2/stage4_joint_summary.csv",
+      "sha256": "b07b96a5cce442ce9b4543f62ef2615d7b329907896818b34334aff13c8d4417"
+    },
+    "run_20261003_F1023_V70_D0120_P5_G23_ch0": {
+      "path": "scenes/F1023_V70_D0120_P5/sage_results/rerun_20261003_frozen_v3/G23_ch0/stage4_joint_summary.csv",
+      "sha256": "5235ed59b68fe935f19448f0e38669d3f86d3b9980292c4778d32c1cbb8a1c66"
+    },
+    "run_20261003_F1023_V70_D0120_P5_G26_ch7": {
+      "path": "scenes/F1023_V70_D0120_P5/sage_results/rerun_20261003_frozen_v3/G26_ch7/stage4_joint_summary.csv",
+      "sha256": "562137081f1d419e22ce692f10798b4a006c339640e776c32f0f6bd708b04c4a"
+    },
+    "run_20261003_F1023_V70_D0120_P5_G27_ch10": {
+      "path": "scenes/F1023_V70_D0120_P5/sage_results/rerun_20261003_frozen_v3/G27_ch10/stage4_joint_summary.csv",
+      "sha256": "8d4610659bd8e3c52795d40337780661c6c4501d04ba6e840ffc5652d8354151"
+    },
+    "run_20261003_F1023_V70_D0120_P7_G16_ch1": {
+      "path": "scenes/F1023_V70_D0120_P7/sage_results/rerun_20261003_frozen_v3/G16_ch1/stage4_joint_summary.csv",
+      "sha256": "644ce8f308fa02fc12c9e4fed5538ef8be04135aa40acaa5caab31e671fc6d69"
+    },
+    "run_20261003_F1023_V70_D0120_P7_G18_ch4": {
+      "path": "scenes/F1023_V70_D0120_P7/sage_results/rerun_20261003_frozen_v3/G18_ch4/stage4_joint_summary.csv",
+      "sha256": "31c052310fac631e9eafc88ab211840aca488f992964bede8798651b509267c7"
+    },
+    "run_20261003_F1023_V70_D0120_P7_G26_ch6": {
+      "path": "scenes/F1023_V70_D0120_P7/sage_results/rerun_20261003_frozen_v3/G26_ch6/stage4_joint_summary.csv",
+      "sha256": "5437fb66134da60be05c8b9511ecbc8ec21e236f4c91ffc8faae151fc706fe59"
+    },
+    "run_20261003_F1023_V70_D0120_P7_G31_ch8": {
+      "path": "scenes/F1023_V70_D0120_P7/sage_results/rerun_20261003_frozen_v3/G31_ch8/stage4_joint_summary.csv",
+      "sha256": "ff6289b9832af95a2eb6372be9b03e5f9abc07ee15678dc5c4e0400c52e4d6f3"
+    },
+    "run_20261003_F1023_V70_D0120_P8_G16_ch4": {
+      "path": "scenes/F1023_V70_D0120_P8/sage_results/rerun_20261003_frozen_v3/G16_ch4/stage4_joint_summary.csv",
+      "sha256": "92077b283379307e41cfee953adbf749996c7d283b1e9f33f1945988f21b4bf8"
+    },
+    "run_20261003_F1023_V70_D0120_P8_G18_ch9": {
+      "path": "scenes/F1023_V70_D0120_P8/sage_results/rerun_20261003_frozen_v3/G18_ch9/stage4_joint_summary.csv",
+      "sha256": "a9bbc74a4a28ce70fd448b1b9fcf9e6d0e1945c94d8839b9cebbb894e97ed31e"
+    },
+    "run_20261003_F1023_V70_D0120_P8_G23_ch11": {
+      "path": "scenes/F1023_V70_D0120_P8/sage_results/rerun_20261003_frozen_v3/G23_ch11/stage4_joint_summary.csv",
+      "sha256": "47d45692f1d9b15222aa9601f19eafb184db9dce44e5227fbf8965f2abb81458"
+    },
+    "run_20261003_F1023_V70_D0120_P8_G26_ch3": {
+      "path": "scenes/F1023_V70_D0120_P8/sage_results/rerun_20261003_frozen_v3/G26_ch3/stage4_joint_summary.csv",
+      "sha256": "940389bbf61305e4d1136cae2ae8b8684a98da75a5ca6ffe36b030a129a79dc3"
+    },
+    "run_20261003_F1023_V70_D0120_P9_G05_ch10": {
+      "path": "scenes/F1023_V70_D0120_P9/sage_results/rerun_20261003_frozen_v3/G05_ch10/stage4_joint_summary.csv",
+      "sha256": "c79dcca674790ab23ee255400ecd88d58f22018c3178b5f1180d960e268df83b"
+    },
+    "run_20261003_F1023_V70_D0120_P9_G16_ch9": {
+      "path": "scenes/F1023_V70_D0120_P9/sage_results/rerun_20261003_frozen_v3/G16_ch9/stage4_joint_summary.csv",
+      "sha256": "6f8c158b6e4cb6717abb63b2e6accbd6f7d27dcb9b34e6d374b51d7aece3f67b"
+    },
+    "run_20261003_F1023_V70_D0120_P9_G18_ch1": {
+      "path": "scenes/F1023_V70_D0120_P9/sage_results/rerun_20261003_frozen_v3/G18_ch1/stage4_joint_summary.csv",
+      "sha256": "bbda5d3b30e042057bd2263ba08adffe1601f94d0de3c9dbe5236cd459de5164"
+    },
+    "run_20261003_F1023_V70_D0120_P9_G23_ch3": {
+      "path": "scenes/F1023_V70_D0120_P9/sage_results/rerun_20261003_frozen_v3/G23_ch3/stage4_joint_summary.csv",
+      "sha256": "9e8cc28ba125edaaa576a1ac2151bcae7e74888f70383bfe1066f968158e5734"
+    },
+    "run_20261003_F1023_V70_D0120_P9_G26_ch6": {
+      "path": "scenes/F1023_V70_D0120_P9/sage_results/rerun_20261003_frozen_v3/G26_ch6/stage4_joint_summary.csv",
+      "sha256": "1c79481c71318c966f226f48bed2ee8fbd8bbc223b092224b50603ed9e384339"
+    },
+    "run_20261003_F1023_V70_D0120_P9_G27_ch5": {
+      "path": "scenes/F1023_V70_D0120_P9/sage_results/rerun_20261003_frozen_v3/G27_ch5/stage4_joint_summary.csv",
+      "sha256": "8b2495f4959315030fc40227363eb5b86e6e420c0a4ace5fcc1cd50df9b78c6d"
+    },
+    "run_20261003_F1023_V70_D0120_P9_G28_ch11": {
+      "path": "scenes/F1023_V70_D0120_P9/sage_results/rerun_20261003_frozen_v3/G28_ch11/stage4_joint_summary.csv",
+      "sha256": "aad1f0f27436f7a6b3c43d500bcf22ffd6945fa74fb205e2e163df2d6bd280c4"
+    },
+    "run_20261003_F1023_V70_D0120_P9_G29_ch4": {
+      "path": "scenes/F1023_V70_D0120_P9/sage_results/rerun_20261003_frozen_v3/G29_ch4/stage4_joint_summary.csv",
+      "sha256": "e0df99d7decb9938f3b0a68c5c56bdad0ae4cfab8dbf20a3c9fff217e37b5c5f"
+    },
+    "run_20261003_F1023_V70_D0120_P9_G31_ch7": {
+      "path": "scenes/F1023_V70_D0120_P9/sage_results/rerun_20261003_frozen_v3/G31_ch7/stage4_joint_summary.csv",
+      "sha256": "6af772efb0beca97809ccc4891cedbbca8882379b8214cf03263f805585748b4"
+    },
+    "run_20261003_F1023_V70_D0122_P1_G12_ch6": {
+      "path": "scenes/F1023_V70_D0122_P1/sage_results/rerun_20261003_frozen_v3/G12_ch6/stage4_joint_summary.csv",
+      "sha256": "0dc001e672e002bffc1db541d9b6995a1c0022f85495390d31b3dfface2af3f8"
+    },
+    "run_20261003_F1023_V70_D0122_P1_G13_ch5": {
+      "path": "scenes/F1023_V70_D0122_P1/sage_results/rerun_20261003_frozen_v3/G13_ch5/stage4_joint_summary.csv",
+      "sha256": "0b7a746c040f99f9e57d99e0d94ac24c5705222b82688715d4521c49557c7195"
+    },
+    "run_20261003_F1023_V70_D0122_P1_G14_ch9": {
+      "path": "scenes/F1023_V70_D0122_P1/sage_results/rerun_20261003_frozen_v3/G14_ch9/stage4_joint_summary.csv",
+      "sha256": "8d4610659bd8e3c52795d40337780661c6c4501d04ba6e840ffc5652d8354151"
+    },
+    "run_20261003_F1023_V70_D0122_P1_G15_ch8": {
+      "path": "scenes/F1023_V70_D0122_P1/sage_results/rerun_20261003_frozen_v3/G15_ch8/stage4_joint_summary.csv",
+      "sha256": "0de423c304abca2f6a3190c7bb916129adf1ae9528450e0ad4a145923c6a191b"
+    },
+    "run_20261003_F1023_V70_D0122_P1_G17_ch2": {
+      "path": "scenes/F1023_V70_D0122_P1/sage_results/rerun_20261003_frozen_v3/G17_ch2/stage4_joint_summary.csv",
+      "sha256": "b22bd75d48c6cbb8d3167353405d44a8d64e65e0ea41fdd42acea0cf398672a9"
+    },
+    "run_20261003_F1023_V70_D0122_P1_G19_ch11": {
+      "path": "scenes/F1023_V70_D0122_P1/sage_results/rerun_20261003_frozen_v3/G19_ch11/stage4_joint_summary.csv",
+      "sha256": "513b7261c7a8ae2f8ed9f0093ea11fbbadb1c6572c3a169a0a7f8d0facc56e7c"
+    },
+    "run_20261003_F1023_V70_D0122_P1_G22_ch4": {
+      "path": "scenes/F1023_V70_D0122_P1/sage_results/rerun_20261003_frozen_v3/G22_ch4/stage4_joint_summary.csv",
+      "sha256": "7d056c811a1ba55543d43f9d92154862f737053e3bdda191d5ff858370c1c6f0"
+    },
+    "run_20261003_F1023_V70_D0122_P1_G24_ch7": {
+      "path": "scenes/F1023_V70_D0122_P1/sage_results/rerun_20261003_frozen_v3/G24_ch7/stage4_joint_summary.csv",
+      "sha256": "916109be075ed331593d1d4659299f98fc97934d86255ba930c1c7485b909481"
+    },
+    "run_20261003_F1023_V70_D0122_P2_G10_ch6": {
+      "path": "scenes/F1023_V70_D0122_P2/sage_results/rerun_20261003_frozen_v3/G10_ch6/stage4_joint_summary.csv",
+      "sha256": "8d4610659bd8e3c52795d40337780661c6c4501d04ba6e840ffc5652d8354151"
+    },
+    "run_20261003_F1023_V70_D0122_P2_G12_ch2": {
+      "path": "scenes/F1023_V70_D0122_P2/sage_results/rerun_20261003_frozen_v3/G12_ch2/stage4_joint_summary.csv",
+      "sha256": "a4240ae8871e5f22ec5591d89c7d22c22c621c56c9598490a8253e78f152b82a"
+    },
+    "run_20261003_F1023_V70_D0122_P2_G13_ch5": {
+      "path": "scenes/F1023_V70_D0122_P2/sage_results/rerun_20261003_frozen_v3/G13_ch5/stage4_joint_summary.csv",
+      "sha256": "8d4610659bd8e3c52795d40337780661c6c4501d04ba6e840ffc5652d8354151"
+    },
+    "run_20261003_F1023_V70_D0122_P2_G15_ch8": {
+      "path": "scenes/F1023_V70_D0122_P2/sage_results/rerun_20261003_frozen_v3/G15_ch8/stage4_joint_summary.csv",
+      "sha256": "f45d4e179264b83010f6d021188896060dd15680c7f2a06e91dda86222f25367"
+    },
+    "run_20261003_F1023_V70_D0122_P2_G19_ch11": {
+      "path": "scenes/F1023_V70_D0122_P2/sage_results/rerun_20261003_frozen_v3/G19_ch11/stage4_joint_summary.csv",
+      "sha256": "e3ce54906490e03d9f5ec3076878fe116f194cce101a30b0721e3b41b4167a4d"
+    },
+    "run_20261003_F1023_V70_D0122_P2_G23_ch10": {
+      "path": "scenes/F1023_V70_D0122_P2/sage_results/rerun_20261003_frozen_v3/G23_ch10/stage4_joint_summary.csv",
+      "sha256": "95fd4bbec4567190fa119616e818f482e78b2e5e789cc0852306db5bd0f45d05"
+    },
+    "run_20261003_F1023_V70_D0122_P2_G24_ch3": {
+      "path": "scenes/F1023_V70_D0122_P2/sage_results/rerun_20261003_frozen_v3/G24_ch3/stage4_joint_summary.csv",
+      "sha256": "14b3aecb526d9203583bedd962c6b72a9b7b56345647fa966e201413abc5c171"
+    },
+    "run_20261003_F1023_V80_D0117_P8_G12_ch4": {
+      "path": "scenes/F1023_V80_D0117_P8/sage_results/rerun_20261003_frozen_v3/G12_ch4/stage4_joint_summary.csv",
+      "sha256": "0a3c1f980401cd5805d34c21ddcb59bfc103e0bc0d36ae26dd11171768ddb91d"
+    },
+    "run_20261003_F1023_V80_D0117_P8_G25_ch10": {
+      "path": "scenes/F1023_V80_D0117_P8/sage_results/rerun_20261003_frozen_v3/G25_ch10/stage4_joint_summary.csv",
+      "sha256": "a7748508ade7a2bb63214676d247be75af9662a852d36dac52218b6dbb32f9af"
+    },
+    "run_20261003_F1023_V80_D0117_P8_G28_ch6": {
+      "path": "scenes/F1023_V80_D0117_P8/sage_results/rerun_20261003_frozen_v3/G28_ch6/stage4_joint_summary.csv",
+      "sha256": "82e2655aadc515b9fecc2cc9b3b65d36ae9465f424f76641f6da909599c6e760"
+    },
+    "run_20261003_F1023_V80_D0117_P8_G31_ch1": {
+      "path": "scenes/F1023_V80_D0117_P8/sage_results/rerun_20261003_frozen_v3/G31_ch1/stage4_joint_summary.csv",
+      "sha256": "8d4610659bd8e3c52795d40337780661c6c4501d04ba6e840ffc5652d8354151"
+    },
+    "run_20261003_F1023_V80_D0117_P8_G32_ch11": {
+      "path": "scenes/F1023_V80_D0117_P8/sage_results/rerun_20261003_frozen_v3/G32_ch11/stage4_joint_summary.csv",
+      "sha256": "8d4610659bd8e3c52795d40337780661c6c4501d04ba6e840ffc5652d8354151"
+    },
+    "run_20261003_F1023_v90_D0117_P7_G11_ch6": {
+      "path": "scenes/F1023_v90_D0117_P7/sage_results/rerun_20261003_frozen_v3/G11_ch6/stage4_joint_summary.csv",
+      "sha256": "b381079ecc6db09241490ac86b648051b50c67b4f8aee878f50ab2ab8fd0ad4d"
+    },
+    "run_20261003_F1023_v90_D0117_P7_G12_ch10": {
+      "path": "scenes/F1023_v90_D0117_P7/sage_results/rerun_20261003_frozen_v3/G12_ch10/stage4_joint_summary.csv",
+      "sha256": "26bee2d0556fbcb68593fec261eb1d7577becdd22f276fe16d666b198cccb6dd"
+    },
+    "run_20261003_F1023_v90_D0117_P7_G25_ch0": {
+      "path": "scenes/F1023_v90_D0117_P7/sage_results/rerun_20261003_frozen_v3/G25_ch0/stage4_joint_summary.csv",
+      "sha256": "48a1478ec1263dd161e06742b4c35d57b6e637716f76fb50c79325f551266a4d"
+    },
+    "run_20261003_F1023_v90_D0117_P7_G28_ch4": {
+      "path": "scenes/F1023_v90_D0117_P7/sage_results/rerun_20261003_frozen_v3/G28_ch4/stage4_joint_summary.csv",
+      "sha256": "8dce92b546bab3d4c45ac4423488ef243d9dd9c43b059d3da94376925c19b673"
+    },
+    "run_20261003_F1023_v90_D0117_P7_G29_ch11": {
+      "path": "scenes/F1023_v90_D0117_P7/sage_results/rerun_20261003_frozen_v3/G29_ch11/stage4_joint_summary.csv",
+      "sha256": "8389edeeb04f26b9725ae734f53673f3e86d0547819df02fa6a7518d05f0db00"
+    },
+    "run_20261003_F1023_v90_D0117_P7_G32_ch5": {
+      "path": "scenes/F1023_v90_D0117_P7/sage_results/rerun_20261003_frozen_v3/G32_ch5/stage4_joint_summary.csv",
+      "sha256": "060059c1077935fcb337d8f428dffaa22df15dbd66e257857f5d669875726b20"
+    }
+  }
+}

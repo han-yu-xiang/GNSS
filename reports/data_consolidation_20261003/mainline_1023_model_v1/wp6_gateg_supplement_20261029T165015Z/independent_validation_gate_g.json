@@ -1,0 +1,41 @@
+{
+  "status": "PASS_WITH_LIMITATIONS",
+  "validated_at_utc": "2026-10-29T17:30:58.730164Z",
+  "validated_at_local": "2026-10-30T01:30:58.730164+08:00",
+  "validation_attempt_id": "validation_attempt_20261029T172834757521Z",
+  "validator_sha256_at_analysis_manifest": "3933851f5043c2bbd3c35d59fe02d2ec5797774503a76fd3b9ebec3e19ef7808",
+  "validator_sha256_at_validation": "3463a82a795e3fd0816517dec92e99a17d0ce5466b026f2c0a1658b974cdfa99",
+  "input_sha256": {
+    "stage2_cir_pdp_window_features.csv": "258d5d70081d9ee6fd82a64b1a4f9c405180bc18cd49280b0e2b799d9a482bf4",
+    "stage2_mpc_cir_alpha_linkage.csv": "8db941db20e684108d13583d67ee20cde543bf2a36ca01013d1288b48231c80b"
+  },
+  "population": {
+    "selected_windows": 7847,
+    "mpc_paths": 8914,
+    "scenes": 13
+  },
+  "scores_recomputed": {
+    "M0_independent": 8914,
+    "M1_count_conditional": 7502,
+    "C0_mixed_copula": 8914,
+    "C1_count_mixed_copula": 5375
+  },
+  "maximum_absolute_score_error": {
+    "M0_independent": 7.105427357601002e-15,
+    "M1_count_conditional": 7.105427357601002e-15,
+    "C0_mixed_copula": 1.2079226507921703e-13,
+    "C1_count_mixed_copula": 1.5987211554602254e-14
+  },
+  "checks": {
+    "total": 39,
+    "failed": 0,
+    "result": "PASS"
+  },
+  "process_exit_code": 0,
+  "portable_command": "python scripts/channel_modeling/validate_mainline_stage2_wp6_gateg.py reports/data_consolidation_20261003/mainline_1023_model_v1/wp6_gateg_supplement_20261029T165015Z",
+  "scope_limitations": [
+    "Validation establishes identity and saved-score arithmetic, not that the continuous Doppler scoring measure matches the SAGE observation grid.",
+    "LOSO training sets overlap; per-path rows and windows are clustered, not independent scene replicates.",
+    "The score is a per-MPC composite, not a likelihood for a whole ordered path set."
+  ]
+}

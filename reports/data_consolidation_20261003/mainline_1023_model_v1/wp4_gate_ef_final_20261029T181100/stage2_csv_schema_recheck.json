@@ -1,0 +1,31 @@
+{
+  "record_type": "POST_REVIEW_STAGE2_CSV_SCHEMA_RECHECK",
+  "checked_utc": "2026-10-29T10:46:16.9388266Z",
+  "checked_local": "2026-10-29 18:46:16 +08:00",
+  "source_input_manifest": "dataset_generation_logs/channel_modeling/mainline_1023_wp5_alpha_full_83run_20261029T055629Z/input_manifest.csv",
+  "source_input_manifest_sha256": "9a914f93ae0dd4aa5c75c53928d89a69ec8bdab685fd739e1355b635b5926b50",
+  "combined_stage2_ledger": "dataset_generation_logs/channel_modeling/mainline_1023_wp5_alpha_full_83run_20261029T055629Z/stage2_modeling_ledger_all_paths.csv",
+  "combined_stage2_ledger_sha256": "def2e1e249af309a5114c100d0630299ebd955cefef6e051407fecb68e5493d7",
+  "stage2_source_csv_count": 83,
+  "unique_run_count": 83,
+  "source_csv_sha256_matches_manifest": 83,
+  "source_csvs_with_required_identity_and_attribute_columns": 83,
+  "required_columns": [
+    "window_id",
+    "path_id",
+    "is_multipath",
+    "delay_samples",
+    "excess_delay_samples",
+    "doppler_offset_hz",
+    "relative_power_db"
+  ],
+  "combined_ledger_has_required_columns": true,
+  "production_validator_helper_pass_count": 83,
+  "production_validator_helper_max_abs_attribute_difference": 0,
+  "validator_source_sha256": "e4e89efe5a2bc29805c96353363bc28fd80078a73e08eded97ec81f831296173",
+  "audit_runner_source_sha256_after_schema_guard": "96ac0dee0cf5d3e3fee91fdb8ffcf61b4134f4357e4d9490a89d6e552ec2dfa5",
+  "hdf5_or_mat_payload_read": false,
+  "cir_or_sage_production_started": false,
+  "raw_stdout_log_sha256_local_only": "6230648b6c99ff5fb2d6d7099ecfebf8bb057ed29aedb350b51efcd8365606a5",
+  "result": "PASS"
+}
