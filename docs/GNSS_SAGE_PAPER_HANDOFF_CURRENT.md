@@ -1970,3 +1970,7 @@ Commander 已验收上述科研成果整理并批准路线 A。本轮直接据�
 ## 35. 第一阶段静态统计建模中文总结报告（2026-10-31）
 
 已据最新冻结报告、逐场景结果、独立审阅和当前实现说明整理[第一阶段总结报告](paper_draft/MAINLINE_STAGE2_STATIC_MODELING_PHASE1_FINAL_REPORT_CN.md)，涵盖 83 run/13 scene 的 Stage2 估计总体、Stage0–4 处理链、统计口径、主要数值、场景外比较、Gate E/F/G 状态及 Phase 2 边界。报告明确区分估计器输出与物理传播真值，并注明历史冻结 runner SHA 与当前工作树源码 SHA 不同。WP1–WP6 与 Gate 状态未因总结文档改变；没有重跑科学计算。
+
+## 36. GNSS 项目阶段性研究总结入口（2026-10-31）
+
+面向项目成员和指导老师的[综合中文阶段总结](GNSS_SAGE_STATIC_MODELING_AND_NEXT_STAGE_SUMMARY_CN.md)已整理历史 SAGE 生产与 Mainline 统计研究的关系、Stage0–4 选择口径、参数模型及拟合/场景外结果、WP4/WP5 数据边界、Gate G 最新结论和后续研究顺序。它以冻结报告、轻量表和独立审阅为依据；不把 SAGE 估计值称作物理真值，也不把重叠历史总体相加。WP1–WP6 及 Gate 状态未因此改变；Gate G 仍为 `PENDING`。原有详细阶段报告 `MAINLINE_STAGE2_STATIC_MODELING_PHASE1_FINAL_REPORT_CN.md` 保留不变。

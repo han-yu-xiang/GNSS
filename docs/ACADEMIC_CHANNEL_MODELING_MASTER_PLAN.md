@@ -1089,3 +1089,7 @@ Commander 批准固定 0-Hz 箱中心与 `(k+1/2)w` 边界后，本次以预先�
 ## 121. Mainline Stage2 第一阶段静态统计建模总结报告（2026-10-31）
 
 新增中文综合报告：`docs/paper_draft/MAINLINE_STAGE2_STATIC_MODELING_PHASE1_FINAL_REPORT_CN.md`。报告统一记录冻结 Stage2 总体、估计流程与变量定义、WP1–WP6 的实际统计结果、CIR/PDP 与复数 alpha 的验证边界，以及 Gate E/F/G 和 Phase 2 状态；其中 Gate G 保持 `PENDING`，不宣称完整联合生成器已通过。该交付仅整理和交叉核对既有证据，未重跑 SAGE、CIR、alpha 或模型拟合；论文交接入口同步更新。
+
+## 122. GNSS 项目阶段性研究总结（2026-10-31）
+
+新增面向项目成员及指导老师的[综合中文阶段总结](GNSS_SAGE_STATIC_MODELING_AND_NEXT_STAGE_SUMMARY_CN.md)，将历史 10.23 MHz SAGE 批次、Phase‑1/r3 与当前 Mainline 统一叙述，并明确其身份交叠、时间快照和不同分母不可相加。报告覆盖 Stage0–4、83-run/13-scene Stage2 总体、全局与条件静态模型参数、场景留出效果、CIR/PDP、alpha、Gate G 固定分箱补充及后续依赖顺序；以当前冻结结果为准，保留 Gate G=`PENDING`、WP1–WP6=`COMPLETED_WITH_LIMITATIONS` 的状态。原有详细阶段报告 `docs/paper_draft/MAINLINE_STAGE2_STATIC_MODELING_PHASE1_FINAL_REPORT_CN.md` 未覆盖或删除。此项为既有证据整理，没有重跑 SAGE/CIR/alpha 或改变科研结果；论文交接与工程交接均增加入口。
